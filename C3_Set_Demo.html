@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+h<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>ESP32+HiveMQ 대시 보드</title>
+  <title>ESP32+HiveMQ 데모 보드</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <style>
@@ -154,7 +154,7 @@
 </head>
 <body data-theme="light">
   <header class="page-header">
-    <h1>ESP32+HiveMQ 대시 보드</h1>
+    <h1>ESP32+HiveMQ 데 보드</h1>
     <button id="themeToggle" class="theme-toggle" type="button" aria-label="테마 전환">
       <span class="theme-toggle-icon">🌞</span>
     </button>
@@ -310,8 +310,8 @@
     let lastDeviceMsgAt = null;
 
     client.on("connect", () => {
-      setMqttStatus(true, "MQTT 연결 OK (broker.hivemq.com)");
-      log("MQTT 연결 성공 (broker.hivemq.com)");
+      setMqttStatus(true, "MQTT 연결 OK (HiveMQ Cloud)");
+      log("MQTT 연결 성공 (HiveMQ Cloud)");
 
       const topicStatus = "esp32c3/status";
       client.subscribe(topicStatus, (err) => {
@@ -398,3 +398,4 @@
   </script>
 </body>
 </html>
+
