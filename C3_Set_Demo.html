@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>ESP32+MQTT 데모 보드 (broker.hivemq.com)</title>
+  <title>ESP32+HiveMQ 대시 보드</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <style>
@@ -164,7 +164,7 @@
 </head>
 <body data-theme="light">
   <header class="page-header">
-    <h1>ESP32+MQTT 데모 보드</h1>
+    <h1>ESP32+HiveMQ 대시 보드</h1>
     <button id="themeToggle" class="theme-toggle" type="button" aria-label="테마 전환">
       <span class="theme-toggle-icon">🌞</span>
     </button>
@@ -177,8 +177,9 @@
       <strong id="mqttState">MQTT 연결 대기 중...</strong>
     </div>
     <div style="margin-top:4px;font-size:0.85rem;color:var(--subtle);">
-      브로커: <code>broker.hivemq.com</code><br>
-      Web: <code>WS 8000</code> / ESP32: <code>1883</code>
+      브로커:
+      <code>6c56aefe0ddb4d57977c735f5070abe8.s1.eu.hivemq.cloud</code><br>
+      Web: <code>WSS 8884</code> / ESP32: <code>TLS 8883</code>
     </div>
     <div style="margin-top:4px;font-size:0.8rem;color:var(--muted);">
       장비 상태: <span id="deviceState">알 수 없음</span>
@@ -285,6 +286,7 @@
       const time = new Date().toLocaleTimeString();
       logEl.textContent += `[${time}] ${msg}\n`;
       logEl.scrollTop = logEl.scrollHeight;
+      console.log(msg);
     }
 
     function setMqttStatus(ok, text) {
@@ -303,21 +305,22 @@
       }
     }
 
-    // ── MQTT 설정: broker.hivemq.com (WS 8000) ─────────────────────
-    const brokerUrl = "ws://broker.hivemq.com:8000/mqtt";
+    // ── HiveMQ Cloud WebSocket 설정 ─────────────────────
+    const brokerUrl = "wss://6c56aefe0ddb4d57977c735f5070abe8.s1.eu.hivemq.cloud:8884/mqtt";
     const options = {
       clean: true,
       connectTimeout: 4000,
-      reconnectPeriod: 5000
-      // demo용 public broker는 username/password 없음
+      reconnectPeriod: 5000,
+      username: "mqtt_ESP32",
+      password: "gomqtt_ESP32"
     };
 
     const client = mqtt.connect(brokerUrl, options);
     let lastDeviceMsgAt = null;
 
     client.on("connect", () => {
-      setMqttStatus(true, "MQTT 연결 OK (broker.hivemq.com)");
-      log("MQTT 연결 성공");
+      setMqttStatus(true, "MQTT 연결 OK (HiveMQ Cloud)");
+      log("MQTT(HiveMQ Cloud) 연결 성공");
 
       const topicStatus = "esp32c3/status";
       client.subscribe(topicStatus, (err) => {
