@@ -109,16 +109,8 @@
       box-shadow: none;
     }
 
-    #btnOn {
-      background: #22c55e;
-      color: #fff;
-      box-shadow: 0 2px 6px rgba(34,197,94,0.4);
-    }
-    #btnOff {
-      background: #ef4444;
-      color: #fff;
-      box-shadow: 0 2px 6px rgba(239,68,68,0.4);
-    }
+    #btnOn { background: #22c55e; color: #fff; box-shadow: 0 2px 6px rgba(34,197,94,0.4); }
+    #btnOff { background: #ef4444; color: #fff; box-shadow: 0 2px 6px rgba(239,68,68,0.4); }
 
     .theme-toggle {
       background: transparent;
@@ -135,9 +127,7 @@
       align-items: center;
       justify-content: center;
     }
-    .theme-toggle-icon {
-      font-size: 1.1rem;
-    }
+    .theme-toggle-icon { font-size: 1.1rem; }
 
     #log {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -178,8 +168,8 @@
     </div>
     <div style="margin-top:4px;font-size:0.85rem;color:var(--subtle);">
       브로커:
-      <code>6c56aefe0ddb4d57977c735f5070abe8.s1.eu.hivemq.cloud</code><br>
-      Web: <code>WSS 8884</code> / ESP32: <code>TLS 8883</code>
+      <code>broker.hivemq.com</code><br>
+      Web: <code>WS 8000</code> / ESP32: <code>1883</code>
     </div>
     <div style="margin-top:4px;font-size:0.8rem;color:var(--muted);">
       장비 상태: <span id="deviceState">알 수 없음</span>
@@ -251,12 +241,13 @@
     const valLed   = $("#valLed");
     const valRssi  = $("#valRssi");
 
-    const btnOn   = $("#btnOn");
-    const btnOff  = $("#btnOff");
+    const btnOn  = $("#btnOn");
+    const btnOff = $("#btnOff");
+
     const themeToggleBtn  = $("#themeToggle");
     const themeToggleIcon = themeToggleBtn.querySelector(".theme-toggle-icon");
 
-    // ── 다크/라이트 모드 ──────────────────────
+    // ── 다크/라이트 테마 ──────────────────────
     function applyTheme(theme) {
       const isDark = theme === "dark";
       document.body.setAttribute("data-theme", theme);
@@ -264,7 +255,7 @@
     }
 
     (function initTheme() {
-      const saved = localStorage.getItem("demo-mqtt-theme");
+      const saved = localStorage.getItem("C3_Set_Demo_theme");
       let theme = "light";
       if (saved === "light" || saved === "dark") {
         theme = saved;
@@ -277,7 +268,7 @@
     themeToggleBtn.addEventListener("click", () => {
       const current = document.body.getAttribute("data-theme") || "light";
       const next = current === "dark" ? "light" : "dark";
-      localStorage.setItem("demo-mqtt-theme", next);
+      localStorage.setItem("C3_Set_Demo_theme", next);
       applyTheme(next);
     });
 
@@ -305,22 +296,21 @@
       }
     }
 
-    // ── HiveMQ Cloud WebSocket 설정 ─────────────────────
-    const brokerUrl = "wss://6c56aefe0ddb4d57977c735f5070abe8.s1.eu.hivemq.cloud:8884/mqtt";
+    // ===== 데모 브로커 WebSocket 설정 (broker.hivemq.com) =====
+    const brokerUrl = "ws://broker.hivemq.com:8000/mqtt";
     const options = {
       clean: true,
       connectTimeout: 4000,
-      reconnectPeriod: 5000,
-      username: "mqtt_ESP32",
-      password: "gomqtt_ESP32"
+      reconnectPeriod: 5000
+      // demo public broker → username/password 없음
     };
 
     const client = mqtt.connect(brokerUrl, options);
     let lastDeviceMsgAt = null;
 
     client.on("connect", () => {
-      setMqttStatus(true, "MQTT 연결 OK (HiveMQ Cloud)");
-      log("MQTT(HiveMQ Cloud) 연결 성공");
+      setMqttStatus(true, "MQTT 연결 OK (broker.hivemq.com)");
+      log("MQTT 연결 성공");
 
       const topicStatus = "esp32c3/status";
       client.subscribe(topicStatus, (err) => {
@@ -350,7 +340,8 @@
 
       const trimmed = text.trim();
       if (!trimmed.startsWith("{")) {
-        return; // online/offline 같은 문자열이면 무시
+        // online/offline 같은 문자열이면 무시
+        return;
       }
 
       let data;
@@ -383,7 +374,7 @@
       }
     }, 2000);
 
-    // ── LED 제어 Publish ───────────────────────
+    // ===== LED 제어 Publish =====
     function publishLed(cmd) {
       if (!client.connected) {
         cmdResultEl.textContent = "MQTT가 연결되지 않았습니다.";
