@@ -32,9 +32,7 @@
       --border-soft: rgba(148,163,184,0.4);
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -123,16 +121,13 @@
       font-size: 0.8rem;
       line-height: 1;
       margin: 0;
-      margin-top: -4px; /* 아이콘을 제목 라인에 맞추기 위해 살짝 위로 */
+      margin-top: -4px;
       box-shadow: none;
       display: inline-flex;
       align-items: center;
       justify-content: center;
     }
-
-    .theme-toggle-icon {
-      font-size: 1.1rem;
-    }
+    .theme-toggle-icon { font-size: 1.1rem; }
 
     #log {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -160,7 +155,6 @@
 <body data-theme="light">
   <header class="page-header">
     <h1>ESP32+HiveMQ 대시 보드</h1>
-    <!-- 우측 상단: 심볼만 있는 다크/라이트 토글 -->
     <button id="themeToggle" class="theme-toggle" type="button" aria-label="테마 전환">
       <span class="theme-toggle-icon">🌞</span>
     </button>
@@ -173,9 +167,8 @@
       <strong id="mqttState">MQTT 연결 대기 중...</strong>
     </div>
     <div style="margin-top:4px;font-size:0.85rem;color:var(--subtle);">
-      브로커: 
-      <code>broker.hivemq.com</code><br>
-      Web: WS 8000 / ESP32: 1883
+      브로커: <code>broker.hivemq.com</code><br>
+      Web: <code>WSS 8884</code> / ESP32: <code>1883</code>
     </div>
     <div style="margin-top:4px;font-size:0.8rem;color:var(--muted);">
       장비 상태: <span id="deviceState">알 수 없음</span>
@@ -253,7 +246,7 @@
     const themeToggleBtn  = $("#themeToggle");
     const themeToggleIcon = themeToggleBtn.querySelector(".theme-toggle-icon");
 
-    // ── 다크/라이트 테마 적용 ──────────────────────
+    // ── 다크/라이트 테마 ──────────────────────
     function applyTheme(theme) {
       const isDark = theme === "dark";
       document.body.setAttribute("data-theme", theme);
@@ -283,12 +276,12 @@
       const time = new Date().toLocaleTimeString();
       logEl.textContent += `[${time}] ${msg}\n`;
       logEl.scrollTop = logEl.scrollHeight;
+      console.log(msg);
     }
 
     function setMqttStatus(ok, text) {
       mqttDotEl.classList.remove("status-ok", "status-bad");
-      if (ok) mqttDotEl.classList.add("status-ok");
-      else    mqttDotEl.classList.add("status-bad");
+      mqttDotEl.classList.add(ok ? "status-ok" : "status-bad");
       mqttStateEl.textContent = text;
     }
 
@@ -302,18 +295,18 @@
       }
     }
 
-    // ===== 데모 MQTT WebSocket 설정 =====
-    const brokerUrl = "ws://broker.hivemq.com:8000/mqtt";
+    // ===== MQTT WebSocket: broker.hivemq.com (WSS 8884) =====
+    //   → Chrome에서 보안 연결 요구하는 경우에도 동작
+    const brokerUrl = "wss://broker.hivemq.com:8884/mqtt";
 
     const options = {
       clean: true,
       connectTimeout: 4000,
       reconnectPeriod: 5000
-      // demo broker → username/password 없음
+      // public 데모 브로커 → username/password 없음
     };
 
     const client = mqtt.connect(brokerUrl, options);
-
     let lastDeviceMsgAt = null;
 
     client.on("connect", () => {
@@ -348,7 +341,7 @@
 
       const trimmed = text.trim();
       if (!trimmed.startsWith("{")) {
-        // online / offline / 기타 문자열은 무시
+        // online/offline 같은 문자열이면 무시
         return;
       }
 
@@ -361,11 +354,7 @@
       }
 
       lastDeviceMsgAt = Date.now();
-      if ("alive" in data) {
-        setDeviceState(!!data.alive);
-      } else {
-        setDeviceState(true);
-      }
+      setDeviceState(data.alive !== false);
 
       if ("temp"  in data) valTemp.textContent  = Number(data.temp).toFixed(1);
       if ("hum"   in data) valHum.textContent   = Number(data.hum).toFixed(1);
@@ -377,11 +366,11 @@
       lastUpdateEl.textContent = new Date().toLocaleString();
     });
 
-    // heartbeat 타임아웃 – 10초 이상 메시지 없으면 오프라인으로 표시
+    // 10초 이상 메시지 없으면 오프라인 표시
     setInterval(() => {
       if (!lastDeviceMsgAt) return;
       const diff = Date.now() - lastDeviceMsgAt;
-      if (diff > 10000) { // 10초
+      if (diff > 10000) {
         setDeviceState(false);
       }
     }, 2000);
