@@ -29,7 +29,7 @@ h1{margin:0 0 8px;font-size:26px;font-weight:800;display:flex;justify-content:sp
 .v{font-size:22px;font-weight:800;margin-top:4px}
 
 /* 구분선 */
-hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+hr{border:0;border-top:1px solid(var(--line));margin:14px 0}
 
 /* LED */
 .led{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
@@ -419,10 +419,15 @@ function restoreHistoryFromLS(){
 
     tb.innerHTML='';
     histBuf = [];
-    const slice = arr.slice(-60);
+
+    // tableHistory는 항상 "최신 → 과거" 순으로 유지
+    const slice = arr.slice(0, 60);
     tableHistory = slice;
 
-    for(const rec of slice){
+    // 테이블은 최신 값이 맨 위가 되도록,
+    // 차트용 histBuf는 시간 순서(과거 → 현재)가 되도록 역순으로 순회
+    for(let i = slice.length - 1; i >= 0; i--){
+      const rec = slice[i];
       const ts = rec.ts ? new Date(rec.ts) : null;
       addRowTop(rec, ts);
       histBuf.push({
@@ -433,6 +438,7 @@ function restoreHistoryFromLS(){
         co2  :+rec.co2
       });
     }
+
     renderAllCharts();
   }catch(_){}
 }
