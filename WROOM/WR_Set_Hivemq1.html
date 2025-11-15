@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESP32 센서 대시보드</title>
+<!-- MQTT JS (HiveMQ WebSocket용) -->
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<style>
+:root{--bg:#0b1020;--card:#131a2b;--txt:#e8eefc;--mut:#9fb2d7;--line:#22314f;--btn-bg:#1b2b4a;--btn-border:#2c3e63}
+:root.light{--bg:#f5f7fa;--card:#ffffff;--txt:#0b1020;--mut:#5a6b8a;--line:#ccd4e0;--btn-bg:#e4e8ef;--btn-border:#b0bacb}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.5 system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif}
+.wrap{max-width:900px;margin:20px auto;padding:0 12px}
+.card{background:var(--card);border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+h1{margin:0 0 8px;font-size:26px;font-weight:800;display:flex;justify-content:space-between;align-items:center}
+.mut{color:var(--mut);margin:0 0 4px}
+.mut.small{font-size:14px}
+.theme-toggle{cursor:pointer;font-size:22px;user-select:none}
+
+/* 장비 상태 색 (온라인/오프라인 글자만) */
+.state-online{color:#4ade80;}
+.state-offline{color:#f97373;}
+
+/* KPI */
+.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:6px}
+.tile{background:#0f1526;border-radius:12px;padding:12px;text-align:center;min-height:76px}
+:root.light .tile{background:#eef1f7}
+.v{font-size:22px;font-weight:800;margin-top:4px}
+
+/* 구분선 */
+hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+
+/* LED */
+.led{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
+.btn{border:0;color:#fff;padding:12px 14px;border-radius:12px;cursor:pointer;font-weight:800;min-width:98px;font-size:15px;transition:all .2s}
+.btn.on{background:#2d6bff;} .btn.off{background:#32405e;} .btn.active{background:#00cc66;} .btn.dim{background:#1b2236;}
+.led-status{font-size:13px;color:var(--mut);position:relative;top:4px}
+
+/* 토글 버튼 */
+.btn.toggle{background:var(--btn-bg);border:1px solid var(--btn-border);color:var(--txt);min-width:120px}
+.toggle-row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}
+
+/* 접힘 섹션 */
+.collapsible{max-height:0;overflow:hidden;transition:max-height .4s ease,opacity .3s ease;opacity:0}
+.collapsible.open{max-height:2000px;opacity:1}
+
+/* 테이블 */
+.tablewrap{overflow:auto;background:#0f1526;border-radius:14px;padding:0 6px 6px 0;max-height:50vh}
+:root.light .tablewrap{background:#eef1f7}
+table{border-collapse:collapse;width:auto;min-width:100%}
+thead th{position:sticky;top:0;background:#12203a}
+:root.light thead th{background:#d6deec}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;font-size:13px}
+th:first-child,td:first-child{text-align:center}
+th:nth-child(1){width:54px}
+th:nth-child(2),th:nth-child(3),th:nth-child(4),th:nth-child(5){width:63px}
+th:nth-child(6){width:72px}
+th:nth-child(7){width:52px}
+
+/* 그래프 */
+.charts{margin-top:14px;display:grid;grid-template-columns:1fr;gap:12px}
+.chart{background:#0f1526;border-radius:12px;padding:10px}
+:root.light .chart{background:#eef1f7}
+.chart h3{margin:0 0 6px;font-size:15px;color:var(--mut)}
+.canvas-wrap{position:relative;width:100%;height:200px}
+.canvas-wrap canvas{position:absolute;inset:0;width:100%;height:100%}
+
+/* 범례 */
+.legend{display:flex;gap:14px;align-items:center;margin:0 0 6px 2px;color:var(--mut);font-size:12px}
+.legend .item{display:flex;align-items:center;gap:6px}
+.swatch{display:inline-block;width:16px;height:6px;border-radius:3px}
+.swatch.blue{background:#7aa0ff}
+.swatch.orange{background:#ff9a7a}
+
+/* 하단 한 줄(요약 + 시간) */
+.bottomRow{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;color:var(--mut)}
+#mini{white-space:pre-line;font-size:12px;margin:0}
+.timeText{font-size:12px;white-space:nowrap;margin:0 2px 0 0}
+
+/* 예전 #foot 숨김 */
+#foot{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap"><div class="card">
+  <h1>ESP32 센서 대시보드 <span class="theme-toggle" id="themeToggle">🌙</span></h1>
+  <p class="mut">AHT25(온/습) + SCD42(온/습/CO₂) · LED제어</p>
+  <p class="mut small" id="mqttLine">MQTT 연결 대기 중...</p>
+  <!-- 장비 상태: 온라인/오프라인 (온라인/오프라인만 색상) -->
+  <p class="mut small">장비 상태: <span id="devStateVal" class="state-offline">오프라인</span></p>
+
+  <div class="grid">
+    <div class="tile"><div>AHT25 온도</div><div id="aht_t" class="v">--.- °C</div></div>
+    <div class="tile"><div>AHT25 습도</div><div id="aht_h" class="v">-- %</div></div>
+    <div class="tile"><div>SCD42 온도</div><div id="scd_t" class="v">--.- °C</div></div>
+    <div class="tile"><div>SCD42 습도</div><div id="scd_h" class="v">-- %</div></div>
+    <div class="tile"><div>CO₂ 공기</div><div id="scd_c" class="v">---- ppm</div></div>
+  </div>
+
+  <div class="led">
+    <button id="on"  class="btn on">LED ON</button>
+    <button id="off" class="btn off">LED OFF</button>
+    <div id="led" class="led-status">LED: -</div>
+  </div>
+
+  <hr>
+  <div class="toggle-row">
+    <button class="btn toggle" id="toggleTable">📋 테이블 보기</button>
+    <button class="btn toggle" id="toggleGraph">📊 그래프 보기</button>
+  </div>
+
+  <div id="tableSection" class="collapsible">
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>시간</th><th>AHT&nbsp;°C</th><th>AHT&nbsp;%</th>
+            <th>SCD&nbsp;°C</th><th>SCD&nbsp;%</th><th>CO₂</th><th>LED</th>
+          </tr>
+        </thead>
+        <tbody id="logtbl"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="graphSection" class="collapsible">
+    <div class="charts">
+      <div class="chart">
+        <h3>온도 (°C) — 최근 60분</h3>
+        <div class="legend">
+          <span class="item"><i class="swatch blue"></i>AHT25 온도</span>
+          <span class="item"><i class="swatch orange"></i>SCD42 온도</span>
+        </div>
+        <div class="canvas-wrap"><canvas id="chTemp"></canvas></div>
+      </div>
+
+      <div class="chart">
+        <h3>습도 (%) — 최근 60분</h3>
+        <div class="legend">
+          <span class="item"><i class="swatch blue"></i>AHT25 습도</span>
+          <span class="item"><i class="swatch orange"></i>SCD42 습도</span>
+        </div>
+        <div class="canvas-wrap"><canvas id="chHum"></canvas></div>
+      </div>
+
+      <div class="chart">
+        <h3>CO₂ (ppm) — 최근 60분</h3>
+        <div class="legend">
+          <span class="item"><i class="swatch blue"></i>SCD42 CO₂</span>
+        </div>
+        <div class="canvas-wrap"><canvas id="chCO2"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+  <div class="bottomRow">
+    <div id="mini">AHT25: --.- °C | -- %<br>SCD42: --.- °C | -- % | ---- ppm<br>RSSI: -- [dBm]</div>
+    <div id="ts" class="timeText">—</div>
+  </div>
+</div></div>
+
+<script>
+const $=s=>document.querySelector(s);
+
+/* ===== 테마 ===== */
+const themeToggle=$('#themeToggle');
+function applyTheme(t){
+  document.documentElement.classList.toggle('light',t==='light');
+  themeToggle.textContent=(t==='light')?'☀️':'🌙';
+  renderAllCharts();
+}
+applyTheme(localStorage.getItem('theme')||'dark');
+themeToggle.onclick=()=>{
+  const t=document.documentElement.classList.contains('light')?'dark':'light';
+  applyTheme(t); localStorage.setItem('theme',t);
+};
+
+/* ===== MQTT 기본 ===== */
+const MQTT_BROKER_URL = "wss://6c56aefe0ddb4d57977c735f5070abe8.s1.eu.hivemq.cloud:8884/mqtt";
+const MQTT_OPTIONS = {
+  clean: true,
+  connectTimeout: 4000,
+  reconnectPeriod: 5000,
+  username: "mqtt_ESP32",
+  password: "gomqtt_ESP32"
+};
+const STATUS_TOPIC = "esp32wr/status";
+const LED_TOPIC    = "esp32wr/led";
+
+let mqttClient = null;
+let lastDeviceMsgAt = 0;
+const mqttLine = $('#mqttLine');
+const devStateValEl = $('#devStateVal');
+
+function setMqttText(t){ if(mqttLine) mqttLine.textContent = t; }
+function setDevState(isOnline){
+  if(!devStateValEl) return;
+  devStateValEl.textContent = isOnline ? '온라인' : '오프라인';
+  devStateValEl.classList.toggle('state-online', isOnline);
+  devStateValEl.classList.toggle('state-offline', !isOnline);
+}
+
+/* ===== ESP32 HTTP 베이스 + 로컬 테이블 저장 ===== */
+const LS_LAST_STATUS='esp32_last_status', LS_BASE='base', LS_TABLE='esp32wr_table';
+let BASE=(localStorage.getItem(LS_BASE)||'').replace(/\/$/,'');
+const CANDS=[]; if(BASE) CANDS.push(BASE); CANDS.push('http://esp32.local','http://192.168.31.204');
+let tableHistory=[];
+
+function saveTableHistory(){
+  try{ localStorage.setItem(LS_TABLE, JSON.stringify(tableHistory)); }catch(_){}
+}
+
+async function tryStatus(b){
+  try{
+    const r=await fetch(b+'/api/status',{cache:'no-store'});
+    return r.ok;
+  }catch(_){return false;}
+}
+async function discoverBase(){
+  for(const b of CANDS){
+    if(await tryStatus(b)){BASE=b;localStorage.setItem(LS_BASE,b);return true}
+  }
+  return false;
+}
+
+/* ===== 엔드포인트 (history 전용 + HTTP LED fallback) ===== */
+const EP={
+  history60: ['/api/history?limit=60','/history?limit=60','/api/history','/history','/logs'],
+  ledOn    : ['/api/led?state=on','/led/on','/api/led/on','/set?led=1'],
+  ledOff   : ['/api/led?state=off','/led/off','/api/led/off','/set?led=0']
+};
+async function fetchFirstJson(paths,opt={}){
+  for(const p of paths){
+    const u=(/^(?:https?:)?\/\//.test(p)?p:(BASE+p));
+    try{
+      const r=await fetch(u,{...opt,cache:'no-store'});
+      if(!r.ok) continue;
+      return await r.json();
+    }catch(_){}
+  }
+  throw new Error('모든 경로 실패');
+}
+
+/* ===== 유틸 ===== */
+function toBool(v){
+  if(typeof v==='boolean') return v;
+  if(typeof v==='number') return v!==0;
+  if(typeof v==='string'){
+    const t=v.trim().toLowerCase();
+    return t==='1'||t==='on'||t==='true';
+  }
+  return !!v;
+}
+const fmtNow=()=>{
+  const d=new Date(),p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+};
+
+/* ===== 직렬 텍스트 → 객체 ===== */
+function parseStatusLineToObj(line){
+  const ahtMatch  = /AHT:\s*([0-9.\-]+)°C\s+([0-9.\-]+)%/.exec(line);
+  const scdMatch  = /SCD:\s*([0-9.\-]+)°C\s+([0-9.\-]+)%/.exec(line);
+  const co2Match  = /CO2:\s*([0-9.\-]+)ppm/.exec(line);
+  const ledMatch  = /LED:\s*(ON|OFF)/i.exec(line);
+  const rssiMatch = /RSSI:\s*([\-0-9]+)/i.exec(line);
+
+  const o = {};
+  if(ahtMatch){ o.aht_t=parseFloat(ahtMatch[1]); o.aht_h=parseFloat(ahtMatch[2]); }
+  if(scdMatch){ o.scd_t=parseFloat(scdMatch[1]); o.scd_h=parseFloat(scdMatch[2]); }
+  if(co2Match){ o.co2  =parseFloat(co2Match[1]); }
+  if(ledMatch){ o.led  = ledMatch[1].toUpperCase()==='ON'; }
+  if(rssiMatch){o.rssi = parseInt(rssiMatch[1],10);}
+  return o;
+}
+
+/* ===== 캐시 우선 적용 ===== */
+(function(){
+  const raw=localStorage.getItem(LS_LAST_STATUS);
+  if(!raw) return;
+  try{applyStatus(JSON.parse(raw),true);}catch(_){}
+})();
+
+/* ===== LED 버튼 동기화 ===== */
+function syncButtons(on){
+  const bon=$('#on'), boff=$('#off');
+  bon.classList.remove('active','dim'); boff.classList.remove('active','dim');
+  if(on){ bon.classList.add('active'); boff.classList.add('dim'); }
+  else  { boff.classList.add('active'); bon.classList.add('dim'); }
+}
+
+/* ===== 상태 적용 ===== */
+function applyStatus(s,fromCache=false){
+  const aT=Number(s.aht_t), aH=Number(s.aht_h),
+        sT=Number(s.scd_t), sH=Number(s.scd_h),
+        co=Number(s.co2);
+  const led = toBool(s.led);
+
+  if(!Number.isNaN(aT)) $('#aht_t').textContent=aT.toFixed(1)+' °C';
+  if(!Number.isNaN(aH)) $('#aht_h').textContent=Math.round(aH)+' %';
+  if(!Number.isNaN(sT)) $('#scd_t').textContent=sT.toFixed(1)+' °C';
+  if(!Number.isNaN(sH)) $('#scd_h').textContent=Math.round(sH)+' %';
+  if(!Number.isNaN(co)&&co>0) $('#scd_c').textContent=co+' ppm';
+
+  $('#led').textContent='LED: '+(led?'ON':'OFF');
+  syncButtons(led);
+
+  const rssiText=(typeof s.rssi!=='undefined')?`RSSI: ${s.rssi} [dBm]`:'RSSI: -- [dBm]';
+  const line1=`AHT25: ${Number.isNaN(aT)?'--.-':aT.toFixed(1)} °C | ${Number.isNaN(aH)?'--':Math.round(aH)} %`;
+  const line2=`SCD42: ${Number.isNaN(sT)?'--.-':sT.toFixed(1)} °C | ${Number.isNaN(sH)?'--':Math.round(sH)} % | ${Number.isNaN(co)?'----':co} ppm`;
+  $('#mini').textContent=`${line1}\n${line2}\n${rssiText}`;
+
+  if(!fromCache) localStorage.setItem(LS_LAST_STATUS, JSON.stringify(s));
+  $('#ts').textContent=fmtNow();
+}
+
+/* ===== 토글 섹션 ===== */
+const secTable=$('#tableSection'), secGraph=$('#graphSection');
+$('#toggleTable').onclick=()=>{
+  const open=secTable.classList.toggle('open');
+  $('#toggleTable').textContent=open?'📋 테이블 숨기기':'📋 테이블 보기';
+};
+$('#toggleGraph').onclick=()=>{
+  const open=secGraph.classList.toggle('open');
+  $('#toggleGraph').textContent=open?'📊 그래프 숨기기':'📊 그래프 보기';
+  if(open) renderAllCharts();
+};
+
+/* ===== 테이블 행 추가 ===== */
+function addRowTop(o,ts){
+  const tb=$('#logtbl');
+  const d=ts?new Date(ts):new Date();
+  const hh=String(d.getHours()).padStart(2,'0');
+  const mm=String(d.getMinutes()).padStart(2,'0');
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${hh}:${mm}</td>
+    <td>${Number(o.aht_t).toFixed(1)}</td>
+    <td>${Math.round(Number(o.aht_h))}</td>
+    <td>${Number(o.scd_t).toFixed(1)}</td>
+    <td>${Math.round(Number(o.scd_h))}</td>
+    <td>${Math.round(Number(o.co2))}</td>
+    <td>${toBool(o.led)?'ON':'OFF'}</td>`;
+  if(tb.firstChild) tb.insertBefore(tr,tb.firstChild); else tb.appendChild(tr);
+  while(tb.rows.length>60) tb.deleteRow(tb.rows.length-1);
+}
+
+/* ===== 차트 ===== */
+let histBuf=[]; const dpr=()=>window.devicePixelRatio||1;
+function prepCanvas(c){
+  const r=c.getBoundingClientRect();
+  const w=Math.max(1,r.width),h=Math.max(1,r.height);
+  c.width=Math.floor(w*dpr());c.height=Math.floor(h*dpr());
+  const ctx=c.getContext('2d');
+  ctx.setTransform(dpr(),0,0,dpr(),0,0);
+  return ctx;
+}
+function drawChart(c,series){
+  const ctx=prepCanvas(c); const W=c.clientWidth,H=c.clientHeight;
+  const padL=38,padR=10,padT=10,padB=26,plotW=W-padL-padR,plotH=H-padT-padB;
+  const light=document.documentElement.classList.contains('light');
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle=light?'#eef1f7':'#0f1526'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle=light?'#ccd4e0':'#22314f';
+  ctx.beginPath();
+  for(let g=0;g<=4;g++){const y=padT+plotH*g/4;ctx.moveTo(padL,y);ctx.lineTo(padL+plotW,y);}
+  for(let m=0;m<=60;m+=10){const x=padL+plotW*(m/60);ctx.moveTo(x,padT);ctx.lineTo(x,padT+plotH);}
+  ctx.stroke();
+  ctx.fillStyle=light?'#5a6b8a':'#9fb2d7';
+  ctx.font='12px system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  for(let m=0;m<=60;m+=10){
+    const x=padL+plotW*(m/60);
+    ctx.fillText((60-m)==0?'지금':`-${60-m}m`,x,padT+plotH+6);
+  }
+  const vals=[]; series.forEach(a=>a.forEach(v=>{if(Number.isFinite(v))vals.push(v);}));
+  let vmin=Math.min(...(vals.length?vals:[0])), vmax=Math.max(...(vals.length?vals:[1]));
+  if(vmax===vmin){vmax=vmin+1;}
+  const pad=(vmax-vmin)*0.1; vmin-=pad; vmax+=pad;
+  ctx.textAlign='right'; ctx.textBaseline='middle';
+  for(let g=0;g<=4;g++){
+    const y=padT+plotH*g/4, val=vmax-(vmax-vmin)*g/4;
+    ctx.fillText(val.toFixed((vmax-vmin)<10?1:0),padL-6,y);
+  }
+  const xAt=i=>padL+plotW*(i/59), yAt=v=>padT+((vmax-v)/(vmax-vmin))*plotH;
+  const colors=['#7aa0ff','#ff9a7a'];
+  series.forEach((arr,idx)=>{
+    ctx.beginPath(); ctx.lineWidth=2; ctx.strokeStyle=colors[idx%colors.length];
+    let moved=false; const N=arr.length;
+    for(let i=0;i<60;i++){
+      const j=i-(60-N); const v=(j>=0&&j<N)?arr[j]:NaN; const x=xAt(i);
+      if(Number.isFinite(v)){
+        const y=yAt(v);
+        if(!moved){ctx.moveTo(x,y); moved=true;} else ctx.lineTo(x,y);
+      }else moved=false;
+    }
+    ctx.stroke();
+  });
+}
+function renderAllCharts(){
+  if(!$('#graphSection').classList.contains('open')) return;
+  const aht_t=histBuf.map(r=>r.aht_t??NaN), scd_t=histBuf.map(r=>r.scd_t??NaN),
+        aht_h=histBuf.map(r=>r.aht_h??NaN), scd_h=histBuf.map(r=>r.scd_h??NaN),
+        co2  =histBuf.map(r=>r.co2??NaN);
+  drawChart(document.getElementById('chTemp'),[aht_t,scd_t]);
+  drawChart(document.getElementById('chHum'), [aht_h,scd_h]);
+  drawChart(document.getElementById('chCO2'), [co2]);
+}
+
+/* ===== 로컬스토리지에서 테이블/그래프 복원 ===== */
+function restoreHistoryFromLS(){
+  try{
+    const raw = localStorage.getItem(LS_TABLE);
+    if(!raw) return;
+    const arr = JSON.parse(raw);
+    if(!Array.isArray(arr) || !arr.length) return;
+    const tb = $('#logtbl');
+    if(!tb) return;
+
+    tb.innerHTML='';
+    histBuf = [];
+    const slice = arr.slice(-60);
+    tableHistory = slice;
+
+    for(const rec of slice){
+      const ts = rec.ts ? new Date(rec.ts) : null;
+      addRowTop(rec, ts);
+      histBuf.push({
+        aht_t:+rec.aht_t,
+        aht_h:+rec.aht_h,
+        scd_t:+rec.scd_t,
+        scd_h:+rec.scd_h,
+        co2  :+rec.co2
+      });
+    }
+    renderAllCharts();
+  }catch(_){}
+}
+
+/* ===== 1분 평균 버퍼 (MQTT 수신기반) + 로컬 저장 ===== */
+let minuteKey=null;
+let minuteSamples=[];
+
+function pushMinuteSample(s, now){
+  const key = now.getHours()*60 + now.getMinutes();
+  if(minuteKey!==null && key!==minuteKey && minuteSamples.length){
+    const ts = new Date(
+      now.getFullYear(), now.getMonth(), now.getDate(),
+      Math.floor(minuteKey/60), minuteKey%60, 0, 0
+    );
+    const avg = k=>{
+      const vals = minuteSamples.map(x=>+x[k]).filter(Number.isFinite);
+      if(!vals.length) return NaN;
+      return vals.reduce((a,b)=>a+b,0)/vals.length;
+    };
+    const row = {
+      aht_t: avg('aht_t'),
+      aht_h: avg('aht_h'),
+      scd_t: avg('scd_t'),
+      scd_h: avg('scd_h'),
+      co2  : avg('co2'),
+      led  : minuteSamples[minuteSamples.length-1].led
+    };
+    addRowTop(row, ts);
+    histBuf.push({
+      aht_t: row.aht_t,
+      aht_h: row.aht_h,
+      scd_t: row.scd_t,
+      scd_h: row.scd_h,
+      co2  : row.co2
+    });
+    if(histBuf.length>60) histBuf.shift();
+
+    tableHistory.unshift({
+      ts: ts.toISOString(),
+      aht_t: row.aht_t,
+      aht_h: row.aht_h,
+      scd_t: row.scd_t,
+      scd_h: row.scd_h,
+      co2:  row.co2,
+      led:  row.led
+    });
+    if(tableHistory.length>60){
+      tableHistory = tableHistory.slice(0,60);
+    }
+    saveTableHistory();
+    renderAllCharts();
+    minuteSamples = [];
+  }
+  minuteKey = key;
+  minuteSamples.push({
+    aht_t:+s.aht_t, aht_h:+s.aht_h,
+    scd_t:+s.scd_t, scd_h:+s.scd_h,
+    co2  :+s.co2,   led: toBool(s.led)
+  });
+}
+
+/* ===== LED 제어 ===== */
+function publishLed(cmd){
+  if(mqttClient && mqttClient.connected){
+    mqttClient.publish(LED_TOPIC, cmd, {qos:0, retain:false});
+  }else if(BASE){
+    const path = cmd==="ON" ? EP.ledOn[0] : EP.ledOff[0];
+    fetch(BASE+path,{cache:'no-store'}).catch(()=>{});
+  }
+}
+$('#on').onclick  = ()=> publishLed("ON");
+$('#off').onclick = ()=> publishLed("OFF");
+
+/* ===== 초기 부팅 ===== */
+(async()=>{
+  restoreHistoryFromLS();
+  if(!BASE || !(await tryStatus(BASE))) await discoverBase();
+  // if(BASE) await loadHistory60(); // 필요하면 주석 해제
+
+  setInterval(()=>{ $('#ts').textContent=fmtNow(); },1000);
+
+  mqttClient = mqtt.connect(MQTT_BROKER_URL, MQTT_OPTIONS);
+
+  mqttClient.on('connect', ()=>{
+    setMqttText('MQTT 연결 OK (HiveMQ Cloud)');
+    mqttClient.subscribe(STATUS_TOPIC, err=>{
+      if(err) setMqttText('MQTT 구독 실패');
+    });
+  });
+  mqttClient.on('reconnect', ()=> setMqttText('MQTT 재연결 중...'));
+  mqttClient.on('error',    ()=> setMqttText('MQTT 에러'));
+  mqttClient.on('close',    ()=>{
+    setMqttText('MQTT 연결 끊김');
+    setDevState(false);
+  });
+
+  mqttClient.on('message',(topic,payload)=>{
+    if(topic!==STATUS_TOPIC) return;
+    const text = new TextDecoder().decode(payload);
+    const trimmed = text.trim();
+    lastDeviceMsgAt = Date.now();
+    setDevState(true);
+
+    let st = null;
+    if(trimmed.startsWith('{')){
+      try{ st = JSON.parse(trimmed); }catch(e){ return; }
+    }else{
+      st = parseStatusLineToObj(trimmed);
+    }
+    if(!st) return;
+    applyStatus(st,false);
+    pushMinuteSample(st, new Date());
+  });
+
+  // 장비 응답 타임아웃 체크 → 상태색도 같이 제어
+  setInterval(()=>{
+    if(!lastDeviceMsgAt){
+      setDevState(false);
+      return;
+    }
+    const diff = Date.now()-lastDeviceMsgAt;
+    if(diff>20000){
+      setMqttText('MQTT: 장치 응답 없음');
+      setDevState(false);
+    }
+  },5000);
+})();
+</script>
+</body>
+</html>
