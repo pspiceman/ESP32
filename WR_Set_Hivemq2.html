@@ -114,6 +114,31 @@
     #btnOn { background: #2ecc71; color: #fff; box-shadow: 0 2px 6px rgba(34,197,94,0.4); }
     #btnOff { background: #e74c3c; color: #fff; box-shadow: 0 2px 6px rgba(239,68,68,0.4); }
 
+    .led-control-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .led-buttons button {
+      min-width: 96px;
+      justify-content: center;
+    }
+    .led-inline-status {
+      display: inline-flex;
+      align-items: baseline;
+      font-size: 0.9rem;
+    }
+    .led-inline-status-label {
+      margin-right: 4px;
+      color: var(--subtle);
+    }
+    .led-inline-status-value {
+      font-weight: 700;
+    }
+
+
     .theme-toggle {
       background: transparent;
       color: var(--subtle);
@@ -173,7 +198,7 @@
     </div>
     <div style="margin-top:4px;font-size:0.85rem;color:var(--subtle);">
       브로커: 
-      <code>6c56aefe0ddb4d57977c735f5070abe8.s1.eu.hivemq.cloud</code><br>
+      <code>broker.hivemq.com</code><br>
       Web: WSS 8884 / ESP32: TLS 8883
     </div>
     <div style="margin-top:4px;font-size:0.8rem;color:var(--muted);">
@@ -209,10 +234,6 @@
         <div class="metric-value"><span id="valCo2">--</span> ppm</div>
       </div>
       <div class="metric">
-        <div class="metric-label">LED 상태</div>
-        <div class="metric-value"><span id="valLed">--</span></div>
-      </div>
-      <div class="metric">
         <div class="metric-label">WiFi RSSI</div>
         <div class="metric-value"><span id="valRssi">--</span> dBm</div>
       </div>
@@ -222,9 +243,17 @@
   <!-- LED 제어 -->
   <div class="card">
     <h2 style="font-size:1.1rem;margin-top:0;">LED 제어 (esp32wr/led)</h2>
-    <button id="btnOn">LED ON</button>
-    <button id="btnOff">LED OFF</button>
-    <div id="cmdResult" style="margin-top:8px;font-size:0.8rem;color:var(--subtle);">-</div>
+    <div class="led-control-row">
+      <div class="led-buttons">
+        <button id="btnOn">LED ON</button>
+        <button id="btnOff">LED OFF</button>
+      </div>
+      <div class="led-inline-status">
+        <span class="led-inline-status-label">LED 상태</span>
+        <span id="valLed" class="led-inline-status-value">--</span>
+      </div>
+    </div>
+    <div id="cmdResult" style="margin-top:4px;font-size:0.8rem;color:var(--subtle);">-</div>
   </div>
 
   <!-- 로그 -->
