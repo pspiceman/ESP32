@@ -1,3 +1,4 @@
+// https://chatgpt.com/c/691914ca-a6a8-8324-9982-2b9db981f606
 // esp32_ref_mqtt_history.ino
 // ESP32 Web Sensor Dashboard + HiveMQ
 //  - 현재값: esp32wr/status (MQTT, retained)
