@@ -23,6 +23,7 @@ h1{margin:0 0 8px;font-size:26px;font-weight:800;display:flex;justify-content:sp
 .theme-toggle{cursor:pointer;font-size:22px}
 .status-block{margin-bottom:4px}
 .status-block p{margin:0;font-size:13px;color:var(--mut);}
+
 .state-online{color:#4ade80;}
 .state-offline{color:#f97373;}
 
@@ -193,7 +194,8 @@ canvas{width:100%;height:100%;display:block}
   <div class="status-block">
     <p id="mqttLine">MQTT: 연결 대기 중...</p>
     <p>브로커: HiveMQ Cloud</p>
-    <p id="devState">장비 상태: <span id="devStateVal" class="state-offline">오프라인</span></p>
+    <!-- 초기 텍스트를 '확인 중...' 으로 -->
+    <p id="devState">장비 상태: <span id="devStateVal">확인 중...</span></p>
   </div>
 
   <div class="grid">
@@ -363,7 +365,19 @@ let lastDeviceMsgAt = 0;
 const mqttLine = $('#mqttLine');
 const devStateValEl = $('#devStateVal');
 
-function setMqttText(t){ if(mqttLine) mqttLine.textContent = t; dbg(`MQTT: ${t}`); }
+function setMqttText(t){
+  if(mqttLine) mqttLine.textContent = t;
+  dbg(`MQTT: ${t}`);
+}
+
+// ✅ 새로고침 직후 “확인 중…” 상태용
+function setDevStateUnknown(){
+  if(!devStateValEl) return;
+  devStateValEl.textContent = '확인 중...';
+  devStateValEl.classList.remove('state-online','state-offline');
+}
+
+// 온라인/오프라인 표시
 function setDevState(isOnline){
   if(!devStateValEl) return;
   devStateValEl.textContent = isOnline ? '온라인' : '오프라인';
@@ -616,6 +630,10 @@ $('#off').onclick = ()=> publishLed("OFF");
 /* ===== 초기 부팅 ===== */
 (async()=>{
   dbg('init...');
+
+  // 장비 상태 초기값: 확인 중...
+  setDevStateUnknown();
+
   setInterval(()=>{ $('#ts').textContent=fmtNow(); },1000);
 
   setMqttText('MQTT 접속 중...');
@@ -636,9 +654,10 @@ $('#off').onclick = ()=> publishLed("OFF");
 
   mqttClient.on('reconnect', ()=> setMqttText('MQTT 재연결 중...'));
   mqttClient.on('error', (e)=> { setMqttText('MQTT 에러'); dbg('MQTT error: '+e); });
+
+  // ❌ 여기서는 더 이상 즉시 오프라인으로 만들지 않음
   mqttClient.on('close', ()=>{
     setMqttText('MQTT 연결 끊김');
-    setDevState(false);
     dbg('MQTT closed');
   });
 
@@ -648,6 +667,7 @@ $('#off').onclick = ()=> publishLed("OFF");
     dbg(`MQTT message: ${topic} = ${trimmed}`);
 
     if(topic === STATUS_TOPIC){
+      // 상태 메시지 들어오면 시각 기록 + 온라인 표시
       lastDeviceMsgAt = Date.now();
       setDevState(true);
 
@@ -668,13 +688,19 @@ $('#off').onclick = ()=> publishLed("OFF");
     }
   });
 
+  // 5초마다 마지막 메시지 시각 체크 → 20초 넘으면 오프라인
   setInterval(()=>{
     if(!lastDeviceMsgAt){
-      setDevState(false);
+      // 아직 한 번도 상태 메시지 못 받음 → 계속 "확인 중..."
+      setDevStateUnknown();
       return;
     }
     const diff = Date.now()-lastDeviceMsgAt;
-    setDevState(diff<=20000);
+    if(diff <= 20000){
+      setDevState(true);
+    }else{
+      setDevState(false);
+    }
   },5000);
 })();
 </script>
