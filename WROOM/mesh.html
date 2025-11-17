@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>LoRa Mesh + MQTT Monitor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <style>
+    :root{
+      --accent:#ff6b6b;
+      --accent-soft:#ffecec;
+      --border-soft:#e0e0e0;
+      --text-main:#222;
+      --bg:#f4f5f7;
+      --card-bg:#ffffff;
+      --shadow:0 2px 6px rgba(15,23,42,0.08);
+      --muted:#b0b0b0;
+    }
+
+    body.dark{
+      --accent:#fb7185;
+      --accent-soft:#451a2b;
+      --border-soft:#374151;
+      --text-main:#e5e7eb;
+      --bg:#020617;
+      --card-bg:#020617;
+      --shadow:0 2px 10px rgba(0,0,0,0.6);
+      --muted:#6b7280;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      margin:0;
+      padding:16px 10px 8px 10px;
+      background:var(--bg);
+      color:var(--text-main);
+      transition:background 0.2s ease,color 0.2s ease;
+    }
+
+    /* 상단 영역 */
+    .top-bar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:8px;
+    }
+
+    .title-block{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    h1{
+      margin:0;
+      font-size:22px;
+      font-weight:800;
+      background:linear-gradient(90deg,#20264e,#3b82f6);
+      -webkit-background-clip:text;
+      color:transparent;
+    }
+    body.dark h1{
+      /* 다크 모드에서 더 밝은 그라데이션 */
+      background:linear-gradient(90deg,#93c5fd,#38bdf8);
+      -webkit-background-clip:text;
+      color:transparent;
+    }
+
+    #status{
+      display:inline-flex;        /* 내용만큼 */
+      align-self:flex-start;      /* 왼쪽 위에 딱 붙게 */
+      width:auto;
+      align-items:center;
+      font-size:11px;
+      font-weight:600;
+      padding:2px 8px;
+      border-radius:999px;
+      background:#ffe4e4;
+      color:#b91c1c;
+      max-width:100%;
+    }
+    #status.ok{
+      background:#e0f7f0;         /* 연한 그린 (라이트 모드) */
+      color:#047857;
+    }
+    body.dark #status{
+      background:rgba(127,29,29,0.25);
+      color:#fecaca;
+    }
+    body.dark #status.ok{
+      /* 다크 모드에서 튀지 않도록 은은한 그린 */
+      background:rgba(22,163,74,0.18);
+      color:#bbf7d0;
+    }
+
+    /* 다크/라이트 토글 버튼 */
+    #themeToggle{
+      border:none;
+      width:34px;
+      height:34px;
+      border-radius:999px;
+      font-size:18px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#e5e7eb;
+      box-shadow:0 1px 4px rgba(15,23,42,0.25);
+    }
+    body.dark #themeToggle{
+      background:#111827;
+      box-shadow:0 1px 6px rgba(0,0,0,0.6);
+    }
+    #themeToggle:active{
+      transform:scale(0.96);
+    }
+
+    .card{
+      background:var(--card-bg);
+      border-radius:14px;
+      padding:12px;
+      box-shadow:var(--shadow);
+      margin-bottom:12px;
+      transition:background 0.2s ease,box-shadow 0.2s ease;
+    }
+
+    .nodes-title{
+      font-size:14px;
+      font-weight:600;
+      margin-bottom:8px;
+      color:#555;
+    }
+    body.dark .nodes-title{
+      color:#9ca3af;
+    }
+
+    .table-wrapper{
+      overflow-x:auto;
+    }
+
+    table{
+      border-collapse:separate;
+      border-spacing:0 6px;
+      width:100%;
+      table-layout:fixed;
+      font-size:13px;
+    }
+
+    thead th{
+      font-size:12px;
+      font-weight:700;
+      text-align:center;
+      padding-bottom:3px;
+      color:#777;
+    }
+    body.dark thead th{
+      color:#9ca3af;
+    }
+
+    tbody td{
+      border:none;
+      text-align:center;
+      padding:6px 2px;
+      background:var(--card-bg);
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    tbody tr{
+      box-shadow:0 1px 4px rgba(15,23,42,0.07);
+    }
+    body.dark tbody tr{
+      box-shadow:0 1px 6px rgba(0,0,0,0.7);
+    }
+
+    tbody td:first-child{
+      border-radius:10px 0 0 10px;
+    }
+    tbody td:last-child{
+      border-radius:0 10px 10px 0;
+    }
+
+    thead th:last-child,
+    tbody td:last-child{
+      width:40px;
+    }
+
+    tbody td:nth-child(2){
+      font-variant-numeric:tabular-nums;
+    }
+
+    .bad{
+      color:var(--accent);
+      font-weight:700;
+    }
+
+    .muted{
+      color:var(--muted);
+    }
+
+    input[type="checkbox"]{
+      transform:scale(1.2);
+    }
+
+    /* LOG 카드 */
+    .log-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;  /* 좌측 LOG, 우측 시간 */
+      margin-bottom:6px;
+      gap:8px;
+    }
+
+    #toggleLogBtn{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-size:13px;
+      font-weight:600;
+      padding:6px 14px;
+      border:none;                /* 흰 테두리 제거 */
+      border-radius:999px;
+      background:#f9fafb;
+    }
+    body.dark #toggleLogBtn{
+      background:#111827;
+      color:#e5e7eb;
+    }
+    #toggleLogBtn:active{
+      transform:scale(0.97);
+    }
+
+    #logContainer{
+      margin-top:4px;
+      display:none;
+    }
+    #log{
+      white-space:pre-wrap;
+      font-size:11px;
+      border-radius:10px;
+      border:1px solid var(--border-soft);
+      background:var(--card-bg);
+      padding:8px;
+      height:180px;
+      overflow:auto;
+    }
+    #logButtons{
+      margin-top:6px;
+      display:flex;
+      gap:6px;
+      justify-content:flex-end;
+    }
+    button.small{
+      font-size:11px;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid #d1d5db;
+      background:#f9fafb;
+    }
+    body.dark button.small{
+      border-color:#4b5563;
+      background:#111827;
+      color:#e5e7eb;
+    }
+    button.small:active{
+      transform:scale(0.97);
+    }
+
+    #timestamp{
+      font-size:11px;
+      color:#888;
+      white-space:nowrap;
+    }
+    body.dark #timestamp{
+      color:#9ca3af;
+    }
+  </style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="title-block">
+    <h1>LoRa Mesh + MQTT Monitor</h1>
+    <div id="status">MQTT: 연결 안 됨</div>
+  </div>
+  <button id="themeToggle" aria-label="Toggle theme">☀️</button>
+</div>
+
+<div class="card">
+  <div class="nodes-title">Nodes 2, 3, 4, 5</div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Node</th>
+          <th>Bat</th>
+          <th>온도</th>
+          <th>습도</th>
+          <th>CO2</th>
+          <th>RSSI</th>
+          <th>LED</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td id="node-2" class="bad">2</td>
+          <td id="bat-2" class="muted">--</td>
+          <td id="t-2" class="muted">--</td>
+          <td id="rh-2" class="muted">--</td>
+          <td id="co2-2" class="muted">--</td>
+          <td id="rssi-2" class="muted">--</td>
+          <td><input type="checkbox" id="led-2" onchange="sendCommand(2)"></td>
+        </tr>
+        <tr>
+          <td id="node-3" class="bad">3</td>
+          <td id="bat-3" class="muted">--</td>
+          <td id="t-3" class="muted">--</td>
+          <td id="rh-3" class="muted">--</td>
+          <td id="co2-3" class="muted">--</td>
+          <td id="rssi-3" class="muted">--</td>
+          <td><input type="checkbox" id="led-3" onchange="sendCommand(3)"></td>
+        </tr>
+        <tr>
+          <td id="node-4" class="bad">4</td>
+          <td id="bat-4" class="muted">--</td>
+          <td id="t-4" class="muted">--</td>
+          <td id="rh-4" class="muted">--</td>
+          <td id="co2-4" class="muted">--</td>
+          <td id="rssi-4" class="muted">--</td>
+          <td><input type="checkbox" id="led-4" onchange="sendCommand(4)"></td>
+        </tr>
+        <tr>
+          <td id="node-5" class="bad">5</td>
+          <td id="bat-5" class="muted">--</td>
+          <td id="t-5" class="muted">--</td>
+          <td id="rh-5" class="muted">--</td>
+          <td id="co2-5" class="muted">--</td>
+          <td id="rssi-5" class="muted">--</td>
+          <td><input type="checkbox" id="led-5" onchange="sendCommand(5)"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="log-header">
+    <button id="toggleLogBtn" onclick="toggleLog()">
+      🐞 <span>LOG</span>
+    </button>
+    <div id="timestamp"></div> <!-- 날짜/시간을 LOG와 같은 줄 오른쪽에 -->
+  </div>
+  <div id="logContainer">
+    <div id="log"></div>
+    <div id="logButtons">
+      <button class="small" onclick="copyLogAll()">전체 복사</button>
+      <button class="small" onclick="clearLog()">지우기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let client;
+let nodeInfo = {};
+let lastSeen = {2:0,3:0,4:0,5:0};
+const OFFLINE_MS = 15000;
+
+function appendLog(line){
+  const logDiv = document.getElementById("log");
+  const now = new Date().toISOString().substr(11,8);
+  logDiv.textContent = `[${now}] ${line}\n` + logDiv.textContent;
+}
+
+function setStatus(text, ok){
+  const s = document.getElementById("status");
+  s.textContent = text;
+  s.classList.toggle("ok", !!ok);
+}
+
+window.onerror = function(msg, src, line, col, err){
+  appendLog("[JS ERROR] " + msg + " @ " + src + ":" + line);
+};
+
+function connectMQTT(){
+  appendLog("[SYS] connectMQTT() 호출");
+  setStatus("MQTT: 연결 시도 중...", false);
+
+  try{
+    client = mqtt.connect(
+      "wss://6c56aefe0ddb4d57977c735f5070abe8.s1.eu.hivemq.cloud:8884/mqtt",
+      {
+        username:"mqtt_ESP32",
+        password:"gomqtt_ESP32",
+        clean:true,
+        reconnectPeriod:3000,
+        connectTimeout:10000
+      }
+    );
+  }catch(e){
+    appendLog("[SYS] mqtt.connect 예외: " + e);
+    setStatus("MQTT: mqtt.connect 예외 발생", false);
+    return;
+  }
+
+  client.on('connect',()=>{
+    setStatus("MQTT: 연결됨", true);
+    appendLog("[EVT] connect");
+    client.subscribe('#');
+    appendLog("[EVT] subscribe #");
+  });
+
+  client.on('reconnect',()=>{
+    setStatus("MQTT: 재접속 중...", false);
+    appendLog("[EVT] reconnect");
+  });
+
+  client.on('error',(err)=>{
+    setStatus("MQTT: 에러 - " + (err && err.message ? err.message : err), false);
+    appendLog("[EVT] error: " + err);
+  });
+
+  client.on('close',()=>{
+    setStatus("MQTT: 연결 끊김", false);
+    appendLog("[EVT] close");
+  });
+
+  client.on('message',(topic,msg)=>{
+    let payload;
+    try{
+      payload = new TextDecoder().decode(msg);
+    }catch(e){
+      payload = String(msg);
+    }
+
+    appendLog("[MSG] " + topic + " → " + payload);
+
+    try{
+      if(topic.startsWith("lora/node/") && topic.endsWith("/data")){
+        let data = JSON.parse(payload);
+        const node = data.node || data.addr;
+        nodeInfo[node] = data;
+        lastSeen[node] = Date.now();
+        updateRow(node, data);
+        refreshOnlineStatus();
+      }else if(topic === "lora/nodes"){
+        let list = JSON.parse(payload);
+        list.forEach(d=>{
+          const node = d.addr || d.node;
+          nodeInfo[node] = d;
+          lastSeen[node] = Date.now();
+          updateRow(node, d);
+        });
+        refreshOnlineStatus();
+      }
+    }catch(e){
+      appendLog("[PARSE ERR] " + e);
+    }
+  });
+}
+
+function updateRow(node, d){
+  if(node < 2 || node > 5) return;
+
+  const bat  = document.getElementById(`bat-${node}`);
+  const t    = document.getElementById(`t-${node}`);
+  const rh   = document.getElementById(`rh-${node}`);
+  const co2  = document.getElementById(`co2-${node}`);
+  const rssi = document.getElementById(`rssi-${node}`);
+  const ledCk= document.getElementById(`led-${node}`);
+
+  const setCell = (el, val)=>{
+    if(!el) return;
+    if(val === undefined || val === null || val === ""){
+      el.textContent = "--";
+      el.classList.add("muted");
+    }else{
+      el.textContent = val;
+      el.classList.remove("muted");
+    }
+  };
+
+  setCell(bat, d.bat);
+  setCell(t, d.t);
+  setCell(rh, d.rh);
+  setCell(co2, d.co2);
+  setCell(rssi, d.rssi);
+
+  if(bat){
+    bat.classList.remove("bad");
+    if(d.bat !== undefined && d.bat !== null){
+      const v = parseFloat(d.bat);
+      if(!isNaN(v) && v < 3.0){
+        bat.classList.add("bad");
+      }
+    }
+  }
+
+  if(ledCk){
+    ledCk.checked = !!d.led;
+  }
+}
+
+function refreshOnlineStatus(){
+  const now = Date.now();
+  for(let n=2;n<=5;n++){
+    const nodeCell = document.getElementById(`node-${n}`);
+    if(!nodeCell) continue;
+
+    const seen = lastSeen[n] || 0;
+    if(!seen || (now - seen) > OFFLINE_MS){
+      nodeCell.classList.add("bad");
+    }else{
+      nodeCell.classList.remove("bad");
+    }
+  }
+}
+
+function sendCommand(node){
+  if(!client) return;
+  const chk = document.getElementById(`led-${node}`);
+  const val = chk && chk.checked ? 1 : 0;
+  appendLog("[CMD] publish lora/node/"+node+"/cmd : " + val);
+  client.publish("lora/node/"+node+"/cmd", String(val));
+}
+
+function toggleLog(){
+  const cont = document.getElementById("logContainer");
+  const visible = cont.style.display === "block";
+  cont.style.display = visible ? "none" : "block";
+}
+
+function copyLogAll(){
+  const log = document.getElementById("log");
+  if(!log) return;
+  const text = log.innerText || log.textContent || "";
+  if(!navigator.clipboard){
+    alert("Ctrl + C로 복사해주세요.");
+    return;
+  }
+  navigator.clipboard.writeText(text)
+    .then(()=>alert("로그를 클립보드에 복사했습니다."))
+    .catch(()=>alert("복사에 실패했습니다. Ctrl + C를 사용해주세요."));
+}
+
+function clearLog(){
+  const log = document.getElementById("log");
+  if(log) log.textContent = "";
+}
+
+function updateTimestamp(){
+  const el = document.getElementById("timestamp");
+  if(!el) return;
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth()+1).padStart(2,'0');
+  const d = String(now.getDate()).padStart(2,'0');
+  const h = String(now.getHours()).padStart(2,'0');
+  const mi = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  el.textContent = `${y}-${m}-${d} ${h}:${mi}:${s}`;
+}
+
+function initTheme(){
+  const btn = document.getElementById("themeToggle");
+  const saved = localStorage.getItem("loraTheme");
+  if(saved === "dark"){
+    document.body.classList.add("dark");
+    btn.textContent = "🌙";
+  }else{
+    document.body.classList.remove("dark");
+    btn.textContent = "☀️";
+  }
+
+  btn.addEventListener("click", ()=>{
+    document.body.classList.toggle("dark");
+    const dark = document.body.classList.contains("dark");
+    btn.textContent = dark ? "🌙" : "☀️";
+    localStorage.setItem("loraTheme", dark ? "dark" : "light");
+  });
+}
+
+window.addEventListener("load", ()=>{
+  appendLog("[SYS] window load");
+  initTheme();
+  connectMQTT();
+  updateTimestamp();
+  setInterval(updateTimestamp, 1000);
+  setInterval(refreshOnlineStatus, 5000);
+});
+</script>
+
+</body>
+</html>
