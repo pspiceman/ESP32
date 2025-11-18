@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>ESP32 MQTT Reset</title>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<style>
+    body { font-family: Arial; margin: 40px; }
+    button { padding: 12px 20px; font-size: 18px; }
+    #log { margin-top: 20px; font-family: monospace; white-space: pre; }
+</style>
+</head>
+<body>
+
+<h2>ESP32 MQTT 원격 Reset</h2>
+
+<button id="btnReset">🔄 ESP32 Reset 실행</button>
+
+<div id="log"></div>
+
+<script>
+    const log = (msg) => {
+        document.getElementById("log").textContent += msg + "\n";
+    };
+
+    // ===== HiveMQ Cloud 접속 설정 =====
+    const options = {
+        username: "mqtt_ESP32",
+        password: "gomqtt_ESP32",
+        reconnectPeriod: 2000,
+        clean: true,
+        connectTimeout: 4000
+    };
+
+    // HiveMQ Cloud WebSocket 주소
+    const client = mqtt.connect(
+        "wss://6c56aefe0ddb4d57977c735f5070abe8.s1.eu.hivemq.cloud:8884/mqtt",
+        options
+    );
+
+    client.on("connect", () => {
+        log("MQTT 서버 연결 완료!");
+        client.subscribe("esp32/response");
+    });
+
+    client.on("error", (err) => {
+        log("MQTT 연결 오류: " + err);
+    });
+
+    client.on("message", (topic, message) => {
+        log("[응답] " + topic + ": " + message.toString());
+    });
+
+    // ===== Reset 버튼 클릭 =====
+    document.getElementById("btnReset").addEventListener("click", () => {
+        log("Reset 명령 전송...");
+        client.publish("esp32/reset", "1");   // ESP32가 구독하는 Topic
+    });
+</script>
+
+</body>
+</html>
