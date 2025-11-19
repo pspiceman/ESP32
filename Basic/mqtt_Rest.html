@@ -2,29 +2,97 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>ESP32 MQTT IP + Reset</title>
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <style>
-  body { font-family: Arial; margin: 40px; }
-  button { padding: 12px 20px; font-size: 18px; margin-top: 10px; }
-  #log { margin-top: 20px; font-family: monospace; white-space: pre-wrap; }
-  #ip { font-weight: bold; color: green; }
+  body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    margin: 0;
+    background-color: #f5f5f5;
+    min-height: 100vh;
+    box-sizing: border-box;
+  }
+
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.8em;
+  }
+
+  #ip-container {
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  #ip {
+    font-weight: bold;
+    color: #1a73e8;
+    font-size: 1.4em;
+  }
+
+  #btnReset {
+    padding: 18px 30px;
+    font-size: 1.2em;
+    background-color: #1a73e8;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    width: 80%;
+    max-width: 300px;
+    transition: background-color 0.2s;
+  }
+
+  #btnReset:disabled {
+    background-color: #888;
+    cursor: not-allowed;
+  }
+
+  #btnReset:active:not(:disabled) {
+    background-color: #155ab6;
+  }
+
+  #log {
+    width: 100%;
+    max-width: 400px;
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 12px;
+    font-family: monospace;
+    font-size: 0.9em;
+    color: #333;
+    white-space: pre-wrap;
+    overflow-y: auto;
+    max-height: 300px;
+    box-sizing: border-box;
+  }
 </style>
 </head>
 <body>
 
 <h2>ESP32 MQTT IP + Soft Reset</h2>
-<div>ESP32 IP: <span id="ip">-</span></div>
+
+<div id="ip-container">ESP32 IP: <span id="ip">-</span></div>
+
 <button id="btnReset" disabled>🔄 ESP32 Reset</button>
 
 <div id="log"></div>
 
 <script>
 const log = msg => {
-  document.getElementById("log").textContent += msg + "\n";
+  const logDiv = document.getElementById("log");
+  logDiv.textContent += msg + "\n";
+  logDiv.scrollTop = logDiv.scrollHeight;
 };
 
-// HiveMQ Cloud WebSocket 연결
+// MQTT 연결
 const options = {
   username: "mqtt_ESP32",
   password: "gomqtt_ESP32",
@@ -40,8 +108,8 @@ const client = mqtt.connect(
 
 client.on("connect", () => {
   log("MQTT 연결 완료!");
-  client.subscribe("esp32/ip");        // ESP32 IP 수신
-  client.subscribe("esp32/response");  // 리셋/상태 응답 수신
+  client.subscribe("esp32/ip");
+  client.subscribe("esp32/response");
   document.getElementById("btnReset").disabled = false;
 });
 
@@ -58,7 +126,7 @@ client.on("message", (topic, message) => {
   }
 });
 
-// Reset 버튼 클릭 시
+// Reset 버튼 클릭
 document.getElementById("btnReset").addEventListener("click", () => {
   log("Reset 명령 전송...");
   client.publish("esp32/reset", "1");
