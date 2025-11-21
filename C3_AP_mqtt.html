@@ -52,51 +52,44 @@ body {
   font-weight: 900;
 }
 
-/* LED 표시 */
-.led-on {
+/* LED 상태 표시 */
+.led-on, .led-off {
   display: inline-block;
   padding: 10px 28px;
-  background: #22c55e;
-  color: white;
   border-radius: 14px;
   font-size: 1.8rem;
   font-weight: 900;
+  color: #fff;
 }
-.led-off {
-  display: inline-block;
-  padding: 10px 28px;
-  background: #ef4444;
-  color: white;
+
+.led-on { background: #22c55e; }
+.led-off { background: #ef4444; }
+
+/* 버튼(LED ON / OFF / RESET) - LED 상태 버튼 크기로 맞춤 */
+.action-btn {
+  padding: 16px 28px;
   border-radius: 14px;
   font-size: 1.8rem;
   font-weight: 900;
+  text-align: center;
+  width: 90%;
+  max-width: 180px; /* LED OFF 버튼과 비슷한 크기 */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
 }
 
 /* 모바일 전용 확대 */
 @media (max-width: 480px) {
+  body { font-size: 26px; }
 
-  body {
-    font-size: 26px;
-  }
+  .info-title { font-size: 1.75rem; }
+  .info-value { font-size: 2.5rem; }
+  .text-4xl { font-size: 3.4rem; }
 
-  .info-title {
-    font-size: 1.75rem;
-  }
-
-  .info-value {
-    font-size: 2.5rem;
-  }
-
-  .text-4xl {
-    font-size: 3.4rem;
-  }
-
-  /* 버튼 현재보다 한 단 계 더 큰 폰트 */
-  button {
-    font-size: 2.2rem !important;
-    padding-top: 18px !important;
-    padding-bottom: 18px !important;
-    width: 70% !important; /* 🔥 버튼 폭 절반 수준으로 줄임 */
+  /* 버튼 더 선명하게 확대 */
+  .action-btn {
+    font-size: 2.2rem;
+    padding: 18px 26px;
+    max-width: 200px;
   }
 }
 </style>
@@ -148,21 +141,21 @@ body {
 
   </div>
 
-  <!-- 버튼 3개 (폭 70%, 폰트 크게, 원래 형태 유지) -->
-  <div class="grid grid-cols-3 gap-4 my-6 place-items-center">
+  <!-- 버튼: LED OFF 버튼 크기로 통일 -->
+  <div class="grid grid-cols-3 gap-4 my-4 place-items-center">
 
     <button onclick="sendLED(1)"
-      class="bg-green-600 rounded-xl shadow-xl active:scale-95 transition text-center">
+      class="action-btn bg-green-600 active:scale-95 transition">
       LED<br>ON
     </button>
 
     <button onclick="sendLED(0)"
-      class="bg-yellow-500 rounded-xl shadow-xl active:scale-95 transition text-center">
+      class="action-btn bg-yellow-500 active:scale-95 transition">
       LED<br>OFF
     </button>
 
     <button onclick="sendReset()"
-      class="bg-red-600 rounded-xl shadow-xl active:scale-95 transition text-center">
+      class="action-btn bg-red-600 active:scale-95 transition">
       RESET
     </button>
 
