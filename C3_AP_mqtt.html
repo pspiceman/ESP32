@@ -13,7 +13,6 @@ body {
   font-size: 20px;
 }
 
-/* 로그창 */
 #logBox {
   white-space: pre-line;
   height: 200px;
@@ -32,31 +31,28 @@ body {
   margin-top: 4px;
 }
 
-/* 정보 카드 */
-.info-row {
-  display: grid;
-  grid-template-columns: 56px auto;
-  align-items: center;
-  gap: 14px;
+/* 공동 스타일 */
+.info-card {
   background: #1e293b;
-  padding: 16px 18px;
-  border-radius: 16px;
   border: 1px solid #334155;
-  margin-bottom: 18px;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
 .info-title {
-  font-size: 1.45rem;
+  font-size: 1.25rem;
   font-weight: 700;
   opacity: 0.9;
 }
 .info-value {
   font-size: 1.95rem;
   font-weight: 900;
-  margin-top: 4px;
 }
 
-/* LED 스타일 */
+/* LED */
 .led-on {
   display: inline-block;
   padding: 10px 26px;
@@ -76,31 +72,23 @@ body {
   font-weight: 900;
 }
 
-/* -----------------------------------------
-   📱 모바일 전용 폰트 크기 강화
-   (스마트폰 세로 화면 기준)
------------------------------------------- */
+/* 📱 모바일 최적화 */
 @media (max-width: 480px) {
 
   body {
-    font-size: 25px; /* 전체 확대 */
-  }
-
-  .info-row {
-    padding: 18px;
-    grid-template-columns: 60px auto;
+    font-size: 26px;
   }
 
   .info-title {
-    font-size: 1.65rem;
+    font-size: 1.6rem;
   }
 
   .info-value {
-    font-size: 2.3rem; /* 항목 값 크게 */
+    font-size: 2.3rem;
   }
 
   .text-4xl {
-    font-size: 3rem; /* 아이콘 크게 */
+    font-size: 3rem;
   }
 
   button {
@@ -109,7 +97,6 @@ body {
     padding-bottom: 18px !important;
   }
 }
-
 </style>
 </head>
 
@@ -117,47 +104,52 @@ body {
 
 <div class="w-full mx-auto py-4 px-4">
 
-  <h1 class="text-4xl font-extrabold mb-6 text-center">
+  <h1 class="text-4xl font-extrabold mb-6 text-center tracking-wide">
     ESP32 MQTT Dashboard
   </h1>
 
-  <!-- SSID -->
-  <div class="info-row">
-    <div class="text-4xl">📶</div>
-    <div>
-      <div class="info-title">SSID</div>
-      <div id="ssid" class="info-value">--</div>
+  <!-- === INFO 2열 묶음 === -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
+    <!-- SSID -->
+    <div class="info-card">
+      <div class="text-4xl">📶</div>
+      <div>
+        <div class="info-title">SSID</div>
+        <div id="ssid" class="info-value">--</div>
+      </div>
     </div>
+
+    <!-- RSSI -->
+    <div class="info-card">
+      <div class="text-4xl">📡</div>
+      <div>
+        <div class="info-title">RSSI</div>
+        <div id="rssi" class="info-value">-- dBm</div>
+      </div>
+    </div>
+
+    <!-- IP -->
+    <div class="info-card">
+      <div class="text-4xl">🌐</div>
+      <div>
+        <div class="info-title">IP</div>
+        <div id="ip" class="info-value">--</div>
+      </div>
+    </div>
+
+    <!-- LED -->
+    <div class="info-card">
+      <div class="text-4xl">💡</div>
+      <div>
+        <div class="info-title">LED 상태</div>
+        <div id="ledState" class="info-value">--</div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- RSSI -->
-  <div class="info-row">
-    <div class="text-4xl">📡</div>
-    <div>
-      <div class="info-title">RSSI</div>
-      <div id="rssi" class="info-value">-- dBm</div>
-    </div>
-  </div>
-
-  <!-- IP -->
-  <div class="info-row">
-    <div class="text-4xl">🌐</div>
-    <div>
-      <div class="info-title">IP</div>
-      <div id="ip" class="info-value">--</div>
-    </div>
-  </div>
-
-  <!-- LED -->
-  <div class="info-row">
-    <div class="text-4xl">💡</div>
-    <div>
-      <div class="info-title">LED 상태</div>
-      <div id="ledState" class="info-value">--</div>
-    </div>
-  </div>
-
-  <!-- 버튼 3개 – 크기 증가 + 폭 줄임 -->
+  <!-- === BUTTONS === -->
   <div class="grid grid-cols-3 gap-4 my-6 px-1">
 
     <button onclick="sendLED(1)"
@@ -184,9 +176,6 @@ body {
 </div>
 
 <script>
-/* ---------------------------------------------------
-   MQTT Connect
---------------------------------------------------- */
 let brokerURL = "wss://broker.hivemq.com:8884/mqtt";
 let clientId = "espui_" + Math.random().toString(16).substr(2, 8);
 let client = mqtt.connect(brokerURL, { clientId });
@@ -203,9 +192,7 @@ client.on("connect", () => {
   client.subscribe("/esp32/log");
 });
 
-/* ---------------------------------------------------
-   MQTT STATUS
---------------------------------------------------- */
+/* STATUS update */
 client.on("message", (topic, payload) => {
   const msg = payload.toString();
 
@@ -216,23 +203,16 @@ client.on("message", (topic, payload) => {
     rssi.innerText = j.rssi + " dBm";
     ip.innerText = j.ip;
 
-    if (j.led == 1) {
-      ledState.innerHTML = "<span class='led-on'>ON</span>";
-    } else {
-      ledState.innerHTML = "<span class='led-off'>OFF</span>";
-    }
+    if (j.led == 1) ledState.innerHTML = "<span class='led-on'>ON</span>";
+    else ledState.innerHTML = "<span class='led-off'>OFF</span>";
 
     log("[STATUS] " + msg);
   }
 
-  if (topic === "/esp32/log") {
-    log("[ESP] " + msg);
-  }
+  if (topic === "/esp32/log") log("[ESP] " + msg);
 });
 
-/* ---------------------------------------------------
-   COMMANDS
---------------------------------------------------- */
+/* COMMANDS */
 function sendLED(v) {
   client.publish("/esp32/cmd/led", String(v));
   log("[CMD] LED=" + v);
@@ -243,13 +223,10 @@ function sendReset() {
   log("[CMD] RESET");
 }
 
-/* ---------------------------------------------------
-   CLOCK
---------------------------------------------------- */
+/* CLOCK */
 setInterval(() => {
   const t = new Date();
-  document.getElementById("timeBox").innerText =
-    t.toLocaleString("ko-KR", { hour12: false });
+  timeBox.innerText = t.toLocaleString("ko-KR", { hour12: false });
 }, 1000);
 </script>
 
