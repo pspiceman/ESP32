@@ -3,15 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ESP32 Status Dashboard</title>
+<title>ESP32 Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
-.valueBox {
-  font-size: 2rem;
-  font-weight: bold;
-  text-align: center;
+.valueBox { font-size: 1.8rem; font-weight: bold; text-align: center; }
+#logBox {
+  white-space: pre-wrap;
+  height: 180px;
+  background: #000;
+  color: #0f0;
   padding: 10px;
+  overflow-y: auto;
+  font-family: Consolas, monospace;
+  font-size: 0.9rem;
+  border: 1px solid #333;
+  margin-top: 20px;
 }
 </style>
 </head>
@@ -20,107 +27,121 @@
 
 <div class="max-w-2xl mx-auto py-10 px-4">
 
-  <h1 class="text-3xl font-bold mb-6 text-center">ESP32 Status</h1>
+  <h1 class="text-3xl font-bold mb-6 text-center">ESP32 STATUS</h1>
 
-  <!-- SSID / RSSI / IP 표시 -->
+  <!-- SSID/RSSI/IP -->
   <div class="valueBox bg-slate-800 border border-slate-700 rounded-xl mb-6 p-6">
-    SSID: <span id="ssidValue">--</span><br>
-    RSSI: <span id="rssiValue">--</span> dBm<br>
-    IP: <span id="ipValue">--</span>
+    SSID: <span id="ssid">--</span><br>
+    RSSI: <span id="rssi">--</span> dBm<br>
+    IP  : <span id="ip">--</span>
   </div>
 
-  <!-- 컨트롤 버튼 -->
-  <div class="mt-10 flex justify-center space-x-4">
-    <button onclick="sendLED(1)"
-            class="bg-green-600 hover:bg-green-700 px-5 py-2 rounded font-bold">
-      LED ON
-    </button>
-    <button onclick="sendLED(0)"
-            class="bg-yellow-600 hover:bg-yellow-700 px-5 py-2 rounded font-bold">
-      LED OFF
-    </button>
-    <button onclick="sendReset()"
-            class="bg-red-600 hover:bg-red-700 px-5 py-2 rounded font-bold">
-      Soft Reset
-    </button>
+  <!-- Buttons -->
+  <div class="flex justify-center space-x-4">
+    <button onclick="sendLED(1)" class="bg-green-600 px-5 py-2 rounded">LED ON</button>
+    <button onclick="sendLED(0)" class="bg-yellow-600 px-5 py-2 rounded">LED OFF</button>
+    <button onclick="sendReset()" class="bg-red-600 px-5 py-2 rounded">Soft Reset</button>
   </div>
+
+  <!-- Log Box -->
+  <div id="logBox"></div>
+
+  <!-- Hidden iframe for Mixed Content bypass -->
+  <iframe id="proxyFrame" style="display:none;"></iframe>
+
 </div>
 
 <script>
 let espIP = null;
+let frame = document.getElementById("proxyFrame");
 
-/* -----------------------------
-   ESP32 상태 요청
-------------------------------*/
+/* Simple logger */
+function log(msg){
+  const box = document.getElementById("logBox");
+  box.textContent += msg + "\n";
+  box.scrollTop = box.scrollHeight;
+}
+
+/* iframe fetch bypass */
+async function httpGet(url) {
+  return new Promise((resolve, reject) => {
+    frame.src = url;
+    frame.onload = () => resolve(true);
+    frame.onerror = () => reject(false);
+  });
+}
+
+/* ---------------- IP AUTO DETECT ---------------- */
+async function detectIP() {
+  let last = localStorage.getItem("esp32_last_ip");
+  if (last) {
+    espIP = last;
+    log("[IP] Loaded saved IP: " + espIP);
+    return;
+  }
+
+  let scans = [
+    "192.168.0.255",
+    "192.168.1.255",
+    "192.168.31.255",
+    "192.168.10.255"
+  ];
+
+  for (let b of scans) {
+    try {
+      let url = "http://" + b + "/esp32-ip";
+      let r = await fetch(url);
+      let ip = await r.text();
+      if (ip.includes(".")) {
+        espIP = ip.trim();
+        localStorage.setItem("esp32_last_ip", espIP);
+        log("[IP FOUND] " + espIP);
+        return;
+      }
+    } catch(e){}
+  }
+
+  log("[ERROR] 자동 IP 탐지 실패");
+}
+
+/* ---------------- STATUS UPDATE ---------------- */
 async function updateStatus() {
   if (!espIP) return;
 
   try {
-    const r = await fetch(`http://${espIP}/status`);
-    const j = await r.json();
+    let r = await fetch(`http://${espIP}/status`);
+    let j = await r.json();
 
-    document.getElementById("ssidValue").innerText = j.ssid;
-    document.getElementById("rssiValue").innerText = j.rssi;
-    document.getElementById("ipValue").innerText = j.ip;
+    document.getElementById("ssid").innerText = j.ssid;
+    document.getElementById("rssi").innerText = j.rssi;
+    document.getElementById("ip").innerText = j.ip;
 
-  } catch (e) {
-    console.log("Status update failed");
+    log(`[STATUS] SSID=${j.ssid} RSSI=${j.rssi} IP=${j.ip}`);
+  }
+  catch (e) {
+    log("[FAIL] 상태 읽기 실패");
   }
 }
 
-/* -----------------------------
-   LED 제어
-------------------------------*/
-function sendLED(state) {
+/* ---------------- LED CONTROL ---------------- */
+function sendLED(v){
   if (!espIP) return;
-  fetch(`http://${espIP}/led?state=${state}`);
+  httpGet(`http://${espIP}/led?state=${v}`);
+  log("LED " + (v ? "ON" : "OFF"));
 }
 
-/* -----------------------------
-   Soft Reset
-------------------------------*/
-function sendReset() {
+/* ---------------- RESET ---------------- */
+function sendReset(){
   if (!espIP) return;
-  fetch(`http://${espIP}/reset`);
+  httpGet(`http://${espIP}/reset`);
+  log("[RESET] Soft reset sent");
 }
 
-/* -----------------------------
-   자동 IP 탐지
-------------------------------*/
-async function autoDetectIP() {
-  let last = localStorage.getItem("esp32_last_ip");
-  if (last) {
-    espIP = last;
-    updateStatus();
-    return;
-  }
-
-  let candidates = [
-    "http://192.168.0.255",
-    "http://192.168.1.255",
-    "http://192.168.31.255",
-    "http://192.168.10.255"
-  ];
-
-  for (let url of candidates) {
-    try {
-      let r = await fetch(url + "/esp32-ip", { mode: "cors" });
-      let ip = (await r.text()).trim();
-      if (ip.startsWith("192.")) {
-        espIP = ip;
-        localStorage.setItem("esp32_last_ip", ip);
-        updateStatus();
-        return;
-      }
-    } catch (e) {}
-  }
-
-  console.log("ESP32 자동 검색 실패");
-}
-
-window.onload = () => {
-  autoDetectIP();
-  setInterval(updateStatus, 3000); // ← 3초 자동 갱신
+/* INIT */
+window.onload = async () => {
+  await detectIP();
+  updateStatus();
+  setInterval(updateStatus, 3000);
 };
 </script>
 
