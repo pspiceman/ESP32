@@ -13,7 +13,7 @@ body {
   font-size: 20px;
 }
 
-/* ===== 로그창 ===== */
+/* 로그창 */
 #logBox {
   white-space: pre-line;
   height: 200px;
@@ -37,8 +37,7 @@ body {
   max-width: 100% !important;
 }
 
-
-/* ===== 정보 카드(타일) ===== */
+/* 정보 카드 */
 .info-card {
   background: #1e293b;
   border: 1px solid #334155;
@@ -49,7 +48,7 @@ body {
   align-items: center;
 
   width: 100%;
-  height: 120px;            /* ★ SAME HEIGHT */
+  height: 120px; 
   max-width: 500px;
   margin-left: auto;
   margin-right: auto;
@@ -68,7 +67,7 @@ body {
   font-weight: 900;
 }
 
-/* ===== LED 상태 표시 ===== */
+/* LED 상태 표시 */
 .led-on, .led-off {
   display: inline-block;
   padding: 6px 22px;
@@ -80,7 +79,7 @@ body {
 .led-on { background: #22c55e; }
 .led-off { background: #ef4444; }
 
-/* ===== ON / OFF / RESET 버튼 ===== */
+/* 버튼 */
 .action-btn {
   padding: 16px 26px;
   border-radius: 14px;
@@ -96,7 +95,11 @@ body {
 /* ===== 모바일 최적화 ===== */
 @media (max-width: 480px) {
 
-  /* 타일 간 간격 한 단계 넓힘 */
+  /* 타이틀 폰트 한단계 확대 */
+  .title-text {
+    font-size: 3.6rem !important;
+  }
+
   .grid-cards {
     grid-template-columns: 1fr 1fr !important;
     gap: 12px !important;
@@ -107,19 +110,13 @@ body {
     max-width: 100% !important;
   }
 
-  /* 폰트 살짝 크게 */
   .info-title { font-size: 1.8rem; }
   .info-value { font-size: 2.4rem; }
   .info-icon { font-size: 3.4rem; }
 
-  /* 버튼 간 간격 확대 */
+  /* 버튼 간 간격 더 넓힘 */
   .button-row {
-    gap: 18px !important;
-  }
-
-  /* 대시보드 타이틀 확대 */
-  .title-text {
-    font-size: 3.4rem !important;
+    gap: 26px !important;
   }
 }
 </style>
@@ -129,12 +126,12 @@ body {
 
 <div class="w-full mx-auto py-4 px-4">
 
-  <!-- ===== 제목 (폰트 크게 수정됨) ===== -->
+  <!-- 타이틀 (폰트 한 단계 더 크게) -->
   <h1 class="text-4xl title-text font-extrabold mb-6 text-center">
     ESP32 MQTT Dashboard
   </h1>
 
-  <!-- ===== SSID / RSSI / IP / LED 상태 ===== -->
+  <!-- 4개 타일 -->
   <div class="grid grid-cols-2 gap-4 mb-4 place-items-center grid-cards">
 
     <div class="info-card">
@@ -171,8 +168,8 @@ body {
 
   </div>
 
-  <!-- ===== 버튼 그룹 (간격 살짝 넓힘) ===== -->
-  <div class="flex justify-center button-row gap-6 my-6">
+  <!-- 버튼 간격 확대 -->
+  <div class="flex justify-center button-row gap-8 my-6">
 
     <button onclick="sendLED(1)"
       class="action-btn bg-green-600 active:scale-95 transition">
@@ -191,7 +188,7 @@ body {
 
   </div>
 
-  <!-- ===== 로그 ===== -->
+  <!-- 로그 -->
   <div id="logBox">[LOG] Ready…</div>
   <div id="timeBox">--:--:--</div>
 
@@ -219,6 +216,7 @@ client.on("message", (topic, payload) => {
 
   if (topic === "/esp32/status") {
     let j = JSON.parse(msg);
+
     ssid.innerText = j.ssid;
     rssi.innerText = j.rssi + " dBm";
     ip.innerText = j.ip;
