@@ -10,8 +10,10 @@
 body {
   margin: 0;
   padding: 0;
-  font-size: 20px; /* 전체 기본 폰트 크게 */
+  font-size: 20px;
 }
+
+/* 로그창 */
 #logBox {
   white-space: pre-line;
   height: 200px;
@@ -30,43 +32,43 @@ body {
   margin-top: 4px;
 }
 
-/* Info section */
+/* 정보 카드 */
 .info-row {
   display: grid;
-  grid-template-columns: 50px auto;
+  grid-template-columns: 56px auto;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   background: #1e293b;
-  padding: 12px 14px;
-  border-radius: 14px;
+  padding: 16px 18px;
+  border-radius: 16px;
   border: 1px solid #334155;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .info-title {
-  font-size: 1.35rem;  /* 제목 더 크게 */
+  font-size: 1.45rem;
   font-weight: 700;
+  opacity: 0.9;
 }
-
 .info-value {
-  font-size: 1.95rem; /* 값(SSID, RSSI, IP) 크게 표시 */
+  font-size: 1.95rem;
   font-weight: 900;
   margin-top: 4px;
 }
 
+/* LED 스타일 */
 .led-on {
   display: inline-block;
-  padding: 8px 22px;
+  padding: 10px 26px;
   background: #22c55e;
   color: white;
   border-radius: 10px;
   font-size: 1.6rem;
   font-weight: 900;
 }
-
 .led-off {
   display: inline-block;
-  padding: 8px 22px;
+  padding: 10px 26px;
   background: #ef4444;
   color: white;
   border-radius: 10px;
@@ -74,10 +76,40 @@ body {
   font-weight: 900;
 }
 
-button {
-  width: 100%;
-  font-size: 1.3rem;
+/* -----------------------------------------
+   📱 모바일 전용 폰트 크기 강화
+   (스마트폰 세로 화면 기준)
+------------------------------------------ */
+@media (max-width: 480px) {
+
+  body {
+    font-size: 25px; /* 전체 확대 */
+  }
+
+  .info-row {
+    padding: 18px;
+    grid-template-columns: 60px auto;
+  }
+
+  .info-title {
+    font-size: 1.65rem;
+  }
+
+  .info-value {
+    font-size: 2.3rem; /* 항목 값 크게 */
+  }
+
+  .text-4xl {
+    font-size: 3rem; /* 아이콘 크게 */
+  }
+
+  button {
+    font-size: 1.8rem !important;
+    padding-top: 18px !important;
+    padding-bottom: 18px !important;
+  }
 }
+
 </style>
 </head>
 
@@ -85,7 +117,7 @@ button {
 
 <div class="w-full mx-auto py-4 px-4">
 
-  <h1 class="text-3xl font-extrabold mb-6 text-center tracking-wide">
+  <h1 class="text-4xl font-extrabold mb-6 text-center">
     ESP32 MQTT Dashboard
   </h1>
 
@@ -125,21 +157,21 @@ button {
     </div>
   </div>
 
-  <!-- BUTTONS: 더 커짐 + 가독성 강화 -->
+  <!-- 버튼 3개 – 크기 증가 + 폭 줄임 -->
   <div class="grid grid-cols-3 gap-4 my-6 px-1">
 
     <button onclick="sendLED(1)"
-      class="bg-green-600 py-5 rounded-xl text-2xl font-extrabold shadow-xl active:scale-95 transition">
+      class="bg-green-600 py-4 rounded-xl text-2xl font-extrabold shadow-xl active:scale-95 transition">
       LED<br>ON
     </button>
 
     <button onclick="sendLED(0)"
-      class="bg-yellow-500 py-5 rounded-xl text-2xl font-extrabold shadow-xl active:scale-95 transition">
+      class="bg-yellow-500 py-4 rounded-xl text-2xl font-extrabold shadow-xl active:scale-95 transition">
       LED<br>OFF
     </button>
 
     <button onclick="sendReset()"
-      class="bg-red-600 py-5 rounded-xl text-2xl font-extrabold shadow-xl active:scale-95 transition">
+      class="bg-red-600 py-4 rounded-xl text-2xl font-extrabold shadow-xl active:scale-95 transition">
       RESET
     </button>
 
@@ -164,8 +196,6 @@ function log(msg) {
   box.textContent += "\n" + msg;
   box.scrollTop = box.scrollHeight;
 }
-
-log("[MQTT] Connecting...");
 
 client.on("connect", () => {
   log("[MQTT] Connected");
