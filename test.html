@@ -9,7 +9,7 @@
 <style>
 body { margin: 0; padding: 0; font-size: 20px; }
 
-/* LED 표시 */
+/* ----- 상태 LED ----- */
 .status-led {
   display: inline-block;
   width: 20px;
@@ -20,30 +20,30 @@ body { margin: 0; padding: 0; font-size: 20px; }
 .led-connected { background: #22c55e; }
 .led-disconnected { background: #ef4444; }
 
-/* 타일 카드 */
+/* ----- 정보 타일 ----- */
 .info-card {
   background: #1e293b;
   border: 1px solid #334155;
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 20px;
   display: flex;
   gap: 16px;
   align-items: center;
   width: 100%;
-  height: 130px;
   max-width: 500px;
+  height: 140px;
   margin-left: auto;
   margin-right: auto;
   box-shadow: 0 6px 18px rgba(0,0,0,0.35);
   transition: 0.25s ease;
 }
-.info-card:hover { transform: scale(1.05); background: #2b3f52; }
+.info-card:hover { transform: scale(1.04); background: #2b3f52; }
 
 .info-icon { font-size: 3.4rem; }
 .info-title { font-size: 1.6rem; font-weight: 700; }
 .info-value { font-size: 2.4rem; font-weight: 900; }
 
-/* 버튼 */
+/* ----- 버튼 ----- */
 .action-btn {
   padding: 18px 30px;
   border-radius: 16px;
@@ -58,59 +58,67 @@ body { margin: 0; padding: 0; font-size: 20px; }
 }
 .action-btn:active { transform: scale(0.92); }
 
-/* 로그 창 */
-#logBox {
-  white-space: pre-line;
-  height: 240px;
-  background: black;
-  color: #33ff33;
-  padding: 12px;
-  overflow-y: auto;
-  border: 1px solid #333;
-  font-family: Consolas, monospace;
+/* ----- 버튼 패널 ----- */
+.button-panel {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 18px;
+  padding: 25px 20px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.35);
 }
 
-/* 시계 */
+/* ----- 로그창 디자인 (확대 & 꾸밈) ----- */
+#logBox {
+  white-space: pre-line;
+  height: 460px;            /* ★ 기존보다 2배 길게 */
+  background: #0a0f16;
+  color: #33ff55;
+  padding: 16px;
+  overflow-y: auto;
+  border-radius: 14px;
+  border: 1px solid #223344;
+  box-shadow: inset 0 0 12px rgba(0,0,0,0.6);
+  font-family: Consolas, monospace;
+  font-size: 1.15rem;
+}
+
+/* ----- 시계 ----- */
 #timeBox {
   text-align: right;
-  color: #aaa;
+  color: #97a5b5;
   margin-top: 6px;
   font-size: 1rem;
 }
 
-/* Day Mode */
-.day body {
-  background: #f4f5f7 !important;
-  color: #1e293b !important;
-}
+/* ----- Day Mode ----- */
+.day body { background: #f4f5f7 !important; color: #1e293b !important; }
 .day .info-card { background: white !important; border-color: #cbd5e1 !important; }
-.day #logBox { background: white !important; color: #000 !important; border-color: #cbd5e1 !important; }
-.day .action-btn { box-shadow: 0 4px 14px rgba(0,0,0,0.12) !important; }
+.day #logBox { background: white !important; color: black !important; border-color: #cbd5e1 !important; }
+.day .button-panel { background: #ffffff !important; border-color: #cbd5e1 !important; }
 
-/* 모바일 */
+/* ----- 모바일 최적화 ----- */
 @media (max-width: 480px) {
-  #mainTitle { font-size: 3.5rem !important; }
-  .info-card { height: 135px !important; }
-  .grid-cards { grid-template-columns: 1fr 1fr !important; gap: 14px !important; }
+  #mainTitle { font-size: 3.6rem !important; }
+  .info-card { height: 145px !important; }
+  .grid-cards { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
 }
 </style>
 </head>
 
 <body class="bg-slate-900 text-slate-100">
+
 <div class="w-full mx-auto py-4 px-4">
 
-  <!-- 🔥 제목 중앙 + 해/달 토글 같은 줄 -->
+  <!-- 🔥 제목 중앙 + 테마 토글 같은 라인 -->
   <div class="relative mb-6 px-2 h-16 flex items-center">
 
-    <!-- 제목 (완전 중앙 + 자동 크기조정 clamp) -->
     <h1 id="mainTitle"
         class="font-extrabold absolute left-1/2 top-1/2
                -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-center"
-        style="font-size: clamp(3.0rem, 7vw, 5.3rem);">
+        style="font-size: clamp(3.0rem, 7vw, 5.5rem);">
         ESP32 MQTT 대시보드
     </h1>
 
-    <!-- 해/달 테마 버튼 -->
     <div id="themeToggle"
          class="text-4xl cursor-pointer select-none hover:scale-110 transition ml-auto">
          🌙
@@ -118,7 +126,7 @@ body { margin: 0; padding: 0; font-size: 20px; }
 
   </div>
 
-  <!-- MQTT + 장비 상태 -->
+  <!-- MQTT + 장비상태 표시 -->
   <div class="text-center mb-6 flex justify-center gap-10">
 
       <div>
@@ -174,14 +182,20 @@ body { margin: 0; padding: 0; font-size: 20px; }
 
   </div>
 
-  <!-- ON / OFF / RESET -->
-  <div class="flex justify-center gap-14 my-6">
-    <button onclick="sendLED(1)" class="action-btn bg-green-600">ON</button>
-    <button onclick="sendLED(0)" class="action-btn bg-yellow-500">OFF</button>
-    <button onclick="sendReset()" class="action-btn bg-red-600">RESET</button>
+  <!-- ★ 버튼 패널(ON/OFF/RESET 묶음) -->
+  <div class="w-full max-w-3xl mx-auto my-6">
+    <div class="button-panel">
+
+      <div class="flex justify-center gap-10">
+        <button onclick="sendLED(1)" class="action-btn bg-green-600">ON</button>
+        <button onclick="sendLED(0)" class="action-btn bg-yellow-500">OFF</button>
+        <button onclick="sendReset()" class="action-btn bg-red-600">RESET</button>
+      </div>
+
+    </div>
   </div>
 
-  <!-- 로그 창 -->
+  <!-- 로그 -->
   <div id="logBox">[LOG] Ready...</div>
   <div id="timeBox">--:--:--</div>
 
@@ -199,7 +213,7 @@ function setMQTTStatus(ok) {
   mqttStatusText.innerText = ok ? "MQTT Connected" : "MQTT Disconnected";
 }
 
-/* 장비 실제 ONLINE/OFFLINE 상태 */
+/* 장비 상태 ONLINE/OFFLINE */
 function setDeviceStatus(ok) {
   deviceLed.className = "status-led " + (ok ? "led-connected" : "led-disconnected");
   deviceStatus.innerText = ok ? "ON LINE(장비상태)" : "OFF LINE(장비상태)";
@@ -211,13 +225,13 @@ function log(msg) {
   logBox.scrollTop = logBox.scrollHeight;
 }
 
-/* 마지막 ESP32 상태 시간 기록 */
+/* ESP32 상태 타이머 */
 let lastStatusTime = 0;
 
-/* MQTT 이벤트 */
 client.on("connect", () => {
   setMQTTStatus(true);
   log("[MQTT] Connected");
+
   client.subscribe("/esp32/status");
   client.subscribe("/esp32/log");
 });
@@ -233,7 +247,7 @@ client.on("message", (topic, payload) => {
 
   if (topic === "/esp32/status") {
 
-    lastStatusTime = Date.now(); // ★ ESP 응답 시간 기록
+    lastStatusTime = Date.now();  // ★ ESP 응답시간 기록
 
     let j = JSON.parse(msg);
     ssid.innerText = j.ssid;
@@ -245,8 +259,7 @@ client.on("message", (topic, payload) => {
         ? "<span class='text-green-400 font-extrabold'>ON</span>"
         : "<span class='text-red-400 font-extrabold'>OFF</span>";
 
-    setDeviceStatus(true);  // 메시지 오는 동안 ONLINE 유지
-
+    setDeviceStatus(true);
     log("[STATUS] " + msg);
   }
 
@@ -259,17 +272,17 @@ function sendLED(v){ client.publish("/esp32/cmd/led", String(v)); }
 /* RESET */
 function sendReset(){ client.publish("/esp32/cmd/reset","1"); }
 
-/* 시간 */
+/* 시계 */
 setInterval(()=>{
-  timeBox.innerText = new Date().toLocaleString("ko-KR",{hour12:false});
-},1000);
+  timeBox.innerText = new Date().toLocaleString("ko-KR", {hour12:false});
+}, 1000);
 
-/* ★ 장비 오프라인 검사: 6초 무응답이면 OFFLINE 표시 */
+/* ★ 장비 OFFLINE 판정 (6초 이상 응답 없음) */
 setInterval(()=>{
   if (Date.now() - lastStatusTime > 6000){
     setDeviceStatus(false);
   }
-},2000);
+}, 2000);
 
 /* 🌙/☀️ 테마 토글 */
 const themeToggle = document.getElementById("themeToggle");
