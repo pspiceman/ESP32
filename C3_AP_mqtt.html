@@ -23,7 +23,7 @@ body {
   overflow-y: auto;
   border: 1px solid #333;
   font-family: Consolas, monospace;
-  font-size: 1rem;
+  font-size: 1.0rem;
 }
 #timeBox {
   text-align: right;
@@ -37,42 +37,42 @@ body {
   background: #1e293b;
   border: 1px solid #334155;
   border-radius: 14px;
-  padding: 16px;
+  padding: 18px;
   display: flex;
-  gap: 14px;
+  gap: 16px;
   align-items: center;
 }
 
 .info-title {
-  font-size: 1.35rem;
+  font-size: 1.4rem;
   font-weight: 700;
 }
 .info-value {
-  font-size: 2.1rem;
+  font-size: 2.2rem;
   font-weight: 900;
 }
 
 /* LED 표시 */
 .led-on {
   display: inline-block;
-  padding: 10px 26px;
+  padding: 10px 28px;
   background: #22c55e;
   color: white;
-  border-radius: 12px;
+  border-radius: 14px;
   font-size: 1.8rem;
   font-weight: 900;
 }
 .led-off {
   display: inline-block;
-  padding: 10px 26px;
+  padding: 10px 28px;
   background: #ef4444;
   color: white;
-  border-radius: 12px;
+  border-radius: 14px;
   font-size: 1.8rem;
   font-weight: 900;
 }
 
-/* 스마트폰 전용 강화 모드 */
+/* 모바일 전용 확대 */
 @media (max-width: 480px) {
 
   body {
@@ -80,7 +80,7 @@ body {
   }
 
   .info-title {
-    font-size: 1.7rem;
+    font-size: 1.75rem;
   }
 
   .info-value {
@@ -88,15 +88,15 @@ body {
   }
 
   .text-4xl {
-    font-size: 3.3rem;
+    font-size: 3.4rem;
   }
 
-  /* 버튼 스타일: 폭 절반, 폰트 2배 */
+  /* 버튼 현재보다 한 단 계 더 큰 폰트 */
   button {
-    font-size: 2.4rem !important;
-    padding-top: 20px !important;
-    padding-bottom: 20px !important;
-    width: 90% !important; /* 버튼 폭 줄임 */
+    font-size: 2.2rem !important;
+    padding-top: 18px !important;
+    padding-bottom: 18px !important;
+    width: 70% !important; /* 🔥 버튼 폭 절반 수준으로 줄임 */
   }
 }
 </style>
@@ -110,10 +110,9 @@ body {
     ESP32 MQTT Dashboard
   </h1>
 
-  <!-- 2열 구조의 SSID/RSSI + IP/LED -->
+  <!-- SSID + RSSI -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
 
-    <!-- SSID -->
     <div class="info-card">
       <div class="text-4xl">📶</div>
       <div>
@@ -122,7 +121,6 @@ body {
       </div>
     </div>
 
-    <!-- RSSI -->
     <div class="info-card">
       <div class="text-4xl">📡</div>
       <div>
@@ -131,7 +129,7 @@ body {
       </div>
     </div>
 
-    <!-- IP -->
+    <!-- IP + LED -->
     <div class="info-card">
       <div class="text-4xl">🌐</div>
       <div>
@@ -140,7 +138,6 @@ body {
       </div>
     </div>
 
-    <!-- LED -->
     <div class="info-card">
       <div class="text-4xl">💡</div>
       <div>
@@ -151,34 +148,32 @@ body {
 
   </div>
 
-  <!-- 버튼 3개: 폭 좁게 + 폰트 2배 -->
-  <div class="grid grid-cols-3 gap-3 my-6 place-items-center">
+  <!-- 버튼 3개 (폭 70%, 폰트 크게, 원래 형태 유지) -->
+  <div class="grid grid-cols-3 gap-4 my-6 place-items-center">
 
     <button onclick="sendLED(1)"
-      class="bg-green-600 rounded-xl shadow-2xl active:scale-95 transition">
+      class="bg-green-600 rounded-xl shadow-xl active:scale-95 transition text-center">
       LED<br>ON
     </button>
 
     <button onclick="sendLED(0)"
-      class="bg-yellow-500 rounded-xl shadow-2xl active:scale-95 transition">
+      class="bg-yellow-500 rounded-xl shadow-xl active:scale-95 transition text-center">
       LED<br>OFF
     </button>
 
     <button onclick="sendReset()"
-      class="bg-red-600 rounded-xl shadow-2xl active:scale-95 transition">
+      class="bg-red-600 rounded-xl shadow-xl active:scale-95 transition text-center">
       RESET
     </button>
 
   </div>
 
-  <!-- LOG -->
   <div id="logBox">[LOG] Ready…</div>
   <div id="timeBox">--:--:--</div>
 
 </div>
 
 <script>
-/* MQTT 연결 */
 let brokerURL = "wss://broker.hivemq.com:8884/mqtt";
 let clientId = "espui_" + Math.random().toString(16).substr(2, 8);
 let client = mqtt.connect(brokerURL, { clientId });
@@ -195,7 +190,6 @@ client.on("connect", () => {
   client.subscribe("/esp32/log");
 });
 
-/* MQTT 메시지 */
 client.on("message", (topic, payload) => {
   const msg = payload.toString();
 
@@ -217,7 +211,6 @@ client.on("message", (topic, payload) => {
   if (topic === "/esp32/log") log("[ESP] " + msg);
 });
 
-/* COMMAND */
 function sendLED(v) {
   client.publish("/esp32/cmd/led", String(v));
   log("[CMD] LED=" + v);
@@ -228,7 +221,6 @@ function sendReset() {
   log("[CMD] RESET");
 }
 
-/* CLOCK */
 setInterval(() => {
   const t = new Date();
   timeBox.innerText = t.toLocaleString("ko-KR", { hour12: false });
