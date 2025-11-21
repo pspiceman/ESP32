@@ -8,96 +8,132 @@
 
 <style>
 body {
-  zoom: 1.05;
+  margin: 0;
+  padding: 0;
 }
 #logBox {
   white-space: pre-line;
-  height: 180px;
+  height: 200px;
   background: #000;
   color: #0f0;
   padding: 10px;
   overflow-y: auto;
   border: 1px solid #333;
   font-family: Consolas, monospace;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
 }
-.status-label {
-  font-size: 1.3rem;
-  font-weight: 600;
+#timeBox {
+  text-align: right;
+  color: #aaa;
+  font-size: 0.8rem;
+  margin-top: 4px;
 }
-.status-value {
-  font-size: 1.6rem;
+.section-box {
+  width: 100%;
+  font-size: 1.15rem;
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  line-height: 1.7rem;
+}
+.title-icon {
+  font-size: 1.4rem;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.led-indicator {
-  font-size: 1.8rem;
-  font-weight: bold;
-  padding: 5px 12px;
+.subtitle {
+  font-size: 1.55rem;
+  font-weight: 700;
+  margin-top: 4px;
+  margin-bottom: 14px;
+}
+.led-on {
+  display: inline-block;
+  padding: 4px 16px;
+  background: #22c55e;
+  color: #fff;
   border-radius: 8px;
+  font-weight: 800;
 }
+.led-off {
+  display: inline-block;
+  padding: 4px 16px;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 8px;
+  font-weight: 800;
+}
+button { width: 100%; }
 </style>
 </head>
 
 <body class="bg-slate-900 text-slate-100">
 
-<div class="max-w-xl mx-auto py-6 px-4">
+<div class="w-full mx-auto py-4 px-4">
 
-  <h1 class="text-3xl font-bold mb-8 text-center">ESP32 MQTT Dashboard</h1>
+  <h1 class="text-2xl font-bold mb-4 text-center">ESP32 MQTT Dashboard</h1>
 
-  <!-- STATUS Box -->
-  <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 mb-6">
-    <div class="mb-3">
-      <span class="status-label">📶 SSID</span><br>
-      <span id="ssid" class="status-value">--</span>
+  <!-- STATUS -->
+  <div id="statusBox" class="section-box">
+
+    <div>
+      <div class="title-icon">📶 SSID</div>
+      <div id="ssid" class="subtitle">--</div>
     </div>
 
-    <div class="mb-3">
-      <span class="status-label">📡 RSSI</span><br>
-      <span id="rssi" class="status-value">--</span> dBm
+    <div>
+      <div class="title-icon">📡 RSSI</div>
+      <div id="rssi" class="subtitle">-- dBm</div>
     </div>
 
-    <div class="mb-3">
-      <span class="status-label">🌐 IP</span><br>
-      <span id="ip" class="status-value">--</span>
+    <div>
+      <div class="title-icon">🌐 IP</div>
+      <div id="ip" class="subtitle">--</div>
     </div>
 
-    <div class="mt-4">
-      <span class="status-label">💡 LED 상태</span><br>
-      <span id="ledState" class="led-indicator bg-slate-700">--</span>
+    <div>
+      <div class="title-icon">💡 LED 상태</div>
+      <div id="ledState" class="subtitle">--</div>
     </div>
+
   </div>
 
-  <!-- BUTTONS (한 줄 배열 / 모바일 최적화) -->
-  <div class="grid grid-cols-3 gap-3 mb-6">
+  <!-- BUTTON 3분할 -->
+  <div class="grid grid-cols-3 gap-3 my-6">
 
     <button onclick="sendLED(1)"
       class="bg-green-600 py-3 rounded-lg text-sm sm:text-lg font-bold">
-      LED<br>켜기
+      LED<br>ON
     </button>
 
     <button onclick="sendLED(0)"
       class="bg-yellow-600 py-3 rounded-lg text-sm sm:text-lg font-bold">
-      LED<br>끄기
+      LED<br>OFF
     </button>
 
     <button onclick="sendReset()"
       class="bg-red-600 py-3 rounded-lg text-sm sm:text-lg font-bold">
-      Soft<br>Reset
+      RESET
     </button>
 
   </div>
 
-  <!-- LOG BOX -->
+  <!-- LOG -->
   <div id="logBox">[LOG] Ready…</div>
+  <div id="timeBox">--:--:--</div>
 
 </div>
 
 <script>
 /* ---------------------------------------------------
-   MQTT Connect (HiveMQ Public Broker)
+   MQTT Connect
 --------------------------------------------------- */
 let brokerURL = "wss://broker.hivemq.com:8884/mqtt";
-let clientId = "esp32_ui_" + Math.random().toString(16).substr(2, 8);
+let clientId = "espui_" + Math.random().toString(16).substr(2, 8);
 let client = mqtt.connect(brokerURL, { clientId });
 
 function log(msg) {
@@ -110,13 +146,12 @@ log("[MQTT] Connecting...");
 
 client.on("connect", () => {
   log("[MQTT] Connected");
-
   client.subscribe("/esp32/status");
   client.subscribe("/esp32/log");
 });
 
 /* ---------------------------------------------------
-   MQTT On Message
+   MQTT 메시지 처리
 --------------------------------------------------- */
 client.on("message", (topic, payload) => {
   const msg = payload.toString();
@@ -124,19 +159,14 @@ client.on("message", (topic, payload) => {
   if (topic === "/esp32/status") {
     let j = JSON.parse(msg);
 
-    ssid.innerText = j.ssid;
-    rssi.innerText = j.rssi;
-    ip.innerText = j.ip;
+    document.getElementById("ssid").innerText = j.ssid;
+    document.getElementById("rssi").innerText = j.rssi + " dBm";
+    document.getElementById("ip").innerText = j.ip;
 
-    // LED 상태 업데이트
     if (j.led == 1) {
-      ledState.innerText = "ON";
-      ledState.classList.remove("bg-slate-700");
-      ledState.classList.add("bg-green-600");
+      ledState.innerHTML = "<span class='led-on'>ON</span>";
     } else {
-      ledState.innerText = "OFF";
-      ledState.classList.remove("bg-green-600");
-      ledState.classList.add("bg-slate-700");
+      ledState.innerHTML = "<span class='led-off'>OFF</span>";
     }
 
     log("[STATUS] " + msg);
@@ -148,7 +178,7 @@ client.on("message", (topic, payload) => {
 });
 
 /* ---------------------------------------------------
-   Publish Commands
+   Commands
 --------------------------------------------------- */
 function sendLED(v) {
   client.publish("/esp32/cmd/led", String(v));
@@ -160,6 +190,14 @@ function sendReset() {
   log("[CMD] RESET");
 }
 
+/* ---------------------------------------------------
+   Clock
+--------------------------------------------------- */
+setInterval(() => {
+  const t = new Date();
+  document.getElementById("timeBox").innerText =
+    t.toLocaleString("ko-KR", { hour12: false });
+}, 1000);
 </script>
 
 </body>
