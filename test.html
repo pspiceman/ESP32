@@ -13,7 +13,7 @@ body {
   font-size: 20px;
 }
 
-/* 로그창 */
+/* 로그창 - FULL WIDTH */
 #logBox {
   white-space: pre-line;
   height: 200px;
@@ -25,9 +25,9 @@ body {
   font-family: Consolas, monospace;
   font-size: 1.0rem;
 
-  /* ★ 타일과 폭 일치 */
-  width: 100%;
-  max-width: 500px;
+  /* ★ 수정됨: 스마트폰 수직에서 FULL 폭 */
+  width: 100% !important;
+  max-width: 100% !important;
   margin-left: auto;
   margin-right: auto;
 }
@@ -37,8 +37,9 @@ body {
   font-size: 1rem;
   margin-top: 6px;
 
-  width: 100%;
-  max-width: 500px;
+  /* ★ 수정됨 - 로그창과 동일 폭 */
+  width: 100% !important;
+  max-width: 100% !important;
   margin-left: auto;
   margin-right: auto;
 }
@@ -53,7 +54,6 @@ body {
   gap: 12px;
   align-items: center;
 
-  /* ★ 타일 폭을 자동으로 화면에 맞춤 */
   width: 100%;
   max-width: 500px;
   margin-left: auto;
@@ -69,19 +69,17 @@ body {
   font-weight: 900;
 }
 
-/* LED 상태 표시 */
 .led-on, .led-off {
   display: inline-block;
   padding: 10px 28px;
   border-radius: 14px;
   font-size: 1.8rem;
   font-weight: 900;
-  color: #fff;
+  color: white;
 }
 .led-on { background: #22c55e; }
 .led-off { background: #ef4444; }
 
-/* 버튼 */
 .action-btn {
   padding: 16px 26px;
   border-radius: 14px;
@@ -90,23 +88,17 @@ body {
   text-align: center;
   width: 100%;
   max-width: 180px;
+  color: #fff;
   box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-  color: white;
 }
 
-/* 모바일 전용 최적화 */
+/* 모바일 최적화 */
 @media (max-width: 480px) {
 
-  body { font-size: 26px; }
-
-  /* ★ 타일을 휴대폰폭으로 꽉 채우고 간격 최소화 */
   .grid-cards {
     grid-template-columns: 1fr 1fr !important;
     gap: 6px !important;
     width: 100%;
-    max-width: 500px;
-    margin-left: auto;
-    margin-right: auto;
   }
 
   .info-card {
@@ -116,8 +108,6 @@ body {
 
   .info-title { font-size: 1.6rem; }
   .info-value { font-size: 2.2rem; }
-
-  #logBox { max-width: 100%; }
 }
 </style>
 </head>
@@ -126,82 +116,57 @@ body {
 
 <div class="w-full mx-auto py-4 px-4">
 
-  <!-- 제목 -->
   <h1 class="text-4xl font-extrabold mb-6 text-center">
     ESP32 MQTT Dashboard
   </h1>
 
-  <!-- ★ 타일 2×2 배치 (여백 좁힘) -->
   <div class="grid grid-cols-2 gap-1 mb-4 place-items-center grid-cards">
 
-    <!-- SSID -->
     <div class="info-card">
       <div class="text-4xl">📶</div>
-      <div>
-        <div class="info-title">SSID</div>
-        <div id="ssid" class="info-value">--</div>
-      </div>
+      <div><div class="info-title">SSID</div><div id="ssid" class="info-value">--</div></div>
     </div>
 
-    <!-- RSSI -->
     <div class="info-card">
       <div class="text-4xl">📡</div>
-      <div>
-        <div class="info-title">RSSI</div>
-        <div id="rssi" class="info-value">-- dBm</div>
-      </div>
+      <div><div class="info-title">RSSI</div><div id="rssi" class="info-value">-- dBm</div></div>
     </div>
 
-    <!-- IP -->
     <div class="info-card">
       <div class="text-4xl">🌐</div>
-      <div>
-        <div class="info-title">IP</div>
-        <div id="ip" class="info-value">--</div>
-      </div>
+      <div><div class="info-title">IP</div><div id="ip" class="info-value">--</div></div>
     </div>
 
-    <!-- LED 상태 -->
     <div class="info-card">
       <div class="text-4xl">💡</div>
-      <div>
-        <div class="info-title">LED 상태</div>
-        <div id="ledState" class="info-value">--</div>
-      </div>
+      <div><div class="info-title">LED 상태</div><div id="ledState" class="info-value">--</div></div>
     </div>
 
   </div>
 
-  <!-- 버튼 -->
   <div class="flex justify-center gap-4 my-4">
 
     <button onclick="sendLED(1)"
-      class="action-btn bg-green-600 active:scale-95 transition">
-      ON
-    </button>
+      class="action-btn bg-green-600 active:scale-95 transition">ON</button>
 
     <button onclick="sendLED(0)"
-      class="action-btn bg-yellow-500 active:scale-95 transition">
-      OFF
-    </button>
+      class="action-btn bg-yellow-500 active:scale-95 transition">OFF</button>
 
     <button onclick="sendReset()"
-      class="action-btn bg-red-600 active:scale-95 transition">
-      RESET
-    </button>
+      class="action-btn bg-red-600 active:scale-95 transition">RESET</button>
 
   </div>
 
-  <!-- 로그 -->
+  <!-- 로그창 FULL WIDTH -->
   <div id="logBox">[LOG] Ready…</div>
   <div id="timeBox">--:--:--</div>
 
 </div>
 
 <script>
-let brokerURL = "wss://broker.hivemq.com:8884/mqtt";
-let clientId = "espui_" + Math.random().toString(16).substr(2, 8);
-let client = mqtt.connect(brokerURL, { clientId });
+let client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt", {
+  clientId: "espui_" + Math.random().toString(16).substr(2, 8)
+});
 
 function log(msg) {
   const box = document.getElementById("logBox");
@@ -220,16 +185,11 @@ client.on("message", (topic, payload) => {
 
   if (topic === "/esp32/status") {
     let j = JSON.parse(msg);
-
     ssid.innerText = j.ssid;
     rssi.innerText = j.rssi + " dBm";
     ip.innerText = j.ip;
-
-    if (j.led == 1)
-      ledState.innerHTML = "<span class='led-on'>ON</span>";
-    else
-      ledState.innerHTML = "<span class='led-off'>OFF</span>";
-
+    ledState.innerHTML =
+      j.led == 1 ? "<span class='led-on'>ON</span>" : "<span class='led-off'>OFF</span>";
     log("[STATUS] " + msg);
   }
 
@@ -247,8 +207,7 @@ function sendReset() {
 }
 
 setInterval(() => {
-  const t = new Date();
-  timeBox.innerText = t.toLocaleString("ko-KR", { hour12: false });
+  timeBox.innerText = new Date().toLocaleString("ko-KR", { hour12: false });
 }, 1000);
 </script>
 
