@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ESP32 Auto Console</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+#log { 
+  white-space: pre-wrap; 
+  font-family: Menlo, Consolas, monospace; 
+}
+</style>
+</head>
+
+<body class="bg-slate-900 text-slate-100">
+
+<div class="max-w-3xl mx-auto py-10 px-4">
+
+  <h1 class="text-3xl font-bold mb-6">ESP32 Remote Serial Console</h1>
+
+  <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 mb-6">
+    <label class="block mb-2 font-semibold">ESP32 IP (자동 감지됨)</label>
+    <input id="espIp" class="w-full p-2 rounded bg-slate-900 border border-slate-600 text-slate-100">
+  </div>
+
+  <div class="bg-black p-5 rounded-xl border border-slate-700 h-96 overflow-y-auto">
+    <div id="log"></div>
+  </div>
+
+  <div class="mt-5">
+    <button onclick="sendReset()" 
+            class="bg-red-600 hover:bg-red-700 px-5 py-2 rounded font-bold">
+      Soft Reset (원격 리셋)
+    </button>
+  </div>
+
+</div>
+
+<script>
+let ws;
+let reconnectTimer;
+
+/* -----------------------------
+   로그 출력
+------------------------------*/
+function logText(msg) {
+  const box = document.getElementById("log");
+  box.innerText += msg + "\n";
+  box.scrollTop = box.scrollHeight;
+}
+
+/* -----------------------------
+   WebSocket 연결
+------------------------------*/
+function connectWS(ip) {
+  let url = `ws://${ip}:81/`;
+  logText(`[Connecting to ${url}]`);
+
+  ws = new WebSocket(url);
+
+  ws.onopen = () => {
+    logText("[Connected]");
+    clearTimeout(reconnectTimer);
+  };
+
+  ws.onmessage = (e) => {
+    logText(e.data);
+  };
+
+  ws.onclose = () => {
+    logText("[Disconnected — retrying in 1 sec]");
+    reconnectTimer = setTimeout(() => connectWS(ip), 1000);
+  };
+
+  ws.onerror = () => {
+    logText("[WebSocket Error]");
+  };
+}
+
+/* -----------------------------
+   Soft Reset 요청
+------------------------------*/
+function sendReset() {
+  const ip = document.getElementById("espIp").value.trim();
+  if (!ip) return;
+  fetch(`http://${ip}/reset`)
+    .then(() => logText("[Soft Reset Sent]"))
+    .catch(() => logText("[Soft Reset Error]"));
+}
+
+/* -----------------------------
+   ESP32 자동 검색
+------------------------------*/
+async function autoDetectIP() {
+  let last = localStorage.getItem("esp32_last_ip");
+  if (last) {
+    document.getElementById("espIp").value = last;
+    connectWS(last);
+    return;
+  }
+
+  let candidates = [
+    "http://192.168.0.255",
+    "http://192.168.1.255",
+    "http://192.168.31.255",
+    "http://192.168.10.255"
+  ];
+
+  for (let url of candidates) {
+    try {
+      let r = await fetch(url + "/esp32-ip", { mode: "cors" });
+      let ip = (await r.text()).trim();
+
+      if (ip.startsWith("192.")) {
+        document.getElementById("espIp").value = ip;
+        localStorage.setItem("esp32_last_ip", ip);
+        connectWS(ip);
+        return;
+      }
+    } catch (e) {}
+  }
+
+  logText("[ESP32 자동 검색 실패]");
+}
+
+window.onload = autoDetectIP;
+</script>
+
+</body>
+</html>
