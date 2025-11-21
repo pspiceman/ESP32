@@ -13,7 +13,7 @@ body {
   font-size: 20px;
 }
 
-/* 로그창 - FULL WIDTH */
+/* ===== 로그창 ===== */
 #logBox {
   white-space: pre-line;
   height: 200px;
@@ -25,54 +25,54 @@ body {
   font-family: Consolas, monospace;
   font-size: 1.0rem;
 
-  /* ★ 수정됨: 스마트폰 수직에서 FULL 폭 */
   width: 100% !important;
   max-width: 100% !important;
-  margin-left: auto;
-  margin-right: auto;
 }
 #timeBox {
   text-align: right;
   color: #aaa;
   font-size: 1rem;
   margin-top: 6px;
-
-  /* ★ 수정됨 - 로그창과 동일 폭 */
   width: 100% !important;
   max-width: 100% !important;
-  margin-left: auto;
-  margin-right: auto;
 }
 
-/* 정보 카드 */
+
+/* ===== 정보 카드(타일) ===== */
 .info-card {
   background: #1e293b;
   border: 1px solid #334155;
   border-radius: 14px;
-  padding: 18px;
+  padding: 20px;
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: center;
 
   width: 100%;
+  height: 120px;            /* ★ SAME HEIGHT */
   max-width: 500px;
   margin-left: auto;
   margin-right: auto;
 }
 
+.info-icon {
+  font-size: 3rem;
+}
+
 .info-title {
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   font-weight: 700;
 }
 .info-value {
-  font-size: 2.1rem;
+  font-size: 2.3rem;
   font-weight: 900;
 }
 
+/* ===== LED 상태 표시 ===== */
 .led-on, .led-off {
   display: inline-block;
-  padding: 10px 28px;
-  border-radius: 14px;
+  padding: 6px 22px;
+  border-radius: 12px;
   font-size: 1.8rem;
   font-weight: 900;
   color: white;
@@ -80,6 +80,7 @@ body {
 .led-on { background: #22c55e; }
 .led-off { background: #ef4444; }
 
+/* ===== ON / OFF / RESET 버튼 ===== */
 .action-btn {
   padding: 16px 26px;
   border-radius: 14px;
@@ -92,22 +93,34 @@ body {
   box-shadow: 0 4px 12px rgba(0,0,0,0.25);
 }
 
-/* 모바일 최적화 */
+/* ===== 모바일 최적화 ===== */
 @media (max-width: 480px) {
 
+  /* 타일 간 간격 한 단계 넓힘 */
   .grid-cards {
     grid-template-columns: 1fr 1fr !important;
-    gap: 6px !important;
+    gap: 12px !important;
     width: 100%;
   }
 
   .info-card {
     max-width: 100% !important;
-    gap: 10px !important;
   }
 
-  .info-title { font-size: 1.6rem; }
-  .info-value { font-size: 2.2rem; }
+  /* 폰트 살짝 크게 */
+  .info-title { font-size: 1.8rem; }
+  .info-value { font-size: 2.4rem; }
+  .info-icon { font-size: 3.4rem; }
+
+  /* 버튼 간 간격 확대 */
+  .button-row {
+    gap: 18px !important;
+  }
+
+  /* 대시보드 타이틀 확대 */
+  .title-text {
+    font-size: 3.4rem !important;
+  }
 }
 </style>
 </head>
@@ -116,48 +129,69 @@ body {
 
 <div class="w-full mx-auto py-4 px-4">
 
-  <h1 class="text-4xl font-extrabold mb-6 text-center">
+  <!-- ===== 제목 (폰트 크게 수정됨) ===== -->
+  <h1 class="text-4xl title-text font-extrabold mb-6 text-center">
     ESP32 MQTT Dashboard
   </h1>
 
-  <div class="grid grid-cols-2 gap-1 mb-4 place-items-center grid-cards">
+  <!-- ===== SSID / RSSI / IP / LED 상태 ===== -->
+  <div class="grid grid-cols-2 gap-4 mb-4 place-items-center grid-cards">
 
     <div class="info-card">
-      <div class="text-4xl">📶</div>
-      <div><div class="info-title">SSID</div><div id="ssid" class="info-value">--</div></div>
+      <div class="info-icon">📶</div>
+      <div>
+        <div class="info-title">SSID</div>
+        <div id="ssid" class="info-value">--</div>
+      </div>
     </div>
 
     <div class="info-card">
-      <div class="text-4xl">📡</div>
-      <div><div class="info-title">RSSI</div><div id="rssi" class="info-value">-- dBm</div></div>
+      <div class="info-icon">📡</div>
+      <div>
+        <div class="info-title">RSSI</div>
+        <div id="rssi" class="info-value">-- dBm</div>
+      </div>
     </div>
 
     <div class="info-card">
-      <div class="text-4xl">🌐</div>
-      <div><div class="info-title">IP</div><div id="ip" class="info-value">--</div></div>
+      <div class="info-icon">🌐</div>
+      <div>
+        <div class="info-title">IP</div>
+        <div id="ip" class="info-value">--</div>
+      </div>
     </div>
 
     <div class="info-card">
-      <div class="text-4xl">💡</div>
-      <div><div class="info-title">LED 상태</div><div id="ledState" class="info-value">--</div></div>
+      <div class="info-icon">💡</div>
+      <div>
+        <div class="info-title">LED 상태</div>
+        <div id="ledState" class="info-value">--</div>
+      </div>
     </div>
 
   </div>
 
-  <div class="flex justify-center gap-4 my-4">
+  <!-- ===== 버튼 그룹 (간격 살짝 넓힘) ===== -->
+  <div class="flex justify-center button-row gap-6 my-6">
 
     <button onclick="sendLED(1)"
-      class="action-btn bg-green-600 active:scale-95 transition">ON</button>
+      class="action-btn bg-green-600 active:scale-95 transition">
+      ON
+    </button>
 
     <button onclick="sendLED(0)"
-      class="action-btn bg-yellow-500 active:scale-95 transition">OFF</button>
+      class="action-btn bg-yellow-500 active:scale-95 transition">
+      OFF
+    </button>
 
     <button onclick="sendReset()"
-      class="action-btn bg-red-600 active:scale-95 transition">RESET</button>
+      class="action-btn bg-red-600 active:scale-95 transition">
+      RESET
+    </button>
 
   </div>
 
-  <!-- 로그창 FULL WIDTH -->
+  <!-- ===== 로그 ===== -->
   <div id="logBox">[LOG] Ready…</div>
   <div id="timeBox">--:--:--</div>
 
@@ -188,8 +222,10 @@ client.on("message", (topic, payload) => {
     ssid.innerText = j.ssid;
     rssi.innerText = j.rssi + " dBm";
     ip.innerText = j.ip;
+
     ledState.innerHTML =
       j.led == 1 ? "<span class='led-on'>ON</span>" : "<span class='led-off'>OFF</span>";
+
     log("[STATUS] " + msg);
   }
 
