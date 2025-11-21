@@ -32,7 +32,7 @@ body {
   margin-top: 6px;
 }
 
-/* 정보 카드 */
+/* 정보 카드 (폭 = 버튼과 동일하게 제한) */
 .info-card {
   background: #1e293b;
   border: 1px solid #334155;
@@ -41,6 +41,12 @@ body {
   display: flex;
   gap: 16px;
   align-items: center;
+
+  /* ★ 카드 폭 제한 = 버튼과 동일한 크기 보정 */
+  max-width: 180px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .info-title {
@@ -48,7 +54,7 @@ body {
   font-weight: 700;
 }
 .info-value {
-  font-size: 2.2rem;
+  font-size: 2.1rem;
   font-weight: 900;
 }
 
@@ -61,11 +67,10 @@ body {
   font-weight: 900;
   color: #fff;
 }
-
 .led-on { background: #22c55e; }
 .led-off { background: #ef4444; }
 
-/* 버튼 (RESET과 같은 사이즈) */
+/* 버튼 크기 (LED 상태 OFF와 동일한 사이즈) */
 .action-btn {
   padding: 16px 26px;
   border-radius: 14px;
@@ -73,7 +78,7 @@ body {
   font-weight: 900;
   text-align: center;
   width: 90%;
-  max-width: 160px;   /* LED 상태 OFF 버튼 사이즈 */
+  max-width: 180px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.25);
   color: white;
 }
@@ -85,13 +90,17 @@ body {
 
   .info-title { font-size: 1.75rem; }
   .info-value { font-size: 2.5rem; }
+
   .text-4xl { font-size: 3.4rem; }
 
   .action-btn {
     font-size: 2.2rem;
     padding: 20px 28px;
-    width: 100%;
-    max-width: 180px;
+    max-width: 200px;
+  }
+
+  .info-card {
+    max-width: 200px !important;
   }
 }
 </style>
@@ -101,13 +110,15 @@ body {
 
 <div class="w-full mx-auto py-4 px-4">
 
+  <!-- 제목 -->
   <h1 class="text-4xl font-extrabold mb-6 text-center">
     ESP32 MQTT Dashboard
   </h1>
 
-  <!-- SSID + RSSI -->
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+  <!-- SSID / RSSI / IP / LED 상태 (4개 타일 → 버튼 크기로 축소) -->
+  <div class="grid grid-cols-2 gap-4 mb-6 place-items-center">
 
+    <!-- SSID -->
     <div class="info-card">
       <div class="text-4xl">📶</div>
       <div>
@@ -116,6 +127,7 @@ body {
       </div>
     </div>
 
+    <!-- RSSI -->
     <div class="info-card">
       <div class="text-4xl">📡</div>
       <div>
@@ -124,7 +136,7 @@ body {
       </div>
     </div>
 
-    <!-- IP + LED -->
+    <!-- IP -->
     <div class="info-card">
       <div class="text-4xl">🌐</div>
       <div>
@@ -133,6 +145,7 @@ body {
       </div>
     </div>
 
+    <!-- LED 상태 -->
     <div class="info-card">
       <div class="text-4xl">💡</div>
       <div>
@@ -143,8 +156,8 @@ body {
 
   </div>
 
-  <!-- 버튼: LED 상태 버튼 크기와 동일하게 맞춤 -->
-  <div class="flex justify-center gap-3 my-6">
+  <!-- ON / OFF / RESET 버튼 (동일 사이즈, 카드 폭과 맞춤) -->
+  <div class="flex justify-center gap-4 my-4">
 
     <button onclick="sendLED(1)"
       class="action-btn bg-green-600 active:scale-95 transition">
@@ -163,6 +176,7 @@ body {
 
   </div>
 
+  <!-- 로그 -->
   <div id="logBox">[LOG] Ready…</div>
   <div id="timeBox">--:--:--</div>
 
