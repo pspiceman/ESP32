@@ -13,7 +13,7 @@ body {
 }
 #logBox {
   white-space: pre-line;
-  height: 180px;
+  height: 190px;
   background: #000;
   color: #0f0;
   padding: 10px;
@@ -25,48 +25,56 @@ body {
 #timeBox {
   text-align: right;
   color: #aaa;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   margin-top: 4px;
 }
 
-/* info card */
+/* Info row */
 .info-row {
   display: grid;
-  grid-template-columns: 40px auto;
+  grid-template-columns: 48px auto;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   background: #1e293b;
-  padding: 12px 14px;
-  border-radius: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
   border: 1px solid #334155;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .info-title {
-  font-size: 1.15rem;
-  font-weight: bold;
+  font-size: 1.25rem;
+  font-weight: 700;
 }
 
 .info-value {
-  font-size: 1.45rem;
+  font-size: 1.7rem;
   font-weight: 800;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .led-on {
+  display: inline-block;
+  padding: 6px 20px;
   background: #22c55e;
   color: white;
-  padding: 4px 16px;
-  border-radius: 8px;
+  border-radius: 10px;
+  font-size: 1.3rem;
   font-weight: 800;
 }
 
 .led-off {
+  display: inline-block;
+  padding: 6px 20px;
   background: #ef4444;
   color: white;
-  padding: 4px 16px;
-  border-radius: 8px;
+  border-radius: 10px;
+  font-size: 1.3rem;
   font-weight: 800;
+}
+
+button {
+  width: 100%;
 }
 </style>
 </head>
@@ -75,11 +83,11 @@ body {
 
 <div class="w-full mx-auto py-4 px-4">
 
-  <h1 class="text-3xl font-bold mb-6 text-center">ESP32 MQTT Dashboard</h1>
+  <h1 class="text-3xl font-extrabold mb-6 text-center">ESP32 MQTT Dashboard</h1>
 
   <!-- SSID -->
   <div class="info-row">
-    <div class="text-3xl">📶</div>
+    <div class="text-4xl">📶</div>
     <div>
       <div class="info-title">SSID</div>
       <div id="ssid" class="info-value">--</div>
@@ -88,7 +96,7 @@ body {
 
   <!-- RSSI -->
   <div class="info-row">
-    <div class="text-3xl">📡</div>
+    <div class="text-4xl">📡</div>
     <div>
       <div class="info-title">RSSI</div>
       <div id="rssi" class="info-value">-- dBm</div>
@@ -97,7 +105,7 @@ body {
 
   <!-- IP -->
   <div class="info-row">
-    <div class="text-3xl">🌐</div>
+    <div class="text-4xl">🌐</div>
     <div>
       <div class="info-title">IP</div>
       <div id="ip" class="info-value">--</div>
@@ -106,34 +114,37 @@ body {
 
   <!-- LED -->
   <div class="info-row">
-    <div class="text-3xl">💡</div>
+    <div class="text-4xl">💡</div>
     <div>
       <div class="info-title">LED 상태</div>
       <div id="ledState" class="info-value">--</div>
     </div>
   </div>
 
-  <!-- BUTTONS -->
-  <div class="grid grid-cols-3 gap-3 my-6">
+  <!-- BUTTONS (축소 + 확대 + 가독성↑) -->
+  <div class="grid grid-cols-3 gap-4 my-6 px-2">
+
     <button onclick="sendLED(1)"
-      class="bg-green-600 py-4 rounded-lg text-sm sm:text-lg font-bold w-full">
+      class="bg-green-600 py-5 rounded-xl text-xl font-extrabold shadow-xl active:scale-95 transition">
       LED<br>ON
     </button>
 
     <button onclick="sendLED(0)"
-      class="bg-yellow-600 py-4 rounded-lg text-sm sm:text-lg font-bold w-full">
+      class="bg-yellow-500 py-5 rounded-xl text-xl font-extrabold shadow-xl active:scale-95 transition">
       LED<br>OFF
     </button>
 
     <button onclick="sendReset()"
-      class="bg-red-600 py-4 rounded-lg text-sm sm:text-lg font-bold w-full">
+      class="bg-red-600 py-5 rounded-xl text-xl font-extrabold shadow-xl active:scale-95 transition">
       RESET
     </button>
+
   </div>
 
   <!-- LOG -->
   <div id="logBox">[LOG] Ready…</div>
   <div id="timeBox">--:--:--</div>
+
 </div>
 
 <script>
@@ -159,7 +170,7 @@ client.on("connect", () => {
 });
 
 /* ---------------------------------------------------
-   MQTT MESSAGE
+   MQTT message
 --------------------------------------------------- */
 client.on("message", (topic, payload) => {
   const msg = payload.toString();
