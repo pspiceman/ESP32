@@ -7,20 +7,8 @@
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
-body {
-  margin: 0;
-  padding: 0;
-  font-size: 20px;
-}
+body { margin: 0; padding: 0; font-size: 20px; }
 
-/* ===== 애니메이션 ===== */
-.fade-in { animation: fadein 0.7s ease-out; }
-@keyframes fadein {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ===== LED 표시 ===== */
 .status-led {
   display: inline-block;
   width: 18px;
@@ -28,28 +16,9 @@ body {
   border-radius: 50%;
   margin-right: 6px;
 }
-.led-connected   { background: #22c55e; }
+.led-connected { background: #22c55e; }
 .led-disconnected { background: #ef4444; }
 
-/* ===== 로그 ===== */
-#logBox {
-  white-space: pre-line;
-  height: 220px;
-  background: #000;
-  color: #0f0;
-  padding: 12px;
-  overflow-y: auto;
-  border: 1px solid #333;
-  font-family: Consolas, monospace;
-}
-#timeBox {
-  text-align: right;
-  color: #aaa;
-  font-size: 1rem;
-  margin-top: 6px;
-}
-
-/* ===== 타일 카드 ===== */
 .info-card {
   background: #1e293b;
   border: 1px solid #334155;
@@ -64,71 +33,79 @@ body {
   margin-left: auto;
   margin-right: auto;
   box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-  transition: transform 0.2s ease, background 0.2s ease;
+  transition: 0.2s ease;
 }
-.info-card:hover {
-  transform: scale(1.05);
-  background: #2b3f52;
-}
+.info-card:hover { transform: scale(1.05); background: #2b3f52; }
 
 .info-icon { font-size: 3.3rem; }
 .info-title { font-size: 1.7rem; font-weight: 700; }
 .info-value { font-size: 2.5rem; font-weight: 900; }
 
-/* ===== 버튼 ===== */
 .action-btn {
   padding: 18px 28px;
   border-radius: 16px;
   font-size: 2rem;
   font-weight: 900;
-  text-align: center;
   width: 100%;
   max-width: 180px;
   color: white;
   box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-  transition: transform 0.15s ease;
+  transition: 0.15s ease;
 }
 .action-btn:active { transform: scale(0.92); }
 
-/* ===== 모바일 ===== */
-@media (max-width: 480px) {
-  .title-text { font-size: 3.7rem !important; }
-  .grid-cards { grid-template-columns: 1fr 1fr !important; gap: 16px !important; }
-  .info-card { height: 140px; }
-  .info-title { font-size: 1.9rem; }
-  .info-value { font-size: 2.6rem; }
-  .info-icon { font-size: 3.7rem; }
+#logBox {
+  white-space: pre-line;
+  height: 220px;
+  background: #000;
+  color: #0f0;
+  padding: 12px;
+  overflow-y: auto;
+  border: 1px solid #333;
+  font-family: Consolas, monospace;
+}
+
+#timeBox {
+  text-align: right;
+  color: #aaa;
+  font-size: 1rem;
+  margin-top: 6px;
 }
 </style>
 </head>
 
-<body class="bg-slate-900 text-slate-100 fade-in">
+<body class="bg-slate-900 text-slate-100">
 
 <div class="w-full mx-auto py-4 px-4">
 
-  <!-- ===== 제목 ===== -->
-  <h1 class="text-5xl title-text font-extrabold mb-4 text-center fade-in">
+  <!-- 제목 -->
+  <h1 class="text-5xl font-extrabold mb-4 text-center">
     ESP32 MQTT Dashboard
   </h1>
 
-  <!-- ===== MQTT 상태 표시 ===== -->
-  <div class="text-center mb-3 fade-in flex justify-center gap-3">
-      <span id="mqttLed" class="status-led led-disconnected"></span>
-      <span id="mqttStatusText" class="text-xl font-bold">
-         MQTT Disconnected
-      </span>
+  <!-- MQTT + 장비상태 (같은 줄) -->
+  <div class="text-center mb-6 flex justify-center gap-10">
+
+      <!-- MQTT 상태 -->
+      <div>
+          <span id="mqttLed" class="status-led led-disconnected"></span>
+          <span id="mqttStatusText" class="text-2xl font-extrabold">
+              MQTT Disconnected
+          </span>
+      </div>
+
+      <!-- 장비 상태 -->
+      <div>
+          <span id="deviceLed" class="status-led led-disconnected"></span>
+          <span id="deviceStatus" class="text-2xl font-extrabold">
+              OFF LINE(장비상태)
+          </span>
+      </div>
+
   </div>
 
-  <!-- ===== 장비 상태 (제목 바로 아래에 추가) ===== -->
-  <div class="text-center mb-6 fade-in flex justify-center gap-3">
-      <span id="deviceLed" class="status-led led-disconnected"></span>
-      <span id="deviceStatus" class="text-3xl font-extrabold">
-         OFF LINE
-      </span>
-  </div>
-
-  <!-- ===== 타일 4개 ===== -->
-  <div class="grid grid-cols-2 gap-6 mb-6 place-items-center grid-cards fade-in">
+  <!-- 타일 4개 -->
+  <div class="grid grid-cols-2 gap-6 mb-6 place-items-center">
 
     <div class="info-card">
       <div class="info-icon">📶</div>
@@ -164,44 +141,30 @@ body {
 
   </div>
 
-  <!-- ===== 버튼 ===== -->
-  <div class="flex justify-center button-row gap-14 my-6 fade-in">
-
-    <button onclick="sendLED(1)"
-      class="action-btn bg-green-600">
-      ON
-    </button>
-
-    <button onclick="sendLED(0)"
-      class="action-btn bg-yellow-500">
-      OFF
-    </button>
-
-    <button onclick="sendReset()"
-      class="action-btn bg-red-600">
-      RESET
-    </button>
-
+  <!-- 버튼 -->
+  <div class="flex justify-center gap-14 my-6">
+    <button onclick="sendLED(1)" class="action-btn bg-green-600">ON</button>
+    <button onclick="sendLED(0)" class="action-btn bg-yellow-500">OFF</button>
+    <button onclick="sendReset()" class="action-btn bg-red-600">RESET</button>
   </div>
 
-  <!-- ===== LOG ===== -->
-  <div id="logBox" class="fade-in">[LOG] Ready…</div>
+  <!-- 로그 -->
+  <div id="logBox">[LOG] Ready…</div>
   <div id="timeBox">--:--:--</div>
 
 </div>
 
 <script>
 
-/* ================== MQTT 연결 ================== */
+// MQTT 연결
 let client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt", {
   clientId: "espui_" + Math.random().toString(16).substr(2, 8)
 });
 
-/* MQTT 상태 표시 */
+// MQTT 상태 LED + 텍스트
 function setMQTTStatus(connected) {
   const led = document.getElementById("mqttLed");
   const txt = document.getElementById("mqttStatusText");
-
   if (connected) {
     led.className = "status-led led-connected";
     txt.innerText = "MQTT Connected";
@@ -211,17 +174,17 @@ function setMQTTStatus(connected) {
   }
 }
 
-/* 장비 상태 표시 */
+// 장비 상태 (장비 연결 여부)
 function setDeviceStatus(connected) {
   const led = document.getElementById("deviceLed");
   const txt = document.getElementById("deviceStatus");
 
   if (connected) {
     led.className = "status-led led-connected";
-    txt.innerText = "ON LINE";
+    txt.innerText = "ON LINE(장비상태)";
   } else {
     led.className = "status-led led-disconnected";
-    txt.innerText = "OFF LINE";
+    txt.innerText = "OFF LINE(장비상태)";
   }
 }
 
@@ -245,7 +208,7 @@ client.on("close", () => {
   log("[MQTT] Disconnected");
 });
 
-/* ================== MQTT 메시지 ================== */
+// MQTT 메시지 처리
 client.on("message", (topic, payload) => {
   const msg = payload.toString();
 
@@ -266,18 +229,19 @@ client.on("message", (topic, payload) => {
   if (topic === "/esp32/log") log("[ESP] " + msg);
 });
 
-/* ================== 버튼 ================== */
+// LED 제어
 function sendLED(v) {
   client.publish("/esp32/cmd/led", String(v));
   log("[CMD] LED=" + v);
 }
 
+// RESET 명령
 function sendReset() {
   client.publish("/esp32/cmd/reset", "1");
   log("[CMD] RESET");
 }
 
-/* ================== 시계 ================== */
+// 시간 표시
 setInterval(() => {
   timeBox.innerText = new Date().toLocaleString("ko-KR", { hour12: false });
 }, 1000);
