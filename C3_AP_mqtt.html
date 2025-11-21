@@ -13,7 +13,7 @@ body {
 }
 #logBox {
   white-space: pre-line;
-  height: 200px;
+  height: 180px;
   background: #000;
   color: #0f0;
   padding: 10px;
@@ -28,46 +28,46 @@ body {
   font-size: 0.8rem;
   margin-top: 4px;
 }
-.section-box {
-  width: 100%;
-  font-size: 1.15rem;
+
+/* info card */
+.info-row {
+  display: grid;
+  grid-template-columns: 40px auto;
+  align-items: center;
+  gap: 10px;
   background: #1e293b;
-  color: #e2e8f0;
-  padding: 16px;
+  padding: 12px 14px;
   border-radius: 12px;
   border: 1px solid #334155;
-  line-height: 1.7rem;
+  margin-bottom: 12px;
 }
-.title-icon {
-  font-size: 1.4rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+
+.info-title {
+  font-size: 1.15rem;
+  font-weight: bold;
 }
-.subtitle {
-  font-size: 1.55rem;
-  font-weight: 700;
-  margin-top: 4px;
-  margin-bottom: 14px;
+
+.info-value {
+  font-size: 1.45rem;
+  font-weight: 800;
+  margin-top: 3px;
 }
+
 .led-on {
-  display: inline-block;
-  padding: 4px 16px;
   background: #22c55e;
-  color: #fff;
-  border-radius: 8px;
-  font-weight: 800;
-}
-.led-off {
-  display: inline-block;
+  color: white;
   padding: 4px 16px;
-  background: #ef4444;
-  color: #fff;
   border-radius: 8px;
   font-weight: 800;
 }
-button { width: 100%; }
+
+.led-off {
+  background: #ef4444;
+  color: white;
+  padding: 4px 16px;
+  border-radius: 8px;
+  font-weight: 800;
+}
 </style>
 </head>
 
@@ -75,57 +75,65 @@ button { width: 100%; }
 
 <div class="w-full mx-auto py-4 px-4">
 
-  <h1 class="text-2xl font-bold mb-4 text-center">ESP32 MQTT Dashboard</h1>
+  <h1 class="text-3xl font-bold mb-6 text-center">ESP32 MQTT Dashboard</h1>
 
-  <!-- STATUS -->
-  <div id="statusBox" class="section-box">
-
+  <!-- SSID -->
+  <div class="info-row">
+    <div class="text-3xl">📶</div>
     <div>
-      <div class="title-icon">📶 SSID</div>
-      <div id="ssid" class="subtitle">--</div>
+      <div class="info-title">SSID</div>
+      <div id="ssid" class="info-value">--</div>
     </div>
-
-    <div>
-      <div class="title-icon">📡 RSSI</div>
-      <div id="rssi" class="subtitle">-- dBm</div>
-    </div>
-
-    <div>
-      <div class="title-icon">🌐 IP</div>
-      <div id="ip" class="subtitle">--</div>
-    </div>
-
-    <div>
-      <div class="title-icon">💡 LED 상태</div>
-      <div id="ledState" class="subtitle">--</div>
-    </div>
-
   </div>
 
-  <!-- BUTTON 3분할 -->
-  <div class="grid grid-cols-3 gap-3 my-6">
+  <!-- RSSI -->
+  <div class="info-row">
+    <div class="text-3xl">📡</div>
+    <div>
+      <div class="info-title">RSSI</div>
+      <div id="rssi" class="info-value">-- dBm</div>
+    </div>
+  </div>
 
+  <!-- IP -->
+  <div class="info-row">
+    <div class="text-3xl">🌐</div>
+    <div>
+      <div class="info-title">IP</div>
+      <div id="ip" class="info-value">--</div>
+    </div>
+  </div>
+
+  <!-- LED -->
+  <div class="info-row">
+    <div class="text-3xl">💡</div>
+    <div>
+      <div class="info-title">LED 상태</div>
+      <div id="ledState" class="info-value">--</div>
+    </div>
+  </div>
+
+  <!-- BUTTONS -->
+  <div class="grid grid-cols-3 gap-3 my-6">
     <button onclick="sendLED(1)"
-      class="bg-green-600 py-3 rounded-lg text-sm sm:text-lg font-bold">
+      class="bg-green-600 py-4 rounded-lg text-sm sm:text-lg font-bold w-full">
       LED<br>ON
     </button>
 
     <button onclick="sendLED(0)"
-      class="bg-yellow-600 py-3 rounded-lg text-sm sm:text-lg font-bold">
+      class="bg-yellow-600 py-4 rounded-lg text-sm sm:text-lg font-bold w-full">
       LED<br>OFF
     </button>
 
     <button onclick="sendReset()"
-      class="bg-red-600 py-3 rounded-lg text-sm sm:text-lg font-bold">
+      class="bg-red-600 py-4 rounded-lg text-sm sm:text-lg font-bold w-full">
       RESET
     </button>
-
   </div>
 
   <!-- LOG -->
   <div id="logBox">[LOG] Ready…</div>
   <div id="timeBox">--:--:--</div>
-
 </div>
 
 <script>
@@ -151,7 +159,7 @@ client.on("connect", () => {
 });
 
 /* ---------------------------------------------------
-   MQTT 메시지 처리
+   MQTT MESSAGE
 --------------------------------------------------- */
 client.on("message", (topic, payload) => {
   const msg = payload.toString();
@@ -159,9 +167,9 @@ client.on("message", (topic, payload) => {
   if (topic === "/esp32/status") {
     let j = JSON.parse(msg);
 
-    document.getElementById("ssid").innerText = j.ssid;
-    document.getElementById("rssi").innerText = j.rssi + " dBm";
-    document.getElementById("ip").innerText = j.ip;
+    ssid.innerText = j.ssid;
+    rssi.innerText = j.rssi + " dBm";
+    ip.innerText = j.ip;
 
     if (j.led == 1) {
       ledState.innerHTML = "<span class='led-on'>ON</span>";
@@ -178,7 +186,7 @@ client.on("message", (topic, payload) => {
 });
 
 /* ---------------------------------------------------
-   Commands
+   COMMANDS
 --------------------------------------------------- */
 function sendLED(v) {
   client.publish("/esp32/cmd/led", String(v));
@@ -191,7 +199,7 @@ function sendReset() {
 }
 
 /* ---------------------------------------------------
-   Clock
+   CLOCK
 --------------------------------------------------- */
 setInterval(() => {
   const t = new Date();
