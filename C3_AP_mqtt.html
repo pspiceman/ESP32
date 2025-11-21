@@ -2,6 +2,10 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+
+<!-- GitHub Pages(HTTPS) → ESP32(HTTP) 요청 허용 -->
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ESP32 Status Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -35,28 +39,31 @@
             class="bg-green-600 hover:bg-green-700 px-5 py-2 rounded font-bold">
       LED ON
     </button>
+
     <button onclick="sendLED(0)"
             class="bg-yellow-600 hover:bg-yellow-700 px-5 py-2 rounded font-bold">
       LED OFF
     </button>
+
     <button onclick="sendReset()"
             class="bg-red-600 hover:bg-red-700 px-5 py-2 rounded font-bold">
       Soft Reset
     </button>
   </div>
+
 </div>
 
 <script>
 let espIP = null;
 
 /* -----------------------------
-   ESP32 상태 요청
+   상태 요청
 ------------------------------*/
 async function updateStatus() {
   if (!espIP) return;
 
   try {
-    const r = await fetch(`http://${espIP}/status`);
+    const r = await fetch(`http://${espIP}/status`, { mode: "cors" });
     const j = await r.json();
 
     document.getElementById("ssidValue").innerText = j.ssid;
@@ -64,30 +71,32 @@ async function updateStatus() {
     document.getElementById("ipValue").innerText = j.ip;
 
   } catch (e) {
-    console.log("Status update failed");
+    console.log("[Status Failed]");
   }
 }
 
 /* -----------------------------
-   LED 제어
+   LED 제어 (Active LOW)
 ------------------------------*/
 function sendLED(state) {
   if (!espIP) return;
-  fetch(`http://${espIP}/led?state=${state}`);
+  fetch(`http://${espIP}/led?state=${state}`, { mode: "cors" });
 }
 
 /* -----------------------------
-   Soft Reset
+   원격 리셋
 ------------------------------*/
 function sendReset() {
   if (!espIP) return;
-  fetch(`http://${espIP}/reset`);
+  fetch(`http://${espIP}/reset`, { mode: "cors" });
 }
 
 /* -----------------------------
    자동 IP 탐지
 ------------------------------*/
 async function autoDetectIP() {
+
+  // 마지막 성공한 IP 사용
   let last = localStorage.getItem("esp32_last_ip");
   if (last) {
     espIP = last;
@@ -95,6 +104,7 @@ async function autoDetectIP() {
     return;
   }
 
+  // 공유기 대역 스캔
   let candidates = [
     "http://192.168.0.255",
     "http://192.168.1.255",
@@ -115,12 +125,14 @@ async function autoDetectIP() {
     } catch (e) {}
   }
 
-  console.log("ESP32 자동 검색 실패");
+  console.log("[ESP32 IP Auto Detect Failed]");
 }
+
+/* ----------------------------- */
 
 window.onload = () => {
   autoDetectIP();
-  setInterval(updateStatus, 3000); // ← 3초 자동 갱신
+  setInterval(updateStatus, 3000);  // 3초마다 자동 갱신
 };
 </script>
 
