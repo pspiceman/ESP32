@@ -24,15 +24,24 @@ body {
   border: 1px solid #333;
   font-family: Consolas, monospace;
   font-size: 1.0rem;
+
+  /* 위 카드와 동일한 폭을 갖도록 */
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
 }
 #timeBox {
   text-align: right;
   color: #aaa;
   font-size: 1rem;
   margin-top: 6px;
+
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-/* 정보 카드 (폭 = 버튼과 동일하게 제한) */
+/* 정보 카드 */
 .info-card {
   background: #1e293b;
   border: 1px solid #334155;
@@ -42,9 +51,10 @@ body {
   gap: 16px;
   align-items: center;
 
-  /* ★ 카드 폭 제한 = 버튼과 동일한 크기 보정 */
-  max-width: 180px;
+  /* ★ 타일 폭 확대하여 글자 잘림 해결 */
   width: 100%;
+  max-width: 420px;
+
   margin-left: auto;
   margin-right: auto;
 }
@@ -70,37 +80,39 @@ body {
 .led-on { background: #22c55e; }
 .led-off { background: #ef4444; }
 
-/* 버튼 크기 (LED 상태 OFF와 동일한 사이즈) */
+/* 버튼 */
 .action-btn {
   padding: 16px 26px;
   border-radius: 14px;
   font-size: 1.8rem;
   font-weight: 900;
   text-align: center;
-  width: 90%;
+  width: 100%;
   max-width: 180px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.25);
   color: white;
 }
 
-/* 모바일 전용 확대 */
+/* 모바일 전용 최적화 */
 @media (max-width: 480px) {
 
   body { font-size: 26px; }
 
-  .info-title { font-size: 1.75rem; }
-  .info-value { font-size: 2.5rem; }
-
-  .text-4xl { font-size: 3.4rem; }
-
-  .action-btn {
-    font-size: 2.2rem;
-    padding: 20px 28px;
-    max-width: 200px;
+  /* 2×2 타일이 스마트폰 화면에 꽉 차도록 */
+  .grid-cards {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
   }
 
   .info-card {
-    max-width: 200px !important;
+    max-width: 100% !important;
+  }
+
+  .info-title { font-size: 1.6rem; }
+  .info-value { font-size: 2.2rem; }
+
+  #logBox {
+    max-width: 100%;
   }
 }
 </style>
@@ -115,8 +127,8 @@ body {
     ESP32 MQTT Dashboard
   </h1>
 
-  <!-- SSID / RSSI / IP / LED 상태 (4개 타일 → 버튼 크기로 축소) -->
-  <div class="grid grid-cols-2 gap-4 mb-6 place-items-center">
+  <!-- ★ 타일 2×2 바둑판 배치 -->
+  <div class="grid grid-cols-2 gap-2 mb-6 place-items-center grid-cards">
 
     <!-- SSID -->
     <div class="info-card">
@@ -156,7 +168,7 @@ body {
 
   </div>
 
-  <!-- ON / OFF / RESET 버튼 (동일 사이즈, 카드 폭과 맞춤) -->
+  <!-- ON / OFF / RESET -->
   <div class="flex justify-center gap-4 my-4">
 
     <button onclick="sendLED(1)"
