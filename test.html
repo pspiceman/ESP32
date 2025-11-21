@@ -25,8 +25,9 @@ body {
   font-family: Consolas, monospace;
   font-size: 1.0rem;
 
-  /* 위 카드와 동일한 폭을 갖도록 */
-  max-width: 420px;
+  /* ★ 타일과 폭 일치 */
+  width: 100%;
+  max-width: 500px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -36,7 +37,8 @@ body {
   font-size: 1rem;
   margin-top: 6px;
 
-  max-width: 420px;
+  width: 100%;
+  max-width: 500px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -48,13 +50,12 @@ body {
   border-radius: 14px;
   padding: 18px;
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
 
-  /* ★ 타일 폭 확대하여 글자 잘림 해결 */
+  /* ★ 타일 폭을 자동으로 화면에 맞춤 */
   width: 100%;
-  max-width: 420px;
-
+  max-width: 500px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -98,22 +99,25 @@ body {
 
   body { font-size: 26px; }
 
-  /* 2×2 타일이 스마트폰 화면에 꽉 차도록 */
+  /* ★ 타일을 휴대폰폭으로 꽉 채우고 간격 최소화 */
   .grid-cards {
     grid-template-columns: 1fr 1fr !important;
-    gap: 10px !important;
+    gap: 6px !important;
+    width: 100%;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .info-card {
     max-width: 100% !important;
+    gap: 10px !important;
   }
 
   .info-title { font-size: 1.6rem; }
   .info-value { font-size: 2.2rem; }
 
-  #logBox {
-    max-width: 100%;
-  }
+  #logBox { max-width: 100%; }
 }
 </style>
 </head>
@@ -127,8 +131,8 @@ body {
     ESP32 MQTT Dashboard
   </h1>
 
-  <!-- ★ 타일 2×2 바둑판 배치 -->
-  <div class="grid grid-cols-2 gap-2 mb-6 place-items-center grid-cards">
+  <!-- ★ 타일 2×2 배치 (여백 좁힘) -->
+  <div class="grid grid-cols-2 gap-1 mb-4 place-items-center grid-cards">
 
     <!-- SSID -->
     <div class="info-card">
@@ -168,7 +172,7 @@ body {
 
   </div>
 
-  <!-- ON / OFF / RESET -->
+  <!-- 버튼 -->
   <div class="flex justify-center gap-4 my-4">
 
     <button onclick="sendLED(1)"
