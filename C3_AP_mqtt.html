@@ -7,56 +7,101 @@
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
+body {
+  zoom: 1.05;
+}
 #logBox {
-  white-space: pre-wrap;
-  height: 220px;
+  white-space: pre-line;
+  height: 180px;
   background: #000;
   color: #0f0;
   padding: 10px;
   overflow-y: auto;
-  border: 1px solid #444;
+  border: 1px solid #333;
   font-family: Consolas, monospace;
   font-size: 0.85rem;
 }
-.value {
+.status-label {
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+.status-value {
   font-size: 1.6rem;
+  font-weight: 700;
+}
+.led-indicator {
+  font-size: 1.8rem;
   font-weight: bold;
-  padding: 10px;
-  text-align: center;
+  padding: 5px 12px;
+  border-radius: 8px;
 }
 </style>
 </head>
 
-<body class="bg-slate-900 text-slate-200">
+<body class="bg-slate-900 text-slate-100">
 
-<div class="max-w-2xl mx-auto py-10 px-4">
+<div class="max-w-xl mx-auto py-6 px-4">
 
-  <h1 class="text-3xl font-bold mb-6 text-center">ESP32 MQTT Status Dashboard</h1>
+  <h1 class="text-3xl font-bold mb-8 text-center">ESP32 MQTT Dashboard</h1>
 
-  <div class="value bg-slate-800 border border-slate-700 rounded-xl mb-6 p-4">
-    SSID: <span id="ssid">--</span><br>
-    RSSI: <span id="rssi">--</span> dBm<br>
-    IP: <span id="ip">--</span>
+  <!-- STATUS Box -->
+  <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 mb-6">
+    <div class="mb-3">
+      <span class="status-label">📶 SSID</span><br>
+      <span id="ssid" class="status-value">--</span>
+    </div>
+
+    <div class="mb-3">
+      <span class="status-label">📡 RSSI</span><br>
+      <span id="rssi" class="status-value">--</span> dBm
+    </div>
+
+    <div class="mb-3">
+      <span class="status-label">🌐 IP</span><br>
+      <span id="ip" class="status-value">--</span>
+    </div>
+
+    <div class="mt-4">
+      <span class="status-label">💡 LED 상태</span><br>
+      <span id="ledState" class="led-indicator bg-slate-700">--</span>
+    </div>
   </div>
 
-  <div class="flex justify-center space-x-4 mb-4">
-    <button onclick="sendLED(1)" class="bg-green-600 px-5 py-2 rounded">LED ON</button>
-    <button onclick="sendLED(0)" class="bg-yellow-600 px-5 py-2 rounded">LED OFF</button>
-    <button onclick="sendReset()" class="bg-red-600 px-5 py-2 rounded">Soft Reset</button>
+  <!-- BUTTONS (한 줄 배열 / 모바일 최적화) -->
+  <div class="grid grid-cols-3 gap-3 mb-6">
+
+    <button onclick="sendLED(1)"
+      class="bg-green-600 py-3 rounded-lg text-sm sm:text-lg font-bold">
+      LED<br>켜기
+    </button>
+
+    <button onclick="sendLED(0)"
+      class="bg-yellow-600 py-3 rounded-lg text-sm sm:text-lg font-bold">
+      LED<br>끄기
+    </button>
+
+    <button onclick="sendReset()"
+      class="bg-red-600 py-3 rounded-lg text-sm sm:text-lg font-bold">
+      Soft<br>Reset
+    </button>
+
   </div>
 
+  <!-- LOG BOX -->
   <div id="logBox">[LOG] Ready…</div>
 
 </div>
 
 <script>
-
+/* ---------------------------------------------------
+   MQTT Connect (HiveMQ Public Broker)
+--------------------------------------------------- */
 let brokerURL = "wss://broker.hivemq.com:8884/mqtt";
-let clientId = "esp32_webui_" + Math.random().toString(16).substr(2, 8);
+let clientId = "esp32_ui_" + Math.random().toString(16).substr(2, 8);
 let client = mqtt.connect(brokerURL, { clientId });
 
 function log(msg) {
-  let box = document.getElementById("logBox");
+  const box = document.getElementById("logBox");
   box.textContent += "\n" + msg;
   box.scrollTop = box.scrollHeight;
 }
@@ -70,14 +115,30 @@ client.on("connect", () => {
   client.subscribe("/esp32/log");
 });
 
+/* ---------------------------------------------------
+   MQTT On Message
+--------------------------------------------------- */
 client.on("message", (topic, payload) => {
-  let msg = payload.toString();
+  const msg = payload.toString();
 
   if (topic === "/esp32/status") {
     let j = JSON.parse(msg);
+
     ssid.innerText = j.ssid;
     rssi.innerText = j.rssi;
     ip.innerText = j.ip;
+
+    // LED 상태 업데이트
+    if (j.led == 1) {
+      ledState.innerText = "ON";
+      ledState.classList.remove("bg-slate-700");
+      ledState.classList.add("bg-green-600");
+    } else {
+      ledState.innerText = "OFF";
+      ledState.classList.remove("bg-green-600");
+      ledState.classList.add("bg-slate-700");
+    }
+
     log("[STATUS] " + msg);
   }
 
@@ -86,9 +147,12 @@ client.on("message", (topic, payload) => {
   }
 });
 
+/* ---------------------------------------------------
+   Publish Commands
+--------------------------------------------------- */
 function sendLED(v) {
   client.publish("/esp32/cmd/led", String(v));
-  log("[CMD] LED = " + v);
+  log("[CMD] LED=" + v);
 }
 
 function sendReset() {
@@ -97,5 +161,6 @@ function sendReset() {
 }
 
 </script>
+
 </body>
 </html>
