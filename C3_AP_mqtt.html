@@ -2,147 +2,110 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ESP32 Dashboard</title>
+<title>ESP32 MQTT Dashboard</title>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
-.valueBox { font-size: 1.8rem; font-weight: bold; text-align: center; }
 #logBox {
   white-space: pre-wrap;
-  height: 180px;
+  height: 220px;
   background: #000;
   color: #0f0;
   padding: 10px;
   overflow-y: auto;
+  border: 1px solid #444;
   font-family: Consolas, monospace;
-  font-size: 0.9rem;
-  border: 1px solid #333;
-  margin-top: 20px;
+  font-size: 0.85rem;
+}
+.value {
+  font-size: 1.6rem;
+  font-weight: bold;
+  padding: 10px;
 }
 </style>
 </head>
 
-<body class="bg-slate-900 text-slate-100">
+<body class="bg-slate-900 text-slate-200">
 
 <div class="max-w-2xl mx-auto py-10 px-4">
 
-  <h1 class="text-3xl font-bold mb-6 text-center">ESP32 STATUS</h1>
+  <h1 class="text-3xl font-bold mb-6 text-center">ESP32 MQTT Dashboard</h1>
 
-  <!-- SSID/RSSI/IP -->
-  <div class="valueBox bg-slate-800 border border-slate-700 rounded-xl mb-6 p-6">
+  <!-- Status -->
+  <div class="value bg-slate-800 border border-slate-600 rounded-xl text-center mb-6 p-4">
     SSID: <span id="ssid">--</span><br>
     RSSI: <span id="rssi">--</span> dBm<br>
-    IP  : <span id="ip">--</span>
+    IP: <span id="ip">--</span>
   </div>
 
-  <!-- Buttons -->
-  <div class="flex justify-center space-x-4">
+  <div class="flex justify-center space-x-4 mb-4">
     <button onclick="sendLED(1)" class="bg-green-600 px-5 py-2 rounded">LED ON</button>
     <button onclick="sendLED(0)" class="bg-yellow-600 px-5 py-2 rounded">LED OFF</button>
     <button onclick="sendReset()" class="bg-red-600 px-5 py-2 rounded">Soft Reset</button>
   </div>
 
-  <!-- Log Box -->
   <div id="logBox"></div>
-
-  <!-- Hidden iframe for Mixed Content bypass -->
-  <iframe id="proxyFrame" style="display:none;"></iframe>
 
 </div>
 
 <script>
-let espIP = null;
-let frame = document.getElementById("proxyFrame");
+/* ---------------------------------------------------
+   MQTT Connect (HiveMQ Broker)
+--------------------------------------------------- */
+let broker = "wss://broker.hivemq.com:8884/mqtt";
+let clientID = "esp32_webui_" + Math.random().toString(16).substr(2, 8);
+let client = mqtt.connect(broker, { clientId: clientID });
 
-/* Simple logger */
 function log(msg){
-  const box = document.getElementById("logBox");
+  let box = document.getElementById("logBox");
   box.textContent += msg + "\n";
   box.scrollTop = box.scrollHeight;
 }
 
-/* iframe fetch bypass */
-async function httpGet(url) {
-  return new Promise((resolve, reject) => {
-    frame.src = url;
-    frame.onload = () => resolve(true);
-    frame.onerror = () => reject(false);
-  });
-}
+log("[MQTT] Connecting...");
 
-/* ---------------- IP AUTO DETECT ---------------- */
-async function detectIP() {
-  let last = localStorage.getItem("esp32_last_ip");
-  if (last) {
-    espIP = last;
-    log("[IP] Loaded saved IP: " + espIP);
-    return;
+/* ---------------------------------------------------
+   MQTT On Connect
+--------------------------------------------------- */
+client.on("connect", function () {
+  log("[MQTT] Connected");
+
+  // Subscribe to ESP32 topics
+  client.subscribe("esp32/status");
+  client.subscribe("esp32/log");
+});
+
+/* ---------------------------------------------------
+   MQTT On Message
+--------------------------------------------------- */
+client.on("message", function (topic, msg) {
+  let data = msg.toString();
+
+  if (topic === "esp32/status") {
+    let obj = JSON.parse(data);
+    document.getElementById("ssid").innerText = obj.ssid;
+    document.getElementById("rssi").innerText = obj.rssi;
+    document.getElementById("ip").innerText = obj.ip;
   }
 
-  let scans = [
-    "192.168.0.255",
-    "192.168.1.255",
-    "192.168.31.255",
-    "192.168.10.255"
-  ];
-
-  for (let b of scans) {
-    try {
-      let url = "http://" + b + "/esp32-ip";
-      let r = await fetch(url);
-      let ip = await r.text();
-      if (ip.includes(".")) {
-        espIP = ip.trim();
-        localStorage.setItem("esp32_last_ip", espIP);
-        log("[IP FOUND] " + espIP);
-        return;
-      }
-    } catch(e){}
+  if (topic === "esp32/log") {
+    log("[ESP] " + data);
   }
+});
 
-  log("[ERROR] 자동 IP 탐지 실패");
-}
-
-/* ---------------- STATUS UPDATE ---------------- */
-async function updateStatus() {
-  if (!espIP) return;
-
-  try {
-    let r = await fetch(`http://${espIP}/status`);
-    let j = await r.json();
-
-    document.getElementById("ssid").innerText = j.ssid;
-    document.getElementById("rssi").innerText = j.rssi;
-    document.getElementById("ip").innerText = j.ip;
-
-    log(`[STATUS] SSID=${j.ssid} RSSI=${j.rssi} IP=${j.ip}`);
-  }
-  catch (e) {
-    log("[FAIL] 상태 읽기 실패");
-  }
-}
-
-/* ---------------- LED CONTROL ---------------- */
+/* ---------------------------------------------------
+   Publish Commands
+--------------------------------------------------- */
 function sendLED(v){
-  if (!espIP) return;
-  httpGet(`http://${espIP}/led?state=${v}`);
-  log("LED " + (v ? "ON" : "OFF"));
+  client.publish("esp32/cmd/led", v.toString());
+  log("[CMD] LED=" + v);
 }
 
-/* ---------------- RESET ---------------- */
 function sendReset(){
-  if (!espIP) return;
-  httpGet(`http://${espIP}/reset`);
-  log("[RESET] Soft reset sent");
+  client.publish("esp32/cmd/reset", "1");
+  log("[CMD] Reset sent");
 }
-
-/* INIT */
-window.onload = async () => {
-  await detectIP();
-  updateStatus();
-  setInterval(updateStatus, 3000);
-};
 </script>
 
 </body>
