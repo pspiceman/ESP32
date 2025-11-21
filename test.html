@@ -30,10 +30,7 @@ body { margin: 0; padding: 0; font-size: 20px; }
   gap: 16px;
   align-items: center;
   width: 100%;
-  max-width: 500px;
   height: 140px;
-  margin-left: auto;
-  margin-right: auto;
   box-shadow: 0 6px 18px rgba(0,0,0,0.35);
   transition: 0.25s ease;
 }
@@ -50,7 +47,6 @@ body { margin: 0; padding: 0; font-size: 20px; }
   font-size: 2rem;
   font-weight: 800;
   width: 100%;
-  max-width: 180px;
   text-align: center;
   color: white;
   box-shadow: 0 4px 14px rgba(0,0,0,0.25);
@@ -65,12 +61,16 @@ body { margin: 0; padding: 0; font-size: 20px; }
   border-radius: 18px;
   padding: 25px 20px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+  width: 100% !important;          /* ★ FULL WIDTH */
+  max-width: none !important;      /* ★ 화면폭 제한 제거 */
+  margin-left: 0;
+  margin-right: 0;
 }
 
-/* ----- 로그창 디자인 (확대 & 꾸밈) ----- */
+/* ----- 로그창 디자인 (FULL WIDTH) ----- */
 #logBox {
   white-space: pre-line;
-  height: 460px;            /* ★ 기존보다 2배 길게 */
+  height: 460px;
   background: #0a0f16;
   color: #33ff55;
   padding: 16px;
@@ -80,6 +80,8 @@ body { margin: 0; padding: 0; font-size: 20px; }
   box-shadow: inset 0 0 12px rgba(0,0,0,0.6);
   font-family: Consolas, monospace;
   font-size: 1.15rem;
+  width: 100% !important;          /* ★ FULL WIDTH */
+  max-width: none !important;
 }
 
 /* ----- 시계 ----- */
@@ -88,6 +90,8 @@ body { margin: 0; padding: 0; font-size: 20px; }
   color: #97a5b5;
   margin-top: 6px;
   font-size: 1rem;
+  width: 100% !important;
+  max-width: none !important;
 }
 
 /* ----- Day Mode ----- */
@@ -98,9 +102,9 @@ body { margin: 0; padding: 0; font-size: 20px; }
 
 /* ----- 모바일 최적화 ----- */
 @media (max-width: 480px) {
-  #mainTitle { font-size: 3.6rem !important; }
-  .info-card { height: 145px !important; }
-  .grid-cards { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+  #mainTitle { font-size: 3.4rem !important; }
+  .info-card { height: 150px !important; }
+  .grid-cards { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
 }
 </style>
 </head>
@@ -115,7 +119,7 @@ body { margin: 0; padding: 0; font-size: 20px; }
     <h1 id="mainTitle"
         class="font-extrabold absolute left-1/2 top-1/2
                -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-center"
-        style="font-size: clamp(3.0rem, 7vw, 5.5rem);">
+        style="font-size: clamp(3.0rem, 7vw, 5.0rem);">
         ESP32 MQTT 대시보드
     </h1>
 
@@ -126,7 +130,7 @@ body { margin: 0; padding: 0; font-size: 20px; }
 
   </div>
 
-  <!-- MQTT + 장비상태 표시 -->
+  <!-- MQTT + 장비상태 -->
   <div class="text-center mb-6 flex justify-center gap-10">
 
       <div>
@@ -145,10 +149,10 @@ body { margin: 0; padding: 0; font-size: 20px; }
 
   </div>
 
-  <!-- 정보 타일 4개 -->
-  <div class="grid grid-cols-2 gap-6 mb-6 place-items-center grid-cards">
+  <!-- 정보 타일 -->
+  <div class="grid grid-cols-2 gap-6 mb-6 place-items-center grid-cards w-full">
 
-    <div class="info-card">
+    <div class="info-card w-full">
       <div class="info-icon">📶</div>
       <div>
         <div class="info-title">SSID</div>
@@ -156,7 +160,7 @@ body { margin: 0; padding: 0; font-size: 20px; }
       </div>
     </div>
 
-    <div class="info-card">
+    <div class="info-card w-full">
       <div class="info-icon">📡</div>
       <div>
         <div class="info-title">RSSI</div>
@@ -164,7 +168,7 @@ body { margin: 0; padding: 0; font-size: 20px; }
       </div>
     </div>
 
-    <div class="info-card">
+    <div class="info-card w-full">
       <div class="info-icon">🌐</div>
       <div>
         <div class="info-title">IP</div>
@@ -172,7 +176,7 @@ body { margin: 0; padding: 0; font-size: 20px; }
       </div>
     </div>
 
-    <div class="info-card">
+    <div class="info-card w-full">
       <div class="info-icon">💡</div>
       <div>
         <div class="info-title">LED 상태</div>
@@ -182,11 +186,11 @@ body { margin: 0; padding: 0; font-size: 20px; }
 
   </div>
 
-  <!-- ★ 버튼 패널(ON/OFF/RESET 묶음) -->
-  <div class="w-full max-w-3xl mx-auto my-6">
-    <div class="button-panel">
+  <!-- ★ 버튼 패널 FULL WIDTH -->
+  <div class="w-full my-6">
+    <div class="button-panel w-full">
 
-      <div class="flex justify-center gap-10">
+      <div class="flex justify-around w-full gap-4">
         <button onclick="sendLED(1)" class="action-btn bg-green-600">ON</button>
         <button onclick="sendLED(0)" class="action-btn bg-yellow-500">OFF</button>
         <button onclick="sendReset()" class="action-btn bg-red-600">RESET</button>
@@ -196,8 +200,8 @@ body { margin: 0; padding: 0; font-size: 20px; }
   </div>
 
   <!-- 로그 -->
-  <div id="logBox">[LOG] Ready...</div>
-  <div id="timeBox">--:--:--</div>
+  <div id="logBox" class="w-full">[LOG] Ready...</div>
+  <div id="timeBox" class="w-full">--:--:--</div>
 
 </div>
 
@@ -213,7 +217,7 @@ function setMQTTStatus(ok) {
   mqttStatusText.innerText = ok ? "MQTT Connected" : "MQTT Disconnected";
 }
 
-/* 장비 상태 ONLINE/OFFLINE */
+/* 장비 상태 */
 function setDeviceStatus(ok) {
   deviceLed.className = "status-led " + (ok ? "led-connected" : "led-disconnected");
   deviceStatus.innerText = ok ? "ON LINE(장비상태)" : "OFF LINE(장비상태)";
@@ -225,7 +229,7 @@ function log(msg) {
   logBox.scrollTop = logBox.scrollHeight;
 }
 
-/* ESP32 상태 타이머 */
+/* ESP 상태 */
 let lastStatusTime = 0;
 
 client.on("connect", () => {
@@ -247,7 +251,7 @@ client.on("message", (topic, payload) => {
 
   if (topic === "/esp32/status") {
 
-    lastStatusTime = Date.now();  // ★ ESP 응답시간 기록
+    lastStatusTime = Date.now();
 
     let j = JSON.parse(msg);
     ssid.innerText = j.ssid;
@@ -274,17 +278,17 @@ function sendReset(){ client.publish("/esp32/cmd/reset","1"); }
 
 /* 시계 */
 setInterval(()=>{
-  timeBox.innerText = new Date().toLocaleString("ko-KR", {hour12:false});
-}, 1000);
+  timeBox.innerText = new Date().toLocaleString("ko-KR",{hour12:false});
+},1000);
 
-/* ★ 장비 OFFLINE 판정 (6초 이상 응답 없음) */
+/* OFFLINE 판정 */
 setInterval(()=>{
   if (Date.now() - lastStatusTime > 6000){
     setDeviceStatus(false);
   }
-}, 2000);
+},2000);
 
-/* 🌙/☀️ 테마 토글 */
+/* 테마 토글 */
 const themeToggle = document.getElementById("themeToggle");
 
 if (localStorage.getItem("esp_theme") === "day") {
