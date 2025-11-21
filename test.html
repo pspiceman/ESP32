@@ -114,23 +114,27 @@ body { margin: 0; padding: 0; font-size: 20px; }
 <div class="w-full mx-auto py-4 px-4">
 
   <!-- 🔥 제목 중앙 + 테마 토글 같은 라인 -->
-  <div class="relative mb-6 px-2 h-16 flex items-center">
+  
+<!-- 제목 + 테마 버튼 (센터 정렬 적용) -->
+<div class="w-full flex justify-center items-center mb-6 relative">
 
+    <!-- 제목 -->
     <h1 id="mainTitle"
-        class="font-extrabold absolute left-1/2 top-1/2
-               -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-center"
-        style="font-size: clamp(3.0rem, 7vw, 5.0rem);">
+        class="font-extrabold text-center"
+        style="font-size: clamp(2.6rem, 6vw, 4.3rem);">
         ESP32 MQTT 대시보드
     </h1>
 
+    <!-- 테마 토글 버튼 -->
     <div id="themeToggle"
-         class="text-4xl cursor-pointer select-none hover:scale-110 transition ml-auto">
+         class="text-4xl cursor-pointer select-none hover:scale-110 transition absolute right-4">
          🌙
     </div>
 
-  </div>
+</div>
 
-  <!-- MQTT + 장비상태 -->
+<!-- MQTT
+ + 장비상태 -->
   <div class="text-center mb-6 flex justify-center gap-10">
 
       <div>
