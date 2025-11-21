@@ -14,15 +14,13 @@ body {
 }
 
 /* ===== 애니메이션 ===== */
-.fade-in {
-  animation: fadein 0.7s ease-out;
-}
+.fade-in { animation: fadein 0.7s ease-out; }
 @keyframes fadein {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ===== MQTT 연결 LED ===== */
+/* ===== LED 표시 ===== */
 .status-led {
   display: inline-block;
   width: 18px;
@@ -43,15 +41,12 @@ body {
   overflow-y: auto;
   border: 1px solid #333;
   font-family: Consolas, monospace;
-
-  width: 100% !important;
 }
 #timeBox {
   text-align: right;
   color: #aaa;
   font-size: 1rem;
   margin-top: 6px;
-  width: 100% !important;
 }
 
 /* ===== 타일 카드 ===== */
@@ -68,30 +63,17 @@ body {
   max-width: 500px;
   margin-left: auto;
   margin-right: auto;
-
-  /* 그림자 */
   box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-
-  /* hover 효과 */
-  transition: transform 0.20s ease, background 0.20s ease;
+  transition: transform 0.2s ease, background 0.2s ease;
 }
 .info-card:hover {
-  transform: scale(1.04);
+  transform: scale(1.05);
   background: #2b3f52;
 }
 
-.info-icon {
-  font-size: 3.3rem;
-}
-
-.info-title {
-  font-size: 1.7rem;
-  font-weight: 700;
-}
-.info-value {
-  font-size: 2.5rem;
-  font-weight: 900;
-}
+.info-icon { font-size: 3.3rem; }
+.info-title { font-size: 1.7rem; font-weight: 700; }
+.info-value { font-size: 2.5rem; font-weight: 900; }
 
 /* ===== 버튼 ===== */
 .action-btn {
@@ -102,40 +84,20 @@ body {
   text-align: center;
   width: 100%;
   max-width: 180px;
-  color: #fff;
+  color: white;
   box-shadow: 0 4px 14px rgba(0,0,0,0.25);
   transition: transform 0.15s ease;
 }
-.action-btn:active {
-  transform: scale(0.92);
-}
+.action-btn:active { transform: scale(0.92); }
 
-/* ===== 모바일 최적화 ===== */
+/* ===== 모바일 ===== */
 @media (max-width: 480px) {
-
-  /* 제목 조정 */
-  .title-text { font-size: 3.5rem !important; }
-
-  /* 타일 2×2 균형 */
-  .grid-cards {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 16px !important;
-  }
-
-  /* 타일 및 내용 확대 */
-  .info-card {
-    max-width: 100%;
-    height: 140px;
-  }
-
+  .title-text { font-size: 3.7rem !important; }
+  .grid-cards { grid-template-columns: 1fr 1fr !important; gap: 16px !important; }
+  .info-card { height: 140px; }
   .info-title { font-size: 1.9rem; }
   .info-value { font-size: 2.6rem; }
   .info-icon { font-size: 3.7rem; }
-
-  /* 버튼 간격 */
-  .button-row {
-    gap: 40px !important;
-  }
 }
 </style>
 </head>
@@ -149,20 +111,20 @@ body {
     ESP32 MQTT Dashboard
   </h1>
 
-  <!-- ===== MQTT + 장비 상태 ===== -->
-  <div class="text-center mb-6 fade-in flex justify-center gap-6">
+  <!-- ===== MQTT 상태 표시 ===== -->
+  <div class="text-center mb-3 fade-in flex justify-center gap-3">
+      <span id="mqttLed" class="status-led led-disconnected"></span>
+      <span id="mqttStatusText" class="text-xl font-bold">
+         MQTT Disconnected
+      </span>
+  </div>
 
-      <!-- MQTT 상태 -->
-      <div>
-          <span id="mqttLed" class="status-led led-disconnected"></span>
-          <span id="mqttStatusText" class="text-xl">MQTT Disconnected</span>
-      </div>
-
-      <!-- 장비 상태 -->
-      <div>
-          <span id="deviceLed" class="status-led led-disconnected"></span>
-          <span id="deviceStatus" class="text-xl">OFF LINE</span>
-      </div>
+  <!-- ===== 장비 상태 (제목 바로 아래에 추가) ===== -->
+  <div class="text-center mb-6 fade-in flex justify-center gap-3">
+      <span id="deviceLed" class="status-led led-disconnected"></span>
+      <span id="deviceStatus" class="text-3xl font-extrabold">
+         OFF LINE
+      </span>
   </div>
 
   <!-- ===== 타일 4개 ===== -->
@@ -222,7 +184,7 @@ body {
 
   </div>
 
-  <!-- ===== 로그 ===== -->
+  <!-- ===== LOG ===== -->
   <div id="logBox" class="fade-in">[LOG] Ready…</div>
   <div id="timeBox">--:--:--</div>
 
@@ -235,6 +197,7 @@ let client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt", {
   clientId: "espui_" + Math.random().toString(16).substr(2, 8)
 });
 
+/* MQTT 상태 표시 */
 function setMQTTStatus(connected) {
   const led = document.getElementById("mqttLed");
   const txt = document.getElementById("mqttStatusText");
@@ -248,6 +211,7 @@ function setMQTTStatus(connected) {
   }
 }
 
+/* 장비 상태 표시 */
 function setDeviceStatus(connected) {
   const led = document.getElementById("deviceLed");
   const txt = document.getElementById("deviceStatus");
@@ -293,7 +257,8 @@ client.on("message", (topic, payload) => {
     ip.innerText = j.ip;
 
     ledState.innerHTML =
-      j.led == 1 ? "<span class='led-on'>ON</span>" : "<span class='led-off'>OFF</span>";
+      j.led == 1 ? "<span class='text-green-400 font-extrabold'>ON</span>"
+                 : "<span class='text-red-400 font-extrabold'>OFF</span>";
 
     log("[STATUS] " + msg);
   }
@@ -301,7 +266,7 @@ client.on("message", (topic, payload) => {
   if (topic === "/esp32/log") log("[ESP] " + msg);
 });
 
-/* ================== 버튼 제어 ================== */
+/* ================== 버튼 ================== */
 function sendLED(v) {
   client.publish("/esp32/cmd/led", String(v));
   log("[CMD] LED=" + v);
