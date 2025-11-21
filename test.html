@@ -2,13 +2,14 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>ESP32 MQTT Dashboard</title>
+<title>ESP32 MQTT 대시보드</title>
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
 body { margin: 0; padding: 0; font-size: 20px; }
 
+/* LED 표시 */
 .status-led {
   display: inline-block;
   width: 18px;
@@ -19,10 +20,11 @@ body { margin: 0; padding: 0; font-size: 20px; }
 .led-connected { background: #22c55e; }
 .led-disconnected { background: #ef4444; }
 
+/* 타일 카드 */
 .info-card {
   background: #1e293b;
   border: 1px solid #334155;
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 20px;
   display: flex;
   gap: 16px;
@@ -35,12 +37,15 @@ body { margin: 0; padding: 0; font-size: 20px; }
   box-shadow: 0 6px 18px rgba(0,0,0,0.35);
   transition: 0.2s ease;
 }
-.info-card:hover { transform: scale(1.05); background: #2b3f52; }
-
+.info-card:hover {
+  transform: scale(1.05);
+  background: #2b3f52;
+}
 .info-icon { font-size: 3.3rem; }
 .info-title { font-size: 1.7rem; font-weight: 700; }
 .info-value { font-size: 2.5rem; font-weight: 900; }
 
+/* 버튼 */
 .action-btn {
   padding: 18px 28px;
   border-radius: 16px;
@@ -48,15 +53,17 @@ body { margin: 0; padding: 0; font-size: 20px; }
   font-weight: 900;
   width: 100%;
   max-width: 180px;
+  text-align: center;
   color: white;
   box-shadow: 0 4px 14px rgba(0,0,0,0.25);
   transition: 0.15s ease;
 }
 .action-btn:active { transform: scale(0.92); }
 
+/* 로그 창 */
 #logBox {
   white-space: pre-line;
-  height: 220px;
+  height: 230px;
   background: #000;
   color: #0f0;
   padding: 12px;
@@ -65,28 +72,66 @@ body { margin: 0; padding: 0; font-size: 20px; }
   font-family: Consolas, monospace;
 }
 
+/* 시계 */
 #timeBox {
   text-align: right;
   color: #aaa;
   font-size: 1rem;
   margin-top: 6px;
 }
+
+/* Day Mode */
+.day body {
+  background: #f4f4f7 !important;
+  color: #1e293b !important;
+}
+.day .info-card {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+}
+.day #logBox {
+  background: #ffffff !important;
+  color: #000 !important;
+  border-color: #cbd5e1 !important;
+}
+.day .action-btn {
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15) !important;
+}
+
+/* 모바일 */
+@media (max-width: 480px) {
+  .title-text { font-size: 3.2rem !important; }
+  .grid-cards { grid-template-columns: 1fr 1fr !important; gap: 14px !important; }
+  .info-card { height: 135px !important; }
+}
 </style>
 </head>
 
 <body class="bg-slate-900 text-slate-100">
-
 <div class="w-full mx-auto py-4 px-4">
 
-  <!-- 제목 -->
-  <h1 class="text-5xl font-extrabold mb-4 text-center">
-    ESP32 MQTT Dashboard
-  </h1>
+  <!-- ★ 제목 중앙 정렬 + 토글 같은 줄 -->
+  <div class="relative mb-6 px-2 h-14 flex items-center">
 
-  <!-- MQTT + 장비상태 (같은 줄) -->
+    <!-- 중앙 제목 -->
+    <h1 id="mainTitle"
+        class="text-5xl title-text font-extrabold absolute left-1/2 top-1/2
+               -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-center">
+        ESP32 MQTT 대시보드
+    </h1>
+
+    <!-- 오른쪽 해/달 -->
+    <div id="themeToggle"
+         class="text-4xl cursor-pointer select-none hover:scale-110 transition ml-auto">
+         🌙
+    </div>
+
+  </div>
+
+  <!-- MQTT + 장비 상태 -->
   <div class="text-center mb-6 flex justify-center gap-10">
 
-      <!-- MQTT 상태 -->
       <div>
           <span id="mqttLed" class="status-led led-disconnected"></span>
           <span id="mqttStatusText" class="text-2xl font-extrabold">
@@ -94,7 +139,6 @@ body { margin: 0; padding: 0; font-size: 20px; }
           </span>
       </div>
 
-      <!-- 장비 상태 -->
       <div>
           <span id="deviceLed" class="status-led led-disconnected"></span>
           <span id="deviceStatus" class="text-2xl font-extrabold">
@@ -104,8 +148,8 @@ body { margin: 0; padding: 0; font-size: 20px; }
 
   </div>
 
-  <!-- 타일 4개 -->
-  <div class="grid grid-cols-2 gap-6 mb-6 place-items-center">
+  <!-- 4개 타일 -->
+  <div class="grid grid-cols-2 gap-6 mb-6 place-items-center grid-cards">
 
     <div class="info-card">
       <div class="info-icon">📶</div>
@@ -149,54 +193,40 @@ body { margin: 0; padding: 0; font-size: 20px; }
   </div>
 
   <!-- 로그 -->
-  <div id="logBox">[LOG] Ready…</div>
+  <div id="logBox">[LOG] Ready...</div>
   <div id="timeBox">--:--:--</div>
 
 </div>
 
 <script>
-
-// MQTT 연결
+/* MQTT 연결 */
 let client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt", {
-  clientId: "espui_" + Math.random().toString(16).substr(2, 8)
+  clientId: "espui_" + Math.random().toString(16).substr(2,8)
 });
 
-// MQTT 상태 LED + 텍스트
-function setMQTTStatus(connected) {
-  const led = document.getElementById("mqttLed");
-  const txt = document.getElementById("mqttStatusText");
-  if (connected) {
-    led.className = "status-led led-connected";
-    txt.innerText = "MQTT Connected";
-  } else {
-    led.className = "status-led led-disconnected";
-    txt.innerText = "MQTT Disconnected";
-  }
+/* MQTT 상태 표시 */
+function setMQTTStatus(ok) {
+  mqttLed.className = "status-led " + (ok ? "led-connected" : "led-disconnected");
+  mqttStatusText.innerText = ok ? "MQTT Connected" : "MQTT Disconnected";
 }
 
-// 장비 상태 (장비 연결 여부)
-function setDeviceStatus(connected) {
-  const led = document.getElementById("deviceLed");
-  const txt = document.getElementById("deviceStatus");
-
-  if (connected) {
-    led.className = "status-led led-connected";
-    txt.innerText = "ON LINE(장비상태)";
-  } else {
-    led.className = "status-led led-disconnected";
-    txt.innerText = "OFF LINE(장비상태)";
-  }
+/* 장비 실제 ONLINE 여부 */
+function setDeviceStatus(ok) {
+  deviceLed.className = "status-led " + (ok ? "led-connected" : "led-disconnected");
+  deviceStatus.innerText = ok ? "ON LINE(장비상태)" : "OFF LINE(장비상태)";
 }
 
 function log(msg) {
-  const box = document.getElementById("logBox");
-  box.textContent += "\n" + msg;
-  box.scrollTop = box.scrollHeight;
+  logBox.textContent += "\n" + msg;
+  logBox.scrollTop = logBox.scrollHeight;
 }
 
+/* 마지막 상태 메시지 시간 기록 */
+let lastStatusTime = 0;
+
+/* MQTT 이벤트 */
 client.on("connect", () => {
   setMQTTStatus(true);
-  setDeviceStatus(true);
   log("[MQTT] Connected");
   client.subscribe("/esp32/status");
   client.subscribe("/esp32/log");
@@ -204,24 +234,26 @@ client.on("connect", () => {
 
 client.on("close", () => {
   setMQTTStatus(false);
-  setDeviceStatus(false);
   log("[MQTT] Disconnected");
 });
 
-// MQTT 메시지 처리
+/* MQTT 메시지 처리 */
 client.on("message", (topic, payload) => {
   const msg = payload.toString();
 
   if (topic === "/esp32/status") {
+    lastStatusTime = Date.now();   // ★ 장비에서 온 마지막 메시지 시간 기록
     let j = JSON.parse(msg);
 
     ssid.innerText = j.ssid;
     rssi.innerText = j.rssi + " dBm";
     ip.innerText = j.ip;
 
-    ledState.innerHTML =
-      j.led == 1 ? "<span class='text-green-400 font-extrabold'>ON</span>"
-                 : "<span class='text-red-400 font-extrabold'>OFF</span>";
+    ledState.innerHTML = j.led == 1
+      ? "<span class='text-green-400 font-extrabold'>ON</span>"
+      : "<span class='text-red-400 font-extrabold'>OFF</span>";
+
+    setDeviceStatus(true);  // 메시지 들어오면 ONLINE
 
     log("[STATUS] " + msg);
   }
@@ -229,23 +261,37 @@ client.on("message", (topic, payload) => {
   if (topic === "/esp32/log") log("[ESP] " + msg);
 });
 
-// LED 제어
-function sendLED(v) {
-  client.publish("/esp32/cmd/led", String(v));
-  log("[CMD] LED=" + v);
-}
+/* LED 제어 */
+function sendLED(v){ client.publish("/esp32/cmd/led", String(v)); }
 
-// RESET 명령
-function sendReset() {
-  client.publish("/esp32/cmd/reset", "1");
-  log("[CMD] RESET");
-}
+/* RESET */
+function sendReset(){ client.publish("/esp32/cmd/reset", "1"); }
 
-// 시간 표시
-setInterval(() => {
-  timeBox.innerText = new Date().toLocaleString("ko-KR", { hour12: false });
+/* 시간 표시 */
+setInterval(()=>{
+  timeBox.innerText = new Date().toLocaleString("ko-KR",{hour12:false});
 }, 1000);
 
+/* ★ 장비 상태 OFFLINE 판정 (6초 이상 무응답 시 OFFLINE) */
+setInterval(() => {
+  if (Date.now() - lastStatusTime > 6000) {
+    setDeviceStatus(false);
+  }
+}, 2000);
+
+/* 🌙/☀️ 테마 토글 */
+const themeToggle = document.getElementById("themeToggle");
+
+if (localStorage.getItem("esp_theme") === "day") {
+    document.documentElement.classList.add("day");
+    themeToggle.textContent = "☀️";
+}
+
+themeToggle.addEventListener("click", () => {
+    const isDay = document.documentElement.classList.toggle("day");
+    themeToggle.textContent = isDay ? "☀️" : "🌙";
+    localStorage.setItem("esp_theme", isDay ? "day" : "night");
+});
 </script>
 
 </body>
