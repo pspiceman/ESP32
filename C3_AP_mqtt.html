@@ -22,6 +22,7 @@
   font-size: 1.6rem;
   font-weight: bold;
   padding: 10px;
+  text-align: center;
 }
 </style>
 </head>
@@ -30,10 +31,9 @@
 
 <div class="max-w-2xl mx-auto py-10 px-4">
 
-  <h1 class="text-3xl font-bold mb-6 text-center">ESP32 MQTT Dashboard</h1>
+  <h1 class="text-3xl font-bold mb-6 text-center">ESP32 MQTT Status Dashboard</h1>
 
-  <!-- Status -->
-  <div class="value bg-slate-800 border border-slate-600 rounded-xl text-center mb-6 p-4">
+  <div class="value bg-slate-800 border border-slate-700 rounded-xl mb-6 p-4">
     SSID: <span id="ssid">--</span><br>
     RSSI: <span id="rssi">--</span> dBm<br>
     IP: <span id="ip">--</span>
@@ -45,68 +45,57 @@
     <button onclick="sendReset()" class="bg-red-600 px-5 py-2 rounded">Soft Reset</button>
   </div>
 
-  <div id="logBox"></div>
+  <div id="logBox">[LOG] Ready…</div>
 
 </div>
 
 <script>
-/* ---------------------------------------------------
-   MQTT Connect (HiveMQ Broker)
---------------------------------------------------- */
-let broker = "wss://broker.hivemq.com:8884/mqtt";
-let clientID = "esp32_webui_" + Math.random().toString(16).substr(2, 8);
-let client = mqtt.connect(broker, { clientId: clientID });
 
-function log(msg){
+let brokerURL = "wss://broker.hivemq.com:8884/mqtt";
+let clientId = "esp32_webui_" + Math.random().toString(16).substr(2, 8);
+let client = mqtt.connect(brokerURL, { clientId });
+
+function log(msg) {
   let box = document.getElementById("logBox");
-  box.textContent += msg + "\n";
+  box.textContent += "\n" + msg;
   box.scrollTop = box.scrollHeight;
 }
 
 log("[MQTT] Connecting...");
 
-/* ---------------------------------------------------
-   MQTT On Connect
---------------------------------------------------- */
-client.on("connect", function () {
+client.on("connect", () => {
   log("[MQTT] Connected");
 
-  // Subscribe to ESP32 topics
-  client.subscribe("esp32/status");
-  client.subscribe("esp32/log");
+  client.subscribe("/esp32/status");
+  client.subscribe("/esp32/log");
 });
 
-/* ---------------------------------------------------
-   MQTT On Message
---------------------------------------------------- */
-client.on("message", function (topic, msg) {
-  let data = msg.toString();
+client.on("message", (topic, payload) => {
+  let msg = payload.toString();
 
-  if (topic === "esp32/status") {
-    let obj = JSON.parse(data);
-    document.getElementById("ssid").innerText = obj.ssid;
-    document.getElementById("rssi").innerText = obj.rssi;
-    document.getElementById("ip").innerText = obj.ip;
+  if (topic === "/esp32/status") {
+    let j = JSON.parse(msg);
+    ssid.innerText = j.ssid;
+    rssi.innerText = j.rssi;
+    ip.innerText = j.ip;
+    log("[STATUS] " + msg);
   }
 
-  if (topic === "esp32/log") {
-    log("[ESP] " + data);
+  if (topic === "/esp32/log") {
+    log("[ESP] " + msg);
   }
 });
 
-/* ---------------------------------------------------
-   Publish Commands
---------------------------------------------------- */
-function sendLED(v){
-  client.publish("esp32/cmd/led", v.toString());
-  log("[CMD] LED=" + v);
+function sendLED(v) {
+  client.publish("/esp32/cmd/led", String(v));
+  log("[CMD] LED = " + v);
 }
 
-function sendReset(){
-  client.publish("esp32/cmd/reset", "1");
-  log("[CMD] Reset sent");
+function sendReset() {
+  client.publish("/esp32/cmd/reset", "1");
+  log("[CMD] RESET");
 }
+
 </script>
-
 </body>
 </html>
