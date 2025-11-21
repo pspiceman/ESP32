@@ -10,71 +10,73 @@
 body {
   margin: 0;
   padding: 0;
+  font-size: 20px; /* 전체 기본 폰트 크게 */
 }
 #logBox {
   white-space: pre-line;
-  height: 190px;
+  height: 200px;
   background: #000;
   color: #0f0;
-  padding: 10px;
+  padding: 12px;
   overflow-y: auto;
   border: 1px solid #333;
   font-family: Consolas, monospace;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 #timeBox {
   text-align: right;
   color: #aaa;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   margin-top: 4px;
 }
 
-/* Info row */
+/* Info section */
 .info-row {
   display: grid;
-  grid-template-columns: 48px auto;
+  grid-template-columns: 50px auto;
   align-items: center;
   gap: 12px;
   background: #1e293b;
-  padding: 14px 16px;
+  padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid #334155;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .info-title {
-  font-size: 1.25rem;
+  font-size: 1.35rem;  /* 제목 더 크게 */
   font-weight: 700;
 }
 
 .info-value {
-  font-size: 1.7rem;
-  font-weight: 800;
+  font-size: 1.95rem; /* 값(SSID, RSSI, IP) 크게 표시 */
+  font-weight: 900;
   margin-top: 4px;
 }
 
 .led-on {
   display: inline-block;
-  padding: 6px 20px;
+  padding: 8px 22px;
   background: #22c55e;
   color: white;
   border-radius: 10px;
-  font-size: 1.3rem;
-  font-weight: 800;
+  font-size: 1.6rem;
+  font-weight: 900;
 }
 
 .led-off {
   display: inline-block;
-  padding: 6px 20px;
+  padding: 8px 22px;
   background: #ef4444;
   color: white;
   border-radius: 10px;
-  font-size: 1.3rem;
-  font-weight: 800;
+  font-size: 1.6rem;
+  font-weight: 900;
 }
 
 button {
   width: 100%;
+  font-size: 1.3rem;
 }
 </style>
 </head>
@@ -83,7 +85,9 @@ button {
 
 <div class="w-full mx-auto py-4 px-4">
 
-  <h1 class="text-3xl font-extrabold mb-6 text-center">ESP32 MQTT Dashboard</h1>
+  <h1 class="text-3xl font-extrabold mb-6 text-center tracking-wide">
+    ESP32 MQTT Dashboard
+  </h1>
 
   <!-- SSID -->
   <div class="info-row">
@@ -121,21 +125,21 @@ button {
     </div>
   </div>
 
-  <!-- BUTTONS (축소 + 확대 + 가독성↑) -->
-  <div class="grid grid-cols-3 gap-4 my-6 px-2">
+  <!-- BUTTONS: 더 커짐 + 가독성 강화 -->
+  <div class="grid grid-cols-3 gap-4 my-6 px-1">
 
     <button onclick="sendLED(1)"
-      class="bg-green-600 py-5 rounded-xl text-xl font-extrabold shadow-xl active:scale-95 transition">
+      class="bg-green-600 py-5 rounded-xl text-2xl font-extrabold shadow-xl active:scale-95 transition">
       LED<br>ON
     </button>
 
     <button onclick="sendLED(0)"
-      class="bg-yellow-500 py-5 rounded-xl text-xl font-extrabold shadow-xl active:scale-95 transition">
+      class="bg-yellow-500 py-5 rounded-xl text-2xl font-extrabold shadow-xl active:scale-95 transition">
       LED<br>OFF
     </button>
 
     <button onclick="sendReset()"
-      class="bg-red-600 py-5 rounded-xl text-xl font-extrabold shadow-xl active:scale-95 transition">
+      class="bg-red-600 py-5 rounded-xl text-2xl font-extrabold shadow-xl active:scale-95 transition">
       RESET
     </button>
 
@@ -170,7 +174,7 @@ client.on("connect", () => {
 });
 
 /* ---------------------------------------------------
-   MQTT message
+   MQTT STATUS
 --------------------------------------------------- */
 client.on("message", (topic, payload) => {
   const msg = payload.toString();
