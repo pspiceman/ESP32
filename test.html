@@ -9,103 +9,80 @@
 <style>
 body { margin: 0; padding: 0; font-size: 20px; }
 
-/* ----- 상태 LED ----- */
+/* 상태 원형 LED */
 .status-led {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  margin-right: 6px;
+  display: inline-block; width:20px; height:20px;
+  border-radius: 50%; margin-right: 6px;
 }
-.led-connected { background: #22c55e; }
-.led-disconnected { background: #ef4444; }
+.led-connected { background:#22c55e; }
+.led-disconnected { background:#ef4444; }
 
-/* ----- 정보 타일 ----- */
+/* GPIO indicator */
+.gpio-item{
+  display:flex; justify-content:space-between;
+  padding:10px 15px; border-bottom:1px solid #334155;
+  font-size:1.3rem;
+}
+.gpio-icon{
+  font-size:1.6rem;
+  font-weight:900;
+}
+
+/* 정보 카드 */
 .info-card {
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 18px;
-  padding: 20px;
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  width: 100%;
-  height: 140px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-  transition: 0.25s ease;
+  background:#1e293b; border:1px solid #334155; border-radius:18px;
+  padding:20px; display:flex; gap:16px; align-items:center;
+  width:100%; height:140px;
+  box-shadow:0 6px 18px rgba(0,0,0,0.35);
+  transition:0.25s ease;
 }
-.info-card:hover { transform: scale(1.04); background: #2b3f52; }
+.info-card:hover{ transform:scale(1.04); background:#2b3f52; }
 
-.info-icon { font-size: 3.4rem; }
-.info-title { font-size: 1.6rem; font-weight: 700; }
-.info-value { font-size: 2.4rem; font-weight: 900; }
+.info-icon{ font-size:3.4rem; }
+.info-title{ font-size:1.6rem; font-weight:700; }
+.info-value{ font-size:2.4rem; font-weight:900; }
 
-/* ----- 버튼 ----- */
+/* 버튼 */
 .action-btn {
-  padding: 18px 30px;
-  border-radius: 16px;
-  font-size: 2rem;
-  font-weight: 800;
-  width: 100%;
-  text-align: center;
-  color: white;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-  transition: 0.15s ease;
+  padding:18px 30px; border-radius:16px;
+  font-size:2rem; font-weight:800; width:100%;
+  color:white; text-align:center;
+  box-shadow:0 4px 14px rgba(0,0,0,0.25);
+  transition:0.15s ease;
 }
-.action-btn:active { transform: scale(0.92); }
+.action-btn:active{ transform:scale(0.92); }
 
-/* ----- 버튼 패널 ----- */
+/* 버튼 그룹 */
 .button-panel {
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 18px;
-  padding: 25px 20px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.35);
-  width: 100% !important;          /* ★ FULL WIDTH */
-  max-width: none !important;      /* ★ 화면폭 제한 제거 */
-  margin-left: 0;
-  margin-right: 0;
+  background:#1e293b; border:1px solid #334155; border-radius:18px;
+  padding:25px 20px; width:100%!important;
+  box-shadow:0 8px 20px rgba(0,0,0,0.35);
 }
 
-/* ----- 로그창 디자인 (FULL WIDTH) ----- */
-#logBox {
-  white-space: pre-line;
-  height: 460px;
-  background: #0a0f16;
-  color: #33ff55;
-  padding: 16px;
-  overflow-y: auto;
-  border-radius: 14px;
-  border: 1px solid #223344;
-  box-shadow: inset 0 0 12px rgba(0,0,0,0.6);
-  font-family: Consolas, monospace;
-  font-size: 1.15rem;
-  width: 100% !important;          /* ★ FULL WIDTH */
-  max-width: none !important;
+/* GPIO 박스 */
+.gpio-panel{
+  background:#1e293b; border:1px solid #334155; border-radius:18px;
+  padding:20px 20px; margin-top:25px;
+  box-shadow:0 8px 20px rgba(0,0,0,0.3);
 }
 
-/* ----- 시계 ----- */
-#timeBox {
-  text-align: right;
-  color: #97a5b5;
-  margin-top: 6px;
-  font-size: 1rem;
-  width: 100% !important;
-  max-width: none !important;
+/* 로그창 */
+#logBox{
+  white-space:pre-line; height:460px; background:#0a0f16;
+  color:#33ff55; padding:16px; overflow-y:auto;
+  border-radius:14px; border:1px solid #223344;
+  box-shadow:inset0 0 12px rgba(0,0,0,0.6);
+  font-family:Consolas, monospace; font-size:1.15rem;
 }
 
-/* ----- Day Mode ----- */
-.day body { background: #f4f5f7 !important; color: #1e293b !important; }
-.day .info-card { background: white !important; border-color: #cbd5e1 !important; }
-.day #logBox { background: white !important; color: black !important; border-color: #cbd5e1 !important; }
-.day .button-panel { background: #ffffff !important; border-color: #cbd5e1 !important; }
+#timeBox{ text-align:right; color:#97a5b5; margin-top:6px; font-size:1rem; }
 
-/* ----- 모바일 최적화 ----- */
-@media (max-width: 480px) {
-  #mainTitle { font-size: 3.4rem !important; }
-  .info-card { height: 150px !important; }
-  .grid-cards { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+/* 모바일 */
+@media (max-width:480px){
+  #mainTitle{ font-size:3.4rem !important; }
+  .info-card{ height:150px !important; }
 }
+
 </style>
 </head>
 
@@ -113,48 +90,34 @@ body { margin: 0; padding: 0; font-size: 20px; }
 
 <div class="w-full mx-auto py-4 px-4">
 
-  <!-- 🔥 제목 중앙 + 테마 토글 같은 라인 -->
-  
-<!-- 제목 + 테마 버튼 (센터 정렬 적용) -->
-<div class="w-full flex justify-center items-center mb-6 relative">
-
-    <!-- 제목 -->
+  <!-- 타이틀 -->
+  <div class="relative mb-6 px-2 h-16 flex items-center">
     <h1 id="mainTitle"
-        class="font-extrabold text-center"
-        style="font-size: clamp(2.6rem, 6vw, 4.3rem);">
+        class="font-extrabold absolute left-1/2 top-1/2
+               -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-center"
+        style="font-size: clamp(3.0rem, 7vw, 5.0rem);">
         ESP32 MQTT 대시보드
     </h1>
-
-    <!-- 테마 토글 버튼 -->
     <div id="themeToggle"
-         class="text-4xl cursor-pointer select-none hover:scale-110 transition absolute right-4">
+         class="text-4xl cursor-pointer select-none hover:scale-110 transition ml-auto">
          🌙
     </div>
-
-</div>
-
-<!-- MQTT
- + 장비상태 -->
-  <div class="text-center mb-6 flex justify-center gap-10">
-
-      <div>
-          <span id="mqttLed" class="status-led led-disconnected"></span>
-          <span id="mqttStatusText" class="text-2xl font-extrabold">
-              MQTT Disconnected
-          </span>
-      </div>
-
-      <div>
-          <span id="deviceLed" class="status-led led-disconnected"></span>
-          <span id="deviceStatus" class="text-2xl font-extrabold">
-              OFF LINE(장비상태)
-          </span>
-      </div>
-
   </div>
 
-  <!-- 정보 타일 -->
-  <div class="grid grid-cols-2 gap-6 mb-6 place-items-center grid-cards w-full">
+  <!-- MQTT + 장비 상태 -->
+  <div class="text-center mb-6 flex justify-center gap-10">
+      <div>
+          <span id="mqttLed" class="status-led led-disconnected"></span>
+          <span id="mqttStatusText" class="text-2xl font-extrabold">MQTT Disconnected</span>
+      </div>
+      <div>
+          <span id="deviceLed" class="status-led led-disconnected"></span>
+          <span id="deviceStatus" class="text-2xl font-extrabold">OFF LINE(장비상태)</span>
+      </div>
+  </div>
+
+  <!-- 정보 카드 -->
+  <div class="grid grid-cols-2 gap-6 mb-6 place-items-center">
 
     <div class="info-card w-full">
       <div class="info-icon">📶</div>
@@ -190,17 +153,19 @@ body { margin: 0; padding: 0; font-size: 20px; }
 
   </div>
 
-  <!-- ★ 버튼 패널 FULL WIDTH -->
-  <div class="w-full my-6">
-    <div class="button-panel w-full">
-
-      <div class="flex justify-around w-full gap-4">
-        <button onclick="sendLED(1)" class="action-btn bg-green-600">ON</button>
-        <button onclick="sendLED(0)" class="action-btn bg-yellow-500">OFF</button>
-        <button onclick="sendReset()" class="action-btn bg-red-600">RESET</button>
-      </div>
-
+  <!-- 버튼 -->
+  <div class="button-panel w-full">
+    <div class="flex justify-around w-full gap-4">
+      <button onclick="sendLED(1)" class="action-btn bg-green-600">ON</button>
+      <button onclick="sendLED(0)" class="action-btn bg-yellow-500">OFF</button>
+      <button onclick="sendReset()" class="action-btn bg-red-600">RESET</button>
     </div>
+  </div>
+
+  <!-- GPIO 패널 -->
+  <div class="gpio-panel w-full">
+    <h2 class="text-3xl font-extrabold mb-4 text-center">GPIO 상태</h2>
+    <div id="gpioList"></div>
   </div>
 
   <!-- 로그 -->
@@ -215,95 +180,115 @@ let client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt", {
   clientId: "espui_" + Math.random().toString(16).substr(2,8)
 });
 
-/* MQTT 상태 */
-function setMQTTStatus(ok) {
-  mqttLed.className = "status-led " + (ok ? "led-connected" : "led-disconnected");
+function setMQTTStatus(ok){
+  mqttLed.className = "status-led " + (ok?"led-connected":"led-disconnected");
   mqttStatusText.innerText = ok ? "MQTT Connected" : "MQTT Disconnected";
 }
 
-/* 장비 상태 */
-function setDeviceStatus(ok) {
-  deviceLed.className = "status-led " + (ok ? "led-connected" : "led-disconnected");
+function setDeviceStatus(ok){
+  deviceLed.className = "status-led " + (ok?"led-connected":"led-disconnected");
   deviceStatus.innerText = ok ? "ON LINE(장비상태)" : "OFF LINE(장비상태)";
 }
 
-/* 로그 */
-function log(msg) {
-  logBox.textContent += "\n" + msg;
+function log(msg){
+  logBox.textContent += "\n"+msg;
   logBox.scrollTop = logBox.scrollHeight;
 }
 
-/* ESP 상태 */
+/* 마지막 GPIO 시간 체크 */
 let lastStatusTime = 0;
 
-client.on("connect", () => {
+/* MQTT 연결 */
+client.on("connect", ()=>{
   setMQTTStatus(true);
   log("[MQTT] Connected");
-
   client.subscribe("/esp32/status");
   client.subscribe("/esp32/log");
+  client.subscribe("/esp32/gpio");
 });
 
-client.on("close", () => {
+client.on("close", ()=>{
   setMQTTStatus(false);
   log("[MQTT] Disconnected");
 });
 
+/* GPIO 렌더링 함수 (High, Low, Floating) */
+function renderGpio(arr){
+  let html = "";
+  const pins = [0,1,2,3,4,5,6,7,8,9,10,20,21];
+
+  for(let i=0;i<pins.length;i++){
+    let icon = "";
+    if(arr[i] == 1)
+      icon = "<span style='color:red; font-weight:900'>🔴 HIGH</span>";
+    else if(arr[i] == 0)
+      icon = "<span style='color:#3b82f6; font-weight:900'>🔵 LOW</span>";
+    else
+      icon = "<span style='color:gray; font-weight:900'>⚪ FLOATING</span>";
+
+    html += `
+      <div class="gpio-item">
+         <span class="font-bold">GPIO ${pins[i]}</span>
+         <span class="gpio-icon">${icon}</span>
+      </div>
+    `;
+  }
+  gpioList.innerHTML = html;
+}
+
 /* 메시지 처리 */
-client.on("message", (topic, payload) => {
-  const msg = payload.toString();
+client.on("message",(topic, payload)=>{
+  let msg = payload.toString();
 
-  if (topic === "/esp32/status") {
-
+  /* 기본 상태 */
+  if(topic==="/esp32/status"){
     lastStatusTime = Date.now();
-
     let j = JSON.parse(msg);
     ssid.innerText = j.ssid;
     rssi.innerText = j.rssi + " dBm";
     ip.innerText = j.ip;
-
-    ledState.innerHTML =
-      j.led == 1
-        ? "<span class='text-green-400 font-extrabold'>ON</span>"
-        : "<span class='text-red-400 font-extrabold'>OFF</span>";
-
+    ledState.innerHTML = j.led==1 ? "<span class='text-green-400 font-extrabold'>ON</span>" : "<span class='text-red-400 font-extrabold'>OFF</span>";
     setDeviceStatus(true);
-    log("[STATUS] " + msg);
+    log("[STATUS] "+msg);
+    return;
   }
 
-  if (topic === "/esp32/log") log("[ESP] " + msg);
+  /* GPIO 상태 */
+  if(topic==="/esp32/gpio"){
+    lastStatusTime = Date.now();
+    let j = JSON.parse(msg);
+    renderGpio(j.gpio);
+    setDeviceStatus(true);
+    log("[GPIO] "+msg);
+    return;
+  }
+
+  if(topic==="/esp32/log") log("[ESP] "+msg);
 });
 
 /* LED 제어 */
 function sendLED(v){ client.publish("/esp32/cmd/led", String(v)); }
 
 /* RESET */
-function sendReset(){ client.publish("/esp32/cmd/reset","1"); }
+function sendReset(){ client.publish("/esp32/cmd/reset", "1"); }
+
+/* 장비 OFFLINE */
+setInterval(()=>{
+  if(Date.now() - lastStatusTime > 6000){
+    setDeviceStatus(false);
+  }
+}, 2000);
 
 /* 시계 */
 setInterval(()=>{
   timeBox.innerText = new Date().toLocaleString("ko-KR",{hour12:false});
 },1000);
 
-/* OFFLINE 판정 */
-setInterval(()=>{
-  if (Date.now() - lastStatusTime > 6000){
-    setDeviceStatus(false);
-  }
-},2000);
-
-/* 테마 토글 */
-const themeToggle = document.getElementById("themeToggle");
-
-if (localStorage.getItem("esp_theme") === "day") {
-    document.documentElement.classList.add("day");
-    themeToggle.textContent = "☀️";
-}
-
-themeToggle.addEventListener("click", () => {
-    const isDay = document.documentElement.classList.toggle("day");
-    themeToggle.textContent = isDay ? "☀️" : "🌙";
-    localStorage.setItem("esp_theme", isDay ? "day" : "night");
+/* 테마 전환 */
+themeToggle.addEventListener("click",()=>{
+  const isDay = document.documentElement.classList.toggle("day");
+  themeToggle.textContent = isDay ? "☀️" : "🌙";
+  localStorage.setItem("esp_theme", isDay?"day":"night");
 });
 </script>
 
