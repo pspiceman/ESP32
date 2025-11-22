@@ -20,10 +20,28 @@ body { margin:0; padding:0; font-size:20px; }
 .gpio-item{display:flex;justify-content:space-between;padding:10px 15px;border-bottom:1px solid #94a3b8;font-size:1.3rem;}
 #logBox{white-space:pre-line;height:300px;background:#0a0f16;color:#33ff55;padding:16px;border-radius:14px;border:1px solid #223344;overflow-y:auto;font-family:Consolas;font-size:1.15rem;}
 #timeBox{text-align:right;margin-top:6px;font-size:1rem;}
-html.day{background:#f8fafc;color:#111827;}
+html.day{background:#f3f4f6;color:#111827;}
 html.day .info-card, html.day .gpio-panel, html.day .button-panel{background:#fff;color:#000;}
 html.day #logBox{background:#f8fafc;color:#000;}
 </style>
+
+<style>
+html.day body {
+  background:#f3f4f6 !important;
+  color:#111827 !important;
+}
+</style>
+
+
+<style>
+html.day #gpioList span {
+    color:#1e293b !important;
+}
+html.day #timeBox {
+    color:#374151 !important;
+}
+</style>
+
 </head>
 
 <body class="bg-slate-900 text-slate-100">
@@ -125,3 +143,13 @@ function toggleLog(){logPanel.style.display=(logPanel.style.display=="none")?"bl
 </script>
 </body>
 </html>
+
+<style>
+html.day .info-card,
+html.day .gpio-panel,
+html.day .button-panel {
+  background:#ffffff !important;
+  border-color:#e5e7eb !important;
+  color:#000 !important;
+}
+</style>
