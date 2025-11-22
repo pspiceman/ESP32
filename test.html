@@ -3,16 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title>ESP32 MQTT 대시보드</title>
-<script src="https://unpkg.com/mqtt/dist/mqtt.min.js">function toggleLog(){
-  let p=document.getElementById("logPanel");
-  p.style.display = (p.style.display==="none") ? "block" : "none";
-}
-</script>
-<script src="https://cdn.tailwindcss.com">function toggleLog(){
-  let p=document.getElementById("logPanel");
-  p.style.display = (p.style.display==="none") ? "block" : "none";
-}
-</script>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
 
 <style>
 body { margin: 0; padding: 0; font-size: 20px; }
@@ -91,7 +83,14 @@ body { margin: 0; padding: 0; font-size: 20px; }
   .info-card{ height:150px !important; }
 }
 
+
+.day body { background:#f1f5f9; color:#000; }
+.day .gpio-panel { background:#ffffff; color:#000; }
+.day .info-card { background:#ffffff; color:#000; }
+.day .button-panel { background:#ffffff; }
+.day #logBox { background:#f8fafc; color:#000; }
 </style>
+
 </head>
 
 <body class="bg-slate-900 text-slate-100">
