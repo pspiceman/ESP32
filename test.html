@@ -5,354 +5,123 @@
 <title>ESP32 MQTT 대시보드</title>
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
-
 <style>
-body { margin: 0; padding: 0; font-size: 20px; }
-
-/* 상태 원형 LED */
-.status-led {
-  display: inline-block; width:20px; height:20px;
-  border-radius: 50%; margin-right: 6px;
-}
-.led-connected { background:#22c55e; }
-.led-disconnected { background:#ef4444; }
-
-/* GPIO indicator */
-.gpio-item{
-  display:flex; justify-content:space-between;
-  padding:10px 15px; border-bottom:1px solid #334155;
-  font-size:1.3rem;
-}
-.gpio-icon{
-  font-size:1.6rem;
-  font-weight:900;
-}
-
-/* 정보 카드 */
-.info-card {
-  background:#1e293b; border:1px solid #334155; border-radius:18px;
-  padding:20px; display:flex; gap:16px; align-items:center;
-  width:100%; height:140px;
-  box-shadow:0 6px 18px rgba(0,0,0,0.35);
-  transition:0.25s ease;
-}
-.info-card:hover{ transform:scale(1.04); background:#2b3f52; }
-
-.info-icon{ font-size:3.4rem; }
-.info-title{ font-size:1.6rem; font-weight:700; }
-.info-value{ font-size:2.4rem; font-weight:900; }
-
-/* 버튼 */
-.action-btn {
-  padding:18px 30px; border-radius:16px;
-  font-size:2rem; font-weight:800; width:100%;
-  color:white; text-align:center;
-  box-shadow:0 4px 14px rgba(0,0,0,0.25);
-  transition:0.15s ease;
-}
-.action-btn:active{ transform:scale(0.92); }
-
-/* 버튼 그룹 */
-.button-panel {
-  background:#1e293b; border:1px solid #334155; border-radius:18px;
-  padding:25px 20px; width:100%!important;
-  box-shadow:0 8px 20px rgba(0,0,0,0.35);
-}
-
-/* GPIO 박스 */
-.gpio-panel{
-  background:#1e293b; border:1px solid #334155; border-radius:18px;
-  padding:20px 20px; margin-top:25px;
-  box-shadow:0 8px 20px rgba(0,0,0,0.3);
-}
-
-/* 로그창 */
-#logBox{
-  white-space:pre-line; height:460px; background:#0a0f16;
-  color:#33ff55; padding:16px; overflow-y:auto;
-  border-radius:14px; border:1px solid #223344;
-  box-shadow:inset0 0 12px rgba(0,0,0,0.6);
-  font-family:Consolas, monospace; font-size:1.15rem;
-}
-
-#timeBox{ text-align:right; color:#97a5b5; margin-top:6px; font-size:1rem; }
-
-/* 모바일 */
-@media (max-width:480px){
-  #mainTitle{ font-size:3.4rem !important; }
-  .info-card{ height:150px !important; }
-}
-
-
-.day body { background:#f1f5f9; color:#000; }
-.day .gpio-panel { background:#ffffff; color:#000; }
-.day .info-card { background:#ffffff; color:#000; }
-.day .button-panel { background:#ffffff; }
-.day #logBox { background:#f8fafc; color:#000; }
+body { margin:0; padding:0; font-size:20px; }
+.status-led{display:inline-block;width:20px;height:20px;border-radius:50%;margin-right:6px;}
+.led-connected{background:#22c55e;}
+.led-disconnected{background:#ef4444;}
+.info-card{background:#1e293b;border:1px solid #334155;border-radius:18px;padding:20px;display:flex;gap:16px;align-items:center;width:100%;height:140px;box-shadow:0 6px 18px rgba(0,0,0,0.35);}
+.info-icon{font-size:3.4rem;}
+.info-title{font-size:1.6rem;font-weight:700;}
+.info-value{font-size:2.4rem;font-weight:900;}
+.button-panel{background:#1e293b;border:1px solid #334155;border-radius:18px;padding:25px 20px;box-shadow:0 8px 20px rgba(0,0,0,0.35);}
+.action-btn{padding:18px 30px;border-radius:16px;font-size:2rem;font-weight:800;width:100%;color:white;box-shadow:0 4px 14px rgba(0,0,0,0.25);}
+.gpio-panel{background:#1e293b;border:1px solid #334155;border-radius:18px;padding:20px;margin-top:25px;}
+.gpio-item{display:flex;justify-content:space-between;padding:10px 15px;border-bottom:1px solid #94a3b8;font-size:1.3rem;}
+#logBox{white-space:pre-line;height:300px;background:#0a0f16;color:#33ff55;padding:16px;border-radius:14px;border:1px solid #223344;overflow-y:auto;font-family:Consolas;font-size:1.15rem;}
+#timeBox{text-align:right;margin-top:6px;font-size:1rem;}
+html.day{background:#ffffff;color:#111827;}
+html.day .info-card, html.day .gpio-panel, html.day .button-panel{background:#fff;color:#000;}
+html.day #logBox{background:#f8fafc;color:#000;}
 </style>
-
 </head>
 
 <body class="bg-slate-900 text-slate-100">
-
 <div class="w-full mx-auto py-4 px-4">
-
-  <!-- 타이틀 -->
   <div class="relative mb-6 px-2 h-16 flex items-center">
-    <h1 id="mainTitle"
-        class="font-extrabold absolute left-1/2 top-1/2
-               -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-center"
-        style="font-size: clamp(3.0rem, 7vw, 5.0rem);">
-        ESP32 MQTT 대시보드
-    </h1>
-    <div id="themeToggle"
-         class="text-4xl cursor-pointer select-none hover:scale-110 transition ml-auto">
-         🌙
-    </div>
+    <h1 id="mainTitle" class="font-extrabold absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center"
+        style="font-size:clamp(2.2rem,5vw,3.2rem);">ESP32 MQTT 대시보드</h1>
+    <div id="themeToggle" class="text-4xl cursor-pointer ml-auto">🌙</div>
   </div>
 
-  <!-- MQTT + 장비 상태 -->
   <div class="text-center mb-6 flex justify-center gap-10">
-      <div>
-          <span id="mqttLed" class="status-led led-disconnected"></span>
-          <span id="mqttStatusText" class="text-2xl font-extrabold">MQTT Disconnected</span>
-      </div>
-      <div>
-          <span id="deviceLed" class="status-led led-disconnected"></span>
-          <span id="deviceStatus" class="text-2xl font-extrabold">OFF LINE(장비상태)</span>
-      </div>
+    <div><span id="mqttLed" class="status-led led-disconnected"></span>
+         <span id="mqttStatusText" class="text-2xl font-extrabold">MQTT Disconnected</span></div>
+    <div><span id="deviceLed" class="status-led led-disconnected"></span>
+         <span id="deviceStatus" class="text-2xl font-extrabold">OFF LINE(장비상태)</span></div>
   </div>
 
-  <!-- 정보 카드 -->
-  <div class="grid grid-cols-2 gap-6 mb-6 place-items-center">
-
-    <div class="info-card w-full">
-      <div class="info-icon">📶</div>
-      <div>
-        <div class="info-title">SSID</div>
-        <div id="ssid" class="info-value">--</div>
-      </div>
-    </div>
-
-    <div class="info-card w-full">
-      <div class="info-icon">📡</div>
-      <div>
-        <div class="info-title">RSSI</div>
-        <div id="rssi" class="info-value">-- dBm</div>
-      </div>
-    </div>
-
-    <div class="info-card w-full">
-      <div class="info-icon">🌐</div>
-      <div>
-        <div class="info-title">IP</div>
-        <div id="ip" class="info-value">--</div>
-      </div>
-    </div>
-
-    <div class="info-card w-full">
-      <div class="info-icon">💡</div>
-      <div>
-        <div class="info-title">LED 상태</div>
-        <div id="ledState" class="info-value">--</div>
-      </div>
-    </div>
-
+  <div class="grid grid-cols-2 gap-6 mb-6">
+    <div class="info-card"><div class="info-icon">📶</div><div><div class="info-title">SSID</div><div id="ssid" class="info-value">--</div></div></div>
+    <div class="info-card"><div class="info-icon">📡</div><div><div class="info-title">RSSI</div><div id="rssi" class="info-value">-- dBm</div></div></div>
+    <div class="info-card"><div class="info-icon">🌐</div><div><div class="info-title">IP</div><div id="ip" class="info-value">--</div></div></div>
+    <div class="info-card"><div class="info-icon">💡</div><div><div class="info-title">LED 상태</div><div id="ledState" class="info-value">--</div></div></div>
   </div>
 
-  <!-- 버튼 -->
-  <div class="button-panel w-full">
-    <div class="flex justify-around w-full gap-4">
+  <div class="button-panel">
+    <div class="flex justify-around gap-4">
       <button onclick="sendLED(1)" class="action-btn bg-green-600">ON</button>
       <button onclick="sendLED(0)" class="action-btn bg-yellow-500">OFF</button>
       <button onclick="sendReset()" class="action-btn bg-red-600">RESET</button>
     </div>
   </div>
 
-  
-
-<!-- GPIO 패널 -->
-  <div class="gpio-panel w-full">
+  <div class="gpio-panel mt-6">
     <h2 class="text-3xl font-extrabold mb-4 text-center">GPIO 상태</h2>
-
     <div id="gpioList"></div>
-<div class="w-full flex justify-between items-center mt-4">
-  <button onclick="toggleLog()" class="text-4xl">🐞</button>
-  <div id="timeBox" class="text-right text-slate-300 text-xl"></div>
-</div>
-
-<div class="w-full flex justify-between items-center mt-4">
-  
-  
-</div>
-
-
-
-<!-- LOG PANEL INLINE -->
-<div id="logPanel" style="display:none; margin-top:20px;">
-    <div id="logBox"
-         style="
-            white-space:pre-line; height:300px;
-            background:#0a0f16; color:#33ff55; padding:16px;
-            overflow-y:auto; border-radius:14px;
-            border:1px solid #223344;
-            box-shadow:inset 0 0 12px rgba(0,0,0,0.6);
-            font-family:Consolas, monospace; font-size:1.15rem;">
-        [LOG] Ready...
-    </div>
-</div>
-
-
   </div>
 
-  
-  
-</div>
-</div>
+  <div class="w-full flex justify-between items-center mt-10 mb-4">
+    <button onclick="toggleLog()" class="text-4xl">🐞</button>
+    <div id="timeBox" class="text-slate-300 text-xl"></div>
+  </div>
 
-
+  <div id="logPanel" style="display:none;">
+    <div id="logBox">[LOG] Ready...</div>
+  </div>
 
 </div>
 
 <script>
-/* MQTT 연결 */
-let client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt", {
-  clientId: "espui_" + Math.random().toString(16).substr(2,8)
-});
+let client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt",{clientId:"espui_"+Math.random().toString(16).substr(2,8)});
+client.on("connect",()=>{setMQTTStatus(true);client.subscribe("/esp32/status");client.subscribe("/esp32/log");client.subscribe("/esp32/gpio");});
+client.on("close",()=>setMQTTStatus(false));
 
-function setMQTTStatus(ok){
-  mqttLed.className = "status-led " + (ok?"led-connected":"led-disconnected");
-  mqttStatusText.innerText = ok ? "MQTT Connected" : "MQTT Disconnected";
-}
+function setMQTTStatus(ok){mqttLed.className="status-led "+(ok?"led-connected":"led-disconnected");mqttStatusText.innerText=ok?"MQTT Connected":"MQTT Disconnected";}
+function setDeviceStatus(ok){deviceLed.className="status-led "+(ok?"led-connected":"led-disconnected");deviceStatus.innerText=ok?"ON LINE(장비상태)":"OFF LINE(장비상태)";}
+function log(m){logBox.textContent+="\n"+m;logBox.scrollTop=logBox.scrollHeight;}
 
-function setDeviceStatus(ok){
-  deviceLed.className = "status-led " + (ok?"led-connected":"led-disconnected");
-  deviceStatus.innerText = ok ? "ON LINE(장비상태)" : "OFF LINE(장비상태)";
-}
-
-function log(msg){
-  logBox.textContent += "\n"+msg;
-  logBox.scrollTop = logBox.scrollHeight;
-}
-
-/* 마지막 GPIO 시간 체크 */
-let lastStatusTime = 0;
-
-/* MQTT 연결 */
-client.on("connect", ()=>{
-  setMQTTStatus(true);
-  log("[MQTT] Connected");
-  client.subscribe("/esp32/status");
-  client.subscribe("/esp32/log");
-  client.subscribe("/esp32/gpio");
-});
-
-client.on("close", ()=>{
-  setMQTTStatus(false);
-  log("[MQTT] Disconnected");
-});
-
-
-/* GPIO 렌더링 함수 (High, Low, Floating) */
-function renderGpio(arr){
-  let html = "";
-  const pins = [0,1,2,3,4,5,6,7,8,9,10,20,21];
-
-  const pinDesc = {
-    0:"IO0 / A0 / ADC0",
-    1:"IO1 / A1 / ADC1",
-    2:"IO2 / A2 / ADC2",
-    3:"IO3 / A3 / ADC3",
-    4:"IO4 / A4 / SCK",
-    5:"IO5 / A5 / MISO",
-    6:"IO6 / MOSI",
-    7:"IO7 / SS",
-    8:"IO8 / SDA (I2C DATA)",
-    9:"IO9 / SCL (I2C CLK)",
-    10:"IO10",
-    20:"IO20 / RX (UART)",
-    21:"IO21 / TX (UART)"
-  };
-
-  for(let i=0;i<pins.length;i++){
-    let icon = "";
-    if(arr[i] == 1)
-      icon = "<span style='color:red; font-weight:900'>🔴 HIGH</span>";
-    else if(arr[i] == 0)
-      icon = "<span style='color:#3b82f6; font-weight:900'>🔵 LOW</span>";
-    else
-      icon = "<span style='color:gray; font-weight:900'>⚪ FLOATING</span>";
-
-    html += `
-      <div class="gpio-item">
-         <span class="font-bold w-32">GPIO ${pins[i]}</span>
-         <span class="text-slate-300 w-64">${pinDesc[pins[i]]}</span>
-         <span class="gpio-icon">${icon}</span>
-      </div>
-    `;
-  }
-gpioList.innerHTML = html;
-}
-
-/* 메시지 처리 */
-client.on("message",(topic, payload)=>{
-  let msg = payload.toString();
-
-  /* 기본 상태 */
-  if(topic==="/esp32/status"){
-    lastStatusTime = Date.now();
-    let j = JSON.parse(msg);
-    ssid.innerText = j.ssid;
-    rssi.innerText = j.rssi + " dBm";
-    ip.innerText = j.ip;
-    ledState.innerHTML = j.led==1 ? "<span class='text-green-400 font-extrabold'>ON</span>" : "<span class='text-red-400 font-extrabold'>OFF</span>";
-    setDeviceStatus(true);
-    log("[STATUS] "+msg);
-    return;
-  }
-
-  /* GPIO 상태 */
-  if(topic==="/esp32/gpio"){
-    lastStatusTime = Date.now();
-    let j = JSON.parse(msg);
-    renderGpio(j.gpio);
-    setDeviceStatus(true);
-    log("[GPIO] "+msg);
-    return;
-  }
-
+let lastStatusTime=0;
+client.on("message",(topic,payload)=>{
+  let msg=payload.toString();
+  if(topic==="/esp32/status"){lastStatusTime=Date.now();let j=JSON.parse(msg);
+    ssid.innerText=j.ssid;rssi.innerText=j.rssi+" dBm";ip.innerText=j.ip;
+    ledState.innerHTML=j.led==1?"<span class='text-green-400 font-extrabold'>ON</span>":"<span class='text-red-400 font-extrabold'>OFF</span>";
+    setDeviceStatus(true);log("[STATUS] "+msg);return;}
+  if(topic==="/esp32/gpio"){lastStatusTime=Date.now();renderGpio(JSON.parse(msg).gpio);setDeviceStatus(true);log("[GPIO] "+msg);return;}
   if(topic==="/esp32/log") log("[ESP] "+msg);
 });
 
-/* LED 제어 */
-function sendLED(v){ client.publish("/esp32/cmd/led", String(v)); }
+function sendLED(v){client.publish("/esp32/cmd/led",String(v));}
+function sendReset(){client.publish("/esp32/cmd/reset","1");}
+setInterval(()=>{if(Date.now()-lastStatusTime>6000)setDeviceStatus(false);},2000);
 
-/* RESET */
-function sendReset(){ client.publish("/esp32/cmd/reset", "1"); }
-
-/* 장비 OFFLINE */
-setInterval(()=>{
-  if(Date.now() - lastStatusTime > 6000){
-    setDeviceStatus(false);
-  }
-}, 2000);
-
-/* 시계 */
-setInterval(()=>{
-  timeBox.innerText = new Date().toLocaleString("ko-KR",{hour12:false});
-},1000);
-
-/* 테마 전환 */
-themeToggle.addEventListener("click",()=>{
-  const isDay = document.documentElement.classList.toggle("day");
-  themeToggle.textContent = isDay ? "☀️" : "🌙";
-  localStorage.setItem("esp_theme", isDay?"day":"night");
-});
-function toggleLog(){
-  let p=document.getElementById("logPanel");
-  p.style.display = (p.style.display==="none") ? "block" : "none";
+function renderGpio(arr){
+  let pins=[0,1,2,3,4,5,6,7,8,9,10,20,21];
+  let desc={0:"IO0 / A0 / ADC0",1:"IO1 / A1 / ADC1",2:"IO2 / A2 / ADC2",3:"IO3 / A3 / ADC3",
+            4:"IO4 / A4 / SCK",5:"IO5 / A5 / MISO",6:"IO6 / MOSI",7:"IO7 / SS",
+            8:"IO8 / SDA",9:"IO9 / SCL",10:"IO10",20:"IO20 / RX",21:"IO21 / TX"};
+  let html="";
+  pins.forEach((p,i)=>{
+    let icon=arr[i]==1?"<span style='color:red;font-weight:900'>🔴 HIGH</span>":
+              arr[i]==0?"<span style='color:#3b82f6;font-weight:900'>🔵 LOW</span>":
+                        "<span style='color:gray;font-weight:900'>⚪ FLOATING</span>";
+    html+=`<div class="gpio-item">
+             <span class="font-bold w-32">GPIO ${p}</span>
+             <span class="text-slate-300 w-64">${desc[p]}</span>
+             <span class="gpio-icon">${icon}</span>
+           </div>`;
+  });
+  gpioList.innerHTML=html;
 }
-</script>
 
+setInterval(()=>{timeBox.innerText=new Date().toLocaleString("ko-KR",{hour12:false});},1000);
+
+themeToggle.addEventListener("click",()=>{let d=document.documentElement.classList.toggle("day");
+  themeToggle.textContent=d?"☀️":"🌙";
+});
+
+function toggleLog(){logPanel.style.display=(logPanel.style.display=="none")?"block":"none";}
+</script>
 </body>
 </html>
