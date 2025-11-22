@@ -3,8 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <title>ESP32 MQTT 대시보드</title>
-<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js">function toggleLog(){
+  let p=document.getElementById("logPanel");
+  p.style.display = (p.style.display==="none") ? "block" : "none";
+}
+</script>
+<script src="https://cdn.tailwindcss.com">function toggleLog(){
+  let p=document.getElementById("logPanel");
+  p.style.display = (p.style.display==="none") ? "block" : "none";
+}
+</script>
 
 <style>
 body { margin: 0; padding: 0; font-size: 20px; }
@@ -162,15 +170,48 @@ body { margin: 0; padding: 0; font-size: 20px; }
     </div>
   </div>
 
-  <!-- GPIO 패널 -->
+  
+
+<!-- GPIO 패널 -->
   <div class="gpio-panel w-full">
     <h2 class="text-3xl font-extrabold mb-4 text-center">GPIO 상태</h2>
+
     <div id="gpioList"></div>
+<div class="w-full flex justify-between items-center mt-4">
+  <button onclick="toggleLog()" class="text-4xl">🐞</button>
+  <div id="timeBox" class="text-right text-slate-300 text-xl"></div>
+</div>
+
+<div class="w-full flex justify-between items-center mt-4">
+  
+  
+</div>
+
+
+
+<!-- LOG PANEL INLINE -->
+<div id="logPanel" style="display:none; margin-top:20px;">
+    <div id="logBox"
+         style="
+            white-space:pre-line; height:300px;
+            background:#0a0f16; color:#33ff55; padding:16px;
+            overflow-y:auto; border-radius:14px;
+            border:1px solid #223344;
+            box-shadow:inset 0 0 12px rgba(0,0,0,0.6);
+            font-family:Consolas, monospace; font-size:1.15rem;">
+        [LOG] Ready...
+    </div>
+</div>
+
+
   </div>
 
-  <!-- 로그 -->
-  <div id="logBox" class="w-full">[LOG] Ready...</div>
-  <div id="timeBox" class="w-full">--:--:--</div>
+  
+  
+</div>
+</div>
+
+
 
 </div>
 
@@ -212,10 +253,27 @@ client.on("close", ()=>{
   log("[MQTT] Disconnected");
 });
 
+
 /* GPIO 렌더링 함수 (High, Low, Floating) */
 function renderGpio(arr){
   let html = "";
   const pins = [0,1,2,3,4,5,6,7,8,9,10,20,21];
+
+  const pinDesc = {
+    0:"IO0 / A0 / ADC0",
+    1:"IO1 / A1 / ADC1",
+    2:"IO2 / A2 / ADC2",
+    3:"IO3 / A3 / ADC3",
+    4:"IO4 / A4 / SCK",
+    5:"IO5 / A5 / MISO",
+    6:"IO6 / MOSI",
+    7:"IO7 / SS",
+    8:"IO8 / SDA (I2C DATA)",
+    9:"IO9 / SCL (I2C CLK)",
+    10:"IO10",
+    20:"IO20 / RX (UART)",
+    21:"IO21 / TX (UART)"
+  };
 
   for(let i=0;i<pins.length;i++){
     let icon = "";
@@ -228,12 +286,13 @@ function renderGpio(arr){
 
     html += `
       <div class="gpio-item">
-         <span class="font-bold">GPIO ${pins[i]}</span>
+         <span class="font-bold w-32">GPIO ${pins[i]}</span>
+         <span class="text-slate-300 w-64">${pinDesc[pins[i]]}</span>
          <span class="gpio-icon">${icon}</span>
       </div>
     `;
   }
-  gpioList.innerHTML = html;
+gpioList.innerHTML = html;
 }
 
 /* 메시지 처리 */
@@ -290,6 +349,10 @@ themeToggle.addEventListener("click",()=>{
   themeToggle.textContent = isDay ? "☀️" : "🌙";
   localStorage.setItem("esp_theme", isDay?"day":"night");
 });
+function toggleLog(){
+  let p=document.getElementById("logPanel");
+  p.style.display = (p.style.display==="none") ? "block" : "none";
+}
 </script>
 
 </body>
