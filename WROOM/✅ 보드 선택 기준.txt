@@ -1,8 +1,9 @@
 ✅ 보드 선택 기준
-칩/모듈			            Arduino IDE에서 선택할 보드
-ESP32-WROOM-32/32D/32E	ESP32 Dev Module
-ESP32-S2		            ESP32S2 Dev Module
-ESP32-S3		            SP32S3 Dev Module
-ESP32-C3(예: WROOM-DA)	ESP32C3 Dev Module
-ESP32-C2		            ESP32C2 Dev Module
-ESP32-C6		            ESP32C6 Dev Module
+칩/모듈			              Arduino IDE에서 선택할 보드
+ESP32-WROOM-32/32D/32E	  ESP32 Dev Module
+ESP32-S2		              ESP32S2 Dev Module
+ESP32-S3		              SP32S3 Dev Module
+ESP32-C3(예: WROOM-DA)	  ESP32C3 Dev Module
+ESP32-C2		              ESP32C2 Dev Module
+ESP32-C6		              ESP32C6 Dev Module
+
