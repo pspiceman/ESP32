@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WiFi Status Monitor</title>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+    :root {
+        --bg: linear-gradient(145deg, #2e3a45, #1e252b);
+        --card-bg: rgba(40, 46, 54, 0.75);
+        --text-color: #dce7f3;
+        --value-color: #6aa8ff;
+        --shadow-dark: rgba(0,0,0,0.6);
+        --shadow-light: rgba(255,255,255,0.05);
+    }
+
+    body.light {
+        --bg: linear-gradient(145deg, #dfe9f3, #ffffff);
+        --card-bg: rgba(255, 255, 255, 0.7);
+        --text-color: #2c3e50;
+        --value-color: #1e65c7;
+        --shadow-dark: rgba(0,0,0,0.1);
+        --shadow-light: rgba(255,255,255,0.8);
+    }
+
+    body {
+        font-family: 'Noto Sans KR', sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: var(--bg);
+        min-height: 100vh;
+        color: var(--text-color);
+        transition: 0.3s ease;
+    }
+
+    h1 {
+        font-size: 24px;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 25px;
+        color: var(--text-color);
+        text-shadow: 0 2px 4px var(--shadow-dark);
+    }
+
+    h2 {
+        font-size: 18px;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: var(--text-color);
+    }
+
+    .card {
+        background: var(--card-bg);
+        backdrop-filter: blur(12px);
+        padding: 18px;
+        border-radius: 18px;
+        box-shadow:
+            8px 8px 20px var(--shadow-dark),
+            -5px -5px 20px var(--shadow-light);
+        margin-bottom: 20px;
+        border: 1px solid rgba(255,255,255,0.18);
+    }
+
+    button {
+        padding: 14px;
+        width: 100%;
+        background: linear-gradient(135deg, #4a90e2, #357ABD);
+        color: #fff;
+        border: none;
+        font-size: 16px;
+        border-radius: 14px;
+        margin-top: 12px;
+        font-weight: 600;
+        box-shadow:
+            4px 4px 12px rgba(0,0,0,0.2),
+            -3px -3px 12px rgba(255,255,255,0.1);
+        transition: 0.2s ease;
+    }
+
+    button:active {
+        transform: scale(0.97);
+    }
+
+    .value {
+        font-size: 19px;
+        font-weight: 600;
+        color: var(--value-color);
+    }
+
+    .toggle-theme {
+        position: fixed;
+        top: 12px;
+        right: 14px;
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 22px;
+        cursor: pointer;
+        box-shadow:
+            5px 5px 12px var(--shadow-dark),
+            -3px -3px 12px var(--shadow-light);
+        z-index: 99;
+        user-select: none;
+    }
+</style>
+</head>
+
+<body>
+
+<!-- 디폴트 다크모드 -->
+<div class="toggle-theme" id="themeToggle">☀️</div>
+
+<h1>📶 Wi-Fi 네트워크 모니터</h1>
+
+<h2>외부 IP / 서비스 업체</h2>
+<div class="card">
+    외부 IP: <span id="externalIp" class="value">조회 중...</span><br>
+    서비스 업체: <span id="ispName" class="value">조회 중...</span>
+</div>
+
+<h2>내부 IP</h2>
+<div class="card">
+    <span id="internalIp" class="value">조회 중...</span>
+</div>
+
+<h2>다운로드 / 업로드 속도</h2>
+<div class="card">
+    다운로드: <span id="downloadSpeed" class="value">-</span><br>
+    업로드: <span id="uploadSpeed" class="value">-</span>
+    <button onclick="startSpeedTest()">속도 측정하기</button>
+</div>
+
+<script>
+// ---- 라이트/다크 모드 ----
+document.getElementById("themeToggle").addEventListener("click", () => {
+    document.body.classList.toggle("light");
+    themeToggle.textContent = document.body.classList.contains("light") ? "🌙" : "☀️";
+});
+
+// ---- 외부 IP + ISP ----
+async function loadIPInfo() {
+    try {
+        // 외부 IP
+        let ipRes = await fetch("https://api.ipify.org?format=json");
+        let ipData = await ipRes.json();
+        document.getElementById("externalIp").innerText = ipData.ip;
+
+        // ISP 정보
+        let ispRes = await fetch("https://ipapi.co/json/");
+        let ispData = await ispRes.json();
+
+        let isp = ispData.org || "알 수 없음";
+
+        if (isp.includes("KT")) isp = "KT";
+        else if (isp.includes("SK")) isp = "SKT / SK Broadband";
+        else if (isp.includes("LG")) isp = "LG U+";
+
+        document.getElementById("ispName").innerText = isp;
+
+    } catch (e) {
+        document.getElementById("externalIp").innerText = "조회 실패";
+        document.getElementById("ispName").innerText = "조회 실패";
+    }
+}
+
+loadIPInfo();
+
+// ---- 내부 IP ----
+function getLocalIP() {
+    const pc=new RTCPeerConnection({iceServers:[]});
+    pc.createDataChannel("");
+    pc.createOffer().then(o=>pc.setLocalDescription(o));
+
+    pc.onicecandidate = (e) => {
+        if (!e.candidate) return;
+        let ip = e.candidate.candidate.split(" ")[4];
+        document.getElementById("internalIp").innerText = ip;
+        pc.close();
+    };
+}
+getLocalIP();
+
+// ---- 속도 측정 ----
+async function startSpeedTest() {
+    const testFile = "https://speed.cloudflare.com/__down?bytes=1000000";
+    let sizeMB = 1;
+
+    try {
+        // DOWNLOAD
+        let start = performance.now();
+        await fetch(testFile);
+        let end = performance.now();
+        let seconds = (end - start) / 1000;
+        downloadSpeed.innerText = ((sizeMB * 8) / seconds).toFixed(2) + " Mbps";
+
+        // UPLOAD
+        let uploadData = new Blob([new ArrayBuffer(sizeMB * 1024 * 1024)]);
+        start = performance.now();
+        await fetch("https://httpbin.org/post", { method:"POST", body: uploadData });
+        end = performance.now();
+        seconds = (end - start) / 1000;
+        uploadSpeed.innerText = ((sizeMB * 8) / seconds).toFixed(2) + " Mbps";
+    }
+    catch {
+        downloadSpeed.innerText = "오류";
+        uploadSpeed.innerText = "오류";
+    }
+}
+</script>
+
+</body>
+</html>
