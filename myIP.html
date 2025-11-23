@@ -15,6 +15,8 @@
         --value-color: #6aa8ff;
         --shadow-dark: rgba(0,0,0,0.6);
         --shadow-light: rgba(255,255,255,0.05);
+        --progress-bg: rgba(255,255,255,0.2);
+        --progress-fill: #6aa8ff;
     }
 
     body.light {
@@ -24,6 +26,8 @@
         --value-color: #1e65c7;
         --shadow-dark: rgba(0,0,0,0.1);
         --shadow-light: rgba(255,255,255,0.8);
+        --progress-bg: rgba(0,0,0,0.15);
+        --progress-fill: #4a90e2;
     }
 
     body {
@@ -33,64 +37,81 @@
         background: var(--bg);
         min-height: 100vh;
         color: var(--text-color);
-        transition: 0.3s ease;
+        transition: 0.3s;
     }
 
     h1 {
         font-size: 24px;
         font-weight: 700;
         text-align: center;
-        margin-bottom: 25px;
-        color: var(--text-color);
+        margin-bottom: 22px;
         text-shadow: 0 2px 4px var(--shadow-dark);
     }
 
     h2 {
-        font-size: 18px;
-        margin-top: 20px;
-        margin-bottom: 10px;
+        font-size: 17px;
+        margin-top: 18px;
+        margin-bottom: 8px;
         font-weight: 600;
-        color: var(--text-color);
     }
 
     .card {
         background: var(--card-bg);
-        backdrop-filter: blur(12px);
-        padding: 18px;
-        border-radius: 18px;
+        backdrop-filter: blur(10px);
+        padding: 16px;
+        border-radius: 16px;
         box-shadow:
-            8px 8px 20px var(--shadow-dark),
-            -5px -5px 20px var(--shadow-light);
-        margin-bottom: 20px;
+            6px 6px 16px var(--shadow-dark),
+            -4px -4px 14px var(--shadow-light);
+        margin-bottom: 18px;
         border: 1px solid rgba(255,255,255,0.18);
     }
 
-    button {
-        padding: 14px;
-        width: 100%;
-        background: linear-gradient(135deg, #4a90e2, #357ABD);
-        color: #fff;
-        border: none;
-        font-size: 16px;
-        border-radius: 14px;
-        margin-top: 12px;
-        font-weight: 600;
-        box-shadow:
-            4px 4px 12px rgba(0,0,0,0.2),
-            -3px -3px 12px rgba(255,255,255,0.1);
-        transition: 0.2s ease;
-    }
-
-    button:active {
-        transform: scale(0.97);
-    }
-
     .value {
-        font-size: 19px;
+        font-size: 18px;
         font-weight: 600;
         color: var(--value-color);
     }
 
+    button {
+        width: 100%;
+        padding: 13px;
+        background: linear-gradient(135deg, #4a90e2, #357ABD);
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        border: none;
+        border-radius: 12px;
+        margin-top: 10px;
+        box-shadow:
+            4px 4px 12px rgba(0,0,0,0.25),
+            -3px -3px 10px rgba(255,255,255,0.15);
+        transition: 0.2s;
+    }
+
+    button:disabled {
+        opacity: 0.6;
+    }
+
+    /* ▶ 옵션 D — 로딩 진행바 */
+    .progress-container {
+        width: 100%;
+        height: 6px;
+        background: var(--progress-bg);
+        border-radius: 6px;
+        overflow: hidden;
+        margin-top: 10px;
+        display: none;
+    }
+
+    .progress-bar {
+        width: 0%;
+        height: 100%;
+        background: var(--progress-fill);
+        transition: width 0.3s;
+    }
+
+    /* 다크/라이트 토글버튼 */
     .toggle-theme {
         position: fixed;
         top: 12px;
@@ -108,15 +129,15 @@
         box-shadow:
             5px 5px 12px var(--shadow-dark),
             -3px -3px 12px var(--shadow-light);
-        z-index: 99;
         user-select: none;
+        z-index: 100;
     }
 </style>
 </head>
 
 <body>
 
-<!-- 디폴트 다크모드 -->
+<!-- 기본 다크 모드 -->
 <div class="toggle-theme" id="themeToggle">☀️</div>
 
 <h1>📶 Wi-Fi 네트워크 모니터</h1>
@@ -136,85 +157,128 @@
 <div class="card">
     다운로드: <span id="downloadSpeed" class="value">-</span><br>
     업로드: <span id="uploadSpeed" class="value">-</span>
-    <button onclick="startSpeedTest()">속도 측정하기</button>
+
+    <button id="speedBtn" onclick="startSpeedTest()">속도 측정하기</button>
+
+    <!-- 로딩바 -->
+    <div class="progress-container" id="progressBox">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
 </div>
 
 <script>
-// ---- 라이트/다크 모드 ----
-document.getElementById("themeToggle").addEventListener("click", () => {
+// 다크/라이트 모드 토글
+const themeBtn = document.getElementById("themeToggle");
+themeBtn.onclick = () => {
     document.body.classList.toggle("light");
-    themeToggle.textContent = document.body.classList.contains("light") ? "🌙" : "☀️";
-});
+    themeBtn.textContent = document.body.classList.contains("light") ? "🌙" : "☀️";
+};
 
-// ---- 외부 IP + ISP ----
+
+// 외부 IP + ISP
 async function loadIPInfo() {
     try {
-        // 외부 IP
         let ipRes = await fetch("https://api.ipify.org?format=json");
         let ipData = await ipRes.json();
-        document.getElementById("externalIp").innerText = ipData.ip;
+        externalIp.innerText = ipData.ip;
 
-        // ISP 정보
         let ispRes = await fetch("https://ipapi.co/json/");
         let ispData = await ispRes.json();
 
         let isp = ispData.org || "알 수 없음";
-
         if (isp.includes("KT")) isp = "KT";
-        else if (isp.includes("SK")) isp = "SKT / SK Broadband";
+        else if (isp.includes("SK")) isp = "SKT / SKB";
         else if (isp.includes("LG")) isp = "LG U+";
 
-        document.getElementById("ispName").innerText = isp;
-
-    } catch (e) {
-        document.getElementById("externalIp").innerText = "조회 실패";
-        document.getElementById("ispName").innerText = "조회 실패";
+        ispName.innerText = isp;
+    } catch {
+        externalIp.innerText = "조회 실패";
+        ispName.innerText = "조회 실패";
     }
 }
-
 loadIPInfo();
 
-// ---- 내부 IP ----
-function getLocalIP() {
-    const pc=new RTCPeerConnection({iceServers:[]});
-    pc.createDataChannel("");
-    pc.createOffer().then(o=>pc.setLocalDescription(o));
 
-    pc.onicecandidate = (e) => {
+// 내부 IP(WebRTC)
+function getLocalIP() {
+    const pc = new RTCPeerConnection({iceServers:[]});
+    pc.createDataChannel("");
+    pc.createOffer().then(o => pc.setLocalDescription(o));
+
+    pc.onicecandidate = e => {
         if (!e.candidate) return;
         let ip = e.candidate.candidate.split(" ")[4];
-        document.getElementById("internalIp").innerText = ip;
+        internalIp.innerText = ip;
         pc.close();
     };
 }
 getLocalIP();
 
-// ---- 속도 측정 ----
-async function startSpeedTest() {
-    const testFile = "https://speed.cloudflare.com/__down?bytes=1000000";
+
+// 속도 테스트용 함수들
+async function testDownload() {
+    const url = "https://speed.cloudflare.com/__down?bytes=1000000";
     let sizeMB = 1;
-
-    try {
-        // DOWNLOAD
-        let start = performance.now();
-        await fetch(testFile);
-        let end = performance.now();
-        let seconds = (end - start) / 1000;
-        downloadSpeed.innerText = ((sizeMB * 8) / seconds).toFixed(2) + " Mbps";
-
-        // UPLOAD
-        let uploadData = new Blob([new ArrayBuffer(sizeMB * 1024 * 1024)]);
-        start = performance.now();
-        await fetch("https://httpbin.org/post", { method:"POST", body: uploadData });
-        end = performance.now();
-        seconds = (end - start) / 1000;
-        uploadSpeed.innerText = ((sizeMB * 8) / seconds).toFixed(2) + " Mbps";
-    }
-    catch {
-        downloadSpeed.innerText = "오류";
-        uploadSpeed.innerText = "오류";
-    }
+    let start = performance.now();
+    await fetch(url, { cache: "no-store" });
+    let end = performance.now();
+    return (sizeMB * 8) / ((end - start) / 1000);
 }
+
+async function testUpload() {
+    let sizeMB = 1;
+    let blob = new Blob([new ArrayBuffer(sizeMB * 1024 * 1024)]);
+    let start = performance.now();
+    await fetch("https://httpbin.org/post", { method: "POST", body: blob });
+    let end = performance.now();
+    return (sizeMB * 8) / ((end - start) / 1000);
+}
+
+
+// 평균값 계산 (3회)
+async function measureAverageSpeed(testFunc, count = 3) {
+    let total = 0;
+
+    for (let i = 0; i < count; i++) {
+        let result = await testFunc();
+        if (!isNaN(result)) total += result;
+
+        // 진행바 업데이트
+        progressBar.style.width = ((i + 1) / count) * 100 + "%";
+    }
+
+    return total / count;
+}
+
+
+// 버튼 클릭 시 평균 측정 + 로딩 애니메이션
+async function startSpeedTest() {
+
+    const btn = document.getElementById("speedBtn");
+    const progressBox = document.getElementById("progressBox");
+    const progressBar = document.getElementById("progressBar");
+
+    // 초기화
+    btn.disabled = true;
+    progressBar.style.width = "0%";
+    progressBox.style.display = "block";
+    downloadSpeed.innerText = "측정 중...";
+    uploadSpeed.innerText = "측정 중...";
+
+    // 평균 다운로드/업로드
+    const avgDownload = await measureAverageSpeed(testDownload, 3);
+    const avgUpload   = await measureAverageSpeed(testUpload, 3);
+
+    downloadSpeed.innerText = avgDownload.toFixed(2) + " Mbps";
+    uploadSpeed.innerText   = avgUpload.toFixed(2) + " Mbps";
+
+    // 완료 후
+    setTimeout(() => {
+        progressBox.style.display = "none";
+        btn.disabled = false;
+    }, 400);
+}
+
 </script>
 
 </body>
