@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>WebSerial Console (CMD Presets)</title>
+  <script src='https://cdn.tailwindcss.com'></script>
+</head>
+
+<body class='bg-gray-900 text-gray-100 p-5'>
+<div id='mainLayout' class='flex flex-row gap-6 w-full'>
+
+  <!-- LEFT PANEL (60%) -->
+  <div class='w-[60%] bg-gray-800 p-5 rounded-xl shadow-lg border border-gray-700'>
+    <h2 class='text-3xl font-bold mb-4'>WebSerial Console</h2>
+
+    <div class='flex justify-between mb-4 items-end'>
+      <div class='flex gap-4 items-end'>
+        <div>
+          <label class='text-sm'>Baud</label>
+          <select id='baud' class='bg-gray-700 border border-gray-600 rounded px-2 py-0.5 w-24'>
+            <option>9600</option>
+            <option selected>115200</option>
+          </select>
+        </div>
+
+        <div>
+          <label class='text-sm'>끝문자</label>
+          <select id='ending' class='bg-gray-700 border border-gray-600 rounded px-2 py-0.5 w-28'>
+            <option value='\n'>LF (\n)</option>
+            <option value='\r'>CR (\r)</option>
+            <option value='\r\n' selected>CRLF (\r\n)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class='flex gap-2'>
+        <button id='connectBtn' class='bg-blue-600 hover:bg-blue-500 px-4 py-0.5 rounded'>포트 연결</button>
+        <button id='disconnectBtn' class='bg-gray-600 px-4 py-0.5 rounded cursor-default' disabled>해제됨</button>
+      </div>
+    </div>
+
+    <div id='serialOutput'
+     class="bg-[#0D0D0D] p-3 rounded-lg h-[36rem] overflow-y-auto whitespace-pre-wrap mb-4 
+            font-[FiraCode] font-thin text-white text-[15px]">
+</div>
+
+    <div class='flex gap-3 mb-3'>
+      <input id='msgInput' type='text' placeholder='메시지 입력...'
+            class='flex-1 bg-gray-700 border border-gray-600 rounded px-3 py-0.5'>
+      <button id='sendBtn' class='bg-green-600 hover:bg-green-500 px-4 py-0.5 rounded'>전송</button>
+    </div>
+
+    <div class='flex items-center gap-4'>
+      <button id='clearBtn' class='bg-gray-700 px-3 py-0.5 rounded hover:bg-gray-600'>지우기</button>
+      <label class='flex items-center gap-2'>
+        <input type='checkbox' id='autoScroll' checked> 자동 스크롤
+      </label>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL (40%) -->
+  <div class='w-[40%] bg-gray-800 p-5 rounded-xl shadow-lg border border-gray-700 text-sm'>
+    <h2 class='text-xl font-bold mb-4'>프리셋</h2>
+
+    <div class='flex gap-2 mb-4'>
+      <button id='importPreset' class='bg-gray-700 px-3 py-0.5 rounded hover:bg-gray-600'>가져오기</button>
+      <button id='exportPreset' class='bg-gray-700 px-3 py-0.5 rounded hover:bg-gray-600'>내보내기</button>
+      <button id='deletePreset' class='bg-black hover:bg-gray-900 px-3 py-0.5 rounded text-white'>전체 삭제</button>
+    </div>
+
+    <div class='flex gap-2 mb-4'>
+      <input id='cmdInput' type='text' placeholder='Command'
+            class='flex-1 bg-gray-700 border border-gray-600 rounded px-3 py-0.5'>
+      <button id='addCmd' class='bg-blue-600 hover:bg-blue-500 px-4 py-0.5 rounded'>추가</button>
+    </div>
+
+    <div id='groupsContainer' class='flex flex-col gap-6'></div>
+  </div>
+
+</div>
+
+<script>
+let port, reader, writer;
+const decoder = new TextDecoder();
+const encoder = new TextEncoder();
+let presetData = {};
+
+function safeEnding(){ return document.getElementById("ending").value; }
+function savePresets(){ localStorage.setItem("presetGroups", JSON.stringify(presetData)); }
+function loadPresets(){ presetData = JSON.parse(localStorage.getItem("presetGroups") || "{}"); renderGroups(); }
+
+/* ============================================================
+   IMPORT with GROUP auto-detection
+============================================================ */
+document.getElementById("importPreset").onclick = () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".txt,application/json";
+
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    const reader2 = new FileReader();
+
+    reader2.onload = () => {
+      let text = reader2.result.trim();
+      let json = null;
+
+      try { json = JSON.parse(text); } catch(err){ json = null; }
+
+      /* 1) JSON 배열 → [GROUP] 자동 분리 */
+      if (json && Array.isArray(json)) {
+        let groups = {};
+        let currentGroup = "Default";
+
+        json.forEach(line => {
+          line = line.trim();
+          if (line.startsWith("[GROUP]")) {
+            currentGroup = line.replace("[GROUP]", "").trim();
+            if (!groups[currentGroup]) groups[currentGroup] = [];
+          } else {
+            if (!groups[currentGroup]) groups[currentGroup] = [];
+            groups[currentGroup].push(line);
+          }
+        });
+
+        presetData = groups;
+        savePresets();
+        renderGroups();
+        return;
+      }
+
+      /* 2) JSON 객체 → 그대로 사용 */
+      if (json && typeof json === "object") {
+        presetData = json;
+        savePresets();
+        renderGroups();
+        return;
+      }
+
+      /* 3) TXT → [GROUP] 자동 분리 */
+      const lines = text
+        .split(/\r?\n/)
+        .map(v => v.trim())
+        .filter(v => v.length > 0);
+
+      let groups = {};
+      let currentGroup = "Default";
+
+      lines.forEach(line => {
+        if (line.startsWith("[GROUP]")) {
+          currentGroup = line.replace("[GROUP]", "").trim();
+          if (!groups[currentGroup]) groups[currentGroup] = [];
+        } else {
+          if (!groups[currentGroup]) groups[currentGroup] = [];
+          groups[currentGroup].push(line);
+        }
+      });
+
+      presetData = groups;
+      savePresets();
+      renderGroups();
+    };
+
+    reader2.readAsText(file);
+  };
+
+  input.click();
+};
+
+/* ============================================================
+   RENDER PRESETS (no delete button)
+============================================================ */
+function renderGroups(){
+  const container = document.getElementById("groupsContainer");
+  container.innerHTML = "";
+
+  Object.entries(presetData).forEach(([group, cmds]) => {
+
+    const box = document.createElement("div");
+    box.className = "bg-gray-700 p-3 rounded-lg border border-gray-600";
+
+    const header = document.createElement("div");
+    header.className = "mb-2";
+
+    const title = document.createElement("h3");
+    title.className = "font-semibold text-blue-300";
+    title.textContent = group;
+
+    header.appendChild(title);
+    box.appendChild(header);
+
+    const list = document.createElement("div");
+    list.className = "flex flex-wrap gap-2";
+
+    cmds.forEach(cmd => {
+      const tag = document.createElement("div");
+      tag.className =
+        "inline-flex items-center bg-gray-600 text-white px-2 py-0.5 rounded-full cursor-pointer text-sm";
+
+      const textSpan = document.createElement("span");
+      textSpan.textContent = cmd;
+
+      textSpan.onclick = () => {
+        if (!writer) return alert("포트가 열려 있지 않습니다.");
+        writer.write(encoder.encode(cmd + safeEnding()));
+      };
+
+      tag.appendChild(textSpan);
+      list.appendChild(tag);
+    });
+
+    box.appendChild(list);
+    container.appendChild(box);
+  });
+}
+
+/* ============================================================
+   기타 기능
+============================================================ */
+loadPresets();
+
+document.getElementById("addCmd").onclick = () => {
+  const cmd = document.getElementById("cmdInput").value.trim();
+  if(!cmd) return;
+
+  if(!presetData["Default"]) presetData["Default"] = [];
+  presetData["Default"].push(cmd);
+
+  savePresets();
+  renderGroups();
+
+  document.getElementById("cmdInput").value = "";
+};
+
+document.getElementById("deletePreset").onclick = () => {
+  if(!confirm("모든 프리셋을 삭제하시겠습니까?")) return;
+  presetData = {};
+  savePresets();
+  renderGroups();
+};
+
+document.getElementById("exportPreset").onclick = () => {
+  const blob = new Blob([JSON.stringify(presetData,null,2)],{type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "presets.json";
+  a.click();
+};
+
+async function readLoop(){
+  try{
+    reader = port.readable.getReader();
+    const out = document.getElementById("serialOutput");
+
+    while(true){
+      const { value, done } = await reader.read();
+      if(done) break;
+
+      out.innerHTML += decoder.decode(value);
+      if(document.getElementById("autoScroll").checked)
+        out.scrollTop = out.scrollHeight;
+    }
+
+  } catch(err){ console.log("⚠️ 포트 끊김:", err); }
+
+  updateConnectionUI(false);
+  try{ if(reader) reader.releaseLock(); }catch(e){}
+}
+
+document.getElementById("connectBtn").onclick = async () => {
+  try{
+    port = await navigator.serial.requestPort();
+    await port.open({ baudRate:Number(document.getElementById("baud").value) });
+    writer = port.writable.getWriter();
+    readLoop();
+    updateConnectionUI(true);
+  }catch(e){ alert("연결 실패: " + e); }
+};
+
+document.getElementById("disconnectBtn").onclick = async () => {
+  try{
+    if(reader) await reader.cancel();
+    if(writer) await writer.close();
+    if(port) await port.close();
+  }catch(e){}
+  updateConnectionUI(false);
+};
+
+document.getElementById("sendBtn").onclick = () => {
+  if(!writer) return alert("포트가 열려 있지 않습니다.");
+  writer.write(encoder.encode(document.getElementById("msgInput").value + safeEnding()));
+};
+
+document.getElementById("msgInput").addEventListener("keydown", e => {
+  if(e.key === "Enter"){
+    e.preventDefault();
+    document.getElementById("sendBtn").click();
+  }
+});
+
+document.getElementById("clearBtn").onclick = () => {
+  document.getElementById("serialOutput").textContent = "";
+};
+
+function updateConnectionUI(connected){
+  const c = document.getElementById("connectBtn");
+  const d = document.getElementById("disconnectBtn");
+
+  if(connected){
+    c.disabled = true;
+    c.className = "bg-green-600 hover:bg-green-500 px-4 py-0.5 rounded cursor-default";
+    c.textContent = "연결됨";
+
+    d.disabled = false;
+    d.className = "bg-red-600 hover:bg-red-500 px-4 py-0.5 rounded";
+    d.textContent = "해제";
+  } else {
+    c.disabled = false;
+    c.className = "bg-blue-600 hover:bg-blue-500 px-4 py-0.5 rounded";
+    c.textContent = "포트 연결";
+
+    d.disabled = true;
+    d.className = "bg-gray-600 px-4 py-0.5 rounded cursor-default";
+    d.textContent = "해제됨";
+  }
+}
+</script>
+
+</body>
+</html>
