@@ -12,13 +12,13 @@
   --bg: #f5f6fa;
   --text: #111;
   --card: #ffffff;
-  --border: #cfcfcf;
+  --border: #cfcfcfc;
   --table-alt: #eef1f5;
   --log-bg: #fff;
   --log-fg: #000;
 
-  --online-color: #37ff79;
-  --offline-color: #ff4c4c;
+  --online-color: #37ff79; /* 초록 */
+  --offline-color: #ff4c4c; /* 빨강 */
 }
 
 [data-theme="dark"] {
@@ -34,7 +34,7 @@
   --offline-color: #ff6666;
 }
 
-/* ───────── 전체 레이아웃 ───────── */
+/* ───────── Layout ───────── */
 body {
   background: var(--bg);
   color: var(--text);
@@ -48,10 +48,7 @@ body {
   justify-content:space-between;
   align-items:center;
 }
-.title {
-  font-size:22px;
-  font-weight:700;
-}
+.title { font-size:22px; font-weight:700; }
 .theme-btn {
   font-size:25px;
   border:none;
@@ -60,7 +57,7 @@ body {
   color:var(--text);
 }
 
-/* ───────── 상단 상태 + 리셋 버튼 ───────── */
+/* 상단 상태 + RESET */
 .top-row {
   margin-top:10px;
   display:flex;
@@ -74,51 +71,44 @@ body {
   gap:14px;
 }
 
-/* [ MQTT: 연결됨 ] 박스 디자인 */
+/* [ MQTT: 연결됨 ] 박스 */
 .status-box {
   display:inline-flex;
   align-items:center;
   gap:6px;
 
   padding:6px 12px;
-  background:#2a2a2c;      /* 회색 박스 */
+  background:#2a2a2c;
   border-radius:8px;
   border:1px solid #444;
 
   font-weight:700;
 }
 
-.label {
-  color:#cfcfcf;           /* 항목 라벨은 항상 Gray */
-}
+.label { color:#cfcfcf; }
 
 .state-text {
   font-size:15px;
   font-weight:700;
 }
 
-/* 상태값 색상 */
-.status-on {
-  color: var(--online-color);
-}
-.status-off {
-  color: var(--offline-color);
-}
+.status-on { color: var(--online-color); }
+.status-off { color: var(--offline-color); }
 
-/* 리셋 버튼 */
+/* RESET 버튼 */
 .reset-btn {
   padding:6px 12px;
+  background:#ef4444;
+  color:#fff;
   border:none;
   border-radius:8px;
   cursor:pointer;
   font-size:14px;
   font-weight:600;
-  background:#ef4444;
-  color:#fff;
 }
 .reset-btn:hover { opacity:0.9; }
 
-/* ───────── 테이블 ───────── */
+/* Table */
 .card {
   background:var(--card);
   padding:12px;
@@ -126,12 +116,8 @@ body {
   box-shadow:0 2px 10px rgba(0,0,0,0.18);
   margin-top:12px;
 }
-table {
-  width:100%;
-  border-collapse:collapse;
-  font-size:15px;
-}
-th,td {
+table { width:100%; border-collapse:collapse; font-size:15px; }
+th,td{
   padding:7px 4px;
   border-bottom:1px solid var(--border);
   text-align:center;
@@ -140,7 +126,7 @@ tr:nth-child(even){ background:var(--table-alt); }
 .lowbat { color:red; font-weight:bold; }
 .node-missing { color:#ff3b3b; font-weight:800; }
 
-/* ───────── 로그 영역 ───────── */
+/* Debug / Log */
 .debug-bar{
   display:flex;
   justify-content:space-between;
@@ -166,30 +152,30 @@ tr:nth-child(even){ background:var(--table-alt); }
   color:var(--log-fg);
   border:1px solid var(--border);
 }
-.time-text{ font-size:12px; opacity:0.8; }
+.time-text { font-size:12px; opacity:0.8; }
 </style>
 </head>
 
 <body>
 
-<!-- ───────── 상단 헤더 ───────── -->
+<!-- Header -->
 <div class="header">
   <div class="title">LoRa Mesh + MQTT Monitor</div>
   <button class="theme-btn" id="themeBtn">🌙</button>
 </div>
 
-<!-- ───────── MQTT/장비 상태 + 리셋 ───────── -->
+<!-- 상태 + RESET -->
 <div class="top-row">
 
   <div class="status-group">
 
-    <!-- MQTT 상태 -->
+    <!-- MQTT -->
     <div class="status-box">
       <span class="label">MQTT:</span>
       <span id="mqttState" class="state-text status-off">연결안됨</span>
     </div>
 
-    <!-- 장비 상태 -->
+    <!-- 장비 상태 (옵션 A 적용) -->
     <div class="status-box">
       <span class="label">장비 상태:</span>
       <span id="deviceState" class="state-text status-off">OFF LINE</span>
@@ -200,7 +186,7 @@ tr:nth-child(even){ background:var(--table-alt); }
   <button class="reset-btn" onclick="resetESP()">리셋</button>
 </div>
 
-<!-- ───────── 테이블 ───────── -->
+<!-- Table -->
 <div class="card">
   <table>
     <thead>
@@ -218,7 +204,7 @@ tr:nth-child(even){ background:var(--table-alt); }
   </table>
 </div>
 
-<!-- ───────── 디버그 / 로그 ───────── -->
+<!-- Log -->
 <div class="debug-bar">
   <button class="log-toggle" onclick="toggleLog()">🐞</button>
   <div id="timeBox" class="time-text">--:--:--</div>
@@ -227,12 +213,14 @@ tr:nth-child(even){ background:var(--table-alt); }
 <div id="logBox" class="log-box"></div>
 
 
-<!-- ───────── SCRIPT ───────── -->
 <script>
 const ESP = "http://192.168.31.200";
 let client;
 let nodes = {};
 
+let lastPacket = 0;   // ★ Gateway 패킷 수신 기준 시간 저장
+
+/* 기본 다크테마 */
 document.body.setAttribute("data-theme","dark");
 themeBtn.textContent = "☀️";
 
@@ -249,16 +237,14 @@ function connectMQTT(){
 
   client.on("connect", ()=>{
     mqttState.textContent = "연결됨";
-    mqttState.classList.remove("status-off");
-    mqttState.classList.add("status-on");
+    mqttState.classList.replace("status-off","status-on");
 
     client.subscribe("lora/node/+/data");
   });
 
   client.on("close", ()=>{
     mqttState.textContent = "연결안됨";
-    mqttState.classList.remove("status-on");
-    mqttState.classList.add("status-off");
+    mqttState.classList.replace("status-on","status-off");
   });
 
   client.on("message", (topic, msg)=>{
@@ -266,7 +252,10 @@ function connectMQTT(){
     if (!id || id === 99) return;
 
     const data = JSON.parse(msg);
-    nodes[id] = { ...nodes[id], ...data, last: Date.now() };
+
+    nodes[id] = { ...nodes[id], ...data };
+
+    lastPacket = Date.now();   // ★ 패킷 수신 시간 갱신 (옵션 A 핵심)
 
     renderTable();
     updateDeviceStatus();
@@ -282,23 +271,21 @@ function resetESP(){
     .catch(e=>addLog("[RESET] error: "+e));
 }
 
-/* 테이블 렌더링 */
+/* 테이블 업데이트 */
 function renderTable(){
   const tbody = document.getElementById("tbody");
   tbody.innerHTML = "";
-
-  const now = Date.now();
 
   Object.keys(nodes)
     .sort((a,b)=>a-b)
     .forEach(id=>{
       const d = nodes[id];
-      const missing = now - d.last > 8000;
+
       const lowbat = d.bat < 3.0;
 
-      const tr=document.createElement("tr");
+      const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td class="${missing?'node-missing':''}">${id}</td>
+        <td>${id}</td>
         <td class="${lowbat?'lowbat':''}">${d.bat ?? '--'}</td>
         <td>${d.t ?? '--'}</td>
         <td>${d.rh ?? '--'}</td>
@@ -325,7 +312,7 @@ function addLog(t){
   logBox.scrollTop = logBox.scrollHeight;
 }
 
-/* 테마 전환 */
+/* 테마 */
 themeBtn.onclick = ()=>{
   const dark = document.body.getAttribute("data-theme")==="dark";
   if(dark){
@@ -337,7 +324,7 @@ themeBtn.onclick = ()=>{
   }
 };
 
-/* 시간 표시 */
+/* 시간 */
 setInterval(()=>{
   const d=new Date();
   timeBox.textContent =
@@ -345,27 +332,22 @@ setInterval(()=>{
     +`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
 },1000);
 
-/* 장비 상태 갱신 */
+/* ★ 옵션 A — Mesh 상태 판단 */
 function updateDeviceStatus(){
   const now = Date.now();
-  const ids = Object.keys(nodes);
 
-  let offline = ids.length === 0;
-
-  ids.forEach(id=>{
-    if(now - nodes[id].last > 8000) offline = true;
-  });
+  // 10초 동안 어떤 패킷도 수신하지 않으면 → OFF LINE
+  const offline = (now - lastPacket > 10000);
 
   if(offline){
     deviceState.textContent = "OFF LINE";
-    deviceState.classList.remove("status-on");
-    deviceState.classList.add("status-off");
+    deviceState.classList.replace("status-on","status-off");
   } else {
     deviceState.textContent = "ON LINE";
-    deviceState.classList.remove("status-off");
-    deviceState.classList.add("status-on");
+    deviceState.classList.replace("status-off","status-on");
   }
 }
+
 setInterval(updateDeviceStatus, 2000);
 </script>
 
