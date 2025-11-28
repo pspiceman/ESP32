@@ -5,7 +5,6 @@
   <title>ESP32+HiveMQ 대시 보드</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-  <!-- Chart.js: 버전 명시 -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
   <style>
     :root {
@@ -110,7 +109,6 @@
     .metric-label { font-size: 0.8rem; color: var(--subtle); }
     .metric-value { font-size: 1.3rem; font-weight: 600; margin-top: 4px; }
 
-    /* 알람 설정 가능한 메트릭 */
     .metric-alarmable {
       cursor: pointer;
     }
@@ -181,7 +179,6 @@
       color: #fff;
       border-color: var(--accent);
     }
-    /* 작은 RESET 버튼 */
     .icon-button-small {
       padding: 2px 8px;
       font-size: 0.7rem;
@@ -210,7 +207,6 @@
       margin-bottom: 8px;
     }
 
-    /* 버튼 바: 왼쪽(테이블/그래프) / 오른쪽(로그) */
     .toolbar {
       display: flex;
       justify-content: space-between;
@@ -236,7 +232,6 @@
       padding-top: 0;
     }
 
-    /* LED 제어 카드 축소 + 상태 메시지 배치 */
     .led-card {
       padding: 10px 16px 8px;
     }
@@ -263,7 +258,6 @@
       margin-top: 8px;
     }
 
-    /* 그래프 레이아웃 */
     .chart-grid {
       display: flex;
       flex-direction: column;
@@ -296,7 +290,6 @@
       height: 100% !important;
     }
 
-    /* 테이블 카드 */
     .table-scroll {
       max-height: 260px;
       overflow-y: auto;
@@ -341,7 +334,6 @@
       font-size: 0.72rem;
     }
 
-    /* 알람 모달 */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -427,7 +419,6 @@
         <span id="mqttDot" class="status-dot"></span>
         <strong id="mqttState">MQTT 연결 대기 중... (broker.hivemq.com)</strong>
         <span class="mqtt-spacer"></span>
-        <!-- 소프트 리셋 버튼 -->
         <button
           id="btnSoftReset"
           class="icon-button icon-button-small"
@@ -447,7 +438,7 @@
     </div>
   </div>
 
-  <!-- 센서값/상태 -->
+  <!-- 센서 상태 -->
   <div class="card">
     <h2 style="font-size:1.1rem;margin-top:0;">센서 상태 (esp32c3/status)</h2>
     <div class="grid">
@@ -478,7 +469,7 @@
     </div>
   </div>
 
-  <!-- LED 제어 (축소 + 상태문구 버튼 오른쪽) -->
+  <!-- LED 제어 -->
   <div class="card led-card">
     <h2>LED 제어 (esp32c3/led)</h2>
     <div class="led-row">
@@ -493,15 +484,15 @@
   <!-- 버튼 바 -->
   <div class="toolbar">
     <div class="toolbar-left">
-      <button id="btnShowTable" class="icon-button" type="button" title="테이블 보기/숨기기">📋 테이블</button>
-      <button id="btnShowChart" class="icon-button" type="button" title="그래프 보기/숨기기">📊 그래프</button>
+      <button id="btnShowTable" class="icon-button" type="button">📋 테이블</button>
+      <button id="btnShowChart" class="icon-button" type="button">📊 그래프</button>
     </div>
     <div class="toolbar-right">
-      <button id="btnToggleLog" class="icon-button" type="button" title="로그 보기/숨기기">🐞 로그</button>
+      <button id="btnToggleLog" class="icon-button" type="button">🐞 로그</button>
     </div>
   </div>
 
-  <!-- 1분 평균 테이블 카드 -->
+  <!-- 1분 평균 테이블 -->
   <div class="card hidden" id="tableCard">
     <div class="card-header">
       <h2 style="font-size:1.1rem;margin:0;">1분 평균 테이블</h2>
@@ -589,7 +580,7 @@
 
   <!-- 알람 설정 모달 -->
   <div id="alarmModalBackdrop" class="modal-backdrop hidden">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="alarmMetricLabel">
+    <div class="modal" role="dialog" aria-modal="true">
       <h3 class="modal-title"><span id="alarmMetricLabel">온도</span> 알람 설정</h3>
       <p class="modal-desc">
         상한/하한 값을 설정하면 범위를 벗어날 때 센서 값이
@@ -649,7 +640,6 @@
     const chartCard = $("#chartCard");
     const logCard   = $("#logCard");
 
-    // 알람 모달 요소
     const alarmModalBackdrop = $("#alarmModalBackdrop");
     const alarmMetricLabelEl = $("#alarmMetricLabel");
     const alarmUnitLabelEl   = $("#alarmUnitLabel");
@@ -666,14 +656,12 @@
     };
     let currentAlarmKey = null;
 
-    // 시간 포맷: HH:MM (24시간)
     function formatTimeHHMM(date) {
       const h = date.getHours().toString().padStart(2, "0");
       const m = date.getMinutes().toString().padStart(2, "0");
       return `${h}:${m}`;
     }
 
-    // 테마
     function applyTheme(theme) {
       const isDark = theme === "dark";
       document.body.setAttribute("data-theme", theme);
@@ -698,7 +686,6 @@
       applyTheme(next);
     });
 
-    // 로그
     function log(msg) {
       const time = new Date().toLocaleTimeString("ko-KR", {
         hour: "2-digit",
@@ -727,6 +714,7 @@
       }
     }
 
+    // 🔁 수신 시각만 12시간제(오전/오후)로 표기
     function formatKoreanDateTime(d) {
       return d.toLocaleString("ko-KR", {
         year: "numeric",
@@ -735,11 +723,10 @@
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
-        hour12: false
+        hour12: true      // ← 여기만  true 로 변경
       });
     }
 
-    // MQTT
     const brokerUrl = "wss://broker.hivemq.com:8884/mqtt";
     const options = { clean: true, connectTimeout: 4000, reconnectPeriod: 5000 };
     const client = mqtt.connect(brokerUrl, options);
@@ -770,12 +757,10 @@
       log("MQTT 연결 끊김");
     });
 
-    // 1분 평균 history + 로컬 저장
     const BUCKET_MS  = 1 * 60 * 1000;
     const HISTORY_MS = 60 * 60 * 1000;
     const STORAGE_KEY = "esp32c3_history_v1";
     const historyBuckets = [];
-    // {key,start,tempSum,tempCount,humSum,humCount,co2Sum,co2Count,solarSum,solarCount,rssiSum,rssiCount,ledLast}
 
     function saveHistoryToStorage() {
       try {
@@ -887,7 +872,6 @@
       saveHistoryToStorage();
     }
 
-    // 페이지 로드 시 기존 히스토리 복원
     loadHistoryFromStorage();
 
     let tempChart = null;
@@ -988,7 +972,7 @@
 
       const labels = historyBuckets.map(b =>
         formatTimeHHMM(new Date(b.start))
-      ); // 왼쪽 오래된, 오른쪽 최신
+      );
 
       const tempData  = historyBuckets.map(b => b.tempCount  ? b.tempSum  / b.tempCount  : null);
       const humData   = historyBuckets.map(b => b.humCount   ? b.humSum   / b.humCount   : null);
@@ -1015,7 +999,6 @@
       if (!tbody) return;
       tbody.innerHTML = "";
 
-      // 최신이 위로 오도록 역순
       for (let i = historyBuckets.length - 1; i >= 0; i--) {
         const b = historyBuckets[i];
         const timeLabel = formatTimeHHMM(new Date(b.start));
@@ -1041,11 +1024,8 @@
       }
     }
 
-    // 저장된 히스토리로 테이블 선반 세팅
     updateTable();
-    // 그래프는 실제로 열 때 ensureChartsInitialized()에서 렌더
 
-    // 뷰 모드: table / chart / none
     let viewMode = null;
     function setViewMode(mode) {
       viewMode = mode;
@@ -1078,7 +1058,6 @@
       setViewMode(viewMode === "chart" ? null : "chart");
     });
 
-    // 로그 토글
     let logVisible = false;
     btnToggleLog.addEventListener("click", () => {
       logVisible = !logVisible;
@@ -1089,7 +1068,6 @@
       }
     });
 
-    // 센서 메시지 수신
     client.on("message", (topic, payload) => {
       const text = new TextDecoder().decode(payload);
       log(`수신 (${topic}): ${text}`);
@@ -1097,11 +1075,14 @@
       const trimmed = text.trim();
       if (!trimmed.startsWith("{")) return;
 
+      // "rssi":} → "rssi":null}
+      let fixed = trimmed.replace(/"rssi"\s*:\s*}/, '"rssi":null}');
+
       let data;
       try {
-        data = JSON.parse(trimmed);
-      } catch {
-        log("JSON 파싱 실패");
+        data = JSON.parse(fixed);
+      } catch (e) {
+        log("JSON 파싱 실패: " + e.message);
         return;
       }
 
@@ -1134,6 +1115,7 @@
         headerRssiEl.textContent = valRssi.textContent;
       }
 
+      // 여기서 수신 시각 업데이트 → 12시간제
       lastUpdateEl.textContent = formatKoreanDateTime(now);
 
       const tVal   = parseFloat(valTemp.textContent);
@@ -1150,7 +1132,6 @@
       applyAlarms();
     });
 
-    // 10초 이상 메시지 없으면 오프라인 표시
     setInterval(() => {
       if (!lastDeviceMsgAt) return;
       if (Date.now() - lastDeviceMsgAt > 10000) {
@@ -1158,7 +1139,6 @@
       }
     }, 2000);
 
-    // LED 제어
     function publishLed(cmd) {
       if (!client.connected) {
         cmdResultEl.textContent = "전송 상태: MQTT가 연결되지 않았습니다.";
@@ -1179,7 +1159,6 @@
     btnOn.addEventListener("click", () => publishLed("LED_ON"));
     btnOff.addEventListener("click", () => publishLed("LED_OFF"));
 
-    // 소프트 리셋: MQTT로 리셋 명령 전송
     function publishSoftReset() {
       if (!client.connected) {
         alert("MQTT가 연결되지 않았습니다.");
@@ -1188,8 +1167,8 @@
       }
       if (!confirm("장비에 소프트 리셋 명령을 전송할까요?")) return;
 
-      const topic   = "esp32c3/reset";   // ⬅ 펌웨어에서 이 토픽 구독하도록 맞춰주세요
-      const payload = "SOFT_RESET";      // ⬅ 펌웨어에서 이 문자열 보고 리셋 수행
+      const topic   = "esp32c3/reset";
+      const payload = "SOFT_RESET";
 
       client.publish(topic, payload, { qos: 0, retain: false }, (err) => {
         if (err) {
@@ -1203,7 +1182,6 @@
 
     btnSoftReset.addEventListener("click", publishSoftReset);
 
-    // 알람 모달
     function openAlarmModal(key, label, unit) {
       currentAlarmKey = key;
       alarmMetricLabelEl.textContent = label;
