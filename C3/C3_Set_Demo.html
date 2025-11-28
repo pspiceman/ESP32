@@ -5,6 +5,8 @@
   <title>ESP32+HiveMQ 대시 보드</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <!-- Chart.js: 버전 명시 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
   <style>
     :root {
       --bg: #f5f5f5;
@@ -17,6 +19,8 @@
       --log-bg: #111827;
       --log-fg: #e5e7eb;
       --border-soft: rgba(0,0,0,0.06);
+      --accent: #3b82f6;
+      --alarm: #ef4444;
     }
 
     body[data-theme="dark"] {
@@ -50,7 +54,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     .card {
@@ -61,6 +65,7 @@
       margin-bottom: 16px;
       border: 1px solid var(--border-soft);
       transition: background 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      width: 100%;
     }
 
     .status-dot {
@@ -74,6 +79,17 @@
     .status-ok { background: #22c55e; }
     .status-bad { background: #ef4444; }
 
+    .mqtt-lines {
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+    .mqtt-line-main {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -86,10 +102,28 @@
       padding: 10px;
       text-align: center;
       border: 1px solid var(--border-soft);
-      transition: background 0.25s ease, border-color 0.25s ease;
+      transition: background 0.25s ease, border-color 0.25s ease, transform 0.1s ease;
     }
     .metric-label { font-size: 0.8rem; color: var(--subtle); }
     .metric-value { font-size: 1.3rem; font-weight: 600; margin-top: 4px; }
+
+    /* 알람 설정 가능한 메트릭 (온도/습도/CO2) */
+    .metric-alarmable {
+      cursor: pointer;
+    }
+    .metric-alarmable:hover {
+      border-color: rgba(59,130,246,0.6);
+      transform: translateY(-1px);
+    }
+    .metric-alarmable .metric-label::after {
+      content: " • 알람";
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+    .metric-alarm-value.alarm-active {
+      color: var(--alarm);
+      font-weight: 700;
+    }
 
     button {
       border: none;
@@ -129,10 +163,26 @@
     }
     .theme-toggle-icon { font-size: 1.1rem; }
 
+    .icon-button {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: transparent;
+      border: 1px solid var(--border-soft);
+      color: var(--subtle);
+      margin-top: 0;
+      box-shadow: none;
+      font-size: 0.85rem;
+    }
+    .icon-button.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
     #log {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: 0.8rem;
-      max-height: 200px;
+      max-height: 260px;
       overflow-y: auto;
       background: var(--log-bg);
       color: var(--log-fg);
@@ -143,12 +193,172 @@
       transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
     }
 
-    code {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    /* 버튼 바: 왼쪽(테이블/그래프) / 오른쪽(로그) */
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .toolbar-left,
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* 로그 카드: 외곽선/그림자 제거 */
+    .log-card {
+      border: none;
+      box-shadow: none;
+      background: transparent;
+      padding-top: 0;
+    }
+
+    /* 그래프 레이아웃: 스마트폰 세로 기준, 폭 100% */
+    .chart-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .chart-block {
+      border-radius: 10px;
+      border: 1px solid var(--border-soft);
+      padding: 8px 10px 10px;
+      background: var(--metric-bg);
+      width: 100%;
+      margin: 0;
+    }
+    .chart-block h3 {
+      margin: 0 0 4px;
+      font-size: 0.9rem;
+      color: var(--subtle);
+      text-align: left;
+    }
+
+    .chart-wrapper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+    }
+    .chart-wrapper canvas {
+      position: absolute;
+      inset: 0;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* 테이블 카드 */
+    .table-scroll {
+      max-height: 260px;
+      overflow-y: auto;
+      overflow-x: auto;
+    }
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
       font-size: 0.8rem;
-      padding: 2px 4px;
-      border-radius: 4px;
-      background: rgba(148,163,184,0.15);
+    }
+    .history-table thead {
+      position: sticky;
+      top: 0;
+      background: var(--card-bg);
+      z-index: 1;
+    }
+    .history-table th,
+    .history-table td {
+      padding: 4px 6px;
+      border-bottom: 1px solid var(--border-soft);
+      text-align: right;
+      white-space: nowrap;
+    }
+    .history-table th:first-child,
+    .history-table td:first-child {
+      text-align: left;
+    }
+
+    /* 알람 모달 */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+    .modal {
+      background: var(--card-bg);
+      color: var(--fg);
+      border-radius: 12px;
+      padding: 16px 18px 14px;
+      width: min(360px, 90vw);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-soft);
+    }
+    .modal-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 8px;
+    }
+    .modal-desc {
+      font-size: 0.85rem;
+      color: var(--subtle);
+      margin-bottom: 12px;
+    }
+    .field-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .field {
+      flex: 1;
+    }
+    .field label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--subtle);
+      margin-bottom: 2px;
+    }
+    .field input {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border-soft);
+      background: var(--bg);
+      color: var(--fg);
+      font-size: 0.85rem;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(37,99,235,0.4);
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border-soft);
+      color: var(--subtle);
+      box-shadow: none;
     }
   </style>
 </head>
@@ -162,19 +372,18 @@
 
   <!-- 브로커/장비 상태 -->
   <div class="card">
-    <div>
-      <span id="mqttDot" class="status-dot"></span>
-      <strong id="mqttState">MQTT 연결 대기 중...</strong>
-    </div>
-    <div style="margin-top:4px;font-size:0.85rem;color:var(--subtle);">
-      브로커: <code>broker.hivemq.com</code><br>
-      Web: <code>WSS 8884</code> / ESP32: <code>1883</code>
-    </div>
-    <div style="margin-top:4px;font-size:0.8rem;color:var(--muted);">
-      장비 상태: <span id="deviceState">알 수 없음</span>
-    </div>
-    <div style="margin-top:4px;font-size:0.8rem;color:var(--muted);">
-      마지막 수신 시각: <span id="lastUpdate">-</span>
+    <div class="mqtt-lines">
+      <div class="mqtt-line-main">
+        <span id="mqttDot" class="status-dot"></span>
+        <strong id="mqttState">MQTT 연결 대기 중... (broker.hivemq.com)</strong>
+      </div>
+      <div style="font-size:0.85rem;color:var(--subtle);">
+        장비 상태: <span id="deviceState">알 수 없음</span>
+        &nbsp;&nbsp; RSSI: <span id="headerRssi">--</span> [dBm]
+      </div>
+      <div style="font-size:0.85rem;color:var(--subtle);">
+        수신 시각: <span id="lastUpdate">-</span>
+      </div>
     </div>
   </div>
 
@@ -182,17 +391,17 @@
   <div class="card">
     <h2 style="font-size:1.1rem;margin-top:0;">센서 상태 (esp32c3/status)</h2>
     <div class="grid">
-      <div class="metric">
+      <div class="metric metric-alarmable" data-key="temp" data-label="온도" data-unit="°C">
         <div class="metric-label">온도</div>
-        <div class="metric-value"><span id="valTemp">--</span> °C</div>
+        <div class="metric-value"><span id="valTemp" class="metric-alarm-value">--</span> °C</div>
       </div>
-      <div class="metric">
+      <div class="metric metric-alarmable" data-key="hum" data-label="습도" data-unit="%">
         <div class="metric-label">습도</div>
-        <div class="metric-value"><span id="valHum">--</span> %</div>
+        <div class="metric-value"><span id="valHum" class="metric-alarm-value">--</span> %</div>
       </div>
-      <div class="metric">
+      <div class="metric metric-alarmable" data-key="co2" data-label="CO₂" data-unit="ppm">
         <div class="metric-label">CO₂</div>
-        <div class="metric-value"><span id="valCo2">--</span> ppm</div>
+        <div class="metric-value"><span id="valCo2" class="metric-alarm-value">--</span> ppm</div>
       </div>
       <div class="metric">
         <div class="metric-label">일사량</div>
@@ -217,10 +426,105 @@
     <div id="cmdResult" style="margin-top:8px;font-size:0.8rem;color:var(--subtle);">-</div>
   </div>
 
-  <!-- 로그 -->
-  <div class="card">
-    <h2 style="font-size:1.1rem;margin-top:0;">로그</h2>
+  <!-- 버튼 바 -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <button id="btnShowTable" class="icon-button" type="button" title="테이블 보기/숨기기">📋 테이블</button>
+      <button id="btnShowChart" class="icon-button" type="button" title="그래프 보기/숨기기">📊 그래프</button>
+    </div>
+    <div class="toolbar-right">
+      <button id="btnToggleLog" class="icon-button" type="button" title="로그 보기/숨기기">🐞 로그</button>
+    </div>
+  </div>
+
+  <!-- 1분 평균 테이블 카드 -->
+  <div class="card hidden" id="tableCard">
+    <div class="card-header">
+      <h2 style="font-size:1.1rem;margin:0;">1분 평균 테이블 (최근 60분)</h2>
+    </div>
+    <div class="table-scroll">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>시간</th>
+            <th>온도 (°C)</th>
+            <th>습도 (%)</th>
+            <th>CO₂ (ppm)</th>
+            <th>일사량 (W/m²)</th>
+            <th>LED 상태</th>
+            <th>RSSI (dBm)</th>
+          </tr>
+        </thead>
+        <tbody id="historyTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 그래프 카드 -->
+  <div class="card hidden" id="chartCard">
+    <div class="card-header">
+      <h2 style="font-size:1.1rem;margin:0;">온도 / 습도 / CO₂ / 일사량 그래프 (1분 평균, 최근 60분)</h2>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-block">
+        <h3>온도 (°C)</h3>
+        <div class="chart-wrapper">
+          <canvas id="tempChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-block">
+        <h3>습도 (%)</h3>
+        <div class="chart-wrapper">
+          <canvas id="humChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-block">
+        <h3>CO₂ (ppm)</h3>
+        <div class="chart-wrapper">
+          <canvas id="co2Chart"></canvas>
+        </div>
+      </div>
+      <div class="chart-block">
+        <h3>일사량 (W/m²)</h3>
+        <div class="chart-wrapper">
+          <canvas id="solarChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 로그 카드 -->
+  <div class="card log-card hidden" id="logCard">
     <div id="log"></div>
+  </div>
+
+  <!-- 알람 설정 모달 -->
+  <div id="alarmModalBackdrop" class="modal-backdrop hidden">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="alarmMetricLabel">
+      <h3 class="modal-title"><span id="alarmMetricLabel">온도</span> 알람 설정</h3>
+      <p class="modal-desc">
+        상한/하한 값을 설정하면 범위를 벗어날 때 센서 값이
+        <span style="color:var(--alarm);font-weight:600;">빨간색</span>으로 표시됩니다.
+        빈 칸으로 두면 해당 값은 무시됩니다.
+      </p>
+      <div class="field-row">
+        <div class="field">
+          <label for="alarmLow">하한값</label>
+          <input id="alarmLow" type="number" step="0.1" placeholder="예: 18.0" />
+        </div>
+        <div class="field">
+          <label for="alarmHigh">상한값</label>
+          <input id="alarmHigh" type="number" step="0.1" placeholder="예: 28.0" />
+        </div>
+      </div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-top:2px;">
+        단위: <span id="alarmUnitLabel">°C</span>
+      </div>
+      <div class="modal-actions">
+        <button id="alarmCancel" class="btn-ghost" type="button">취소</button>
+        <button id="alarmSave" class="btn-primary" type="button">저장</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -230,6 +534,7 @@
     const mqttDotEl     = $("#mqttDot");
     const deviceStateEl = $("#deviceState");
     const lastUpdateEl  = $("#lastUpdate");
+    const headerRssiEl  = $("#headerRssi");
     const logEl         = $("#log");
     const cmdResultEl   = $("#cmdResult");
 
@@ -246,7 +551,31 @@
     const themeToggleBtn  = $("#themeToggle");
     const themeToggleIcon = themeToggleBtn.querySelector(".theme-toggle-icon");
 
-    // ── 다크/라이트 테마 ──────────────────────
+    const btnShowTable = $("#btnShowTable");
+    const btnShowChart = $("#btnShowChart");
+    const btnToggleLog = $("#btnToggleLog");
+
+    const tableCard = $("#tableCard");
+    const chartCard = $("#chartCard");
+    const logCard   = $("#logCard");
+
+    // 알람 모달 요소
+    const alarmModalBackdrop = $("#alarmModalBackdrop");
+    const alarmMetricLabelEl = $("#alarmMetricLabel");
+    const alarmUnitLabelEl   = $("#alarmUnitLabel");
+    const alarmLowInput      = $("#alarmLow");
+    const alarmHighInput     = $("#alarmHigh");
+    const alarmCancelBtn     = $("#alarmCancel");
+    const alarmSaveBtn       = $("#alarmSave");
+
+    const alarmConfig = {
+      temp: { low: null, high: null },
+      hum:  { low: null, high: null },
+      co2:  { low: null, high: null },
+    };
+    let currentAlarmKey = null;
+
+    // 테마
     function applyTheme(theme) {
       const isDark = theme === "dark";
       document.body.setAttribute("data-theme", theme);
@@ -271,7 +600,7 @@
       applyTheme(next);
     });
 
-    // ── 로그 출력 ─────────────────────────────
+    // 로그
     function log(msg) {
       const time = new Date().toLocaleTimeString();
       logEl.textContent += `[${time}] ${msg}\n`;
@@ -295,24 +624,26 @@
       }
     }
 
-    // ===== MQTT WebSocket: broker.hivemq.com (WSS 8884) =====
-    //   → Chrome에서 보안 연결 요구하는 경우에도 동작
+    function formatKoreanDateTime(d) {
+      return d.toLocaleString("ko-KR", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+    }
+
+    // MQTT
     const brokerUrl = "wss://broker.hivemq.com:8884/mqtt";
-
-    const options = {
-      clean: true,
-      connectTimeout: 4000,
-      reconnectPeriod: 5000
-      // public 데모 브로커 → username/password 없음
-    };
-
+    const options = { clean: true, connectTimeout: 4000, reconnectPeriod: 5000 };
     const client = mqtt.connect(brokerUrl, options);
     let lastDeviceMsgAt = null;
 
     client.on("connect", () => {
       setMqttStatus(true, "MQTT 연결 OK (broker.hivemq.com)");
       log("MQTT 연결 성공 (broker.hivemq.com)");
-
       const topicStatus = "esp32c3/status";
       client.subscribe(topicStatus, (err) => {
         if (err) log("구독 실패: " + err.message);
@@ -321,61 +652,344 @@
     });
 
     client.on("reconnect", () => {
-      setMqttStatus(false, "MQTT 재연결 시도 중...");
+      setMqttStatus(false, "MQTT 재연결 시도 중... (broker.hivemq.com)");
       log("재연결 시도...");
     });
 
     client.on("error", (err) => {
-      setMqttStatus(false, "MQTT 에러");
+      setMqttStatus(false, "MQTT 에러 (broker.hivemq.com)");
       log("에러: " + err.message);
     });
 
     client.on("close", () => {
-      setMqttStatus(false, "MQTT 연결 끊김");
+      setMqttStatus(false, "MQTT 연결 끊김 (broker.hivemq.com)");
       log("MQTT 연결 끊김");
     });
 
+    // 1분 평균 history
+    const BUCKET_MS  = 1 * 60 * 1000;
+    const HISTORY_MS = 60 * 60 * 1000;
+    const historyBuckets = [];
+    // {key,start,tempSum,tempCount,humSum,humCount,co2Sum,co2Count,solarSum,solarCount,rssiSum,rssiCount,ledLast}
+
+    function addHistoryPoint(ts, temp, hum, co2, solar, ledState, rssi) {
+      if (isNaN(temp) && isNaN(hum) && isNaN(co2) && isNaN(solar) && isNaN(rssi) && !ledState) {
+        return;
+      }
+
+      const key = Math.floor(ts / BUCKET_MS);
+      let bucket = historyBuckets[historyBuckets.length - 1];
+
+      if (!bucket || bucket.key !== key) {
+        bucket = {
+          key,
+          start: key * BUCKET_MS,
+          tempSum: 0, tempCount: 0,
+          humSum:  0, humCount:  0,
+          co2Sum:  0, co2Count:  0,
+          solarSum: 0, solarCount: 0,
+          rssiSum: 0, rssiCount: 0,
+          ledLast: null
+        };
+        historyBuckets.push(bucket);
+      }
+
+      if (!isNaN(temp)) {
+        bucket.tempSum += temp;
+        bucket.tempCount += 1;
+      }
+      if (!isNaN(hum)) {
+        bucket.humSum += hum;
+        bucket.humCount += 1;
+      }
+      if (!isNaN(co2)) {
+        bucket.co2Sum += co2;
+        bucket.co2Count += 1;
+      }
+      if (!isNaN(solar)) {
+        bucket.solarSum += solar;
+        bucket.solarCount += 1;
+      }
+      if (!isNaN(rssi)) {
+        bucket.rssiSum += rssi;
+        bucket.rssiCount += 1;
+      }
+      if (ledState) {
+        bucket.ledLast = ledState;
+      }
+
+      const cutoff = ts - HISTORY_MS;
+      while (historyBuckets.length && historyBuckets[0].start < cutoff) {
+        historyBuckets.shift();
+      }
+    }
+
+    let tempChart = null;
+    let humChart  = null;
+    let co2Chart  = null;
+    let solarChart = null;
+
+    // 축 라벨을 확실히 표시하기 위해 CSS 변수 대신 고정 색 사용
+    function createChart(ctx, label, borderColor, bgColor, yTitle) {
+      return new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label,
+              data: [],
+              borderColor,
+              backgroundColor: bgColor,
+              tension: 0.2,
+              spanGaps: true
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const v = ctx.parsed.y;
+                  if (v == null) return `${label}: -`;
+                  return `${label}: ${v.toFixed(1)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: "시간",
+                color: "#6b7280",
+                font: { size: 11 }
+              },
+              ticks: {
+                color: "#6b7280",
+                maxRotation: 0
+              },
+              grid: {
+                color: "rgba(148,163,184,0.25)"
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: yTitle,
+                color: "#6b7280",
+                font: { size: 11 }
+              },
+              position: "left",
+              ticks: {
+                color: "#6b7280"
+              },
+              grid: {
+                color: "rgba(148,163,184,0.25)"
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function ensureChartsInitialized() {
+      if (tempChart && humChart && co2Chart && solarChart) {
+        updateCharts();
+        return;
+      }
+      const ctxTemp  = document.getElementById("tempChart").getContext("2d");
+      const ctxHum   = document.getElementById("humChart").getContext("2d");
+      const ctxCo2   = document.getElementById("co2Chart").getContext("2d");
+      const ctxSolar = document.getElementById("solarChart").getContext("2d");
+
+      tempChart  = createChart(ctxTemp,  "온도",   "#f97316", "rgba(249,115,22,0.15)",  "온도 (°C)");
+      humChart   = createChart(ctxHum,   "습도",   "#22c55e", "rgba(34,197,94,0.15)",   "습도 (%)");
+      co2Chart   = createChart(ctxCo2,   "CO₂",    "#3b82f6", "rgba(59,130,246,0.15)", "CO₂ (ppm)");
+      solarChart = createChart(ctxSolar, "일사량", "#eab308", "rgba(234,179,8,0.15)",  "일사량 (W/m²)");
+
+      updateCharts();
+    }
+
+    function updateCharts() {
+      if (!tempChart || !humChart || !co2Chart || !solarChart) return;
+
+      const labels = historyBuckets.map(b =>
+        new Date(b.start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      ); // 왼쪽 오래된, 오른쪽 최신
+
+      const tempData  = historyBuckets.map(b => b.tempCount  ? b.tempSum  / b.tempCount  : null);
+      const humData   = historyBuckets.map(b => b.humCount   ? b.humSum   / b.humCount   : null);
+      const co2Data   = historyBuckets.map(b => b.co2Count   ? b.co2Sum   / b.co2Count   : null);
+      const solarData = historyBuckets.map(b => b.solarCount ? b.solarSum / b.solarCount : null);
+
+      [tempChart, humChart, co2Chart, solarChart].forEach((chart) => {
+        chart.data.labels = labels;
+      });
+
+      tempChart.data.datasets[0].data  = tempData;
+      humChart.data.datasets[0].data   = humData;
+      co2Chart.data.datasets[0].data   = co2Data;
+      solarChart.data.datasets[0].data = solarData;
+
+      tempChart.update();
+      humChart.update();
+      co2Chart.update();
+      solarChart.update();
+    }
+
+    function updateTable() {
+      const tbody = document.getElementById("historyTableBody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+
+      // 최신이 위로 오도록 역순
+      for (let i = historyBuckets.length - 1; i >= 0; i--) {
+        const b = historyBuckets[i];
+        const timeLabel = new Date(b.start).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+
+        const temp  = b.tempCount  ? (b.tempSum  / b.tempCount ).toFixed(1) : "-";
+        const hum   = b.humCount   ? (b.humSum   / b.humCount  ).toFixed(1) : "-";
+        const co2   = b.co2Count   ? (b.co2Sum   / b.co2Count  ).toFixed(0) : "-";
+        const solar = b.solarCount ? (b.solarSum / b.solarCount).toFixed(0) : "-";
+        const rssi  = b.rssiCount  ? (b.rssiSum  / b.rssiCount ).toFixed(0) : "-";
+        const led   = b.ledLast || "-";
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${timeLabel}</td>
+          <td>${temp}</td>
+          <td>${hum}</td>
+          <td>${co2}</td>
+          <td>${solar}</td>
+          <td>${led}</td>
+          <td>${rssi}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // 뷰 모드: table / chart / none
+    let viewMode = null;
+    function setViewMode(mode) {
+      viewMode = mode;
+      if (mode === "table") {
+        tableCard.classList.remove("hidden");
+        chartCard.classList.add("hidden");
+        btnShowTable.classList.add("active");
+        btnShowChart.classList.remove("active");
+        updateTable();
+        tableCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else if (mode === "chart") {
+        chartCard.classList.remove("hidden");
+        tableCard.classList.add("hidden");
+        btnShowChart.classList.add("active");
+        btnShowTable.classList.remove("active");
+        ensureChartsInitialized();
+        chartCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        tableCard.classList.add("hidden");
+        chartCard.classList.add("hidden");
+        btnShowTable.classList.remove("active");
+        btnShowChart.classList.remove("active");
+      }
+    }
+
+    btnShowTable.addEventListener("click", () => {
+      setViewMode(viewMode === "table" ? null : "table");
+    });
+    btnShowChart.addEventListener("click", () => {
+      setViewMode(viewMode === "chart" ? null : "chart");
+    });
+
+    // 로그 토글
+    let logVisible = false;
+    btnToggleLog.addEventListener("click", () => {
+      logVisible = !logVisible;
+      logCard.classList.toggle("hidden", !logVisible);
+      btnToggleLog.classList.toggle("active", logVisible);
+      if (logVisible) {
+        logCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+
+    // 센서 메시지 수신
     client.on("message", (topic, payload) => {
       const text = new TextDecoder().decode(payload);
       log(`수신 (${topic}): ${text}`);
 
       const trimmed = text.trim();
-      if (!trimmed.startsWith("{")) {
-        // online/offline 같은 문자열이면 무시
-        return;
-      }
+      if (!trimmed.startsWith("{")) return;
 
       let data;
       try {
         data = JSON.parse(trimmed);
-      } catch (e) {
+      } catch {
         log("JSON 파싱 실패");
         return;
       }
 
       lastDeviceMsgAt = Date.now();
       setDeviceState(data.alive !== false);
+      const now = new Date();
 
-      if ("temp"  in data) valTemp.textContent  = Number(data.temp).toFixed(1);
-      if ("hum"   in data) valHum.textContent   = Number(data.hum).toFixed(1);
-      if ("co2"   in data) valCo2.textContent   = Number(data.co2).toFixed(0);
-      if ("solar" in data) valSolar.textContent = Number(data.solar).toFixed(0);
-      if ("led"   in data) valLed.textContent   = data.led ? "ON" : "OFF";
-      if ("rssi"  in data) valRssi.textContent  = Number(data.rssi).toFixed(0);
+      if ("temp"  in data) {
+        const t = Number(data.temp);
+        valTemp.textContent = isNaN(t) ? "--" : t.toFixed(1);
+      }
+      if ("hum"   in data) {
+        const h = Number(data.hum);
+        valHum.textContent = isNaN(h) ? "--" : h.toFixed(1);
+      }
+      if ("co2"   in data) {
+        const c = Number(data.co2);
+        valCo2.textContent = isNaN(c) ? "--" : c.toFixed(0);
+      }
+      if ("solar" in data) {
+        const s = Number(data.solar);
+        valSolar.textContent = isNaN(s) ? "--" : s.toFixed(0);
+      }
+      if ("led"   in data) {
+        valLed.textContent = data.led ? "ON" : "OFF";
+      }
+      if ("rssi"  in data) {
+        const r = Number(data.rssi);
+        valRssi.textContent = isNaN(r) ? "--" : r.toFixed(0);
+        headerRssiEl.textContent = valRssi.textContent;
+      }
 
-      lastUpdateEl.textContent = new Date().toLocaleString();
+      lastUpdateEl.textContent = formatKoreanDateTime(now);
+
+      const tVal   = parseFloat(valTemp.textContent);
+      const hVal   = parseFloat(valHum.textContent);
+      const cVal   = parseFloat(valCo2.textContent);
+      const sVal   = parseFloat(valSolar.textContent);
+      const ledStr = valLed.textContent.trim() || null;
+      const rVal   = parseFloat(valRssi.textContent);
+
+      addHistoryPoint(now.getTime(), tVal, hVal, cVal, sVal, ledStr, rVal);
+
+      updateCharts();
+      updateTable();
+      applyAlarms();
     });
 
-    // 10초 이상 메시지 없으면 오프라인 표시
+    // 10초 이상 메시지 없으면 오프라인
     setInterval(() => {
       if (!lastDeviceMsgAt) return;
-      const diff = Date.now() - lastDeviceMsgAt;
-      if (diff > 10000) {
+      if (Date.now() - lastDeviceMsgAt > 10000) {
         setDeviceState(false);
       }
     }, 2000);
 
-    // ===== LED 제어 Publish =====
+    // LED 제어
     function publishLed(cmd) {
       if (!client.connected) {
         cmdResultEl.textContent = "MQTT가 연결되지 않았습니다.";
@@ -395,6 +1009,78 @@
 
     btnOn.addEventListener("click", () => publishLed("LED_ON"));
     btnOff.addEventListener("click", () => publishLed("LED_OFF"));
+
+    // 알람 모달
+    function openAlarmModal(key, label, unit) {
+      currentAlarmKey = key;
+      alarmMetricLabelEl.textContent = label;
+      alarmUnitLabelEl.textContent   = unit;
+
+      const cfg = alarmConfig[key] || { low: null, high: null };
+      alarmLowInput.value  = cfg.low  ?? "";
+      alarmHighInput.value = cfg.high ?? "";
+
+      alarmModalBackdrop.classList.remove("hidden");
+    }
+    function closeAlarmModal() {
+      alarmModalBackdrop.classList.add("hidden");
+    }
+
+    alarmCancelBtn.addEventListener("click", closeAlarmModal);
+    alarmModalBackdrop.addEventListener("click", (e) => {
+      if (e.target === alarmModalBackdrop) closeAlarmModal();
+    });
+
+    alarmSaveBtn.addEventListener("click", () => {
+      if (!currentAlarmKey) return;
+      let low  = alarmLowInput.value.trim();
+      let high = alarmHighInput.value.trim();
+
+      const key = currentAlarmKey;
+      const cfg = alarmConfig[key];
+
+      cfg.low  = low === ""  ? null : Number(low);
+      cfg.high = high === "" ? null : Number(high);
+
+      applyAlarms();
+      closeAlarmModal();
+    });
+
+    document.querySelectorAll(".metric-alarmable").forEach((el) => {
+      el.addEventListener("click", () => {
+        const key   = el.getAttribute("data-key");
+        const label = el.getAttribute("data-label") || key;
+        const unit  = el.getAttribute("data-unit") || "";
+        openAlarmModal(key, label, unit);
+      });
+    });
+
+    const alarmState = { temp: false, hum: false, co2: false };
+
+    function checkMetricAlarm(key, value, valueEl) {
+      const cfg = alarmConfig[key];
+      if (!cfg || isNaN(value)) {
+        valueEl.classList.remove("alarm-active");
+        alarmState[key] = false;
+        return;
+      }
+      let alarm = false;
+      if (cfg.low  != null && value < cfg.low)  alarm = true;
+      if (cfg.high != null && value > cfg.high) alarm = true;
+      alarmState[key] = alarm;
+      if (alarm) valueEl.classList.add("alarm-active");
+      else       valueEl.classList.remove("alarm-active");
+    }
+
+    function applyAlarms() {
+      const tVal = parseFloat(valTemp.textContent);
+      const hVal = parseFloat(valHum.textContent);
+      const cVal = parseFloat(valCo2.textContent);
+
+      checkMetricAlarm("temp", tVal, valTemp);
+      checkMetricAlarm("hum",  hVal, valHum);
+      checkMetricAlarm("co2",  cVal, valCo2);
+    }
   </script>
 </body>
 </html>
