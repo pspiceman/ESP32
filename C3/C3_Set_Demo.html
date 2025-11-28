@@ -107,6 +107,7 @@
     .metric-label { font-size: 0.8rem; color: var(--subtle); }
     .metric-value { font-size: 1.3rem; font-weight: 600; margin-top: 4px; }
 
+    /* 알람 설정 가능한 메트릭 */
     .metric-alarmable {
       cursor: pointer;
     }
@@ -224,6 +225,33 @@
       box-shadow: none;
       background: transparent;
       padding-top: 0;
+    }
+
+    /* LED 제어 카드 축소 + 상태 메시지 배치 */
+    .led-card {
+      padding: 10px 16px 8px;
+    }
+    .led-card h2 {
+      margin-top: 0;
+      margin-bottom: 4px;
+      font-size: 1.05rem;
+    }
+    .led-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .led-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: nowrap;
+    }
+    .cmd-status {
+      font-size: 0.75rem;
+      color: var(--subtle);
+      min-height: 1.2em;
+      margin-top: 8px;
     }
 
     /* 그래프 레이아웃 */
@@ -416,9 +444,9 @@
         <div class="metric-label">CO₂</div>
         <div class="metric-value"><span id="valCo2" class="metric-alarm-value">--</span> ppm</div>
       </div>
-      <div class="metric">
+      <div class="metric metric-alarmable" data-key="solar" data-label="일사량" data-unit="W/m²">
         <div class="metric-label">일사량</div>
-        <div class="metric-value"><span id="valSolar">--</span> W/m²</div>
+        <div class="metric-value"><span id="valSolar" class="metric-alarm-value">--</span> W/m²</div>
       </div>
       <div class="metric">
         <div class="metric-label">LED 상태</div>
@@ -431,12 +459,16 @@
     </div>
   </div>
 
-  <!-- LED 제어 -->
-  <div class="card">
-    <h2 style="font-size:1.1rem;margin-top:0;">LED 제어 (esp32c3/led)</h2>
-    <button id="btnOn">LED ON</button>
-    <button id="btnOff">LED OFF</button>
-    <div id="cmdResult" style="margin-top:8px;font-size:0.8rem;color:var(--subtle);">-</div>
+  <!-- LED 제어 (축소 + 상태문구 버튼 오른쪽) -->
+  <div class="card led-card">
+    <h2>LED 제어 (esp32c3/led)</h2>
+    <div class="led-row">
+      <div class="led-buttons">
+        <button id="btnOn">LED ON</button>
+        <button id="btnOff">LED OFF</button>
+      </div>
+      <div id="cmdResult" class="cmd-status">전송 상태: -</div>
+    </div>
   </div>
 
   <!-- 버튼 바 -->
@@ -607,11 +639,19 @@
     const alarmSaveBtn       = $("#alarmSave");
 
     const alarmConfig = {
-      temp: { low: null, high: null },
-      hum:  { low: null, high: null },
-      co2:  { low: null, high: null },
+      temp:  { low: null, high: null },
+      hum:   { low: null, high: null },
+      co2:   { low: null, high: null },
+      solar: { low: null, high: null },
     };
     let currentAlarmKey = null;
+
+    // 시간 포맷: HH:MM (24시간)
+    function formatTimeHHMM(date) {
+      const h = date.getHours().toString().padStart(2, "0");
+      const m = date.getMinutes().toString().padStart(2, "0");
+      return `${h}:${m}`;
+    }
 
     // 테마
     function applyTheme(theme) {
@@ -640,7 +680,12 @@
 
     // 로그
     function log(msg) {
-      const time = new Date().toLocaleTimeString();
+      const time = new Date().toLocaleTimeString("ko-KR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      });
       logEl.textContent += `[${time}] ${msg}\n`;
       logEl.scrollTop = logEl.scrollHeight;
       console.log(msg);
@@ -669,7 +714,8 @@
         day: "2-digit",
         hour: "2-digit",
         minute: "2-digit",
-        second: "2-digit"
+        second: "2-digit",
+        hour12: false
       });
     }
 
@@ -870,7 +916,10 @@
               },
               ticks: {
                 color: "#6b7280",
-                maxRotation: 0
+                maxRotation: 45,
+                minRotation: 45,
+                autoSkip: true,
+                maxTicksLimit: 8
               },
               grid: {
                 color: "rgba(148,163,184,0.25)"
@@ -918,7 +967,7 @@
       if (!tempChart || !humChart || !co2Chart || !solarChart) return;
 
       const labels = historyBuckets.map(b =>
-        new Date(b.start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        formatTimeHHMM(new Date(b.start))
       ); // 왼쪽 오래된, 오른쪽 최신
 
       const tempData  = historyBuckets.map(b => b.tempCount  ? b.tempSum  / b.tempCount  : null);
@@ -949,10 +998,7 @@
       // 최신이 위로 오도록 역순
       for (let i = historyBuckets.length - 1; i >= 0; i--) {
         const b = historyBuckets[i];
-        const timeLabel = new Date(b.start).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit"
-        });
+        const timeLabel = formatTimeHHMM(new Date(b.start));
 
         const temp  = b.tempCount  ? (b.tempSum  / b.tempCount ).toFixed(1) : "-";
         const hum   = b.humCount   ? (b.humSum   / b.humCount  ).toFixed(1) : "-";
@@ -975,7 +1021,7 @@
       }
     }
 
-    // 저장된 히스토리로 테이블/그래프 선반 세팅
+    // 저장된 히스토리로 테이블 선반 세팅
     updateTable();
     // 그래프는 실제로 열 때 ensureChartsInitialized()에서 렌더
 
@@ -1095,16 +1141,16 @@
     // LED 제어
     function publishLed(cmd) {
       if (!client.connected) {
-        cmdResultEl.textContent = "MQTT가 연결되지 않았습니다.";
+        cmdResultEl.textContent = "전송 상태: MQTT가 연결되지 않았습니다.";
         return;
       }
       const topic = "esp32c3/led";
       client.publish(topic, cmd, { qos: 0, retain: false }, (err) => {
         if (err) {
-          cmdResultEl.textContent = "전송 실패: " + err.message;
+          cmdResultEl.textContent = "전송 상태: 전송 실패 - " + err.message;
           log("LED publish 실패: " + err.message);
         } else {
-          cmdResultEl.textContent = `전송 완료: ${cmd}`;
+          cmdResultEl.textContent = `전송 상태: ${cmd}`;
           log(`LED 명령 전송 (${topic}): ${cmd}`);
         }
       });
@@ -1158,7 +1204,7 @@
       });
     });
 
-    const alarmState = { temp: false, hum: false, co2: false };
+    const alarmState = { temp: false, hum: false, co2: false, solar: false };
 
     function checkMetricAlarm(key, value, valueEl) {
       const cfg = alarmConfig[key];
@@ -1179,10 +1225,12 @@
       const tVal = parseFloat(valTemp.textContent);
       const hVal = parseFloat(valHum.textContent);
       const cVal = parseFloat(valCo2.textContent);
+      const sVal = parseFloat(valSolar.textContent);
 
-      checkMetricAlarm("temp", tVal, valTemp);
-      checkMetricAlarm("hum",  hVal, valHum);
-      checkMetricAlarm("co2",  cVal, valCo2);
+      checkMetricAlarm("temp",  tVal, valTemp);
+      checkMetricAlarm("hum",   hVal, valHum);
+      checkMetricAlarm("co2",   cVal, valCo2);
+      checkMetricAlarm("solar", sVal, valSolar);
     }
   </script>
 </body>
