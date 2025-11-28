@@ -417,7 +417,7 @@
     <div class="mqtt-lines">
       <div class="mqtt-line-main">
         <span id="mqttDot" class="status-dot"></span>
-        <strong id="mqttState">MQTT 연결 대기 중... (broker.hivemq.com)</strong>
+        <strong id="mqttState">MQTT 연결 대기 중...</strong>
         <span class="mqtt-spacer"></span>
         <button
           id="btnSoftReset"
@@ -723,7 +723,7 @@
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
-        hour12: true      // ← 여기만  true 로 변경
+        hour12: true
       });
     }
 
@@ -733,8 +733,8 @@
     let lastDeviceMsgAt = null;
 
     client.on("connect", () => {
-      setMqttStatus(true, "MQTT 연결 OK (broker.hivemq.com)");
-      log("MQTT 연결 성공 (broker.hivemq.com)");
+      setMqttStatus(true, "MQTT 연결 OK");
+      log("MQTT 연결 성공");
       const topicStatus = "esp32c3/status";
       client.subscribe(topicStatus, (err) => {
         if (err) log("구독 실패: " + err.message);
@@ -743,17 +743,17 @@
     });
 
     client.on("reconnect", () => {
-      setMqttStatus(false, "MQTT 재연결 시도 중... (broker.hivemq.com)");
+      setMqttStatus(false, "MQTT 재연결 시도 중...");
       log("재연결 시도...");
     });
 
     client.on("error", (err) => {
-      setMqttStatus(false, "MQTT 에러 (broker.hivemq.com)");
+      setMqttStatus(false, "MQTT 에러");
       log("에러: " + err.message);
     });
 
     client.on("close", () => {
-      setMqttStatus(false, "MQTT 연결 끊김 (broker.hivemq.com)");
+      setMqttStatus(false, "MQTT 연결 끊김");
       log("MQTT 연결 끊김");
     });
 
@@ -1115,7 +1115,7 @@
         headerRssiEl.textContent = valRssi.textContent;
       }
 
-      // 여기서 수신 시각 업데이트 → 12시간제
+      // 수신 시각: 12시간제
       lastUpdateEl.textContent = formatKoreanDateTime(now);
 
       const tVal   = parseFloat(valTemp.textContent);
