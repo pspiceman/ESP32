@@ -89,6 +89,9 @@
       gap: 6px;
       margin-bottom: 2px;
     }
+    .mqtt-spacer {
+      flex: 1;
+    }
 
     .grid {
       display: grid;
@@ -177,6 +180,12 @@
       background: var(--accent);
       color: #fff;
       border-color: var(--accent);
+    }
+    /* 작은 RESET 버튼 */
+    .icon-button-small {
+      padding: 2px 8px;
+      font-size: 0.7rem;
+      margin-right: 0;
     }
 
     #log {
@@ -417,6 +426,16 @@
       <div class="mqtt-line-main">
         <span id="mqttDot" class="status-dot"></span>
         <strong id="mqttState">MQTT 연결 대기 중... (broker.hivemq.com)</strong>
+        <span class="mqtt-spacer"></span>
+        <!-- 소프트 리셋 버튼 -->
+        <button
+          id="btnSoftReset"
+          class="icon-button icon-button-small"
+          type="button"
+          title="장비 소프트 리셋"
+        >
+          RESET
+        </button>
       </div>
       <div style="font-size:0.85rem;color:var(--subtle);">
         장비 상태: <span id="deviceState">알 수 없음</span>
@@ -615,8 +634,9 @@
     const valLed   = $("#valLed");
     const valRssi  = $("#valRssi");
 
-    const btnOn  = $("#btnOn");
-    const btnOff = $("#btnOff");
+    const btnOn        = $("#btnOn");
+    const btnOff       = $("#btnOff");
+    const btnSoftReset = $("#btnSoftReset");
 
     const themeToggleBtn  = $("#themeToggle");
     const themeToggleIcon = themeToggleBtn.querySelector(".theme-toggle-icon");
@@ -1158,6 +1178,30 @@
 
     btnOn.addEventListener("click", () => publishLed("LED_ON"));
     btnOff.addEventListener("click", () => publishLed("LED_OFF"));
+
+    // 소프트 리셋: MQTT로 리셋 명령 전송
+    function publishSoftReset() {
+      if (!client.connected) {
+        alert("MQTT가 연결되지 않았습니다.");
+        log("Soft reset 전송 실패: MQTT 미연결");
+        return;
+      }
+      if (!confirm("장비에 소프트 리셋 명령을 전송할까요?")) return;
+
+      const topic   = "esp32c3/reset";   // ⬅ 펌웨어에서 이 토픽 구독하도록 맞춰주세요
+      const payload = "SOFT_RESET";      // ⬅ 펌웨어에서 이 문자열 보고 리셋 수행
+
+      client.publish(topic, payload, { qos: 0, retain: false }, (err) => {
+        if (err) {
+          alert("Soft reset 전송 실패: " + err.message);
+          log("Soft reset 전송 실패: " + err.message);
+        } else {
+          log(`Soft reset 명령 전송 (${topic}): ${payload}`);
+        }
+      });
+    }
+
+    btnSoftReset.addEventListener("click", publishSoftReset);
 
     // 알람 모달
     function openAlarmModal(key, label, unit) {
