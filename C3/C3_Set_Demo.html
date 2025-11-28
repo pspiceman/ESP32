@@ -107,7 +107,6 @@
     .metric-label { font-size: 0.8rem; color: var(--subtle); }
     .metric-value { font-size: 1.3rem; font-weight: 600; margin-top: 4px; }
 
-    /* 알람 설정 가능한 메트릭 (온도/습도/CO2) */
     .metric-alarmable {
       cursor: pointer;
     }
@@ -195,7 +194,7 @@
 
     .card-header {
       display: flex;
-      align-items: center;
+      align-items: baseline;
       justify-content: space-between;
       gap: 8px;
       margin-bottom: 8px;
@@ -220,7 +219,6 @@
       display: none !important;
     }
 
-    /* 로그 카드: 외곽선/그림자 제거 */
     .log-card {
       border: none;
       box-shadow: none;
@@ -228,7 +226,7 @@
       padding-top: 0;
     }
 
-    /* 그래프 레이아웃: 스마트폰 세로 기준, 폭 100% */
+    /* 그래프 레이아웃 */
     .chart-grid {
       display: flex;
       flex-direction: column;
@@ -248,7 +246,6 @@
       color: var(--subtle);
       text-align: left;
     }
-
     .chart-wrapper {
       position: relative;
       width: 100%;
@@ -271,7 +268,8 @@
     .history-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
+      table-layout: fixed;
     }
     .history-table thead {
       position: sticky;
@@ -281,14 +279,29 @@
     }
     .history-table th,
     .history-table td {
-      padding: 4px 6px;
+      padding: 3px 4px;
       border-bottom: 1px solid var(--border-soft);
       text-align: right;
       white-space: nowrap;
     }
+    .history-table th {
+      font-size: 0.72rem;
+      line-height: 1.25;
+    }
+    .history-table th .th-label {
+      display: block;
+    }
+    .history-table th .th-unit {
+      display: block;
+      font-size: 0.65rem;
+      color: var(--muted);
+    }
     .history-table th:first-child,
     .history-table td:first-child {
       text-align: left;
+    }
+    .history-table td {
+      font-size: 0.72rem;
     }
 
     /* 알람 모달 */
@@ -440,19 +453,41 @@
   <!-- 1분 평균 테이블 카드 -->
   <div class="card hidden" id="tableCard">
     <div class="card-header">
-      <h2 style="font-size:1.1rem;margin:0;">1분 평균 테이블 (최근 60분)</h2>
+      <h2 style="font-size:1.1rem;margin:0;">1분 평균 테이블</h2>
+      <div style="font-size:0.8rem;color:var(--subtle);">최근 60분</div>
     </div>
     <div class="table-scroll">
       <table class="history-table">
         <thead>
           <tr>
-            <th>시간</th>
-            <th>온도 (°C)</th>
-            <th>습도 (%)</th>
-            <th>CO₂ (ppm)</th>
-            <th>일사량 (W/m²)</th>
-            <th>LED 상태</th>
-            <th>RSSI (dBm)</th>
+            <th>
+              <span class="th-label">시간</span>
+              <span class="th-unit">&nbsp;</span>
+            </th>
+            <th>
+              <span class="th-label">온도</span>
+              <span class="th-unit">(°C)</span>
+            </th>
+            <th>
+              <span class="th-label">습도</span>
+              <span class="th-unit">(%)</span>
+            </th>
+            <th>
+              <span class="th-label">CO₂</span>
+              <span class="th-unit">(ppm)</span>
+            </th>
+            <th>
+              <span class="th-label">일사량</span>
+              <span class="th-unit">(W/m²)</span>
+            </th>
+            <th>
+              <span class="th-label">LED</span>
+              <span class="th-unit">(상태)</span>
+            </th>
+            <th>
+              <span class="th-label">RSSI</span>
+              <span class="th-unit">(dBm)</span>
+            </th>
           </tr>
         </thead>
         <tbody id="historyTableBody"></tbody>
@@ -463,7 +498,10 @@
   <!-- 그래프 카드 -->
   <div class="card hidden" id="chartCard">
     <div class="card-header">
-      <h2 style="font-size:1.1rem;margin:0;">온도 / 습도 / CO₂ / 일사량 그래프 (1분 평균, 최근 60분)</h2>
+      <div>
+        <h2 style="font-size:1.1rem;margin:0;">온도/습도/CO₂/일사량 그래프</h2>
+        <div style="font-size:0.8rem;color:var(--subtle);">1분 평균, 최근 60분</div>
+      </div>
     </div>
     <div class="chart-grid">
       <div class="chart-block">
@@ -666,11 +704,68 @@
       log("MQTT 연결 끊김");
     });
 
-    // 1분 평균 history
+    // 1분 평균 history + 로컬 저장
     const BUCKET_MS  = 1 * 60 * 1000;
     const HISTORY_MS = 60 * 60 * 1000;
+    const STORAGE_KEY = "esp32c3_history_v1";
     const historyBuckets = [];
     // {key,start,tempSum,tempCount,humSum,humCount,co2Sum,co2Count,solarSum,solarCount,rssiSum,rssiCount,ledLast}
+
+    function saveHistoryToStorage() {
+      try {
+        const payload = {
+          version: 1,
+          buckets: historyBuckets.map(b => ({
+            start: b.start,
+            tempSum: b.tempSum, tempCount: b.tempCount,
+            humSum: b.humSum, humCount: b.humCount,
+            co2Sum: b.co2Sum, co2Count: b.co2Count,
+            solarSum: b.solarSum, solarCount: b.solarCount,
+            rssiSum: b.rssiSum, rssiCount: b.rssiCount,
+            ledLast: b.ledLast
+          }))
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      } catch (e) {
+        console.warn("history 저장 실패", e);
+      }
+    }
+
+    function loadHistoryFromStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const payload = JSON.parse(raw);
+        if (!payload || payload.version !== 1 || !Array.isArray(payload.buckets)) return;
+
+        const now = Date.now();
+        const cutoff = now - HISTORY_MS;
+        historyBuckets.length = 0;
+
+        for (const src of payload.buckets) {
+          const startNum = Number(src.start);
+          if (!isFinite(startNum) || startNum < cutoff) continue;
+          const key = Math.floor(startNum / BUCKET_MS);
+          historyBuckets.push({
+            key,
+            start: startNum,
+            tempSum:  src.tempSum  || 0,
+            tempCount:src.tempCount|| 0,
+            humSum:   src.humSum   || 0,
+            humCount: src.humCount || 0,
+            co2Sum:   src.co2Sum   || 0,
+            co2Count: src.co2Count || 0,
+            solarSum: src.solarSum || 0,
+            solarCount:src.solarCount||0,
+            rssiSum:  src.rssiSum  || 0,
+            rssiCount:src.rssiCount|| 0,
+            ledLast:  src.ledLast  || null
+          });
+        }
+      } catch (e) {
+        console.warn("history 로드 실패", e);
+      }
+    }
 
     function addHistoryPoint(ts, temp, hum, co2, solar, ledState, rssi) {
       if (isNaN(temp) && isNaN(hum) && isNaN(co2) && isNaN(solar) && isNaN(rssi) && !ledState) {
@@ -722,14 +817,18 @@
       while (historyBuckets.length && historyBuckets[0].start < cutoff) {
         historyBuckets.shift();
       }
+
+      saveHistoryToStorage();
     }
+
+    // 페이지 로드 시 기존 히스토리 복원
+    loadHistoryFromStorage();
 
     let tempChart = null;
     let humChart  = null;
     let co2Chart  = null;
     let solarChart = null;
 
-    // 축 라벨을 확실히 표시하기 위해 CSS 변수 대신 고정 색 사용
     function createChart(ctx, label, borderColor, bgColor, yTitle) {
       return new Chart(ctx, {
         type: "line",
@@ -876,6 +975,10 @@
       }
     }
 
+    // 저장된 히스토리로 테이블/그래프 선반 세팅
+    updateTable();
+    // 그래프는 실제로 열 때 ensureChartsInitialized()에서 렌더
+
     // 뷰 모드: table / chart / none
     let viewMode = null;
     function setViewMode(mode) {
@@ -981,7 +1084,7 @@
       applyAlarms();
     });
 
-    // 10초 이상 메시지 없으면 오프라인
+    // 10초 이상 메시지 없으면 오프라인 표시
     setInterval(() => {
       if (!lastDeviceMsgAt) return;
       if (Date.now() - lastDeviceMsgAt > 10000) {
