@@ -921,7 +921,7 @@
   // ==== alive 체크 ====
   setInterval(()=>{
     if(!lastDeviceMsgAt) return;
-    if(Date.now()-lastDeviceMsgAt>3000) setDeviceState(false);
+    if(Date.now()-lastDeviceMsgAt>60000) setDeviceState(false);
   },2000);
 
   // ==== LED & reset ====
