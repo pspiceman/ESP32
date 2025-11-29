@@ -254,7 +254,6 @@
 <div class="card hidden" id="tableCard">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
     <h2 style="font-size:1.1rem;margin:0;">1분 평균 (최근 60분)</h2>
-    <span style="font-size:.8rem;color:var(--subtle);">ESP32 히스토리 + 브라우저 히스토리</span>
   </div>
   <div class="table-scroll">
     <table class="history-table">
@@ -567,12 +566,47 @@
     });
   });
 
-  // ==== 히스토리 (ESP + 브라우저, localStorage 저장) ====
-  let historyData = []; // [{ts,temp,hum,co2,solar,rssi,led}, ...]
-  const HISTORY_MAX_POINTS   = 60;
-  const HISTORY_INTERVAL_MS  = 5 * 1000;
-  const HISTORY_LS_KEY       = "esp32_history_v1";
+  // ==== 히스토리 (1분 평균, 최근 60분) ====
+  let historyData = [];
+  const HISTORY_MAX_MINUTES  = 60;
+  const BUCKET_MS            = 60 * 1000;
+  const HISTORY_LS_KEY       = "esp32_history_v2";
   let historyLoadedFromLocal = false;
+
+  let currentBucket = null;
+  function createNewBucket(nowMs, temp, hum, co2, solar, rssi, led){
+    return {
+      startMs: nowMs - (nowMs % BUCKET_MS),
+      sampleCount: 0,
+      tempSum:0,  tempCnt:0,
+      humSum:0,   humCnt:0,
+      co2Sum:0,   co2Cnt:0,
+      solarSum:0, solarCnt:0,
+      rssiSum:0,  rssiCnt:0,
+      lastLed: !!led
+    };
+  }
+
+  function bucketToRecord(b){
+    const tsMs = b.startMs + BUCKET_MS;
+    const temp  = b.tempCnt  > 0 ? b.tempSum  / b.tempCnt  : null;
+    const hum   = b.humCnt   > 0 ? b.humSum   / b.humCnt   : null;
+    const co2   = b.co2Cnt   > 0 ? b.co2Sum   / b.co2Cnt   : null;
+    const solar = b.solarCnt > 0 ? b.solarSum / b.solarCnt : null;
+    const rssi  = b.rssiCnt  > 0 ? b.rssiSum  / b.rssiCnt  : null;
+    return {
+      ts:   tsMs,
+      temp, hum, co2, solar, rssi,
+      led:  b.lastLed
+    };
+  }
+
+  function pushHistoryRecord(rec){
+    historyData.push(rec);
+    if(historyData.length > HISTORY_MAX_MINUTES){
+      historyData.splice(0, historyData.length - HISTORY_MAX_MINUTES);
+    }
+  }
 
   function saveHistoryToLocal(){
     try {
@@ -589,7 +623,7 @@
       const arr = JSON.parse(raw);
       if(!Array.isArray(arr)) return;
       historyData = arr.map(rec => ({
-        ts:    rec.ts    || null,
+        ts:    rec.ts    || Date.now(),
         temp:  rec.temp  ?? null,
         hum:   rec.hum   ?? null,
         co2:   rec.co2   ?? null,
@@ -597,15 +631,23 @@
         rssi:  rec.rssi  ?? null,
         led:   !!rec.led
       }));
-      if(historyData.length > HISTORY_MAX_POINTS){
-        historyData.splice(0, historyData.length - HISTORY_MAX_POINTS);
+      if(historyData.length > HISTORY_MAX_MINUTES){
+        historyData.splice(0, historyData.length - HISTORY_MAX_MINUTES);
       }
       historyLoadedFromLocal = true;
       rebuildTableAndCharts();
-      log("브라우저 저장 히스토리 복원: "+historyData.length+"개");
+      log("브라우저 저장 히스토리 복원: "+historyData.length+"개 (1분 평균)");
     } catch(e){
       console.warn("히스토리 로드 실패:", e);
     }
+  }
+
+  function getDisplayHistory(){
+    const result = historyData.slice();
+    if(currentBucket && currentBucket.sampleCount > 0){
+      result.push(bucketToRecord(currentBucket));
+    }
+    return result;
   }
 
   function rebuildTableAndCharts(){
@@ -615,48 +657,49 @@
   }
 
   function addHistorySampleFromStatus(temp, hum, co2, solar, rssi, led){
-    const sample = {
-      ts:   Date.now(),
-      temp: isNaN(temp)  ? null : temp,
-      hum:  isNaN(hum)   ? null : hum,
-      co2:  isNaN(co2)   ? null : co2,
-      solar:isNaN(solar) ? null : solar,
-      rssi: isNaN(rssi)  ? null : rssi,
-      led:  !!led
-    };
-    historyData.push(sample);
-    if(historyData.length > HISTORY_MAX_POINTS){
-      historyData.splice(0, historyData.length - HISTORY_MAX_POINTS);
+    const nowMs = Date.now();
+
+    if(!currentBucket){
+      currentBucket = createNewBucket(nowMs, temp, hum, co2, solar, rssi, led);
+    }else if(nowMs - currentBucket.startMs >= BUCKET_MS){
+      if(currentBucket.sampleCount > 0){
+        const rec = bucketToRecord(currentBucket);
+        pushHistoryRecord(rec);
+      }
+      currentBucket = createNewBucket(nowMs, temp, hum, co2, solar, rssi, led);
     }
+
+    currentBucket.sampleCount++;
+    if(!isNaN(temp)){  currentBucket.tempSum  += temp;  currentBucket.tempCnt++; }
+    if(!isNaN(hum)){   currentBucket.humSum   += hum;   currentBucket.humCnt++; }
+    if(!isNaN(co2)){   currentBucket.co2Sum   += co2;   currentBucket.co2Cnt++; }
+    if(!isNaN(solar)){ currentBucket.solarSum += solar; currentBucket.solarCnt++; }
+    if(!isNaN(rssi)){  currentBucket.rssiSum  += rssi;  currentBucket.rssiCnt++; }
+    currentBucket.lastLed = !!led;
+
     rebuildTableAndCharts();
   }
 
   function rebuildTable(){
+    const data = getDisplayHistory();
     historyTableBody.innerHTML = "";
-    const N = historyData.length;
+    const N = data.length;
     if(N === 0) return;
 
-    const nowTs = Date.now();
     for(let i=N-1;i>=0;i--){
-      const rec = historyData[i];
-      let t;
-      if(rec.ts){
-        t = new Date(rec.ts);
-      }else{
-        const offsetMs = (N-1 - i) * HISTORY_INTERVAL_MS;
-        t = new Date(nowTs - offsetMs);
-      }
+      const rec = data[i];
+      const t = new Date(rec.ts || Date.now());
       const timeLabel = formatTimeHHMM(t);
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${timeLabel}</td>
-        <td>${rec.temp  != null ? Number(rec.temp).toFixed(1) : "-"}</td>
-        <td>${rec.hum   != null ? Number(rec.hum).toFixed(1)  : "-"}</td>
-        <td>${rec.co2   != null ? Number(rec.co2).toFixed(0)  : "-"}</td>
-        <td>${rec.solar != null ? Number(rec.solar).toFixed(0): "-"}</td>
+        <td>${rec.temp  != null ? Number(rec.temp).toFixed(0)  : "-"}</td>
+        <td>${rec.hum   != null ? Number(rec.hum).toFixed(0)   : "-"}</td>
+        <td>${rec.co2   != null ? Number(rec.co2).toFixed(0)   : "-"}</td>
+        <td>${rec.solar != null ? Number(rec.solar).toFixed(0) : "-"}</td>
         <td>${rec.led   ? "ON" : "OFF"}</td>
-        <td>${rec.rssi  != null ? Number(rec.rssi).toFixed(0) : "-"}</td>
+        <td>${rec.rssi  != null ? Number(rec.rssi).toFixed(0)  : "-"}</td>
       `;
       historyTableBody.appendChild(tr);
     }
@@ -668,7 +711,21 @@
   function createChart(ctx,label,borderColor,bgColor,yTitle){
     return new Chart(ctx,{
       type:"line",
-      data:{labels:[],datasets:[{label,data:[],borderColor,borderWidth:2,backgroundColor:bgColor,tension:0.2,spanGaps:true}]},
+      data:{
+        labels:[],
+        datasets:[{
+          label,
+          data:[],
+          borderColor,
+          borderWidth:2,
+          backgroundColor:bgColor,
+          tension:0.2,
+          spanGaps:true,
+          pointRadius:0,       // ★ 동그라미 제거
+          pointHoverRadius:0,  // ★ 호버 동그라미 제거
+          pointHitRadius:6
+        }]
+      },
       options:{
         responsive:true,
         maintainAspectRatio:false,
@@ -677,7 +734,8 @@
           tooltip:{callbacks:{label:(ctx)=>{
             const v = ctx.parsed.y;
             if(v==null) return `${label}: -`;
-            return `${label}: ${v.toFixed(1)}`;
+            // ★ 정수 표시
+            return `${label}: ${Math.round(v)}`;
           }}}
         },
         scales:{
@@ -707,24 +765,23 @@
 
   function updateCharts(){
     if(!tempChart || !humChart || !co2Chart || !solarChart) return;
-    const N = historyData.length;
+    const data = getDisplayHistory();
+    const N = data.length;
     const labels = [];
-    const nowTs = Date.now();
+    const temps  = [];
+    const hums   = [];
+    const co2s   = [];
+    const solars = [];
+
     for(let i=0;i<N;i++){
-      const rec = historyData[i];
-      let t;
-      if(rec.ts){
-        t = new Date(rec.ts);
-      }else{
-        const offsetMs = (N-1 - i) * HISTORY_INTERVAL_MS;
-        t = new Date(nowTs - offsetMs);
-      }
+      const rec = data[i];
+      const t = new Date(rec.ts || Date.now());
       labels.push(formatTimeHHMM(t));
+      temps.push(  rec.temp  != null ? Number(rec.temp)  : null);
+      hums.push(   rec.hum   != null ? Number(rec.hum)   : null);
+      co2s.push(   rec.co2   != null ? Number(rec.co2)   : null);
+      solars.push( rec.solar != null ? Number(rec.solar) : null);
     }
-    const temps  = historyData.map(r=> r.temp  != null ? Number(r.temp)  : null);
-    const hums   = historyData.map(r=> r.hum   != null ? Number(r.hum)   : null);
-    const co2s   = historyData.map(r=> r.co2   != null ? Number(r.co2)   : null);
-    const solars = historyData.map(r=> r.solar != null ? Number(r.solar) : null);
 
     [tempChart,humChart,co2Chart,solarChart].forEach(c=>{ c.data.labels = labels; });
     tempChart.data.datasets[0].data  = temps;
@@ -804,8 +861,9 @@
     const led   = !!data.led;
     const rssi  = Number(data.rssi);
 
-    if(!isNaN(temp))  valTemp.textContent  = temp.toFixed(1);
-    if(!isNaN(hum))   valHum.textContent   = hum.toFixed(1);
+    // ★ 온도/습도 정수 표시
+    if(!isNaN(temp))  valTemp.textContent  = temp.toFixed(0);
+    if(!isNaN(hum))   valHum.textContent   = hum.toFixed(0);
     if(!isNaN(co2))   valCo2.textContent   = co2.toFixed(0);
     if(!isNaN(solar)) valSolar.textContent = solar.toFixed(0);
     valLed.textContent  = led ? "ON" : "OFF";
@@ -816,12 +874,10 @@
 
     applyAlarms();
 
-    // ★ 5초마다 status 수신 → 히스토리에 샘플 추가
     addHistorySampleFromStatus(temp, hum, co2, solar, rssi, led);
   }
 
   function handleHistoryMessage(text){
-    // ★ 이미 브라우저 쪽 히스토리가 있으면 ESP 히스토리는 무시
     if(historyLoadedFromLocal && historyData.length > 0){
       log("ESP history 수신: 브라우저 히스토리가 있어 무시");
       return;
@@ -830,11 +886,8 @@
     const obj = JSON.parseSafe(text);
     if(!obj || obj.type !== "history" || !Array.isArray(obj.data)) return;
 
-    const nowTs = Date.now();
-    const N = obj.data.length;
-
-    historyData = obj.data.map((item, idx)=>({
-      ts:    nowTs - (N-1 - idx) * HISTORY_INTERVAL_MS,
+    historyData = obj.data.map(item => ({
+      ts:    item.ts ? item.ts * 1000 : Date.now(),
       temp:  item.temp  ?? null,
       hum:   item.hum   ?? null,
       co2:   item.co2   ?? null,
@@ -843,8 +896,8 @@
       led:   !!item.led
     }));
 
-    if(historyData.length > HISTORY_MAX_POINTS){
-      historyData.splice(0, historyData.length - HISTORY_MAX_POINTS);
+    if(historyData.length > HISTORY_MAX_MINUTES){
+      historyData.splice(0, historyData.length - HISTORY_MAX_MINUTES);
     }
     rebuildTableAndCharts();
   }
