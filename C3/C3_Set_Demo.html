@@ -254,7 +254,7 @@
 <div class="card hidden" id="tableCard">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
     <h2 style="font-size:1.1rem;margin:0;">1분 평균 (최근 60분)</h2>
-    <span style="font-size:.8rem;color:var(--subtle);">ESP32 히스토리 사용</span>
+    <span style="font-size:.8rem;color:var(--subtle);">ESP32 히스토리 + 브라우저 히스토리</span>
   </div>
   <div class="table-scroll">
     <table class="history-table">
@@ -420,7 +420,7 @@
     }
   }
 
-  // 수신 시각: 12시간제로 표시 (요청사항 반영)
+  // 수신 시각: 12시간제로 표시
   function formatDisplayTime12(d){
     return d.toLocaleString("ko-KR",{
       year:"numeric",month:"2-digit",day:"2-digit",
@@ -467,7 +467,7 @@
     log("MQTT 연결 끊김");
   });
 
-  // ==== 알람 설정 구조 (브라우저 쪽) ====
+  // ==== 알람 설정 구조 ====
   const alarmConfig = {
     temp: {low:null, high:null},
     hum:  {low:null, high:null},
@@ -502,7 +502,6 @@
     cfg.low  = lowStr === ""  ? null : Number(lowStr);
     cfg.high = highStr === "" ? null : Number(highStr);
 
-    // MQTT로 전체 알람 설정 전송 (ESP32가 Preferences에 저장)
     const payload = {
       type: "alarm_config",
       temp:  alarmConfig.temp,
@@ -521,7 +520,6 @@
     closeAlarmModal();
   });
 
-  // 알람 설정 수신 처리
   function handleAlarmConfigMessage(obj){
     if(!obj) return;
     if(obj.temp)  alarmConfig.temp  = {low:obj.temp.low ?? null,  high:obj.temp.high ?? null};
@@ -531,7 +529,6 @@
     applyAlarms();
   }
 
-  // ==== 알람 적용 ====
   const alarmState = {temp:false,hum:false,co2:false,solar:false};
 
   function checkMetricAlarm(key,value,valueEl){
@@ -570,17 +567,51 @@
     });
   });
 
-  // ==== 히스토리 (status+history 통합, 5초 간격 기준 최대 60개) ====
+  // ==== 히스토리 (ESP + 브라우저, 5초 간격 기준 최대 60개, localStorage 저장) ====
   let historyData = []; // [{ts,temp,hum,co2,solar,rssi,led}, ...]
   const HISTORY_MAX_POINTS   = 60;
-  const HISTORY_INTERVAL_MS  = 5 * 1000; // ts 없을 때 fallback 간격
+  const HISTORY_INTERVAL_MS  = 5 * 1000;
+  const HISTORY_LS_KEY       = "esp32_history_v1";
+
+  function saveHistoryToLocal(){
+    try {
+      localStorage.setItem(HISTORY_LS_KEY, JSON.stringify(historyData));
+    } catch(e){
+      console.warn("히스토리 저장 실패:", e);
+    }
+  }
+
+  function loadHistoryFromLocal(){
+    try {
+      const raw = localStorage.getItem(HISTORY_LS_KEY);
+      if(!raw) return;
+      const arr = JSON.parse(raw);
+      if(!Array.isArray(arr)) return;
+      historyData = arr.map(rec => ({
+        ts:    rec.ts    || null,
+        temp:  rec.temp  ?? null,
+        hum:   rec.hum   ?? null,
+        co2:   rec.co2   ?? null,
+        solar: rec.solar ?? null,
+        rssi:  rec.rssi  ?? null,
+        led:   !!rec.led
+      }));
+      if(historyData.length > HISTORY_MAX_POINTS){
+        historyData.splice(0, historyData.length - HISTORY_MAX_POINTS);
+      }
+      rebuildTableAndCharts();
+      log("브라우저 저장 히스토리 복원: "+historyData.length+"개");
+    } catch(e){
+      console.warn("히스토리 로드 실패:", e);
+    }
+  }
 
   function rebuildTableAndCharts(){
     rebuildTable();
     updateCharts();
+    saveHistoryToLocal();
   }
 
-  // 상태(status) 수신 시 히스토리에 샘플 1개 추가
   function addHistorySampleFromStatus(temp, hum, co2, solar, rssi, led){
     const sample = {
       ts:   Date.now(),
@@ -750,7 +781,6 @@
     }
   });
 
-  // JSON 파싱 도우미
   JSON.parseSafe = function(str){
     try{ return JSON.parse(str); }catch(e){ log("JSON 파싱 실패: "+e.message); return null;}
   }
@@ -784,7 +814,7 @@
 
     applyAlarms();
 
-    // ★ 5초마다 status 수신 → 히스토리에 샘플 추가 (최대 60개)
+    // ★ 5초마다 status 수신 → 히스토리에 샘플 추가 (최대 60개 + localStorage 저장)
     addHistorySampleFromStatus(temp, hum, co2, solar, rssi, led);
   }
 
@@ -797,7 +827,6 @@
 
     historyData = obj.data.map((item, idx)=>({
       ts:    nowTs - (N-1 - idx) * HISTORY_INTERVAL_MS,
-      idx:   item.idx ?? 0,
       temp:  item.temp  ?? null,
       hum:   item.hum   ?? null,
       co2:   item.co2   ?? null,
@@ -812,7 +841,7 @@
     rebuildTableAndCharts();
   }
 
-  // ==== 주기적으로 alive 체크 ====
+  // ==== alive 체크 ====
   setInterval(()=>{
     if(!lastDeviceMsgAt) return;
     if(Date.now() - lastDeviceMsgAt > 15000){
@@ -820,7 +849,7 @@
     }
   }, 2000);
 
-  // ==== LED 제어 & Soft reset 전송 ====
+  // ==== LED 제어 & Soft reset ====
   function publishLed(cmd){
     if(!client.connected){
       cmdResultEl.textContent = "전송 상태: MQTT 미연결";
@@ -856,6 +885,9 @@
     });
   }
   btnSoftReset.addEventListener("click",publishSoftReset);
+
+  // ==== 시작 시: 브라우저 저장 히스토리 복원 ====
+  loadHistoryFromLocal();
 </script>
 </body>
 </html>
