@@ -571,7 +571,6 @@
   const HISTORY_MAX_MINUTES  = 60;
   const BUCKET_MS            = 60 * 1000;
   const HISTORY_LS_KEY       = "esp32_history_v2";
-  let historyLoadedFromLocal = false;
 
   let currentBucket = null;
   function createNewBucket(nowMs, temp, hum, co2, solar, rssi, led){
@@ -634,7 +633,6 @@
       if(historyData.length > HISTORY_MAX_MINUTES){
         historyData.splice(0, historyData.length - HISTORY_MAX_MINUTES);
       }
-      historyLoadedFromLocal = true;
       rebuildTableAndCharts();
       log("브라우저 저장 히스토리 복원: "+historyData.length+"개 (1분 평균)");
     } catch(e){
@@ -878,14 +876,10 @@
   }
 
   function handleHistoryMessage(text){
-    if(historyLoadedFromLocal && historyData.length > 0){
-      log("ESP history 수신: 브라우저 히스토리가 있어 무시");
-      return;
-    }
-
     const obj = JSON.parseSafe(text);
     if(!obj || obj.type !== "history" || !Array.isArray(obj.data)) return;
 
+    // ESP32에서 온 히스토리를 항상 기준으로 사용
     historyData = obj.data.map(item => ({
       ts:    item.ts ? item.ts * 1000 : Date.now(),
       temp:  item.temp  ?? null,
@@ -899,7 +893,13 @@
     if(historyData.length > HISTORY_MAX_MINUTES){
       historyData.splice(0, historyData.length - HISTORY_MAX_MINUTES);
     }
+
+    // 새 히스토리를 받은 후 현재 버킷은 초기화해서
+    // 이후 status 샘플은 최신 분부터 다시 1분 평균으로 쌓이도록 함
+    currentBucket = null;
+
     rebuildTableAndCharts();
+    log("ESP 히스토리 반영: "+historyData.length+"개 (1분 평균)");
   }
 
   // ==== alive 체크 ====
@@ -947,7 +947,7 @@
   }
   btnSoftReset.addEventListener("click",publishSoftReset);
 
-  // ==== 시작 시: 브라우저 저장 히스토리 복원 ====
+  // ==== 시작 시: 브라우저 저장 히스토리 복원 (초기 화면용), 이후 ESP history가 오면 덮어씀 ====
   loadHistoryFromLocal();
 </script>
 </body>
