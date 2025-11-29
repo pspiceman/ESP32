@@ -171,10 +171,10 @@
     .btn-ghost{background:transparent;border:1px solid var(--border-soft);color:var(--subtle);box-shadow:none;}
   </style>
 </head>
-<body data-theme="light">
+<body data-theme="dark">
 <header class="page-header">
   <h1>ESP32 환경 대시보드</h1>
-  <button id="themeToggle" class="theme-toggle" type="button"><span class="theme-toggle-icon">🌞</span></button>
+  <button id="themeToggle" class="theme-toggle" type="button"><span class="theme-toggle-icon">🌙</span></button>
 </header>
 
 <!-- MQTT/장비 상태 -->
@@ -338,6 +338,26 @@
 <script>
   const $ = (s)=>document.querySelector(s);
 
+  // ==== 테마 ====
+  const themeToggleBtn  = $("#themeToggle");
+  const themeToggleIcon = themeToggleBtn.querySelector(".theme-toggle-icon");
+
+  function applyTheme(theme){
+    document.body.setAttribute("data-theme", theme);
+    themeToggleIcon.textContent = theme==="dark" ? "🌙" : "🌞";
+  }
+  (function initTheme(){
+    const saved = localStorage.getItem("esp32-dashboard-theme");
+    const t = (saved === "dark" || saved === "light") ? saved : "dark"; // 기본 다크
+    applyTheme(t);
+  })();
+  themeToggleBtn.addEventListener("click",()=>{
+    const cur = document.body.getAttribute("data-theme") || "dark";
+    const next = cur === "dark" ? "light" : "dark";
+    localStorage.setItem("esp32-dashboard-theme",next);
+    applyTheme(next);
+  });
+
   // ==== UI 요소 ====
   const mqttDotEl      = $("#mqttDot");
   const mqttStateEl    = $("#mqttState");
@@ -364,9 +384,6 @@
   const chartCard    = $("#chartCard");
   const logCard      = $("#logCard");
 
-  const themeToggleBtn  = $("#themeToggle");
-  const themeToggleIcon = themeToggleBtn.querySelector(".theme-toggle-icon");
-
   const alarmModalBackdrop = $("#alarmModalBackdrop");
   const alarmMetricLabelEl = $("#alarmMetricLabel");
   const alarmUnitLabelEl   = $("#alarmUnitLabel");
@@ -375,25 +392,6 @@
   const alarmCancelBtn     = $("#alarmCancel");
   const alarmSaveBtn       = $("#alarmSave");
   const historyTableBody   = $("#historyTableBody");
-
-  // ==== 테마 ====
-  function applyTheme(theme){
-    document.body.setAttribute("data-theme", theme);
-    themeToggleIcon.textContent = theme==="dark" ? "🌙" : "🌞";
-  }
-  (function initTheme(){
-    const saved = localStorage.getItem("esp32-dashboard-theme");
-    let t = "light";
-    if(saved === "dark" || saved === "light") t = saved;
-    else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) t="dark";
-    applyTheme(t);
-  })();
-  themeToggleBtn.addEventListener("click",()=>{
-    const cur = document.body.getAttribute("data-theme") || "light";
-    const next = cur === "dark" ? "light" : "dark";
-    localStorage.setItem("esp32-dashboard-theme",next);
-    applyTheme(next);
-  });
 
   // ==== 로그 ====
   function log(msg){
@@ -408,7 +406,6 @@
     mqttDotEl.classList.add(ok?"status-ok":"status-bad");
     mqttStateEl.textContent = text;
   }
-
   function setDeviceState(alive){
     if(alive){
       deviceStateEl.textContent = "온라인";
@@ -419,7 +416,6 @@
     }
   }
 
-  // 수신 시각: 12시간제로 표시
   function formatDisplayTime12(d){
     return d.toLocaleString("ko-KR",{
       year:"numeric",month:"2-digit",day:"2-digit",
@@ -427,18 +423,13 @@
       hour12:true
     });
   }
-  // 24시간 HH:mm
   function formatTimeHHMM(d){
     return d.toLocaleTimeString("ko-KR",{hour12:false,hour:"2-digit",minute:"2-digit"});
   }
 
   // ==== MQTT 연결 ====
   const brokerUrl = "wss://broker.hivemq.com:8884/mqtt";
-  const options = {
-    clean:true,
-    connectTimeout:4000,
-    reconnectPeriod:5000
-  };
+  const options = { clean:true, connectTimeout:4000, reconnectPeriod:5000 };
   const client = mqtt.connect(brokerUrl, options);
 
   let lastDeviceMsgAt = null;
@@ -450,23 +441,21 @@
     client.subscribe("esp32c3/history");
     client.subscribe("esp32c3/config/alarm");
   });
-
   client.on("reconnect",()=>{
     setMqttStatus(false,"MQTT 재연결 시도 중...");
     log("재연결 시도...");
   });
-
   client.on("error",(err)=>{
     setMqttStatus(false,"MQTT 에러");
     log("에러: "+err.message);
   });
-
   client.on("close",()=>{
     setMqttStatus(false,"MQTT 연결 끊김");
     log("MQTT 연결 끊김");
   });
 
-  // ==== 알람 설정 구조 ====
+  // ==== 알람 설정 ====
+  const ALARM_LS_KEY = "esp32_alarm_config_v1";
   const alarmConfig = {
     temp: {low:null, high:null},
     hum:  {low:null, high:null},
@@ -474,6 +463,25 @@
     solar:{low:null, high:null}
   };
   let currentAlarmKey = null;
+
+  function loadAlarmFromLocal(){
+    try{
+      const raw = localStorage.getItem(ALARM_LS_KEY);
+      if(!raw) return;
+      const obj = JSON.parse(raw);
+      ["temp","hum","co2","solar"].forEach(k=>{
+        if(obj && obj[k]){
+          alarmConfig[k] = { low:obj[k].low ?? null, high:obj[k].high ?? null };
+        }
+      });
+      applyAlarms();
+      log("브라우저 저장 알람 설정 복원: "+JSON.stringify(alarmConfig));
+    }catch(e){ console.warn("알람 설정 로드 실패:", e); }
+  }
+  function saveAlarmToLocal(){
+    try{ localStorage.setItem(ALARM_LS_KEY, JSON.stringify(alarmConfig)); }
+    catch(e){ console.warn("알람 설정 저장 실패:", e); }
+  }
 
   function openAlarmModal(key,label,unit){
     currentAlarmKey = key;
@@ -484,9 +492,7 @@
     alarmHighInput.value = cfg.high ?? "";
     alarmModalBackdrop.classList.remove("hidden");
   }
-  function closeAlarmModal(){
-    alarmModalBackdrop.classList.add("hidden");
-  }
+  function closeAlarmModal(){ alarmModalBackdrop.classList.add("hidden"); }
   alarmCancelBtn.addEventListener("click",closeAlarmModal);
   alarmModalBackdrop.addEventListener("click",(e)=>{
     if(e.target === alarmModalBackdrop) closeAlarmModal();
@@ -497,9 +503,9 @@
     const lowStr  = alarmLowInput.value.trim();
     const highStr = alarmHighInput.value.trim();
     const cfg = alarmConfig[currentAlarmKey];
-
-    cfg.low  = lowStr === ""  ? null : Number(lowStr);
+    cfg.low  = lowStr  === "" ? null : Number(lowStr);
     cfg.high = highStr === "" ? null : Number(highStr);
+    saveAlarmToLocal();
 
     const payload = {
       type: "alarm_config",
@@ -508,13 +514,12 @@
       co2:   alarmConfig.co2,
       solar: alarmConfig.solar
     };
-    if (client.connected) {
+    if(client.connected){
       client.publish("esp32c3/config/alarm", JSON.stringify(payload));
       log("알람 설정 전송: "+JSON.stringify(payload));
-    } else {
+    }else{
       log("알람 설정 전송 실패: MQTT 미연결");
     }
-
     applyAlarms();
     closeAlarmModal();
   });
@@ -525,11 +530,11 @@
     if(obj.hum)   alarmConfig.hum   = {low:obj.hum.low ?? null,   high:obj.hum.high ?? null};
     if(obj.co2)   alarmConfig.co2   = {low:obj.co2.low ?? null,   high:obj.co2.high ?? null};
     if(obj.solar) alarmConfig.solar = {low:obj.solar.low ?? null, high:obj.solar.high ?? null};
+    saveAlarmToLocal();
     applyAlarms();
   }
 
   const alarmState = {temp:false,hum:false,co2:false,solar:false};
-
   function checkMetricAlarm(key,value,valueEl){
     const cfg = alarmConfig[key];
     if(!cfg || isNaN(value)){
@@ -544,19 +549,16 @@
     if(alarm) valueEl.classList.add("alarm-active");
     else      valueEl.classList.remove("alarm-active");
   }
-
   function applyAlarms(){
-    const tVal = parseFloat(valTemp.textContent);
-    const hVal = parseFloat(valHum.textContent);
-    const cVal = parseFloat(valCo2.textContent);
-    const sVal = parseFloat(valSolar.textContent);
-
-    checkMetricAlarm("temp",  tVal, valTemp);
-    checkMetricAlarm("hum",   hVal, valHum);
-    checkMetricAlarm("co2",   cVal, valCo2);
-    checkMetricAlarm("solar", sVal, valSolar);
+    const t = parseFloat(valTemp.textContent);
+    const h = parseFloat(valHum.textContent);
+    const c = parseFloat(valCo2.textContent);
+    const s = parseFloat(valSolar.textContent);
+    checkMetricAlarm("temp",  t, valTemp);
+    checkMetricAlarm("hum",   h, valHum);
+    checkMetricAlarm("co2",   c, valCo2);
+    checkMetricAlarm("solar", s, valSolar);
   }
-
   document.querySelectorAll(".metric-alarmable").forEach(el=>{
     el.addEventListener("click",()=>{
       const key   = el.getAttribute("data-key");
@@ -566,62 +568,62 @@
     });
   });
 
-  // ==== 히스토리 (1분 평균, 최근 60분) ====
+  // ==== 히스토리 ====
   let historyData = [];
   const HISTORY_MAX_MINUTES  = 60;
-  const BUCKET_MS            = 60 * 1000;
+  const BUCKET_MS            = 60*1000;
+  const HISTORY_WINDOW_MS    = 60*60*1000;
   const HISTORY_LS_KEY       = "esp32_history_v2";
-
   let currentBucket = null;
-  function createNewBucket(nowMs, temp, hum, co2, solar, rssi, led){
+
+  function createNewBucket(nowMs){
     return {
       startMs: nowMs - (nowMs % BUCKET_MS),
-      sampleCount: 0,
-      tempSum:0,  tempCnt:0,
-      humSum:0,   humCnt:0,
-      co2Sum:0,   co2Cnt:0,
-      solarSum:0, solarCnt:0,
-      rssiSum:0,  rssiCnt:0,
-      lastLed: !!led
+      sampleCount:0,
+      tempSum:0,tempCnt:0,
+      humSum:0,humCnt:0,
+      co2Sum:0,co2Cnt:0,
+      solarSum:0,solarCnt:0,
+      rssiSum:0,rssiCnt:0,
+      lastLed:false
     };
   }
-
   function bucketToRecord(b){
     const tsMs = b.startMs + BUCKET_MS;
-    const temp  = b.tempCnt  > 0 ? b.tempSum  / b.tempCnt  : null;
-    const hum   = b.humCnt   > 0 ? b.humSum   / b.humCnt   : null;
-    const co2   = b.co2Cnt   > 0 ? b.co2Sum   / b.co2Cnt   : null;
-    const solar = b.solarCnt > 0 ? b.solarSum / b.solarCnt : null;
-    const rssi  = b.rssiCnt  > 0 ? b.rssiSum  / b.rssiCnt  : null;
     return {
       ts:   tsMs,
-      temp, hum, co2, solar, rssi,
-      led:  b.lastLed
+      temp:  b.tempCnt  ? b.tempSum  / b.tempCnt  : null,
+      hum:   b.humCnt   ? b.humSum   / b.humCnt   : null,
+      co2:   b.co2Cnt   ? b.co2Sum   / b.co2Cnt   : null,
+      solar: b.solarCnt ? b.solarSum / b.solarCnt : null,
+      rssi:  b.rssiCnt  ? b.rssiSum  / b.rssiCnt  : null,
+      led:   b.lastLed
     };
   }
 
-  function pushHistoryRecord(rec){
-    historyData.push(rec);
-    if(historyData.length > HISTORY_MAX_MINUTES){
-      historyData.splice(0, historyData.length - HISTORY_MAX_MINUTES);
-    }
+  function keyOfRec(rec){
+    const ts = rec.ts || Date.now();
+    return Math.floor(ts / BUCKET_MS);
+  }
+
+  function trimHistoryByTime(){
+    if(historyData.length === 0) return;
+    const nowMs = Date.now();
+    const cutoff = nowMs - HISTORY_WINDOW_MS;
+    historyData = historyData.filter(rec=> (rec.ts || nowMs) >= cutoff);
   }
 
   function saveHistoryToLocal(){
-    try {
-      localStorage.setItem(HISTORY_LS_KEY, JSON.stringify(historyData));
-    } catch(e){
-      console.warn("히스토리 저장 실패:", e);
-    }
+    try{ localStorage.setItem(HISTORY_LS_KEY, JSON.stringify(historyData)); }
+    catch(e){ console.warn("히스토리 저장 실패:", e); }
   }
-
   function loadHistoryFromLocal(){
-    try {
+    try{
       const raw = localStorage.getItem(HISTORY_LS_KEY);
       if(!raw) return;
       const arr = JSON.parse(raw);
       if(!Array.isArray(arr)) return;
-      historyData = arr.map(rec => ({
+      historyData = arr.map(rec=>({
         ts:    rec.ts    || Date.now(),
         temp:  rec.temp  ?? null,
         hum:   rec.hum   ?? null,
@@ -630,43 +632,33 @@
         rssi:  rec.rssi  ?? null,
         led:   !!rec.led
       }));
-      if(historyData.length > HISTORY_MAX_MINUTES){
-        historyData.splice(0, historyData.length - HISTORY_MAX_MINUTES);
+      trimHistoryByTime();
+      if(historyData.length>HISTORY_MAX_MINUTES){
+        historyData.splice(0, historyData.length-HISTORY_MAX_MINUTES);
       }
       rebuildTableAndCharts();
-      log("브라우저 저장 히스토리 복원: "+historyData.length+"개 (1분 평균)");
-    } catch(e){
-      console.warn("히스토리 로드 실패:", e);
-    }
+      log("브라우저 저장 히스토리 복원: "+historyData.length+"개");
+    }catch(e){ console.warn("히스토리 로드 실패:", e); }
   }
 
   function getDisplayHistory(){
     const result = historyData.slice();
-    if(currentBucket && currentBucket.sampleCount > 0){
+    if(currentBucket && currentBucket.sampleCount>0){
       result.push(bucketToRecord(currentBucket));
     }
     return result;
   }
 
-  function rebuildTableAndCharts(){
-    rebuildTable();
-    updateCharts();
-    saveHistoryToLocal();
-  }
-
-  function addHistorySampleFromStatus(temp, hum, co2, solar, rssi, led){
+  function addHistorySampleFromStatus(temp,hum,co2,solar,rssi,led){
     const nowMs = Date.now();
-
     if(!currentBucket){
-      currentBucket = createNewBucket(nowMs, temp, hum, co2, solar, rssi, led);
+      currentBucket = createNewBucket(nowMs);
     }else if(nowMs - currentBucket.startMs >= BUCKET_MS){
-      if(currentBucket.sampleCount > 0){
-        const rec = bucketToRecord(currentBucket);
-        pushHistoryRecord(rec);
+      if(currentBucket.sampleCount>0){
+        pushMergedRecords([bucketToRecord(currentBucket)]);
       }
-      currentBucket = createNewBucket(nowMs, temp, hum, co2, solar, rssi, led);
+      currentBucket = createNewBucket(nowMs);
     }
-
     currentBucket.sampleCount++;
     if(!isNaN(temp)){  currentBucket.tempSum  += temp;  currentBucket.tempCnt++; }
     if(!isNaN(hum)){   currentBucket.humSum   += hum;   currentBucket.humCnt++; }
@@ -674,21 +666,30 @@
     if(!isNaN(solar)){ currentBucket.solarSum += solar; currentBucket.solarCnt++; }
     if(!isNaN(rssi)){  currentBucket.rssiSum  += rssi;  currentBucket.rssiCnt++; }
     currentBucket.lastLed = !!led;
-
     rebuildTableAndCharts();
+  }
+
+  function pushMergedRecords(newRecords){
+    if(!newRecords || !newRecords.length) return;
+    const map = new Map();
+    historyData.forEach(rec=>{ map.set(keyOfRec(rec), rec); });
+    newRecords.forEach(rec=>{ map.set(keyOfRec(rec), rec); }); // 새 데이터로 덮어쓰기
+    historyData = Array.from(map.values()).sort((a,b)=> (a.ts||0)-(b.ts||0));
+    trimHistoryByTime();
+    if(historyData.length>HISTORY_MAX_MINUTES){
+      historyData.splice(0, historyData.length-HISTORY_MAX_MINUTES);
+    }
   }
 
   function rebuildTable(){
     const data = getDisplayHistory();
     historyTableBody.innerHTML = "";
     const N = data.length;
-    if(N === 0) return;
-
+    if(N===0) return;
     for(let i=N-1;i>=0;i--){
       const rec = data[i];
       const t = new Date(rec.ts || Date.now());
       const timeLabel = formatTimeHHMM(t);
-
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${timeLabel}</td>
@@ -703,36 +704,25 @@
     }
   }
 
-  // ==== Chart.js ====
+  // ==== Chart ====
   let tempChart=null,humChart=null,co2Chart=null,solarChart=null;
-
   function createChart(ctx,label,borderColor,bgColor,yTitle){
     return new Chart(ctx,{
       type:"line",
-      data:{
-        labels:[],
-        datasets:[{
-          label,
-          data:[],
-          borderColor,
-          borderWidth:2,
-          backgroundColor:bgColor,
-          tension:0.2,
-          spanGaps:true,
-          pointRadius:0,       // ★ 동그라미 제거
-          pointHoverRadius:0,  // ★ 호버 동그라미 제거
-          pointHitRadius:6
-        }]
-      },
+      data:{ labels:[], datasets:[{
+        label, data:[],
+        borderColor, borderWidth:2,
+        backgroundColor:bgColor,
+        tension:0.2, spanGaps:true,
+        pointRadius:0, pointHoverRadius:0, pointHitRadius:6
+      }]},
       options:{
-        responsive:true,
-        maintainAspectRatio:false,
+        responsive:true, maintainAspectRatio:false,
         plugins:{
           legend:{display:false},
           tooltip:{callbacks:{label:(ctx)=>{
-            const v = ctx.parsed.y;
+            const v=ctx.parsed.y;
             if(v==null) return `${label}: -`;
-            // ★ 정수 표시
             return `${label}: ${Math.round(v)}`;
           }}}
         },
@@ -751,28 +741,19 @@
       }
     });
   }
-
   function ensureChartsInitialized(){
     if(tempChart && humChart && co2Chart && solarChart){ updateCharts(); return; }
-    tempChart  = createChart(document.getElementById("tempChart").getContext("2d"), "온도",   "#f97316","rgba(249,115,22,0.15)","온도 (°C)");
-    humChart   = createChart(document.getElementById("humChart").getContext("2d"),  "습도",   "#22c55e","rgba(34,197,94,0.15)","습도 (%)");
-    co2Chart   = createChart(document.getElementById("co2Chart").getContext("2d"),  "CO₂",    "#3b82f6","rgba(59,130,246,0.15)","CO₂ (ppm)");
-    solarChart = createChart(document.getElementById("solarChart").getContext("2d"),"일사량", "#eab308","rgba(234,179,8,0.15)","일사량 (W/m²)");
+    tempChart  = createChart($("#tempChart").getContext("2d"), "온도",   "#f97316","rgba(249,115,22,0.15)","온도 (°C)");
+    humChart   = createChart($("#humChart").getContext("2d"),  "습도",   "#22c55e","rgba(34,197,94,0.15)","습도 (%)");
+    co2Chart   = createChart($("#co2Chart").getContext("2d"),  "CO₂",    "#3b82f6","rgba(59,130,246,0.15)","CO₂ (ppm)");
+    solarChart = createChart($("#solarChart").getContext("2d"),"일사량", "#eab308","rgba(234,179,8,0.15)","일사량 (W/m²)");
     updateCharts();
   }
-
   function updateCharts(){
     if(!tempChart || !humChart || !co2Chart || !solarChart) return;
     const data = getDisplayHistory();
-    const N = data.length;
-    const labels = [];
-    const temps  = [];
-    const hums   = [];
-    const co2s   = [];
-    const solars = [];
-
-    for(let i=0;i<N;i++){
-      const rec = data[i];
+    const labels=[], temps=[], hums=[], co2s=[], solars=[];
+    for(const rec of data){
       const t = new Date(rec.ts || Date.now());
       labels.push(formatTimeHHMM(t));
       temps.push(  rec.temp  != null ? Number(rec.temp)  : null);
@@ -780,7 +761,6 @@
       co2s.push(   rec.co2   != null ? Number(rec.co2)   : null);
       solars.push( rec.solar != null ? Number(rec.solar) : null);
     }
-
     [tempChart,humChart,co2Chart,solarChart].forEach(c=>{ c.data.labels = labels; });
     tempChart.data.datasets[0].data  = temps;
     humChart.data.datasets[0].data   = hums;
@@ -789,7 +769,7 @@
     tempChart.update(); humChart.update(); co2Chart.update(); solarChart.update();
   }
 
-  // ==== view 토글 ====
+  // ==== view / 로그 ====
   let viewMode = null;
   function setViewMode(mode){
     viewMode = mode;
@@ -817,34 +797,32 @@
   btnShowTable.addEventListener("click",()=>{ setViewMode(viewMode==="table"?null:"table"); });
   btnShowChart.addEventListener("click",()=>{ setViewMode(viewMode==="chart"?null:"chart"); });
 
-  let logVisible = false;
+  let logVisible=false;
   btnToggleLog.addEventListener("click",()=>{
-    logVisible = !logVisible;
+    logVisible=!logVisible;
     logCard.classList.toggle("hidden",!logVisible);
     btnToggleLog.classList.toggle("active",logVisible);
     if(logVisible) logCard.scrollIntoView({behavior:"smooth",block:"start"});
   });
 
+  // ==== JSON helper ====
+  JSON.parseSafe = function(str){
+    try{ return JSON.parse(str); }
+    catch(e){ log("JSON 파싱 실패: "+e.message); return null;}
+  };
+
   // ==== MQTT 메시지 처리 ====
   client.on("message",(topic,payload)=>{
     const text = new TextDecoder().decode(payload);
     log(`수신 (${topic}): ${text}`);
-    if(topic === "esp32c3/status"){
-      handleStatusMessage(text);
-    }else if(topic === "esp32c3/history"){
-      handleHistoryMessage(text);
-    }else if(topic === "esp32c3/config/alarm"){
-      handleAlarmConfigMessage(JSON.parseSafe(text));
-    }
+    if(topic==="esp32c3/status")      handleStatusMessage(text);
+    else if(topic==="esp32c3/history")handleHistoryMessage(text);
+    else if(topic==="esp32c3/config/alarm")handleAlarmConfigMessage(JSON.parseSafe(text));
   });
-
-  JSON.parseSafe = function(str){
-    try{ return JSON.parse(str); }catch(e){ log("JSON 파싱 실패: "+e.message); return null;}
-  }
 
   function handleStatusMessage(text){
     const fixed = text.replace(/"rssi"\s*:\s*}/,'"rssi":null}');
-    const data = JSON.parseSafe(fixed);
+    const data  = JSON.parseSafe(fixed);
     if(!data) return;
     lastDeviceMsgAt = Date.now();
     setDeviceState(data.alive !== false);
@@ -859,69 +837,105 @@
     const led   = !!data.led;
     const rssi  = Number(data.rssi);
 
-    // ★ 온도/습도 정수 표시
     if(!isNaN(temp))  valTemp.textContent  = temp.toFixed(0);
     if(!isNaN(hum))   valHum.textContent   = hum.toFixed(0);
     if(!isNaN(co2))   valCo2.textContent   = co2.toFixed(0);
     if(!isNaN(solar)) valSolar.textContent = solar.toFixed(0);
-    valLed.textContent  = led ? "ON" : "OFF";
+    valLed.textContent = led ? "ON" : "OFF";
     if(!isNaN(rssi)){
-      valRssi.textContent  = rssi.toFixed(0);
+      valRssi.textContent   = rssi.toFixed(0);
       headerRssiEl.textContent = valRssi.textContent;
     }
-
     applyAlarms();
-
-    addHistorySampleFromStatus(temp, hum, co2, solar, rssi, led);
+    addHistorySampleFromStatus(temp,hum,co2,solar,rssi,led);
   }
 
   function handleHistoryMessage(text){
     const obj = JSON.parseSafe(text);
-    if(!obj || obj.type !== "history" || !Array.isArray(obj.data)) return;
+    if(!obj || obj.type!=="history" || !Array.isArray(obj.data)) return;
+    const arr = obj.data;
+    if(arr.length===0) return;
+    lastDeviceMsgAt = Date.now();
+    setDeviceState(true);
 
-    // ESP32에서 온 히스토리를 항상 기준으로 사용
-    historyData = obj.data.map(item => ({
-      ts:    item.ts ? item.ts * 1000 : Date.now(),
-      temp:  item.temp  ?? null,
-      hum:   item.hum   ?? null,
-      co2:   item.co2   ?? null,
-      solar: item.solar ?? null,
-      rssi:  item.rssi  ?? null,
-      led:   !!item.led
-    }));
-
-    if(historyData.length > HISTORY_MAX_MINUTES){
-      historyData.splice(0, historyData.length - HISTORY_MAX_MINUTES);
+    const nowMs = Date.now();
+    let hasTs=false, hasIdx=false;
+    for(const it of arr){
+      if(it && it.ts  != null) hasTs = true;
+      if(it && it.idx != null) hasIdx = true;
     }
 
-    // 새 히스토리를 받은 후 현재 버킷은 초기화해서
-    // 이후 status 샘플은 최신 분부터 다시 1분 평균으로 쌓이도록 함
-    currentBucket = null;
+    let newRecords=[];
+    if(hasTs){
+      newRecords = arr.map(item=>({
+        ts:    (item.ts || 0)*1000,
+        temp:  item.temp  ?? null,
+        hum:   item.hum   ?? null,
+        co2:   item.co2   ?? null,
+        solar: item.solar ?? null,
+        rssi:  item.rssi  ?? null,
+        led:   !!item.led
+      }));
+    }else if(hasIdx){
+      let maxIdx=-Infinity;
+      arr.forEach(it=>{ if(typeof it.idx==="number" && it.idx>maxIdx) maxIdx=it.idx; });
+      if(!isFinite(maxIdx)) maxIdx = arr.length-1;
+      newRecords = arr.map(item=>{
+        const idx = typeof item.idx==="number" ? item.idx : 0;
+        const minutesAgo = maxIdx - idx;
+        const ts = nowMs - minutesAgo*60*1000;
+        return {
+          ts,
+          temp:  item.temp  ?? null,
+          hum:   item.hum   ?? null,
+          co2:   item.co2   ?? null,
+          solar: item.solar ?? null,
+          rssi:  item.rssi  ?? null,
+          led:   !!item.led
+        };
+      });
+    }else{
+      const len = arr.length;
+      newRecords = arr.map((item,i)=>{
+        const minutesAgo = len-1-i;
+        const ts = nowMs - minutesAgo*60*1000;
+        return {
+          ts,
+          temp:  item.temp  ?? null,
+          hum:   item.hum   ?? null,
+          co2:   item.co2   ?? null,
+          solar: item.solar ?? null,
+          rssi:  item.rssi  ?? null,
+          led:   !!item.led
+        };
+      });
+    }
 
+    // 기존 히스토리와 병합
+    pushMergedRecords(newRecords);
+    currentBucket = null;
     rebuildTableAndCharts();
-    log("ESP 히스토리 반영: "+historyData.length+"개 (1분 평균)");
+    log("ESP history 반영(병합): "+historyData.length+"개");
   }
 
   // ==== alive 체크 ====
   setInterval(()=>{
     if(!lastDeviceMsgAt) return;
-    if(Date.now() - lastDeviceMsgAt > 15000){
-      setDeviceState(false);
-    }
-  }, 2000);
+    if(Date.now()-lastDeviceMsgAt>3000) setDeviceState(false);
+  },2000);
 
-  // ==== LED 제어 & Soft reset ====
+  // ==== LED & reset ====
   function publishLed(cmd){
     if(!client.connected){
-      cmdResultEl.textContent = "전송 상태: MQTT 미연결";
+      cmdResultEl.textContent="전송 상태: MQTT 미연결";
       return;
     }
-    client.publish("esp32c3/led", cmd, {qos:0,retain:false}, (err)=>{
+    client.publish("esp32c3/led",cmd,{qos:0,retain:false},(err)=>{
       if(err){
-        cmdResultEl.textContent = "전송 상태: 실패 - "+err.message;
+        cmdResultEl.textContent="전송 상태: 실패 - "+err.message;
         log("LED publish 실패: "+err.message);
       }else{
-        cmdResultEl.textContent = "전송 상태: "+cmd;
+        cmdResultEl.textContent="전송 상태: "+cmd;
         log("LED 명령 전송: "+cmd);
       }
     });
@@ -947,8 +961,16 @@
   }
   btnSoftReset.addEventListener("click",publishSoftReset);
 
-  // ==== 시작 시: 브라우저 저장 히스토리 복원 (초기 화면용), 이후 ESP history가 오면 덮어씀 ====
+  function rebuildTableAndCharts(){
+    trimHistoryByTime();
+    rebuildTable();
+    saveHistoryToLocal();
+    if(tempChart) updateCharts();
+  }
+
+  // ==== 시작 시: 로컬 히스토리 + 알람 복원 ====
   loadHistoryFromLocal();
+  loadAlarmFromLocal();
 </script>
 </body>
 </html>
