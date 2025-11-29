@@ -567,11 +567,12 @@
     });
   });
 
-  // ==== 히스토리 (ESP + 브라우저, 5초 간격 기준 최대 60개, localStorage 저장) ====
+  // ==== 히스토리 (ESP + 브라우저, localStorage 저장) ====
   let historyData = []; // [{ts,temp,hum,co2,solar,rssi,led}, ...]
   const HISTORY_MAX_POINTS   = 60;
   const HISTORY_INTERVAL_MS  = 5 * 1000;
   const HISTORY_LS_KEY       = "esp32_history_v1";
+  let historyLoadedFromLocal = false;
 
   function saveHistoryToLocal(){
     try {
@@ -599,6 +600,7 @@
       if(historyData.length > HISTORY_MAX_POINTS){
         historyData.splice(0, historyData.length - HISTORY_MAX_POINTS);
       }
+      historyLoadedFromLocal = true;
       rebuildTableAndCharts();
       log("브라우저 저장 히스토리 복원: "+historyData.length+"개");
     } catch(e){
@@ -666,7 +668,7 @@
   function createChart(ctx,label,borderColor,bgColor,yTitle){
     return new Chart(ctx,{
       type:"line",
-      data:{labels:[],datasets:[{label,data:[],borderColor,backgroundColor:bgColor,tension:0.2,spanGaps:true}]},
+      data:{labels:[],datasets:[{label,data:[],borderColor,borderWidth:2,backgroundColor:bgColor,tension:0.2,spanGaps:true}]},
       options:{
         responsive:true,
         maintainAspectRatio:false,
@@ -814,11 +816,17 @@
 
     applyAlarms();
 
-    // ★ 5초마다 status 수신 → 히스토리에 샘플 추가 (최대 60개 + localStorage 저장)
+    // ★ 5초마다 status 수신 → 히스토리에 샘플 추가
     addHistorySampleFromStatus(temp, hum, co2, solar, rssi, led);
   }
 
   function handleHistoryMessage(text){
+    // ★ 이미 브라우저 쪽 히스토리가 있으면 ESP 히스토리는 무시
+    if(historyLoadedFromLocal && historyData.length > 0){
+      log("ESP history 수신: 브라우저 히스토리가 있어 무시");
+      return;
+    }
+
     const obj = JSON.parseSafe(text);
     if(!obj || obj.type !== "history" || !Array.isArray(obj.data)) return;
 
