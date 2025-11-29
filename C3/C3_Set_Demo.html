@@ -434,19 +434,49 @@
 
   let lastDeviceMsgAt = null;
 
-  client.on("connect",()=>{
-    setMqttStatus(true,"MQTT 연결 OK");
-    log("MQTT 연결 성공");
-    client.subscribe("esp32c3/status");
-    client.subscribe("esp32c3/history");
-    client.subscribe("esp32c3/config/alarm");
-    // ESP32의 60분 히스토리 요청
+  // ★ ESP 히스토리 요청 관련 플래그/타이머
+  let historyReceived = false;
+  let historyRequestTimer = null;
+
+  function requestHistoryOnce(){          // ★ 한번 요청
+    if(!client.connected) return;
     try{
       client.publish("esp32c3/history/get","GET");
       log("히스토리 GET 요청 전송");
     }catch(e){
       log("히스토리 GET 요청 실패: "+e.message);
     }
+  }
+  function startHistoryRequestLoop(){     // ★ 받기 전까지 3초마다 재요청
+    if(historyRequestTimer) clearInterval(historyRequestTimer);
+    historyReceived = false;
+    historyRequestTimer = setInterval(()=>{
+      if(historyReceived){
+        clearInterval(historyRequestTimer);
+        historyRequestTimer = null;
+        return;
+      }
+      requestHistoryOnce();
+    }, 3000);
+  }
+  function stopHistoryRequestLoop(){      // ★ 중단
+    if(historyRequestTimer){
+      clearInterval(historyRequestTimer);
+      historyRequestTimer = null;
+    }
+  }
+
+  client.on("connect",()=>{
+    setMqttStatus(true,"MQTT 연결 OK");
+    log("MQTT 연결 성공");
+    client.subscribe("esp32c3/status");
+    client.subscribe("esp32c3/history");
+    client.subscribe("esp32c3/config/alarm");
+
+    // ★ 구독 완료 후 약간 기다렸다가 히스토리 반복 요청 시작
+    setTimeout(()=>{
+      startHistoryRequestLoop();
+    }, 500);
   });
   client.on("reconnect",()=>{
     setMqttStatus(false,"MQTT 재연결 시도 중...");
@@ -461,7 +491,7 @@
     log("MQTT 연결 끊김");
   });
 
-  // ==== 알람 설정 (localStorage에만 저장) ====
+  // ==== 알람 설정 (localStorage) ====
   const ALARM_LS_KEY = "esp32_alarm_config_v1";
   const alarmConfig = {
     temp: {low:null, high:null},
@@ -651,7 +681,7 @@
     if(!newRecords || !newRecords.length) return;
     const map = new Map();
     historyData.forEach(rec=>{ map.set(keyOfRec(rec), rec); });
-    newRecords.forEach(rec=>{ map.set(keyOfRec(rec), rec); }); // 새 데이터로 덮어쓰기
+    newRecords.forEach(rec=>{ map.set(keyOfRec(rec), rec); });
     historyData = Array.from(map.values()).sort((a,b)=> (a.ts||0)-(b.ts||0));
     trimHistoryByTime();
     if(historyData.length>HISTORY_MAX_MINUTES){
@@ -836,6 +866,10 @@
     lastDeviceMsgAt = Date.now();
     setDeviceState(true);
 
+    // ★ 히스토리를 한번이라도 받으면 재요청 중단
+    historyReceived = true;
+    stopHistoryRequestLoop();
+
     const nowMs = Date.now();
     let hasTs=false, hasIdx=false;
     for(const it of arr){
@@ -889,7 +923,6 @@
       });
     }
 
-    // ESP가 보내준 60개가 기준 (브라우저 히스토리 없음)
     pushMergedRecords(newRecords);
     currentBucket = null;
     rebuildTableAndCharts();
