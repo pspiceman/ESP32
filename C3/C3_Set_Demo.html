@@ -348,7 +348,7 @@
   }
   (function initTheme(){
     const saved = localStorage.getItem("esp32-dashboard-theme");
-    const t = (saved === "dark" || saved === "light") ? saved : "dark"; // 기본 다크
+    const t = (saved === "dark" || saved === "light") ? saved : "dark";
     applyTheme(t);
   })();
   themeToggleBtn.addEventListener("click",()=>{
@@ -440,8 +440,7 @@
     client.subscribe("esp32c3/status");
     client.subscribe("esp32c3/history");
     client.subscribe("esp32c3/config/alarm");
-
-    // ESP32에 60분 히스토리 요청
+    // ESP32의 60분 히스토리 요청
     try{
       client.publish("esp32c3/history/get","GET");
       log("히스토리 GET 요청 전송");
@@ -462,7 +461,7 @@
     log("MQTT 연결 끊김");
   });
 
-  // ==== 알람 설정 ====
+  // ==== 알람 설정 (localStorage에만 저장) ====
   const ALARM_LS_KEY = "esp32_alarm_config_v1";
   const alarmConfig = {
     temp: {low:null, high:null},
@@ -576,7 +575,7 @@
     });
   });
 
-  // ==== 히스토리 ====
+  // ==== 히스토리 (ESP32 데이터만 사용) ====
   let historyData = [];
   const HISTORY_MAX_MINUTES  = 60;
   const BUCKET_MS            = 60*1000;
@@ -619,10 +618,6 @@
     const cutoff = nowMs - HISTORY_WINDOW_MS;
     historyData = historyData.filter(rec=> (rec.ts || nowMs) >= cutoff);
   }
-
-  // localStorage 히스토리는 더 이상 사용하지 않음 (ESP32 히스토리만 기준으로 사용)
-  // function saveHistoryToLocal(){ ... }
-  // function loadHistoryFromLocal(){ ... }
 
   function getDisplayHistory(){
     const result = historyData.slice();
@@ -894,7 +889,7 @@
       });
     }
 
-    // 기존 히스토리와 병합 (ESP에서 온 60개가 기준)
+    // ESP가 보내준 60개가 기준 (브라우저 히스토리 없음)
     pushMergedRecords(newRecords);
     currentBucket = null;
     rebuildTableAndCharts();
@@ -947,7 +942,6 @@
   function rebuildTableAndCharts(){
     trimHistoryByTime();
     rebuildTable();
-    // localStorage 저장 제거 → 항상 ESP32 기준
     if(tempChart) updateCharts();
   }
 
