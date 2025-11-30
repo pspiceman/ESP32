@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>ESP32 환경 대시보드</title>
+  <title>ESP32+HiveMQ 대시 보드</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
@@ -35,857 +35,983 @@
     }
     * { box-sizing: border-box; }
     body {
-      font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      margin: 0;
-      padding: 16px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: var(--bg);
       color: var(--fg);
-      transition: background .25s,color .25s;
+      margin: 0;
+      padding: 16px;
+      transition: background 0.25s ease, color 0.25s ease;
     }
-    h1 { margin: 0 0 4px; font-size: 1.5rem; }
+    h1 { margin-top: 0; font-size: 1.5rem; }
     .page-header {
-      display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
     }
     .card {
       background: var(--card-bg);
-      border-radius:12px;
-      padding:16px;
-      box-shadow:var(--shadow);
-      border:1px solid var(--border-soft);
-      margin-bottom:16px;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+      border: 1px solid var(--border-soft);
+      transition: background 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      width: 100%;
     }
-    .status-dot { width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;background:#9ca3af; }
-    .status-ok { background:#22c55e;}
-    .status-bad{ background:#ef4444;}
-    .mqtt-lines{font-size:.9rem;line-height:1.4;}
-    .mqtt-line-main{display:flex;align-items:center;gap:6px;margin-bottom:2px;}
-    .mqtt-spacer{flex:1;}
+    .status-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 6px;
+      background: #9ca3af;
+    }
+    .status-ok { background: #22c55e; }
+    .status-bad { background: #ef4444; }
+    .mqtt-lines { font-size: 0.9rem; line-height: 1.4; }
+    .mqtt-line-main {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+    .mqtt-spacer { flex: 1; }
     .grid {
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
-      gap:12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit,minmax(120px,1fr));
+      gap: 12px;
     }
     .metric {
-      background:var(--metric-bg);
-      border-radius:10px;
-      padding:10px;
-      text-align:center;
-      border:1px solid var(--border-soft);
+      background: var(--metric-bg);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+      border: 1px solid var(--border-soft);
+      transition: background 0.25s ease, border-color 0.25s ease, transform 0.1s ease;
     }
-    .metric-label{font-size:.8rem;color:var(--subtle);}
-    .metric-value{font-size:1.3rem;font-weight:600;margin-top:4px;}
-    .metric-alarmable{cursor:pointer;}
-    .metric-alarmable:hover{border-color:rgba(59,130,246,0.6);}
-    .metric-alarmable .metric-label::after{
-      content:" • 알람";
-      font-size:.7rem;
-      color:var(--muted);
+    .metric-label { font-size: 0.8rem; color: var(--subtle); }
+    .metric-value { font-size: 1.3rem; font-weight: 600; margin-top: 4px; }
+    .metric-alarmable { cursor: pointer; }
+    .metric-alarmable:hover {
+      border-color: rgba(59,130,246,0.6);
+      transform: translateY(-1px);
     }
-    .metric-alarm-value.alarm-active{color:var(--alarm);font-weight:700;}
-    button{
-      border:none;border-radius:999px;padding:8px 16px;font-size:.9rem;cursor:pointer;
-      margin-right:8px;margin-top:8px;display:inline-flex;align-items:center;gap:4px;
-      transition:transform .08s,box-shadow .12s,background .2s,color .2s;
+    .metric-alarmable .metric-label::after {
+      content: " • 알람";
+      font-size: 0.7rem;
+      color: var(--muted);
     }
-    button:active{transform:translateY(1px);box-shadow:none;}
-    #btnOn{
-      background:#22c55e;color:#fff;box-shadow:0 2px 6px rgba(34,197,94,.4);
+    .metric-alarm-value.alarm-active {
+      color: var(--alarm);
+      font-weight: 700;
     }
-    #btnOff{
-      background:#ef4444;color:#fff;box-shadow:0 2px 6px rgba(239,68,68,.4);
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      margin-right: 8px;
+      margin-top: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: transform 0.08s ease, box-shadow 0.12s ease, background 0.2s ease, color 0.2s ease;
     }
-    .theme-toggle{
-      background:transparent;color:var(--subtle);border-radius:999px;border:1px solid var(--border-soft);
-      padding:6px 10px;font-size:.8rem;box-shadow:none;display:inline-flex;align-items:center;justify-content:center;
+    button:active { transform: translateY(1px); box-shadow: none; }
+    #btnOn { background: #2ecc71; color: #fff; box-shadow: 0 2px 6px rgba(34,197,94,0.4); }
+    #btnOff { background: #e74c3c; color: #fff; box-shadow: 0 2px 6px rgba(239,68,68,0.4); }
+    .theme-toggle {
+      background: transparent;
+      color: var(--subtle);
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      margin: 0;
+      margin-top: -4px;
+      box-shadow: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
-    .theme-toggle-icon{font-size:1.1rem;}
-    .icon-button{
-      padding:6px 10px;border-radius:999px;background:transparent;border:1px solid var(--border-soft);
-      color:var(--subtle);font-size:.85rem;box-shadow:none;margin-top:0;
+    .theme-toggle-icon { font-size: 1.1rem; }
+    .icon-button {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: transparent;
+      border: 1px solid var(--border-soft);
+      color: var(--subtle);
+      margin-top: 0;
+      box-shadow: none;
+      font-size: 0.85rem;
     }
-    .icon-button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
-    .icon-button-small{padding:2px 8px;font-size:.7rem;margin-right:0;}
-    #log{
-      font-family:ui-monospace,Menlo,Consolas,"Courier New",monospace;
-      font-size:.8rem;max-height:260px;overflow-y:auto;
-      background:var(--log-bg);color:var(--log-fg);padding:8px;border-radius:8px;
-      white-space:pre-wrap;border:1px solid var(--border-soft);
+    .icon-button.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
     }
-    .toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;}
-    .toolbar-left,.toolbar-right{display:flex;align-items:center;gap:8px;}
-    .hidden{display:none!important;}
-    .log-card{border:none;box-shadow:none;background:transparent;padding-top:0;}
-    .led-card{padding:10px 16px 8px;}
-    .led-card h2{margin:0 0 4px;font-size:1.05rem;}
-    .led-row{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;}
-    .led-buttons{display:flex;gap:8px;}
-    .cmd-status{font-size:.75rem;color:var(--subtle);min-height:1.2em;margin-top:8px;}
-    .chart-grid{display:flex;flex-direction:column;gap:12px;}
-    .chart-block{border-radius:10px;border:1px solid var(--border-soft);padding:8px 10px 10px;background:var(--metric-bg);}
-    .chart-block h3{margin:0 0 4px;font-size:.9rem;color:var(--subtle);}
-    .chart-wrapper{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;}
-    .chart-wrapper canvas{position:absolute;inset:0;width:100%!important;height:100%!important;}
-    .table-scroll{max-height:260px;overflow-y:auto;overflow-x:auto;}
-    .history-table{width:100%;border-collapse:collapse;font-size:.75rem;table-layout:fixed;}
-    .history-table thead{position:sticky;top:0;background:var(--card-bg);z-index:1;}
-    .history-table th,.history-table td{
-      padding:3px 4px;border-bottom:1px solid var(--border-soft);text-align:right;white-space:nowrap;
+    .icon-button-small {
+      padding: 2px 8px;
+      font-size: 0.7rem;
+      margin-right: 0;
     }
-    .history-table th{font-size:.72rem;line-height:1.25;}
-    .history-table th .th-label{display:block;}
-    .history-table th .th-unit{display:block;font-size:.65rem;color:var(--muted);}
-    .history-table th:first-child,.history-table td:first-child{text-align:left;}
-    .history-table td{font-size:.72rem;}
-    .modal-backdrop{
-      position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:50;
+    #log {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.8rem;
+      max-height: 260px;
+      overflow-y: auto;
+      background: var(--log-bg);
+      color: var(--log-fg);
+      padding: 8px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      border: 1px solid var(--border-soft);
+      transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
     }
-    .modal{
-      background:var(--card-bg);color:var(--fg);border-radius:12px;padding:16px 18px 14px;
-      width:min(360px,90vw);box-shadow:var(--shadow);border:1px solid var(--border-soft);
+    .card-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
     }
-    .modal-title{font-size:1rem;font-weight:600;margin:0 0 8px;}
-    .modal-desc{font-size:.85rem;color:var(--subtle);margin-bottom:12px;}
-    .field-row{display:flex;gap:8px;margin-bottom:8px;}
-    .field{flex:1;}
-    .field label{display:block;font-size:.75rem;color:var(--subtle);margin-bottom:2px;}
-    .field input{
-      width:100%;padding:6px 8px;border-radius:8px;border:1px solid var(--border-soft);
-      background:var(--bg);color:var(--fg);font-size:.85rem;
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
     }
-    .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px;}
-    .btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 6px rgba(37,99,235,.4);}
-    .btn-ghost{background:transparent;border:1px solid var(--border-soft);color:var(--subtle);box-shadow:none;}
+    .toolbar-left,
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .hidden { display: none !important; }
+    .log-card { border: none; box-shadow: none; background: transparent; padding-top: 0; }
+    .led-card { padding: 10px 16px 8px; }
+    .led-card h2 { margin-top: 0; margin-bottom: 4px; font-size: 1.05rem; }
+    .led-row { display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; }
+    .led-buttons { display: flex; gap: 8px; flex-wrap: nowrap; }
+    .cmd-status { font-size: 0.75rem; color: var(--subtle); min-height: 1.2em; margin-top: 8px; }
+    .chart-grid { display: flex; flex-direction: column; gap: 12px; }
+    .chart-block {
+      border-radius: 10px;
+      border: 1px solid var(--border-soft);
+      padding: 8px 10px 10px;
+      background: var(--metric-bg);
+      width: 100%;
+      margin: 0;
+    }
+    .chart-block h3 { margin: 0 0 4px; font-size: 0.9rem; color: var(--subtle); text-align: left; }
+    .chart-wrapper { position: relative; width: 100%; aspect-ratio: 16/9; overflow: hidden; }
+    .chart-wrapper canvas {
+      position: absolute;
+      inset: 0;
+      width: 100% !important;
+      height: 100% !important;
+    }
+    .table-scroll { max-height: 260px; overflow-y: auto; overflow-x: auto; }
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+      table-layout: fixed;
+    }
+    .history-table thead {
+      position: sticky;
+      top: 0;
+      background: var(--card-bg);
+      z-index: 1;
+    }
+    .history-table th,
+    .history-table td {
+      padding: 3px 4px;
+      border-bottom: 1px solid var(--border-soft);
+      text-align: right;
+      white-space: nowrap;
+    }
+    .history-table th {
+      font-size: 0.72rem;
+      line-height: 1.25;
+    }
+    .history-table th .th-label { display: block; }
+    .history-table th .th-unit {
+      display: block;
+      font-size: 0.65rem;
+      color: var(--muted);
+    }
+    .history-table th:first-child,
+    .history-table td:first-child {
+      text-align: left;
+    }
+    .history-table td { font-size: 0.72rem; }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+    .modal {
+      background: var(--card-bg);
+      color: var(--fg);
+      border-radius: 12px;
+      padding: 16px 18px 14px;
+      width: min(360px, 90vw);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-soft);
+    }
+    .modal-title { font-size: 1rem; font-weight: 600; margin: 0 0 8px; }
+    .modal-desc { font-size: 0.85rem; color: var(--subtle); margin-bottom: 12px; }
+    .field-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .field { flex: 1; }
+    .field label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--subtle);
+      margin-bottom: 2px;
+    }
+    .field input {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border-soft);
+      background: var(--bg);
+      color: var(--fg);
+      font-size: 0.85rem;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(37,99,235,0.4);
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border-soft);
+      color: var(--subtle);
+      box-shadow: none;
+    }
   </style>
 </head>
 <body data-theme="dark">
-<header class="page-header">
-  <h1>ESP32 환경 대시보드</h1>
-  <button id="themeToggle" class="theme-toggle" type="button"><span class="theme-toggle-icon">🌙</span></button>
-</header>
+  <header class="page-header">
+    <h1>ESP32+HiveMQ 대시 보드</h1>
+    <button id="themeToggle" class="theme-toggle" type="button" aria-label="테마 전환">
+      <span class="theme-toggle-icon">🌙</span>
+    </button>
+  </header>
 
-<div class="card">
-  <div class="mqtt-lines">
-    <div class="mqtt-line-main">
-      <span id="mqttDot" class="status-dot"></span>
-      <strong id="mqttState">MQTT 연결 대기 중...</strong>
-      <span class="mqtt-spacer"></span>
-      <button id="btnSoftReset" class="icon-button icon-button-small" type="button">RESET</button>
-    </div>
-    <div style="font-size:.85rem;color:var(--subtle);">
-      장비 상태: <span id="deviceState">알 수 없음</span>
-      &nbsp;&nbsp; RSSI: <span id="headerRssi">--</span> dBm
-    </div>
-    <div style="font-size:.85rem;color:var(--subtle);">
-      수신 시각: <span id="lastUpdate">-</span>
-    </div>
-  </div>
-</div>
-
-<div class="card">
-  <h2 style="font-size:1.1rem;margin:0 0 6px;">센서 상태 (esp32c3/status)</h2>
-  <div class="grid">
-    <div class="metric metric-alarmable" data-key="temp" data-label="온도" data-unit="°C">
-      <div class="metric-label">온도</div>
-      <div class="metric-value"><span id="valTemp" class="metric-alarm-value">--</span> °C</div>
-    </div>
-    <div class="metric metric-alarmable" data-key="hum" data-label="습도" data-unit="%">
-      <div class="metric-label">습도</div>
-      <div class="metric-value"><span id="valHum" class="metric-alarm-value">--</span> %</div>
-    </div>
-    <div class="metric metric-alarmable" data-key="co2" data-label="CO₂" data-unit="ppm">
-      <div class="metric-label">CO₂</div>
-      <div class="metric-value"><span id="valCo2" class="metric-alarm-value">--</span> ppm</div>
-    </div>
-    <div class="metric metric-alarmable" data-key="solar" data-label="일사량" data-unit="W/m²">
-      <div class="metric-label">일사량</div>
-      <div class="metric-value"><span id="valSolar" class="metric-alarm-value">--</span> W/m²</div>
-    </div>
-    <div class="metric">
-      <div class="metric-label">LED 상태</div>
-      <div class="metric-value"><span id="valLed">--</span></div>
-    </div>
-    <div class="metric">
-      <div class="metric-label">WiFi RSSI</div>
-      <div class="metric-value"><span id="valRssi">--</span> dBm</div>
-    </div>
-  </div>
-</div>
-
-<div class="card led-card">
-  <h2>LED 제어 (esp32c3/led)</h2>
-  <div class="led-row">
-    <div class="led-buttons">
-      <button id="btnOn">LED ON</button>
-      <button id="btnOff">LED OFF</button>
-    </div>
-    <div id="cmdResult" class="cmd-status">전송 상태: -</div>
-  </div>
-</div>
-
-<div class="toolbar">
-  <div class="toolbar-left">
-    <button id="btnShowTable" class="icon-button" type="button">📋 테이블</button>
-    <button id="btnShowChart" class="icon-button" type="button">📊 그래프</button>
-  </div>
-  <div class="toolbar-right">
-    <button id="btnToggleLog" class="icon-button" type="button">🐞 로그</button>
-  </div>
-</div>
-
-<div class="card hidden" id="tableCard">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-    <h2 style="font-size:1.1rem;margin:0;">1분 평균 (최근 60분, 플래시 포함)</h2>
-  </div>
-  <div class="table-scroll">
-    <table class="history-table">
-      <thead>
-      <tr>
-        <th><span class="th-label">시간</span><span class="th-unit">&nbsp;</span></th>
-        <th><span class="th-label">온도</span><span class="th-unit">(°C)</span></th>
-        <th><span class="th-label">습도</span><span class="th-unit">(%)</span></th>
-        <th><span class="th-label">CO₂</span><span class="th-unit">(ppm)</span></th>
-        <th><span class="th-label">일사량</span><span class="th-unit">(W/m²)</span></th>
-        <th><span class="th-label">LED</span><span class="th-unit">(상태)</span></th>
-        <th><span class="th-label">RSSI</span><span class="th-unit">(dBm)</span></th>
-      </tr>
-      </thead>
-      <tbody id="historyTableBody"></tbody>
-    </table>
-  </div>
-</div>
-
-<div class="card hidden" id="chartCard">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-    <div>
-      <h2 style="font-size:1.1rem;margin:0;">온도/습도/CO₂/일사량 그래프</h2>
-      <div style="font-size:.8rem;color:var(--subtle);">1분 평균, 최근 60분 (ESP32 플래시 히스토리 기준)</div>
-    </div>
-  </div>
-  <div class="chart-grid">
-    <div class="chart-block">
-      <h3>온도 (°C)</h3>
-      <div class="chart-wrapper"><canvas id="tempChart"></canvas></div>
-    </div>
-    <div class="chart-block">
-      <h3>습도 (%)</h3>
-      <div class="chart-wrapper"><canvas id="humChart"></canvas></div>
-    </div>
-    <div class="chart-block">
-      <h3>CO₂ (ppm)</h3>
-      <div class="chart-wrapper"><canvas id="co2Chart"></canvas></div>
-    </div>
-    <div class="chart-block">
-      <h3>일사량 (W/m²)</h3>
-      <div class="chart-wrapper"><canvas id="solarChart"></canvas></div>
-    </div>
-  </div>
-</div>
-
-<div class="card log-card hidden" id="logCard">
-  <div id="log"></div>
-</div>
-
-<div id="alarmModalBackdrop" class="modal-backdrop hidden">
-  <div class="modal">
-    <h3 class="modal-title"><span id="alarmMetricLabel">온도</span> 알람 설정</h3>
-    <p class="modal-desc">
-      상한/하한 값을 설정하면 범위를 벗어날 때 센서 값이
-      <span style="color:var(--alarm);font-weight:600;">빨간색</span>으로 표시됩니다.
-      빈 칸은 무시됩니다.
-    </p>
-    <div class="field-row">
-      <div class="field">
-        <label for="alarmLow">하한값</label>
-        <input id="alarmLow" type="number" step="0.1" placeholder="예: 18.0">
+  <!-- 브로커/장비 상태 -->
+  <div class="card">
+    <div class="mqtt-lines">
+      <div class="mqtt-line-main">
+        <span id="mqttDot" class="status-dot"></span>
+        <strong id="mqttState">MQTT 연결 대기 중...</strong>
+        <span class="mqtt-spacer"></span>
+        <button
+          id="btnSoftReset"
+          class="icon-button icon-button-small"
+          type="button"
+          title="장비 소프트 리셋"
+        >
+          RESET
+        </button>
       </div>
-      <div class="field">
-        <label for="alarmHigh">상한값</label>
-        <input id="alarmHigh" type="number" step="0.1" placeholder="예: 28.0">
+      <div style="font-size:0.85rem;color:var(--subtle);">
+        장비 상태: <span id="deviceState">알 수 없음</span>
+        &nbsp;&nbsp; RSSI: <span id="headerRssi">--</span> [dBm]
+      </div>
+      <div style="font-size:0.85rem;color:var(--subtle);">
+        수신 시각: <span id="lastUpdate">-</span>
       </div>
     </div>
-    <div style="font-size:.8rem;color:var(--muted);margin-top:2px;">
-      단위: <span id="alarmUnitLabel">°C</span>
-    </div>
-    <div class="modal-actions">
-      <button id="alarmCancel" type="button" class="btn-ghost">취소</button>
-      <button id="alarmSave" type="button" class="btn-primary">저장</button>
+  </div>
+
+  <!-- 센서 상태 -->
+  <div class="card">
+    <h2 style="font-size:1.1rem;margin-top:0;">센서 상태 (esp32c3/status)</h2>
+    <div class="grid">
+      <div class="metric metric-alarmable" data-key="temp" data-label="온도" data-unit="°C">
+        <div class="metric-label">온도</div>
+        <div class="metric-value"><span id="valTemp" class="metric-alarm-value">--</span> °C</div>
+      </div>
+      <div class="metric metric-alarmable" data-key="hum" data-label="습도" data-unit="%">
+        <div class="metric-label">습도</div>
+        <div class="metric-value"><span id="valHum" class="metric-alarm-value">--</span> %</div>
+      </div>
+      <div class="metric metric-alarmable" data-key="co2" data-label="CO₂" data-unit="ppm">
+        <div class="metric-label">CO₂</div>
+        <div class="metric-value"><span id="valCo2" class="metric-alarm-value">--</span> ppm</div>
+      </div>
+      <div class="metric metric-alarmable" data-key="solar" data-label="일사량" data-unit="W/m²">
+        <div class="metric-label">일사량</div>
+        <div class="metric-value"><span id="valSolar" class="metric-alarm-value">--</span> W/m²</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">LED 상태</div>
+        <div class="metric-value"><span id="valLed">--</span></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">WiFi RSSI</div>
+        <div class="metric-value"><span id="valRssi">--</span> dBm</div>
+      </div>
     </div>
   </div>
-</div>
 
-<script>
-  const $ = (s)=>document.querySelector(s);
+  <!-- LED 제어 -->
+  <div class="card led-card">
+    <h2>LED 제어 (esp32c3/led)</h2>
+    <div class="led-row">
+      <div class="led-buttons">
+        <button id="btnOn">LED ON</button>
+        <button id="btnOff">LED OFF</button>
+      </div>
+      <div id="cmdResult" class="cmd-status">전송 상태: -</div>
+    </div>
+  </div>
 
-  /* ===== 테마 ===== */
-  const themeToggleBtn  = $("#themeToggle");
-  const themeToggleIcon = themeToggleBtn.querySelector(".theme-toggle-icon");
-  function applyTheme(theme){
-    document.body.setAttribute("data-theme", theme);
-    themeToggleIcon.textContent = theme==="dark" ? "🌙" : "🌞";
-  }
-  (function initTheme(){
-    const saved = localStorage.getItem("esp32-dashboard-theme");
-    const t = (saved === "dark" || saved === "light") ? saved : "dark";
-    applyTheme(t);
-  })();
-  themeToggleBtn.addEventListener("click",()=>{
-    const cur = document.body.getAttribute("data-theme") || "dark";
-    const next = cur === "dark" ? "light" : "dark";
-    localStorage.setItem("esp32-dashboard-theme",next);
-    applyTheme(next);
-  });
+  <!-- 버튼 바 -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <button id="btnShowTable" class="icon-button" type="button">📋 테이블</button>
+      <button id="btnShowChart" class="icon-button" type="button">📊 그래프</button>
+    </div>
+    <div class="toolbar-right">
+      <button id="btnToggleLog" class="icon-button" type="button">🐞 로그</button>
+    </div>
+  </div>
 
-  /* ===== UI 요소 ===== */
-  const mqttDotEl      = $("#mqttDot");
-  const mqttStateEl    = $("#mqttState");
-  const deviceStateEl  = $("#deviceState");
-  const lastUpdateEl   = $("#lastUpdate");
-  const headerRssiEl   = $("#headerRssi");
-  const logEl          = $("#log");
-  const cmdResultEl    = $("#cmdResult");
+  <!-- 10초 평균 테이블 -->
+  <div class="card hidden" id="tableCard">
+    <div class="card-header">
+      <h2 style="font-size:1.1rem;margin:0;">10초 평균 이력 (최근 약 10분, 최대 60개)</h2>
+    </div>
+    <div class="table-scroll">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th><span class="th-label">시간</span><span class="th-unit">&nbsp;</span></th>
+            <th><span class="th-label">온도</span><span class="th-unit">(°C)</span></th>
+            <th><span class="th-label">습도</span><span class="th-unit">(%)</span></th>
+            <th><span class="th-label">CO₂</span><span class="th-unit">(ppm)</span></th>
+            <th><span class="th-label">일사량</span><span class="th-unit">(W/m²)</span></th>
+            <th><span class="th-label">LED</span><span class="th-unit">(상태)</span></th>
+            <th><span class="th-label">RSSI</span><span class="th-unit">(dBm)</span></th>
+          </tr>
+        </thead>
+        <tbody id="historyTableBody"></tbody>
+      </table>
+    </div>
+  </div>
 
-  const valTemp  = $("#valTemp");
-  const valHum   = $("#valHum");
-  const valCo2   = $("#valCo2");
-  const valSolar = $("#valSolar");
-  const valLed   = $("#valLed");
-  const valRssi  = $("#valRssi");
-  const btnOn    = $("#btnOn");
-  const btnOff   = $("#btnOff");
-  const btnSoftReset = $("#btnSoftReset");
+  <!-- 그래프 카드 -->
+  <div class="card hidden" id="chartCard">
+    <div class="card-header">
+      <div>
+        <h2 style="font-size:1.1rem;margin:0;">온도/습도/CO₂/일사량 그래프</h2>
+        <div style="font-size:0.8rem;color:var(--subtle);">
+          10초 평균, 최근 약 10분 (최대 60개)
+        </div>
+      </div>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-block">
+        <h3>온도 (°C)</h3>
+        <div class="chart-wrapper"><canvas id="tempChart"></canvas></div>
+      </div>
+      <div class="chart-block">
+        <h3>습도 (%)</h3>
+        <div class="chart-wrapper"><canvas id="humChart"></canvas></div>
+      </div>
+      <div class="chart-block">
+        <h3>CO₂ (ppm)</h3>
+        <div class="chart-wrapper"><canvas id="co2Chart"></canvas></div>
+      </div>
+      <div class="chart-block">
+        <h3>일사량 (W/m²)</h3>
+        <div class="chart-wrapper"><canvas id="solarChart"></canvas></div>
+      </div>
+    </div>
+  </div>
 
-  const btnShowTable = $("#btnShowTable");
-  const btnShowChart = $("#btnShowChart");
-  const btnToggleLog = $("#btnToggleLog");
-  const tableCard    = $("#tableCard");
-  const chartCard    = $("#chartCard");
-  const logCard      = $("#logCard");
+  <!-- 로그 카드 -->
+  <div class="card log-card hidden" id="logCard">
+    <div id="log"></div>
+  </div>
 
-  const alarmModalBackdrop = $("#alarmModalBackdrop");
-  const alarmMetricLabelEl = $("#alarmMetricLabel");
-  const alarmUnitLabelEl   = $("#alarmUnitLabel");
-  const alarmLowInput      = $("#alarmLow");
-  const alarmHighInput     = $("#alarmHigh");
-  const alarmCancelBtn     = $("#alarmCancel");
-  const alarmSaveBtn       = $("#alarmSave");
-  const historyTableBody   = $("#historyTableBody");
+  <!-- 알람 모달 -->
+  <div id="alarmModalBackdrop" class="modal-backdrop hidden">
+    <div class="modal" role="dialog" aria-modal="true">
+      <h3 class="modal-title"><span id="alarmMetricLabel">온도</span> 알람 설정</h3>
+      <p class="modal-desc">
+        상한/하한 값을 설정하면 범위를 벗어날 때 센서 값이
+        <span style="color:var(--alarm);font-weight:600;">빨간색</span>으로 표시됩니다.
+        알람 설정은 ESP32에 저장되며, 브라우저를 바꾸어도 유지됩니다.
+      </p>
+      <div class="field-row">
+        <div class="field">
+          <label for="alarmLow">하한값</label>
+          <input id="alarmLow" type="number" step="0.1" placeholder="예: 18.0" />
+        </div>
+        <div class="field">
+          <label for="alarmHigh">상한값</label>
+          <input id="alarmHigh" type="number" step="0.1" placeholder="예: 28.0" />
+        </div>
+      </div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-top:2px;">
+        단위: <span id="alarmUnitLabel">°C</span>
+      </div>
+      <div class="modal-actions">
+        <button id="alarmCancel" class="btn-ghost" type="button">취소</button>
+        <button id="alarmSave" class="btn-primary" type="button">저장</button>
+      </div>
+    </div>
+  </div>
 
-  /* ===== 로그 ===== */
-  function log(msg){
-    const time = new Date().toLocaleTimeString("ko-KR",{hour12:false,hour:"2-digit",minute:"2-digit",second:"2-digit"});
-    logEl.textContent += `[${time}] ${msg}\n`;
-    logEl.scrollTop = logEl.scrollHeight;
-    console.log(msg);
-  }
-  function setMqttStatus(ok,text){
-    mqttDotEl.classList.remove("status-ok","status-bad");
-    mqttDotEl.classList.add(ok?"status-ok":"status-bad");
-    mqttStateEl.textContent = text;
-  }
-  function setDeviceState(alive){
-    if(alive){
-      deviceStateEl.textContent = "온라인";
-      deviceStateEl.style.color = "#16a34a";
-    }else{
-      deviceStateEl.textContent = "오프라인";
-      deviceStateEl.style.color = "#dc2626";
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+
+    const mqttStateEl   = $("#mqttState");
+    const mqttDotEl     = $("#mqttDot");
+    const deviceStateEl = $("#deviceState");
+    const lastUpdateEl  = $("#lastUpdate");
+    const headerRssiEl  = $("#headerRssi");
+    const logEl         = $("#log");
+    const cmdResultEl   = $("#cmdResult");
+
+    const valTemp  = $("#valTemp");
+    const valHum   = $("#valHum");
+    const valCo2   = $("#valCo2");
+    const valSolar = $("#valSolar");
+    const valLed   = $("#valLed");
+    const valRssi  = $("#valRssi");
+
+    const btnOn        = $("#btnOn");
+    const btnOff       = $("#btnOff");
+    const btnSoftReset = $("#btnSoftReset");
+
+    const themeToggleBtn  = $("#themeToggle");
+    const themeToggleIcon = themeToggleBtn.querySelector(".theme-toggle-icon");
+
+    const btnShowTable = $("#btnShowTable");
+    const btnShowChart = $("#btnShowChart");
+    const btnToggleLog = $("#btnToggleLog");
+
+    const tableCard = $("#tableCard");
+    const chartCard = $("#chartCard");
+    const logCard   = $("#logCard");
+
+    const alarmModalBackdrop = $("#alarmModalBackdrop");
+    const alarmMetricLabelEl = $("#alarmMetricLabel");
+    const alarmUnitLabelEl   = $("#alarmUnitLabel");
+    const alarmLowInput      = $("#alarmLow");
+    const alarmHighInput     = $("#alarmHigh");
+    const alarmCancelBtn     = $("#alarmCancel");
+    const alarmSaveBtn       = $("#alarmSave");
+
+    function formatTimeHHMM(date) {
+      const h = date.getHours().toString().padStart(2, "0");
+      const m = date.getMinutes().toString().padStart(2, "0");
+      return `${h}:${m}`;
     }
-  }
-  function formatDisplayTime12(d){
-    return d.toLocaleString("ko-KR",{
-      year:"numeric",month:"2-digit",day:"2-digit",
-      hour:"2-digit",minute:"2-digit",second:"2-digit",
-      hour12:true
+
+    function applyTheme(theme) {
+      document.body.setAttribute("data-theme", theme);
+      themeToggleIcon.textContent = theme === "dark" ? "🌙" : "🌞";
+    }
+    applyTheme("dark");
+    themeToggleBtn.addEventListener("click", () => {
+      const cur = document.body.getAttribute("data-theme") || "dark";
+      applyTheme(cur === "dark" ? "light" : "dark");
     });
-  }
-  function formatTimeHHMM(d){
-    return d.toLocaleTimeString("ko-KR",{hour12:false,hour:"2-digit",minute:"2-digit"});
-  }
 
-  /* ===== MQTT 연결 ===== */
-  const brokerUrl = "wss://broker.hivemq.com:8884/mqtt";
-  const options = { clean:true, connectTimeout:4000, reconnectPeriod:5000 };
-  const client = mqtt.connect(brokerUrl, options);
-
-  let lastDeviceMsgAt = null;
-
-  let historyReceived = false;
-  let historyReady = false;
-  let historyRequestTimer = null;
-  let historyAttemptStart = Date.now();
-  const HISTORY_WAIT_TIMEOUT_MS = 10000;
-
-  function requestHistoryOnce(){
-    if(!client.connected) return;
-    try{
-      client.publish("esp32c3/history/get","GET");
-      log("히스토리 GET 요청 전송");
-    }catch(e){
-      log("히스토리 GET 요청 실패: "+e.message);
-    }
-  }
-  function startHistoryRequestLoop(){
-    if(historyRequestTimer) clearInterval(historyRequestTimer);
-    historyReceived = false;
-    historyReady = false;
-    historyAttemptStart = Date.now();
-    historyRequestTimer = setInterval(()=>{
-      if(historyReceived){
-        clearInterval(historyRequestTimer);
-        historyRequestTimer = null;
-        return;
-      }
-      requestHistoryOnce();
-    }, 3000);
-  }
-  function stopHistoryRequestLoop(){
-    if(historyRequestTimer){
-      clearInterval(historyRequestTimer);
-      historyRequestTimer = null;
-    }
-  }
-
-  client.on("connect",()=>{
-    setMqttStatus(true,"MQTT 연결 OK");
-    log("MQTT 연결 성공");
-    client.subscribe("esp32c3/status");
-    client.subscribe("esp32c3/history");
-    client.subscribe("esp32c3/config/alarm");
-    setTimeout(startHistoryRequestLoop, 500);
-  });
-  client.on("reconnect",()=>{
-    setMqttStatus(false,"MQTT 재연결 시도 중...");
-    log("재연결 시도...");
-  });
-  client.on("error",(err)=>{
-    setMqttStatus(false,"MQTT 에러");
-    log("에러: "+err.message);
-  });
-  client.on("close",()=>{
-    setMqttStatus(false,"MQTT 연결 끊김");
-    log("MQTT 연결 끊김");
-  });
-
-  /* ===== 알람 설정 ===== */
-  const ALARM_LS_KEY = "esp32_alarm_config_v1";
-  const alarmConfig = {
-    temp: {low:null, high:null},
-    hum:  {low:null, high:null},
-    co2:  {low:null, high:null},
-    solar:{low:null, high:null}
-  };
-  let currentAlarmKey = null;
-
-  function loadAlarmFromLocal(){
-    try{
-      const raw = localStorage.getItem(ALARM_LS_KEY);
-      if(!raw) return;
-      const obj = JSON.parse(raw);
-      ["temp","hum","co2","solar"].forEach(k=>{
-        if(obj && obj[k]){
-          alarmConfig[k] = { low:obj[k].low ?? null, high:obj[k].high ?? null };
-        }
+    function log(msg) {
+      const time = new Date().toLocaleTimeString("ko-KR", {
+        hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false
       });
-      applyAlarms();
-      log("브라우저 저장 알람 설정 복원: "+JSON.stringify(alarmConfig));
-    }catch(e){ console.warn("알람 설정 로드 실패:", e); }
-  }
-  function saveAlarmToLocal(){
-    try{ localStorage.setItem(ALARM_LS_KEY, JSON.stringify(alarmConfig)); }
-    catch(e){ console.warn("알람 설정 저장 실패:", e); }
-  }
-  function openAlarmModal(key,label,unit){
-    currentAlarmKey = key;
-    alarmMetricLabelEl.textContent = label;
-    alarmUnitLabelEl.textContent   = unit;
-    const cfg = alarmConfig[key] || {low:null,high:null};
-    alarmLowInput.value  = cfg.low  ?? "";
-    alarmHighInput.value = cfg.high ?? "";
-    alarmModalBackdrop.classList.remove("hidden");
-  }
-  function closeAlarmModal(){ alarmModalBackdrop.classList.add("hidden"); }
-  alarmCancelBtn.addEventListener("click",closeAlarmModal);
-  alarmModalBackdrop.addEventListener("click",(e)=>{
-    if(e.target === alarmModalBackdrop) closeAlarmModal();
-  });
+      logEl.textContent += `[${time}] ${msg}\n`;
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(msg);
+    }
 
-  alarmSaveBtn.addEventListener("click",()=>{
-    if(!currentAlarmKey) return;
-    const lowStr  = alarmLowInput.value.trim();
-    const highStr = alarmHighInput.value.trim();
-    const cfg = alarmConfig[currentAlarmKey];
-    cfg.low  = lowStr  === "" ? null : Number(lowStr);
-    cfg.high = highStr === "" ? null : Number(highStr);
-    saveAlarmToLocal();
-
-    const payload = { type: "alarm_config" };
-    ["temp","hum","co2","solar"].forEach(key=>{
-      const src = alarmConfig[key];
-      const obj = {};
-      if(src.low  != null && !Number.isNaN(src.low))  obj.low  = src.low;
-      if(src.high != null && !Number.isNaN(src.high)) obj.high = src.high;
-      if(Object.keys(obj).length>0){
-        payload[key] = obj;
+    function setMqttStatus(ok, text) {
+      mqttDotEl.classList.remove("status-ok", "status-bad");
+      mqttDotEl.classList.add(ok ? "status-ok" : "status-bad");
+      mqttStateEl.textContent = text;
+    }
+    function setDeviceState(alive) {
+      if (alive) {
+        deviceStateEl.textContent = "온라인";
+        deviceStateEl.style.color = "#16a34a";
+      } else {
+        deviceStateEl.textContent = "오프라인";
+        deviceStateEl.style.color = "#dc2626";
       }
-    });
-
-    if(client.connected){
-      client.publish("esp32c3/config/alarm", JSON.stringify(payload));
-      log("알람 설정 전송: "+JSON.stringify(payload));
-    }else{
-      log("알람 설정 전송 실패: MQTT 미연결");
     }
-    applyAlarms();
-    closeAlarmModal();
-  });
-
-  function handleAlarmConfigMessage(obj){
-    if(!obj) return;
-    if(obj.type && obj.type!=="alarm_config") return;
-    if(obj.temp)  alarmConfig.temp  = {low:obj.temp.low ?? null,  high:obj.temp.high ?? null};
-    if(obj.hum)   alarmConfig.hum   = {low:obj.hum.low ?? null,   high:obj.hum.high ?? null};
-    if(obj.co2)   alarmConfig.co2   = {low:obj.co2.low ?? null,   high:obj.co2.high ?? null};
-    if(obj.solar) alarmConfig.solar = {low:obj.solar.low ?? null, high:obj.solar.high ?? null};
-    saveAlarmToLocal();
-    applyAlarms();
-  }
-
-  const alarmState = {temp:false,hum:false,co2:false,solar:false};
-  function checkMetricAlarm(key,value,valueEl){
-    const cfg = alarmConfig[key];
-    if(!cfg || isNaN(value)){
-      valueEl.classList.remove("alarm-active");
-      alarmState[key] = false;
-      return;
+    function formatKoreanDateTime(d) {
+      return d.toLocaleString("ko-KR", {
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true
+      });
     }
-    let alarm = false;
-    if(cfg.low  != null && value < cfg.low)  alarm = true;
-    if(cfg.high != null && value > cfg.high) alarm = true;
-    alarmState[key] = alarm;
-    if(alarm) valueEl.classList.add("alarm-active");
-    else      valueEl.classList.remove("alarm-active");
-  }
-  function applyAlarms(){
-    const t = parseFloat(valTemp.textContent);
-    const h = parseFloat(valHum.textContent);
-    const c = parseFloat(valCo2.textContent);
-    const s = parseFloat(valSolar.textContent);
-    checkMetricAlarm("temp",  t, valTemp);
-    checkMetricAlarm("hum",   h, valHum);
-    checkMetricAlarm("co2",   c, valCo2);
-    checkMetricAlarm("solar", s, valSolar);
-  }
-  document.querySelectorAll(".metric-alarmable").forEach(el=>{
-    el.addEventListener("click",()=>{
-      const key   = el.getAttribute("data-key");
-      const label = el.getAttribute("data-label") || key;
-      const unit  = el.getAttribute("data-unit") || "";
-      openAlarmModal(key,label,unit);
-    });
-  });
-
-  /* ===== 히스토리 / 1분 집계 ===== */
-  let historyData = [];
-  const HISTORY_MAX_MINUTES  = 60;
-  const BUCKET_MS            = 60*1000;
-  const HISTORY_WINDOW_MS    = 60*60*1000;
-
-  // 이전에는 currentBucket + status 기반 집계를 했지만,
-  // 브라우저별 차이를 없애기 위해 이제는 ESP32에서 받은 history만 사용
-  let currentBucket = null; // 남겨두지만 사용 안 함
-
-  function trimHistoryByTime(){
-    if(historyData.length === 0) return;
-    const nowMs = Date.now();
-    const cutoff = nowMs - HISTORY_WINDOW_MS;
-    historyData = historyData.filter(rec=> (rec.ts || nowMs) >= cutoff);
-  }
-
-  function getDisplayHistory(){
-    // 오직 ESP32에서 받은 historyData만 사용
-    return historyData.slice();
-  }
-
-  function rebuildTable(){
-    const data = getDisplayHistory();
-    historyTableBody.innerHTML = "";
-    const N = data.length;
-    if(N===0) return;
-    for(let i=N-1;i>=0;i--){
-      const rec = data[i];
-      const t = new Date(rec.ts || Date.now());
-      const timeLabel = formatTimeHHMM(t);
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${timeLabel}</td>
-        <td>${rec.temp  != null ? Number(rec.temp).toFixed(0)  : "-"}</td>
-        <td>${rec.hum   != null ? Number(rec.hum).toFixed(0)   : "-"}</td>
-        <td>${rec.co2   != null ? Number(rec.co2).toFixed(0)   : "-"}</td>
-        <td>${rec.solar != null ? Number(rec.solar).toFixed(0) : "-"}</td>
-        <td>${rec.led   ? "ON" : "OFF"}</td>
-        <td>${rec.rssi  != null ? Number(rec.rssi).toFixed(0)  : "-"}</td>
-      `;
-      historyTableBody.appendChild(tr);
+    function isFiniteNumber(v) {
+      return typeof v === "number" && isFinite(v);
     }
-  }
 
-  /* ===== Chart.js ===== */
-  let tempChart=null,humChart=null,co2Chart=null,solarChart=null;
-  function createChart(ctx,label,borderColor,bgColor,yTitle){
-    return new Chart(ctx,{
-      type:"line",
-      data:{ labels:[], datasets:[{
-        label, data:[],
-        borderColor, borderWidth:2,
-        backgroundColor:bgColor,
-        tension:0.2, spanGaps:true,
-        pointRadius:0, pointHoverRadius:0, pointHitRadius:6
-      }]},
-      options:{
-        responsive:true, maintainAspectRatio:false,
-        plugins:{
-          legend:{display:false},
-          tooltip:{callbacks:{label:(ctx)=>{
-            const v=ctx.parsed.y;
-            if(v==null) return `${label}: -`;
-            return `${label}: ${Math.round(v)}`;
-          }}}
-        },
-        scales:{
-          x:{
-            title:{display:true,text:"시간 (24시)",color:"#6b7280",font:{size:11}},
-            ticks:{color:"#6b7280",maxRotation:45,minRotation:45,autoSkip:true,maxTicksLimit:8},
-            grid:{color:"rgba(148,163,184,0.25)"}
+    // MQTT
+    const brokerUrl = "wss://broker.hivemq.com:8884/mqtt";
+    const options = { clean: true, connectTimeout: 4000, reconnectPeriod: 5000 };
+    const client = mqtt.connect(brokerUrl, options);
+    let lastDeviceMsgAt = null;
+
+    // 히스토리 (브라우저 측)
+    const MAX_HISTORY_BUCKETS = 60;
+    const historyBuckets = []; // {start,temp,hum,co2,solar,rssi,led,_idx}
+
+    function updateTable() {
+      const tbody = document.getElementById("historyTableBody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+      for (let i = historyBuckets.length - 1; i >= 0; i--) {
+        const b = historyBuckets[i];
+        const timeLabel = formatTimeHHMM(new Date(b.start));
+        const temp  = b.temp  != null ? b.temp.toFixed(1)  : "-";
+        const hum   = b.hum   != null ? b.hum.toFixed(1)   : "-";
+        const co2   = b.co2   != null ? b.co2.toFixed(0)   : "-";
+        const solar = b.solar != null ? b.solar.toFixed(0) : "-";
+        const rssi  = b.rssi  != null ? b.rssi.toFixed(0)  : "-";
+        const led   = b.led   || "-";
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${timeLabel}</td>
+          <td>${temp}</td>
+          <td>${hum}</td>
+          <td>${co2}</td>
+          <td>${solar}</td>
+          <td>${led}</td>
+          <td>${rssi}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // 차트
+    let tempChart = null, humChart = null, co2Chart = null, solarChart = null;
+
+    function createChart(ctx, label, borderColor, bgColor, yTitle) {
+      return new Chart(ctx, {
+        type: "line",
+        data: { labels: [], datasets: [{ label, data: [], borderColor, backgroundColor: bgColor, tension: 0.2, spanGaps: true }] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const v = ctx.parsed.y;
+                  if (v == null) return `${label}: -`;
+                  return `${label}: ${v.toFixed(1)}`;
+                }
+              }
+            }
           },
-          y:{
-            title:{display:true,text:yTitle,color:"#6b7280",font:{size:11}},
-            ticks:{color:"#6b7280"},
-            grid:{color:"rgba(148,163,184,0.25)"}
+          scales: {
+            x: {
+              title: { display: true, text: "시간", color: "#6b7280", font: { size: 11 } },
+              ticks: { color: "#6b7280", maxRotation: 45, minRotation: 45, autoSkip: true, maxTicksLimit: 8 },
+              grid: { color: "rgba(148,163,184,0.25)" }
+            },
+            y: {
+              title: { display: true, text: yTitle, color: "#6b7280", font: { size: 11 } },
+              ticks: { color: "#6b7280" },
+              grid: { color: "rgba(148,163,184,0.25)" }
+            }
           }
         }
+      });
+    }
+
+    function ensureChartsInitialized() {
+      if (tempChart && humChart && co2Chart && solarChart) { updateCharts(); return; }
+      tempChart  = createChart(document.getElementById("tempChart").getContext("2d"),  "온도",   "#f97316", "rgba(249,115,22,0.15)",  "온도 (°C)");
+      humChart   = createChart(document.getElementById("humChart").getContext("2d"),   "습도",   "#22c55e", "rgba(34,197,94,0.15)",   "습도 (%)");
+      co2Chart   = createChart(document.getElementById("co2Chart").getContext("2d"),   "CO₂",    "#3b82f6", "rgba(59,130,246,0.15)", "CO₂ (ppm)");
+      solarChart = createChart(document.getElementById("solarChart").getContext("2d"), "일사량", "#eab308", "rgba(234,179,8,0.15)",  "일사량 (W/m²)");
+      updateCharts();
+    }
+
+    function updateCharts() {
+      if (!tempChart || !humChart || !co2Chart || !solarChart) return;
+      const labels = historyBuckets.map(b => formatTimeHHMM(new Date(b.start)));
+      const tempData  = historyBuckets.map(b => b.temp  != null ? b.temp  : null);
+      const humData   = historyBuckets.map(b => b.hum   != null ? b.hum   : null);
+      const co2Data   = historyBuckets.map(b => b.co2   != null ? b.co2   : null);
+      const solarData = historyBuckets.map(b => b.solar != null ? b.solar : null);
+      [tempChart, humChart, co2Chart, solarChart].forEach(ch => ch.data.labels = labels);
+      tempChart.data.datasets[0].data  = tempData;
+      humChart.data.datasets[0].data   = humData;
+      co2Chart.data.datasets[0].data   = co2Data;
+      solarChart.data.datasets[0].data = solarData;
+      tempChart.update(); humChart.update(); co2Chart.update(); solarChart.update();
+    }
+
+    // 뷰 토글
+    let viewMode = null;
+    function setViewMode(mode) {
+      viewMode = mode;
+      if (mode === "table") {
+        tableCard.classList.remove("hidden");
+        chartCard.classList.add("hidden");
+        btnShowTable.classList.add("active");
+        btnShowChart.classList.remove("active");
+        updateTable();
+        tableCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else if (mode === "chart") {
+        chartCard.classList.remove("hidden");
+        tableCard.classList.add("hidden");
+        btnShowChart.classList.add("active");
+        btnShowTable.classList.remove("active");
+        ensureChartsInitialized();
+        chartCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        tableCard.classList.add("hidden");
+        chartCard.classList.add("hidden");
+        btnShowTable.classList.remove("active");
+        btnShowChart.classList.remove("active");
+      }
+    }
+    btnShowTable.addEventListener("click", () => setViewMode(viewMode === "table" ? null : "table"));
+    btnShowChart.addEventListener("click", () => setViewMode(viewMode === "chart" ? null : "chart"));
+
+    let logVisible = false;
+    btnToggleLog.addEventListener("click", () => {
+      logVisible = !logVisible;
+      logCard.classList.toggle("hidden", !logVisible);
+      btnToggleLog.classList.toggle("active", logVisible);
+      if (logVisible) logCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    // 알람
+    const alarmConfig = {
+      temp:  { low: null, high: null },
+      hum:   { low: null, high: null },
+      co2:   { low: null, high: null },
+      solar: { low: null, high: null },
+    };
+    let currentAlarmKey = null;
+    const alarmState = { temp: false, hum: false, co2: false, solar: false };
+    let lastAlarmJson = "";
+
+    function openAlarmModal(key, label, unit) {
+      currentAlarmKey = key;
+      alarmMetricLabelEl.textContent = label;
+      alarmUnitLabelEl.textContent   = unit;
+      const cfg = alarmConfig[key] || { low: null, high: null };
+      alarmLowInput.value  = cfg.low  ?? "";
+      alarmHighInput.value = cfg.high ?? "";
+      alarmModalBackdrop.classList.remove("hidden");
+    }
+    function closeAlarmModal() { alarmModalBackdrop.classList.add("hidden"); }
+
+    alarmCancelBtn.addEventListener("click", closeAlarmModal);
+    alarmModalBackdrop.addEventListener("click", (e) => {
+      if (e.target === alarmModalBackdrop) closeAlarmModal();
+    });
+    document.querySelectorAll(".metric-alarmable").forEach((el) => {
+      el.addEventListener("click", () => {
+        openAlarmModal(
+          el.getAttribute("data-key"),
+          el.getAttribute("data-label") || "",
+          el.getAttribute("data-unit") || ""
+        );
+      });
+    });
+
+    function buildAlarmPayload() {
+      const payload = {};
+      ["temp", "hum", "co2", "solar"].forEach((key) => {
+        const cfg = alarmConfig[key];
+        payload[key] = { low: cfg.low, high: cfg.high };
+      });
+      return payload;
+    }
+    function publishAlarmConfig() {
+      if (!client.connected) {
+        alert("MQTT가 연결되지 않았습니다. 알람 설정을 전송하지 못했습니다.");
+        log("알람 설정 전송 실패: MQTT 미연결");
+        return;
+      }
+      const topic = "esp32c3/config/alarm";
+      const payloadStr = JSON.stringify(buildAlarmPayload());
+      client.publish(topic, payloadStr, { qos: 1, retain: true }, (err) => {
+        if (err) log("알람 설정 전송 실패: " + err.message);
+        else     log(`알람 설정 전송 (${topic}): ${payloadStr}`);
+      });
+    }
+    alarmSaveBtn.addEventListener("click", () => {
+      if (!currentAlarmKey) return;
+      const key = currentAlarmKey;
+      const cfg = alarmConfig[key];
+      const low  = alarmLowInput.value.trim();
+      const high = alarmHighInput.value.trim();
+      cfg.low  = low  === "" ? null : Number(low);
+      cfg.high = high === "" ? null : Number(high);
+      applyAlarms();
+      closeAlarmModal();
+      publishAlarmConfig();
+    });
+
+    function checkMetricAlarm(key, value, valueEl) {
+      const cfg = alarmConfig[key];
+      if (!cfg || isNaN(value)) {
+        valueEl.classList.remove("alarm-active");
+        alarmState[key] = false;
+        return;
+      }
+      let alarm = false;
+      if (cfg.low  != null && value < cfg.low)  alarm = true;
+      if (cfg.high != null && value > cfg.high) alarm = true;
+      alarmState[key] = alarm;
+      valueEl.classList.toggle("alarm-active", alarm);
+    }
+    function applyAlarms() {
+      const tVal = parseFloat(valTemp.textContent);
+      const hVal = parseFloat(valHum.textContent);
+      const cVal = parseFloat(valCo2.textContent);
+      const sVal = parseFloat(valSolar.textContent);
+      checkMetricAlarm("temp",  tVal, valTemp);
+      checkMetricAlarm("hum",   hVal, valHum);
+      checkMetricAlarm("co2",   cVal, valCo2);
+      checkMetricAlarm("solar", sVal, valSolar);
+    }
+
+    // MQTT 토픽 상수
+    const HISTORY_META_TOPIC    = "esp32c3/history/meta";
+    const HISTORY_BUCKET_PREFIX = "esp32c3/history/bucket/";
+
+    // MQTT 이벤트
+    client.on("connect", () => {
+      setMqttStatus(true, "MQTT 연결 OK");
+      log("MQTT 연결 성공");
+
+      const topicStatus  = "esp32c3/status";
+      const topicAlarm   = "esp32c3/config/alarm";
+      const topicHistory = "esp32c3/history/#";
+
+      client.subscribe(topicStatus, (err) => {
+        if (err) log("구독 실패: " + err.message);
+        else     log("구독 성공: " + topicStatus);
+      });
+      client.subscribe(topicAlarm, (err) => {
+        if (err) log("알람 구독 실패: " + err.message);
+        else     log("알람 구독 성공: " + topicAlarm);
+      });
+      client.subscribe(topicHistory, (err) => {
+        if (err) log("히스토리 구독 실패: " + err.message);
+        else     log("히스토리 구독 성공: " + topicHistory);
+      });
+    });
+    client.on("reconnect", () => { setMqttStatus(false,"MQTT 재연결 시도 중..."); log("재연결 시도..."); });
+    client.on("error", (err) => { setMqttStatus(false,"MQTT 에러"); log("에러: " + err.message); });
+    client.on("close", () =>   { setMqttStatus(false,"MQTT 연결 끊김"); log("MQTT 연결 끊김"); });
+
+    client.on("message", (topic, payload) => {
+      const text = new TextDecoder().decode(payload);
+      log(`수신 (${topic}): ${text}`);
+
+      const trimmed = text.trim();
+      if (topic === "esp32c3/status") {
+        let data;
+        try {
+          const fixed = trimmed.replace(/"rssi"\s*:\s*}/, '"rssi":null}');
+          data = JSON.parse(fixed);
+        } catch (e) { log("JSON 파싱 실패: " + e.message); return; }
+
+        lastDeviceMsgAt = Date.now();
+        setDeviceState(data.alive !== false);
+        const now = new Date();
+
+        if ("temp" in data) {
+          const t = Number(data.temp);
+          valTemp.textContent = isNaN(t) ? "--" : t.toFixed(1);
+        }
+        if ("hum" in data) {
+          const h = Number(data.hum);
+          valHum.textContent = isNaN(h) ? "--" : h.toFixed(1);
+        }
+        if ("co2" in data) {
+          const c = Number(data.co2);
+          valCo2.textContent = isNaN(c) ? "--" : c.toFixed(0);
+        }
+        if ("solar" in data) {
+          const s = Number(data.solar);
+          valSolar.textContent = isNaN(s) ? "--" : s.toFixed(0);
+        }
+        if ("led" in data) {
+          valLed.textContent = data.led ? "ON" : "OFF";
+        }
+        if ("rssi" in data) {
+          const r = Number(data.rssi);
+          valRssi.textContent = isNaN(r) ? "--" : r.toFixed(0);
+          headerRssiEl.textContent = valRssi.textContent;
+        }
+        lastUpdateEl.textContent = formatKoreanDateTime(now);
+        applyAlarms();
+        return;
+      }
+
+      // 알람 설정
+      if (topic === "esp32c3/config/alarm") {
+        if (text === lastAlarmJson) {
+          log("알람 설정 동기화(내용 동일)");
+        } else {
+          lastAlarmJson = text;
+          try {
+            const data = JSON.parse(trimmed);
+            ["temp","hum","co2","solar"].forEach((key)=>{
+              const cfg = alarmConfig[key];
+              const src = data[key] || {};
+              const low  = src.low;
+              const high = src.high;
+              cfg.low  = (low  === null || low  === undefined || low  === "")  ? null : Number(low);
+              cfg.high = (high === null || high === undefined || high === "") ? null : Number(high);
+            });
+            log("알람 설정 동기화 완료");
+            applyAlarms();
+          } catch (e) { log("알람 설정 파싱 실패: " + e.message); }
+        }
+        return;
+      }
+
+      // 히스토리 메타
+      if (topic === HISTORY_META_TOPIC) {
+        try {
+          const data = JSON.parse(trimmed || "{}");
+          const cnt = Number(data.count);
+          if (Number.isFinite(cnt)) {
+            log(`히스토리 메타 수신: count=${cnt}`);
+          }
+        } catch (e) {
+          log("히스토리 메타 파싱 실패: " + e.message);
+        }
+        return;
+      }
+
+      // 히스토리 버킷 (esp32c3/history/bucket/idx)
+      if (topic.startsWith(HISTORY_BUCKET_PREFIX)) {
+        const idxStr = topic.substring(HISTORY_BUCKET_PREFIX.length);
+        const idx = parseInt(idxStr, 10);
+        if (Number.isNaN(idx)) return;
+
+        if (trimmed === "") {
+          // 빈 페이로드 = 삭제
+          for (let i = historyBuckets.length - 1; i >= 0; i--) {
+            if (historyBuckets[i]._idx === idx) historyBuckets.splice(i, 1);
+          }
+          historyBuckets.sort((a,b)=>a.start-b.start);
+          updateCharts(); updateTable();
+          return;
+        }
+
+        let data;
+        try {
+          data = JSON.parse(trimmed);
+        } catch (e) {
+          log("버킷 JSON 파싱 실패: " + e.message);
+          return;
+        }
+
+        const startNum = Number(data.start);
+        if (!Number.isFinite(startNum)) return;
+
+        const bucket = {
+          _idx: idx,
+          start: startNum,
+          temp:  isFiniteNumber(data.temp)  ? Number(data.temp)  : null,
+          hum:   isFiniteNumber(data.hum)   ? Number(data.hum)   : null,
+          co2:   isFiniteNumber(data.co2)   ? Number(data.co2)   : null,
+          solar: isFiniteNumber(data.solar) ? Number(data.solar) : null,
+          rssi:  isFiniteNumber(data.rssi)  ? Number(data.rssi)  : null,
+          led:   typeof data.led === "string" ? data.led : null
+        };
+
+        let replaced = false;
+        for (let i = 0; i < historyBuckets.length; i++) {
+          if (historyBuckets[i].start === bucket.start) {
+            historyBuckets[i] = bucket;
+            replaced = true;
+            break;
+          }
+        }
+        if (!replaced) historyBuckets.push(bucket);
+
+        historyBuckets.sort((a,b)=>a.start - b.start);
+        if (historyBuckets.length > MAX_HISTORY_BUCKETS) {
+          historyBuckets.splice(0, historyBuckets.length - MAX_HISTORY_BUCKETS);
+        }
+        updateCharts();
+        updateTable();
+        return;
       }
     });
-  }
-  function ensureChartsInitialized(){
-    if(tempChart && humChart && co2Chart && solarChart){ updateCharts(); return; }
-    tempChart  = createChart($("#tempChart").getContext("2d"), "온도",   "#f97316","rgba(249,115,22,0.15)","온도 (°C)");
-    humChart   = createChart($("#humChart").getContext("2d"),  "습도",   "#22c55e","rgba(34,197,94,0.15)","습도 (%)");
-    co2Chart   = createChart($("#co2Chart").getContext("2d"),  "CO₂",    "#3b82f6","rgba(59,130,246,0.15)","CO₂ (ppm)");
-    solarChart = createChart($("#solarChart").getContext("2d"),"일사량", "#eab308","rgba(234,179,8,0.15)","일사량 (W/m²)");
-    updateCharts();
-  }
-  function updateCharts(){
-    if(!tempChart || !humChart || !co2Chart || !solarChart) return;
-    const data = getDisplayHistory();
-    const labels=[], temps=[], hums=[], co2s=[], solars=[];
-    for(const rec of data){
-      const t = new Date(rec.ts || Date.now());
-      labels.push(formatTimeHHMM(t));
-      temps.push(  rec.temp  != null ? Number(rec.temp)  : null);
-      hums.push(   rec.hum   != null ? Number(rec.hum)   : null);
-      co2s.push(   rec.co2   != null ? Number(rec.co2)   : null);
-      solars.push( rec.solar != null ? Number(rec.solar) : null);
-    }
-    [tempChart,humChart,co2Chart,solarChart].forEach(c=>{ c.data.labels = labels; });
-    tempChart.data.datasets[0].data  = temps;
-    humChart.data.datasets[0].data   = hums;
-    co2Chart.data.datasets[0].data   = co2s;
-    solarChart.data.datasets[0].data = solars;
-    tempChart.update(); humChart.update(); co2Chart.update(); solarChart.update();
-  }
 
-  /* ===== view / 로그 ===== */
-  let viewMode = null;
-  function setViewMode(mode){
-    viewMode = mode;
-    if(mode==="table"){
-      tableCard.classList.remove("hidden");
-      chartCard.classList.add("hidden");
-      btnShowTable.classList.add("active");
-      btnShowChart.classList.remove("active");
-      rebuildTable();
-      tableCard.scrollIntoView({behavior:"smooth",block:"start"});
-    }else if(mode==="chart"){
-      chartCard.classList.remove("hidden");
-      tableCard.classList.add("hidden");
-      btnShowChart.classList.add("active");
-      btnShowTable.classList.remove("active");
-      ensureChartsInitialized();
-      chartCard.scrollIntoView({behavior:"smooth",block:"start"});
-    }else{
-      tableCard.classList.add("hidden");
-      chartCard.classList.add("hidden");
-      btnShowTable.classList.remove("active");
-      btnShowChart.classList.remove("active");
-    }
-  }
-  btnShowTable.addEventListener("click",()=>{ setViewMode(viewMode==="table"?null:"table"); });
-  btnShowChart.addEventListener("click",()=>{ setViewMode(viewMode==="chart"?null:"chart"); });
-  let logVisible=false;
-  btnToggleLog.addEventListener("click",()=>{
-    logVisible=!logVisible;
-    logCard.classList.toggle("hidden",!logVisible);
-    btnToggleLog.classList.toggle("active",logVisible);
-    if(logVisible) logCard.scrollIntoView({behavior:"smooth",block:"start"});
-  });
+    // 장비 alive 확인
+    setInterval(() => {
+      if (!lastDeviceMsgAt) return;
+      if (Date.now() - lastDeviceMsgAt > 10000) setDeviceState(false);
+    }, 2000);
 
-  /* ===== JSON helper ===== */
-  JSON.parseSafe = function(str){
-    try{ return JSON.parse(str); }
-    catch(e){ log("JSON 파싱 실패: "+e.message); return null;}
-  };
-
-  /* ===== MQTT 메시지 처리 ===== */
-  client.on("message",(topic,payload)=>{
-    const text = new TextDecoder().decode(payload);
-    log(`수신 (${topic}): ${text}`);
-    if(topic==="esp32c3/status")      handleStatusMessage(text);
-    else if(topic==="esp32c3/history")handleHistoryMessage(text);
-    else if(topic==="esp32c3/config/alarm")handleAlarmConfigMessage(JSON.parseSafe(text));
-  });
-
-  function handleStatusMessage(text){
-    const data  = JSON.parseSafe(text);
-    if(!data || data.type!=="status") return;
-
-    lastDeviceMsgAt = Date.now();
-    setDeviceState(true);
-
-    const now = new Date();
-    lastUpdateEl.textContent = formatDisplayTime12(now);
-
-    const temp  = Number(data.temp);
-    const hum   = Number(data.hum);
-    const co2   = Number(data.co2);
-    const solar = Number(data.solar);
-    const led   = !!data.led;
-    const rssi  = Number(data.rssi);
-
-    if(!isNaN(temp))  valTemp.textContent  = temp.toFixed(0);
-    if(!isNaN(hum))   valHum.textContent   = hum.toFixed(0);
-    if(!isNaN(co2))   valCo2.textContent   = co2.toFixed(0);
-    if(!isNaN(solar)) valSolar.textContent = solar.toFixed(0);
-    valLed.textContent = led ? "ON" : "OFF";
-    if(!isNaN(rssi)){
-      valRssi.textContent     = rssi.toFixed(0);
-      headerRssiEl.textContent = valRssi.textContent;
-    }
-    applyAlarms();
-
-    // ✅ 이제는 status로 테이블/히스토리 만들지 않음 (브라우저마다 차이가 나지 않도록)
-  }
-
-  /* ===== 히스토리 수신 처리 ===== */
-  function handleHistoryMessage(text){
-    const obj = JSON.parseSafe(text);
-    if (!obj) return;
-
-    // payload 형식: {type:"history", data:[...]} 또는 [... ] 둘 다 허용
-    let arr = null;
-    if (Array.isArray(obj)) {
-      arr = obj;
-    } else if (Array.isArray(obj.data)) {
-      arr = obj.data;
-    } else {
-      log("히스토리 payload 형식이 예상과 다릅니다: " + text);
-      return;
-    }
-
-    historyReceived = true;
-    historyReady   = true;
-    stopHistoryRequestLoop();
-
-    lastDeviceMsgAt = Date.now();
-    setDeviceState(true);
-
-    if (arr.length === 0) {
-      log("히스토리 수신: 저장된 데이터가 없습니다 (data=[])");
-      rebuildTableAndCharts();
-      return;
-    }
-
-    // ✅ ESP32가 보내는 ts는 epoch seconds 라고 가정하고 그대로 변환
-    const newRecords = arr.map((item) => {
-      const tsSec = (typeof item.ts === "number") ? item.ts : 0;
-      const tsMs  = tsSec * 1000; // epoch seconds → ms
-      return {
-        ts:    tsMs,
-        temp:  item.temp  ?? null,
-        hum:   item.hum   ?? null,
-        co2:   item.co2   ?? null,
-        solar: item.solar ?? null,
-        rssi:  item.rssi  ?? null,
-        led:   item.led   ?? null,
-      };
-    });
-
-    // ❗ 브라우저들 사이 차이가 없도록 완전 덮어쓰기
-    historyData = newRecords;
-
-    rebuildTableAndCharts();
-    log("히스토리 수신 및 반영 완료 (" + newRecords.length + "개 레코드)");
-  }
-
-  // alive 체크
-  setInterval(()=>{
-    if(!lastDeviceMsgAt) return;
-    if(Date.now()-lastDeviceMsgAt>30000) setDeviceState(false);
-  },2000);
-
-  // 히스토리 타임아웃 → 이제 status로 테이블을 채우지 않고, 단순 로그만
-  setInterval(()=>{
-    if(historyReady) return;
-    if(!client.connected) return;
-    if(Date.now() - historyAttemptStart > HISTORY_WAIT_TIMEOUT_MS){
-      stopHistoryRequestLoop();
-      log("히스토리 응답이 없어 테이블을 채울 수 없습니다. (ESP32 히스토리 미전송)");
-    }
-  }, 1000);
-
-  /* ===== LED & reset ===== */
-  function publishLed(cmd){
-    if(!client.connected){
-      cmdResultEl.textContent="전송 상태: MQTT 미연결";
-      return;
-    }
-    client.publish("esp32c3/led",cmd,{qos:0,retain:false},(err)=>{
-      if(err){
-        cmdResultEl.textContent="전송 상태: 실패 - "+err.message;
-        log("LED publish 실패: "+err.message);
-      }else{
-        cmdResultEl.textContent="전송 상태: "+cmd;
-        log("LED 명령 전송: "+cmd);
+    // LED 제어 & 소프트 리셋
+    function publishLed(cmd) {
+      if (!client.connected) {
+        cmdResultEl.textContent = "전송 상태: MQTT가 연결되지 않았습니다.";
+        return;
       }
-    });
-  }
-  btnOn.addEventListener("click",()=>publishLed("LED_ON"));
-  btnOff.addEventListener("click",()=>publishLed("LED_OFF"));
-
-  function publishSoftReset(){
-    if(!client.connected){
-      alert("MQTT가 연결되지 않았습니다.");
-      log("Soft reset 전송 실패: MQTT 미연결");
-      return;
+      const topic = "esp32c3/led";
+      client.publish(topic, cmd, { qos: 0, retain: false }, (err) => {
+        if (err) {
+          cmdResultEl.textContent = "전송 상태: 전송 실패 - " + err.message;
+          log("LED publish 실패: " + err.message);
+        } else {
+          cmdResultEl.textContent = `전송 상태: ${cmd}`;
+          log(`LED 명령 전송 (${topic}): ${cmd}`);
+        }
+      });
     }
-    if(!confirm("장비에 소프트 리셋 명령을 전송할까요?")) return;
-    client.publish("esp32c3/reset","SOFT_RESET",{qos:0,retain:false},(err)=>{
-      if(err){
-        alert("Soft reset 전송 실패: "+err.message);
-        log("Soft reset 전송 실패: "+err.message);
-      }else{
-        log("Soft reset 명령 전송 완료");
+    btnOn.addEventListener("click", () => publishLed("LED_ON"));
+    btnOff.addEventListener("click", () => publishLed("LED_OFF"));
+
+    function publishSoftReset() {
+      if (!client.connected) {
+        alert("MQTT가 연결되지 않았습니다.");
+        log("Soft reset 전송 실패: MQTT 미연결");
+        return;
       }
-    });
-  }
-  btnSoftReset.addEventListener("click",publishSoftReset);
-
-  function rebuildTableAndCharts(){
-    trimHistoryByTime();
-    rebuildTable();
-    if(tempChart) updateCharts();
-  }
-
-  loadAlarmFromLocal();
-</script>
+      if (!confirm("장비에 소프트 리셋 명령을 전송할까요?")) return;
+      const topic = "esp32c3/reset";
+      const payload = "SOFT_RESET";
+      client.publish(topic, payload, { qos: 0, retain: false }, (err) => {
+        if (err) { alert("Soft reset 전송 실패: " + err.message); log("Soft reset 전송 실패: " + err.message); }
+        else     { log(`Soft reset 명령 전송 (${topic}): ${payload}`); }
+      });
+    }
+    btnSoftReset.addEventListener("click", publishSoftReset);
+  </script>
 </body>
 </html>
