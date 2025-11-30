@@ -15,8 +15,9 @@
       --card-bg: #ffffff;
       --metric-bg: #fafafa;
       --shadow: 0 2px 6px rgba(0,0,0,0.08);
-      --log-bg: #111827;
-      --log-fg: #e5e7eb;
+      /* 라이트 모드 로그 */
+      --log-bg: #f9fafb;
+      --log-fg: #111827;
       --border-soft: rgba(0,0,0,0.06);
       --accent: #3b82f6;
       --alarm: #ef4444;
@@ -29,6 +30,7 @@
       --card-bg: #020617;
       --metric-bg: #020617;
       --shadow: 0 2px 10px rgba(0,0,0,0.55);
+      /* 다크 모드 로그 */
       --log-bg: #020617;
       --log-fg: #e5e7eb;
       --border-soft: rgba(148,163,184,0.4);
@@ -78,6 +80,7 @@
       margin-bottom: 2px;
     }
     .mqtt-spacer { flex: 1; }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit,minmax(120px,1fr));
@@ -107,8 +110,8 @@
       color: var(--alarm);
       font-weight: 700;
     }
+
     button {
-      border: none;
       border-radius: 999px;
       padding: 8px 16px;
       font-size: 0.9rem;
@@ -118,11 +121,26 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      transition: transform 0.08s ease, box-shadow 0.12s ease, background 0.2s ease, color 0.2s ease;
+      border: 1px solid transparent;
+      background: transparent;
+      transition: transform 0.08s ease, box-shadow 0.12s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
     }
     button:active { transform: translateY(1px); box-shadow: none; }
-    #btnOn { background: #2ecc71; color: #fff; box-shadow: 0 2px 6px rgba(34,197,94,0.4); }
-    #btnOff { background: #e74c3c; color: #fff; box-shadow: 0 2px 6px rgba(239,68,68,0.4); }
+
+    /* ✅ LED ON/OFF 버튼: 배경은 페이지와 동일, 테두리/글자색만 강조 */
+    #btnOn {
+      background: var(--bg);
+      color: #16a34a;
+      border-color: #16a34a;
+      box-shadow: none;
+    }
+    #btnOff {
+      background: var(--bg);
+      color: #ef4444;
+      border-color: #ef4444;
+      box-shadow: none;
+    }
+
     .theme-toggle {
       background: transparent;
       color: var(--subtle);
@@ -138,6 +156,7 @@
       justify-content: center;
     }
     .theme-toggle-icon { font-size: 1.1rem; }
+
     .icon-button {
       padding: 6px 10px;
       border-radius: 999px;
@@ -148,16 +167,27 @@
       box-shadow: none;
       font-size: 0.85rem;
     }
-    .icon-button.active {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent);
-    }
     .icon-button-small {
       padding: 2px 8px;
       font-size: 0.7rem;
       margin-right: 0;
     }
+
+    /* ✅ 테이블 / 그래프 버튼: 배경 = 페이지, 테두리만 포인트 색 */
+    #btnShowTable,
+    #btnShowChart {
+      background: var(--bg);
+      border-color: var(--accent);
+      color: var(--subtle);
+    }
+    #btnShowTable.active,
+    #btnShowChart.active {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* 로그 버튼은 기존 스타일 유지(원하면 여기도 동일하게 바꿀 수 있음) */
+
     #log {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: 0.8rem;
@@ -198,6 +228,7 @@
     .led-row { display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; }
     .led-buttons { display: flex; gap: 8px; flex-wrap: nowrap; }
     .cmd-status { font-size: 0.75rem; color: var(--subtle); min-height: 1.2em; margin-top: 8px; }
+
     .chart-grid { display: flex; flex-direction: column; gap: 12px; }
     .chart-block {
       border-radius: 10px;
@@ -215,6 +246,7 @@
       width: 100% !important;
       height: 100% !important;
     }
+
     .table-scroll { max-height: 260px; overflow-y: auto; overflow-x: auto; }
     .history-table {
       width: 100%;
@@ -250,6 +282,7 @@
       text-align: left;
     }
     .history-table td { font-size: 0.72rem; }
+
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -376,8 +409,8 @@
     <h2>LED 제어 (esp32c3/led)</h2>
     <div class="led-row">
       <div class="led-buttons">
-        <button id="btnOn">LED ON</button>
-        <button id="btnOff">LED OFF</button>
+        <button id="btnOn" type="button">LED ON</button>
+        <button id="btnOff" type="button">LED OFF</button>
       </div>
       <div id="cmdResult" class="cmd-status">전송 상태: -</div>
     </div>
@@ -394,10 +427,10 @@
     </div>
   </div>
 
-  <!-- 10초 평균 테이블 -->
+  <!-- 1분 평균 테이블 -->
   <div class="card hidden" id="tableCard">
     <div class="card-header">
-      <h2 style="font-size:1.1rem;margin:0;">10초 평균 이력 (최근 약 10분, 최대 60개)</h2>
+      <h2 style="font-size:1.1rem;margin:0;">1분 평균 이력 (최근 60분, 최대 60개)</h2>
     </div>
     <div class="table-scroll">
       <table class="history-table">
@@ -423,7 +456,7 @@
       <div>
         <h2 style="font-size:1.1rem;margin:0;">온도/습도/CO₂/일사량 그래프</h2>
         <div style="font-size:0.8rem;color:var(--subtle);">
-          10초 평균, 최근 약 10분 (최대 60개)
+          1분 평균, 최근 60분 (최대 60개)
         </div>
       </div>
     </div>
@@ -522,10 +555,30 @@
     const alarmCancelBtn     = $("#alarmCancel");
     const alarmSaveBtn       = $("#alarmSave");
 
+    // 시간 포맷: HH:MM (분 단위만)
     function formatTimeHHMM(date) {
       const h = date.getHours().toString().padStart(2, "0");
       const m = date.getMinutes().toString().padStart(2, "0");
       return `${h}:${m}`;
+    }
+
+    // 버킷용 시각(HH:MM). 실제 값은 장비 시간과 상대값이지만,
+    // 최신 버킷은 "마지막 상태 수신 시각"에 맞추고 나머지는 간격 유지
+    let lastDeviceMsgAt = null; // 상태 수신된 브라우저 시각(ms)
+
+    function getBucketDisplayDate(bucket, newestDeviceStart) {
+      if (!historyBuckets.length) {
+        return new Date(bucket.start); // fallback
+      }
+      const newestStart = newestDeviceStart;
+      const anchorClient = lastDeviceMsgAt || Date.now();
+      const delta = bucket.start - newestStart;
+      return new Date(anchorClient + delta);
+    }
+
+    function formatBucketTime(bucket, newestDeviceStart) {
+      const d = getBucketDisplayDate(bucket, newestDeviceStart);
+      return formatTimeHHMM(d);
     }
 
     function applyTheme(theme) {
@@ -575,9 +628,8 @@
     const brokerUrl = "wss://broker.hivemq.com:8884/mqtt";
     const options = { clean: true, connectTimeout: 4000, reconnectPeriod: 5000 };
     const client = mqtt.connect(brokerUrl, options);
-    let lastDeviceMsgAt = null;
 
-    // 히스토리 (브라우저 측)
+    // 히스토리
     const MAX_HISTORY_BUCKETS = 60;
     const historyBuckets = []; // {start,temp,hum,co2,solar,rssi,led,_idx}
 
@@ -585,9 +637,15 @@
       const tbody = document.getElementById("historyTableBody");
       if (!tbody) return;
       tbody.innerHTML = "";
+      if (!historyBuckets.length) return;
+
+      const newest = historyBuckets[historyBuckets.length - 1];
+      const newestStart = newest.start;
+
       for (let i = historyBuckets.length - 1; i >= 0; i--) {
         const b = historyBuckets[i];
-        const timeLabel = formatTimeHHMM(new Date(b.start));
+        const timeLabel = formatBucketTime(b, newestStart); // HH:MM
+
         const temp  = b.temp  != null ? b.temp.toFixed(1)  : "-";
         const hum   = b.hum   != null ? b.hum.toFixed(1)   : "-";
         const co2   = b.co2   != null ? b.co2.toFixed(0)   : "-";
@@ -658,16 +716,30 @@
 
     function updateCharts() {
       if (!tempChart || !humChart || !co2Chart || !solarChart) return;
-      const labels = historyBuckets.map(b => formatTimeHHMM(new Date(b.start)));
+      if (!historyBuckets.length) {
+        [tempChart, humChart, co2Chart, solarChart].forEach(ch => {
+          ch.data.labels = [];
+          ch.data.datasets[0].data = [];
+          ch.update();
+        });
+        return;
+      }
+
+      const newest = historyBuckets[historyBuckets.length - 1];
+      const newestStart = newest.start;
+
+      const labels = historyBuckets.map(b => formatBucketTime(b, newestStart)); // HH:MM
       const tempData  = historyBuckets.map(b => b.temp  != null ? b.temp  : null);
       const humData   = historyBuckets.map(b => b.hum   != null ? b.hum   : null);
       const co2Data   = historyBuckets.map(b => b.co2   != null ? b.co2   : null);
       const solarData = historyBuckets.map(b => b.solar != null ? b.solar : null);
+
       [tempChart, humChart, co2Chart, solarChart].forEach(ch => ch.data.labels = labels);
       tempChart.data.datasets[0].data  = tempData;
       humChart.data.datasets[0].data   = humData;
       co2Chart.data.datasets[0].data   = co2Data;
       solarChart.data.datasets[0].data = solarData;
+
       tempChart.update(); humChart.update(); co2Chart.update(); solarChart.update();
     }
 
@@ -707,7 +779,7 @@
       if (logVisible) logCard.scrollIntoView({ behavior: "smooth", block: "start" });
     });
 
-    // 알람
+    // 알람 설정
     const alarmConfig = {
       temp:  { low: null, high: null },
       hum:   { low: null, high: null },
@@ -801,7 +873,7 @@
       checkMetricAlarm("solar", sVal, valSolar);
     }
 
-    // MQTT 토픽 상수
+    // MQTT 토픽
     const HISTORY_META_TOPIC    = "esp32c3/history/meta";
     const HISTORY_BUCKET_PREFIX = "esp32c3/history/bucket/";
 
@@ -913,14 +985,13 @@
         return;
       }
 
-      // 히스토리 버킷 (esp32c3/history/bucket/idx)
+      // 히스토리 버킷
       if (topic.startsWith(HISTORY_BUCKET_PREFIX)) {
         const idxStr = topic.substring(HISTORY_BUCKET_PREFIX.length);
         const idx = parseInt(idxStr, 10);
         if (Number.isNaN(idx)) return;
 
         if (trimmed === "") {
-          // 빈 페이로드 = 삭제
           for (let i = historyBuckets.length - 1; i >= 0; i--) {
             if (historyBuckets[i]._idx === idx) historyBuckets.splice(i, 1);
           }
@@ -1007,8 +1078,12 @@
       const topic = "esp32c3/reset";
       const payload = "SOFT_RESET";
       client.publish(topic, payload, { qos: 0, retain: false }, (err) => {
-        if (err) { alert("Soft reset 전송 실패: " + err.message); log("Soft reset 전송 실패: " + err.message); }
-        else     { log(`Soft reset 명령 전송 (${topic}): ${payload}`); }
+        if (err) {
+          alert("Soft reset 전송 실패: " + err.message);
+          log("Soft reset 전송 실패: " + err.message);
+        } else {
+          log(`Soft reset 명령 전송 (${topic}): ${payload}`);
+        }
       });
     }
     btnSoftReset.addEventListener("click", publishSoftReset);
