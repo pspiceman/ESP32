@@ -15,7 +15,6 @@
       --card-bg: #ffffff;
       --metric-bg: #fafafa;
       --shadow: 0 2px 6px rgba(0,0,0,0.08);
-      /* 라이트 모드 로그 */
       --log-bg: #f9fafb;
       --log-fg: #111827;
       --border-soft: rgba(0,0,0,0.06);
@@ -30,7 +29,6 @@
       --card-bg: #020617;
       --metric-bg: #020617;
       --shadow: 0 2px 10px rgba(0,0,0,0.55);
-      /* 다크 모드 로그 */
       --log-bg: #020617;
       --log-fg: #e5e7eb;
       --border-soft: rgba(148,163,184,0.4);
@@ -127,7 +125,7 @@
     }
     button:active { transform: translateY(1px); box-shadow: none; }
 
-    /* ✅ LED ON/OFF 버튼: 배경은 페이지와 동일, 테두리/글자색만 강조 */
+    /* LED 버튼: 배경 = 페이지, 테두리/글자색만 */
     #btnOn {
       background: var(--bg);
       color: #16a34a;
@@ -173,7 +171,7 @@
       margin-right: 0;
     }
 
-    /* ✅ 테이블 / 그래프 버튼: 배경 = 페이지, 테두리만 포인트 색 */
+    /* 테이블 / 그래프 버튼 */
     #btnShowTable,
     #btnShowChart {
       background: var(--bg);
@@ -185,8 +183,6 @@
       color: var(--accent);
       border-color: var(--accent);
     }
-
-    /* 로그 버튼은 기존 스타일 유지(원하면 여기도 동일하게 바꿀 수 있음) */
 
     #log {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -555,30 +551,26 @@
     const alarmCancelBtn     = $("#alarmCancel");
     const alarmSaveBtn       = $("#alarmSave");
 
-    // 시간 포맷: HH:MM (분 단위만)
+    // 시간 포맷: HH:MM
     function formatTimeHHMM(date) {
       const h = date.getHours().toString().padStart(2, "0");
       const m = date.getMinutes().toString().padStart(2, "0");
       return `${h}:${m}`;
     }
 
-    // 버킷용 시각(HH:MM). 실제 값은 장비 시간과 상대값이지만,
-    // 최신 버킷은 "마지막 상태 수신 시각"에 맞추고 나머지는 간격 유지
-    let lastDeviceMsgAt = null; // 상태 수신된 브라우저 시각(ms)
+    // 최신 상태 수신 시각 (브라우저 기준)
+    let lastDeviceMsgAt = null;
 
+    // 장비에서 받은 start(초/epoch)와 최신 start를 이용해
+    // 브라우저 로컬 기준 표시 시간 계산
     function getBucketDisplayDate(bucket, newestDeviceStart) {
       if (!historyBuckets.length) {
-        return new Date(bucket.start); // fallback
+        return new Date(bucket.start * 1000);
       }
-      const newestStart = newestDeviceStart;
-      const anchorClient = lastDeviceMsgAt || Date.now();
-      const delta = bucket.start - newestStart;
-      return new Date(anchorClient + delta);
-    }
-
-    function formatBucketTime(bucket, newestDeviceStart) {
-      const d = getBucketDisplayDate(bucket, newestDeviceStart);
-      return formatTimeHHMM(d);
+      const newestStartSec = newestDeviceStart;
+      const anchorClientMs = lastDeviceMsgAt || Date.now();
+      const deltaSec = bucket.start - newestStartSec;
+      return new Date(anchorClientMs + deltaSec * 1000);
     }
 
     function applyTheme(theme) {
@@ -631,7 +623,7 @@
 
     // 히스토리
     const MAX_HISTORY_BUCKETS = 60;
-    const historyBuckets = []; // {start,temp,hum,co2,solar,rssi,led,_idx}
+    const historyBuckets = []; // {start(tempSec), temp, ...}
 
     function updateTable() {
       const tbody = document.getElementById("historyTableBody");
@@ -642,9 +634,24 @@
       const newest = historyBuckets[historyBuckets.length - 1];
       const newestStart = newest.start;
 
+      const seenMinutes = new Set();
+
       for (let i = historyBuckets.length - 1; i >= 0; i--) {
         const b = historyBuckets[i];
-        const timeLabel = formatBucketTime(b, newestStart); // HH:MM
+        const d = getBucketDisplayDate(b, newestStart);
+
+        const key =
+          d.getFullYear().toString() +
+          (d.getMonth() + 1).toString().padStart(2, "0") +
+          d.getDate().toString().padStart(2, "0") +
+          d.getHours().toString().padStart(2, "0") +
+          d.getMinutes().toString().padStart(2, "0");
+
+        // 같은 분(HH:MM)은 한 번만
+        if (seenMinutes.has(key)) continue;
+        seenMinutes.add(key);
+
+        const timeLabel = formatTimeHHMM(d);
 
         const temp  = b.temp  != null ? b.temp.toFixed(1)  : "-";
         const hum   = b.hum   != null ? b.hum.toFixed(1)   : "-";
@@ -673,10 +680,28 @@
     function createChart(ctx, label, borderColor, bgColor, yTitle) {
       return new Chart(ctx, {
         type: "line",
-        data: { labels: [], datasets: [{ label, data: [], borderColor, backgroundColor: bgColor, tension: 0.2, spanGaps: true }] },
+        data: {
+          labels: [],
+          datasets: [{
+            label,
+            data: [],
+            borderColor,
+            backgroundColor: bgColor,
+            tension: 0.2,
+            spanGaps: true,
+            pointRadius: 0,
+            pointHitRadius: 10,
+            pointHoverRadius: 0
+          }]
+        },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          elements: {
+            point: {
+              radius: 0
+            }
+          },
           plugins: {
             legend: { display: false },
             tooltip: {
@@ -728,7 +753,10 @@
       const newest = historyBuckets[historyBuckets.length - 1];
       const newestStart = newest.start;
 
-      const labels = historyBuckets.map(b => formatBucketTime(b, newestStart)); // HH:MM
+      const labels = historyBuckets.map(b => {
+        const d = getBucketDisplayDate(b, newestStart);
+        return formatTimeHHMM(d);
+      });
       const tempData  = historyBuckets.map(b => b.temp  != null ? b.temp  : null);
       const humData   = historyBuckets.map(b => b.hum   != null ? b.hum   : null);
       const co2Data   = historyBuckets.map(b => b.co2   != null ? b.co2   : null);
