@@ -825,11 +825,10 @@
     }
   }
 
-  // ★ 히스토리 수신 처리: ts/idx 값은 플래시에서도 그대로 오지만,
-  //   시간 정보는 "배열 순서" 또는 epoch(ts) 기준으로 재구성해서 사용.
+  /* ===== 히스토리 수신 처리 (플래시 저장 대응, 다양한 ts/idx 포맷 지원) ===== */
   function handleHistoryMessage(text){
     const obj = JSON.parseSafe(text);
-    if (!obj || obj.type !== "history" || !Array.isArray(obj.data)) return;
+    if (!obj || !Array.isArray(obj.data)) return;
 
     const arr = obj.data;
     if (arr.length === 0) return;
@@ -842,27 +841,72 @@
     stopHistoryRequestLoop();
 
     const nowMs = Date.now();
-    const len   = arr.length;
 
-    // ts가 epoch(초)인지 확인
-    let hasEpochTs = false;
-    for(const item of arr){
-      if(typeof item.ts === "number" && item.ts > 1670000000){
-        hasEpochTs = true;
-        break;
+    // ts가 존재하는 항목만 추리기
+    const numericTs = arr
+      .map(it => (typeof it.ts === "number" && !isNaN(it.ts)) ? it.ts : null)
+      .filter(v => v !== null);
+
+    let mode = "order"; // epoch_ms | epoch_s | relative_sec | idx | order
+    let maxTs = null;
+
+    if (numericTs.length > 0) {
+      maxTs = Math.max(...numericTs);
+      if (maxTs > 1e12) {
+        mode = "epoch_ms";       // 이미 ms 단위 타임스탬프
+      } else if (maxTs > 1e9) {
+        mode = "epoch_s";        // 초 단위 epoch
+      } else {
+        mode = "relative_sec";   // 부팅 이후 초 카운터(예: 60,120,...)
+      }
+    } else {
+      const allIdxNumeric = arr.every(it => typeof it.idx === "number" && !isNaN(it.idx));
+      if (allIdxNumeric) {
+        mode = "idx";            // idx=0..59 형태
+      } else {
+        mode = "order";          // 아무 것도 없으면 배열 순서만 사용
       }
     }
 
+    let maxIdx = null;
+    if (mode === "idx") {
+      maxIdx = Math.max(...arr.map(it => it.idx));
+    }
+    let maxRelSec = null;
+    if (mode === "relative_sec") {
+      maxRelSec = maxTs;         // 가장 최근 초 카운터
+    }
+
+    const len = arr.length;
+
     const newRecords = arr.map((item, i) => {
-      let ts;
-      if(hasEpochTs && typeof item.ts === "number"){
-        ts = item.ts * 1000;
-      }else{
-        const minutesAgo = len - 1 - i;
-        ts = nowMs - minutesAgo * 60 * 1000;
+      let tsMs;
+      if (mode === "epoch_ms") {
+        tsMs = Number(item.ts);
+      } else if (mode === "epoch_s") {
+        tsMs = Number(item.ts) * 1000;
+      } else if (mode === "relative_sec") {
+        // ts가 60,120,... 처럼 "초" 단위 카운터라고 보고,
+        // 가장 큰 값을 현재 시각으로 맞춘 뒤 상대 시간 계산
+        const thisSec = (typeof item.ts === "number" && !isNaN(item.ts))
+          ? item.ts
+          : maxRelSec - (len - 1 - i) * 60;
+        const diffSec = maxRelSec - thisSec;
+        tsMs = nowMs - diffSec * 1000;
+      } else if (mode === "idx") {
+        // idx가 0..N 이고 "오래된 것 -> idx작음"이라고 가정
+        const idx = (typeof item.idx === "number" && !isNaN(item.idx))
+          ? item.idx
+          : (maxIdx - (len - 1 - i));
+        const minutesAgo = maxIdx - idx;
+        tsMs = nowMs - minutesAgo * 60 * 1000;
+      } else { // order
+        const minutesAgo = (len - 1 - i);
+        tsMs = nowMs - minutesAgo * 60 * 1000;
       }
+
       return {
-        ts,
+        ts:    tsMs,
         temp:  item.temp  ?? null,
         hum:   item.hum   ?? null,
         co2:   item.co2   ?? null,
@@ -875,7 +919,7 @@
     pushMergedRecords(newRecords);
     currentBucket = null;
     rebuildTableAndCharts();
-    log("ESP history 반영(병합, 플래시 포함): "+historyData.length+"개");
+    log(`ESP history 반영(병합, 플래시 포함): ${historyData.length}개 (수신=${arr.length}, 모드=${mode})`);
   }
 
   // alive 체크
