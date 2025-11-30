@@ -508,6 +508,8 @@
   alarmModalBackdrop.addEventListener("click",(e)=>{
     if(e.target === alarmModalBackdrop) closeAlarmModal();
   });
+
+  // ==== 알람 저장 + MQTT 전송 (null 값은 필드 자체를 빼서 전송) ====
   alarmSaveBtn.addEventListener("click",()=>{
     if(!currentAlarmKey) return;
     const lowStr  = alarmLowInput.value.trim();
@@ -517,13 +519,18 @@
     cfg.high = highStr === "" ? null : Number(highStr);
     saveAlarmToLocal();
 
-    const payload = {
-      type: "alarm_config",
-      temp:  alarmConfig.temp,
-      hum:   alarmConfig.hum,
-      co2:   alarmConfig.co2,
-      solar: alarmConfig.solar
-    };
+    // null 은 보내지 않고, 숫자만 보내기 → ESP32에서 hasLow/hasHigh 정확히 동작
+    const payload = { type: "alarm_config" };
+    ["temp","hum","co2","solar"].forEach(key=>{
+      const src = alarmConfig[key];
+      const obj = {};
+      if(src.low  != null && !Number.isNaN(src.low))  obj.low  = src.low;
+      if(src.high != null && !Number.isNaN(src.high)) obj.high = src.high;
+      if(Object.keys(obj).length>0){
+        payload[key] = obj;
+      }
+    });
+
     if(client.connected){
       client.publish("esp32c3/config/alarm", JSON.stringify(payload));
       log("알람 설정 전송: "+JSON.stringify(payload));
@@ -533,8 +540,10 @@
     applyAlarms();
     closeAlarmModal();
   });
+
   function handleAlarmConfigMessage(obj){
     if(!obj) return;
+    if(obj.type && obj.type!=="alarm_config") return;
     if(obj.temp)  alarmConfig.temp  = {low:obj.temp.low ?? null,  high:obj.temp.high ?? null};
     if(obj.hum)   alarmConfig.hum   = {low:obj.hum.low ?? null,   high:obj.hum.high ?? null};
     if(obj.co2)   alarmConfig.co2   = {low:obj.co2.low ?? null,   high:obj.co2.high ?? null};
@@ -542,6 +551,7 @@
     saveAlarmToLocal();
     applyAlarms();
   }
+
   const alarmState = {temp:false,hum:false,co2:false,solar:false};
   function checkMetricAlarm(key,value,valueEl){
     const cfg = alarmConfig[key];
@@ -825,7 +835,7 @@
     }
   }
 
-  /* ===== 히스토리 수신 처리 (플래시 저장 대응, 다양한 ts/idx 포맷 지원) ===== */
+  /* ===== 히스토리 수신 처리: ESP32가 보내는 ts를 "부팅 후 ms"로 해석 ===== */
   function handleHistoryMessage(text){
     const obj = JSON.parseSafe(text);
     if (!obj || !Array.isArray(obj.data)) return;
@@ -842,39 +852,34 @@
 
     const nowMs = Date.now();
 
-    // ts가 존재하는 항목만 추리기
     const numericTs = arr
       .map(it => (typeof it.ts === "number" && !isNaN(it.ts)) ? it.ts : null)
       .filter(v => v !== null);
 
-    let mode = "order"; // epoch_ms | epoch_s | relative_sec | idx | order
+    let mode = "order"; // epoch_ms | epoch_s | relative_ms | idx | order
     let maxTs = null;
 
     if (numericTs.length > 0) {
       maxTs = Math.max(...numericTs);
       if (maxTs > 1e12) {
-        mode = "epoch_ms";       // 이미 ms 단위 타임스탬프
+        mode = "epoch_ms";      // 절대 ms 타임스탬프
       } else if (maxTs > 1e9) {
-        mode = "epoch_s";        // 초 단위 epoch
+        mode = "epoch_s";       // 절대 초 단위 타임스탬프
       } else {
-        mode = "relative_sec";   // 부팅 이후 초 카운터(예: 60,120,...)
+        mode = "relative_ms";   // ESP32 부팅 후 ms 범위 (우리 펌웨어)
       }
     } else {
       const allIdxNumeric = arr.every(it => typeof it.idx === "number" && !isNaN(it.idx));
       if (allIdxNumeric) {
-        mode = "idx";            // idx=0..59 형태
+        mode = "idx";           // idx=0..59 형태
       } else {
-        mode = "order";          // 아무 것도 없으면 배열 순서만 사용
+        mode = "order";         // 아무 것도 없으면 배열 순서만 사용
       }
     }
 
     let maxIdx = null;
     if (mode === "idx") {
       maxIdx = Math.max(...arr.map(it => it.idx));
-    }
-    let maxRelSec = null;
-    if (mode === "relative_sec") {
-      maxRelSec = maxTs;         // 가장 최근 초 카운터
     }
 
     const len = arr.length;
@@ -885,16 +890,14 @@
         tsMs = Number(item.ts);
       } else if (mode === "epoch_s") {
         tsMs = Number(item.ts) * 1000;
-      } else if (mode === "relative_sec") {
-        // ts가 60,120,... 처럼 "초" 단위 카운터라고 보고,
-        // 가장 큰 값을 현재 시각으로 맞춘 뒤 상대 시간 계산
-        const thisSec = (typeof item.ts === "number" && !isNaN(item.ts))
+      } else if (mode === "relative_ms") {
+        // ts: 부팅 이후 누적 ms라고 가정 → 가장 큰 ts를 현재 시각에 매핑
+        const thisMs = (typeof item.ts === "number" && !isNaN(item.ts))
           ? item.ts
-          : maxRelSec - (len - 1 - i) * 60;
-        const diffSec = maxRelSec - thisSec;
-        tsMs = nowMs - diffSec * 1000;
+          : maxTs - (len - 1 - i) * BUCKET_MS;
+        const diffMs = maxTs - thisMs;
+        tsMs = nowMs - diffMs;
       } else if (mode === "idx") {
-        // idx가 0..N 이고 "오래된 것 -> idx작음"이라고 가정
         const idx = (typeof item.idx === "number" && !isNaN(item.idx))
           ? item.idx
           : (maxIdx - (len - 1 - i));
