@@ -410,8 +410,8 @@
   let lastDeviceMsgAt = null;
 
   let historyReceived = false;
-  let historyRequestTimer = null;
   let historyReady = false;
+  let historyRequestTimer = null;
   let historyAttemptStart = Date.now();
   const HISTORY_WAIT_TIMEOUT_MS = 10000;
 
@@ -451,6 +451,7 @@
     client.subscribe("esp32c3/status");
     client.subscribe("esp32c3/history");
     client.subscribe("esp32c3/config/alarm");
+    // retained history를 바로 받을 수도 있으니, 잠깐 기다렸다가 GET 루프 시작
     setTimeout(startHistoryRequestLoop, 500);
   });
   client.on("reconnect",()=>{
@@ -509,7 +510,6 @@
     if(e.target === alarmModalBackdrop) closeAlarmModal();
   });
 
-  // ==== 알람 저장 + MQTT 전송 (null 값은 필드 자체를 빼서 전송) ====
   alarmSaveBtn.addEventListener("click",()=>{
     if(!currentAlarmKey) return;
     const lowStr  = alarmLowInput.value.trim();
@@ -519,7 +519,6 @@
     cfg.high = highStr === "" ? null : Number(highStr);
     saveAlarmToLocal();
 
-    // null 은 보내지 않고, 숫자만 보내기 → ESP32에서 hasLow/hasHigh 정확히 동작
     const payload = { type: "alarm_config" };
     ["temp","hum","co2","solar"].forEach(key=>{
       const src = alarmConfig[key];
@@ -803,11 +802,11 @@
   });
 
   function handleStatusMessage(text){
-    const fixed = text.replace(/"rssi"\s*:\s*}/,'"rssi":null}');
-    const data  = JSON.parseSafe(fixed);
-    if(!data) return;
+    const data  = JSON.parseSafe(text);
+    if(!data || data.type!=="status") return;
+
     lastDeviceMsgAt = Date.now();
-    setDeviceState(data.alive !== false);
+    setDeviceState(true);
 
     const now = new Date();
     lastUpdateEl.textContent = formatDisplayTime12(now);
@@ -825,7 +824,7 @@
     if(!isNaN(solar)) valSolar.textContent = solar.toFixed(0);
     valLed.textContent = led ? "ON" : "OFF";
     if(!isNaN(rssi)){
-      valRssi.textContent   = rssi.toFixed(0);
+      valRssi.textContent     = rssi.toFixed(0);
       headerRssiEl.textContent = valRssi.textContent;
     }
     applyAlarms();
@@ -835,51 +834,68 @@
     }
   }
 
-  /* ===== 히스토리 수신 처리: ESP32가 보내는 ts를 "부팅 후 ms"로 해석 ===== */
+  /* ===== 히스토리 수신 처리 ===== */
   function handleHistoryMessage(text){
     const obj = JSON.parseSafe(text);
-    if (!obj || !Array.isArray(obj.data)) return;
+    if (!obj) return;
 
-    const arr = obj.data;
-    if (arr.length === 0) return;
+    // payload 형식: {type:"history", data:[...]} 또는 [... ] 둘 다 허용
+    let arr = null;
+    if (Array.isArray(obj)) {
+      arr = obj;
+    } else if (Array.isArray(obj.data)) {
+      arr = obj.data;
+    } else {
+      log("히스토리 payload 형식이 예상과 다릅니다: " + text);
+      return;
+    }
 
-    lastDeviceMsgAt = Date.now();
-    setDeviceState(true);
-
+    // 응답 받음 → 플래그 세우고, 요청 루프 중단
     historyReceived = true;
     historyReady   = true;
     stopHistoryRequestLoop();
 
+    lastDeviceMsgAt = Date.now();
+    setDeviceState(true);
+
+    if (arr.length === 0) {
+      log("히스토리 수신: 저장된 데이터가 없습니다 (data=[])");
+      rebuildTableAndCharts();
+      return;
+    }
+
     const nowMs = Date.now();
 
     const numericTs = arr
-      .map(it => (typeof it.ts === "number" && !isNaN(it.ts)) ? it.ts : null)
-      .filter(v => v !== null);
+      .map(item => typeof item.ts === "number" ? item.ts : NaN)
+      .filter(v => !isNaN(v));
 
-    let mode = "order"; // epoch_ms | epoch_s | relative_ms | idx | order
-    let maxTs = null;
-
-    if (numericTs.length > 0) {
-      maxTs = Math.max(...numericTs);
+    let mode = "order";  // 기본
+    if (numericTs.length === arr.length) {
+      const maxTs = Math.max(...numericTs);
       if (maxTs > 1e12) {
-        mode = "epoch_ms";      // 절대 ms 타임스탬프
+        mode = "epoch_ms";      // 13자리 ms 타임스탬프
       } else if (maxTs > 1e9) {
-        mode = "epoch_s";       // 절대 초 단위 타임스탬프
+        mode = "epoch_s";       // 초 단위 타임스탬프
       } else {
-        mode = "relative_ms";   // ESP32 부팅 후 ms 범위 (우리 펌웨어)
+        mode = "relative_ms";   // 부팅 이후 millis (펌웨어 버전)
       }
     } else {
       const allIdxNumeric = arr.every(it => typeof it.idx === "number" && !isNaN(it.idx));
       if (allIdxNumeric) {
-        mode = "idx";           // idx=0..59 형태
+        mode = "idx";           // idx=0..N
       } else {
-        mode = "order";         // 아무 것도 없으면 배열 순서만 사용
+        mode = "order";
       }
     }
 
     let maxIdx = null;
     if (mode === "idx") {
       maxIdx = Math.max(...arr.map(it => it.idx));
+    }
+    let maxRelMs = null;
+    if (mode === "relative_ms") {
+      maxRelMs = Math.max(...arr.map(it => it.ts));
     }
 
     const len = arr.length;
@@ -891,16 +907,15 @@
       } else if (mode === "epoch_s") {
         tsMs = Number(item.ts) * 1000;
       } else if (mode === "relative_ms") {
-        // ts: 부팅 이후 누적 ms라고 가정 → 가장 큰 ts를 현재 시각에 매핑
         const thisMs = (typeof item.ts === "number" && !isNaN(item.ts))
           ? item.ts
-          : maxTs - (len - 1 - i) * BUCKET_MS;
-        const diffMs = maxTs - thisMs;
+          : maxRelMs - (len - 1 - i) * BUCKET_MS;
+        const diffMs = maxRelMs - thisMs;
         tsMs = nowMs - diffMs;
       } else if (mode === "idx") {
         const idx = (typeof item.idx === "number" && !isNaN(item.idx))
           ? item.idx
-          : (maxIdx - (len - 1 - i));
+          : (len - 1 - i);
         const minutesAgo = maxIdx - idx;
         tsMs = nowMs - minutesAgo * 60 * 1000;
       } else { // order
@@ -915,14 +930,14 @@
         co2:   item.co2   ?? null,
         solar: item.solar ?? null,
         rssi:  item.rssi  ?? null,
-        led:   !!item.led
+        led:   item.led   ?? null,
       };
     });
 
     pushMergedRecords(newRecords);
     currentBucket = null;
     rebuildTableAndCharts();
-    log(`ESP history 반영(병합, 플래시 포함): ${historyData.length}개 (수신=${arr.length}, 모드=${mode})`);
+    log("히스토리 수신 및 반영 완료 (" + newRecords.length + "개 레코드, mode=" + mode + ")");
   }
 
   // alive 체크
