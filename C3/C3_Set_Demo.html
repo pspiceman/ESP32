@@ -451,7 +451,6 @@
     client.subscribe("esp32c3/status");
     client.subscribe("esp32c3/history");
     client.subscribe("esp32c3/config/alarm");
-    // retained history를 바로 받을 수도 있으니, 잠깐 기다렸다가 GET 루프 시작
     setTimeout(startHistoryRequestLoop, 500);
   });
   client.on("reconnect",()=>{
@@ -590,79 +589,23 @@
   const HISTORY_MAX_MINUTES  = 60;
   const BUCKET_MS            = 60*1000;
   const HISTORY_WINDOW_MS    = 60*60*1000;
-  let currentBucket = null;
 
-  function createNewBucket(nowMs){
-    return {
-      startMs: nowMs - (nowMs % BUCKET_MS),
-      sampleCount:0,
-      tempSum:0,tempCnt:0,
-      humSum:0,humCnt:0,
-      co2Sum:0,co2Cnt:0,
-      solarSum:0,solarCnt:0,
-      rssiSum:0,rssiCnt:0,
-      lastLed:false
-    };
-  }
-  function bucketToRecord(b){
-    const tsMs = b.startMs + BUCKET_MS;
-    return {
-      ts:   tsMs,
-      temp:  b.tempCnt  ? b.tempSum  / b.tempCnt  : null,
-      hum:   b.humCnt   ? b.humSum   / b.humCnt   : null,
-      co2:   b.co2Cnt   ? b.co2Sum   / b.co2Cnt   : null,
-      solar: b.solarCnt ? b.solarSum / b.solarCnt : null,
-      rssi:  b.rssiCnt  ? b.rssiSum  / b.rssiCnt  : null,
-      led:   b.lastLed
-    };
-  }
-  function keyOfRec(rec){
-    const ts = rec.ts || Date.now();
-    return Math.floor(ts / BUCKET_MS);
-  }
+  // 이전에는 currentBucket + status 기반 집계를 했지만,
+  // 브라우저별 차이를 없애기 위해 이제는 ESP32에서 받은 history만 사용
+  let currentBucket = null; // 남겨두지만 사용 안 함
+
   function trimHistoryByTime(){
     if(historyData.length === 0) return;
     const nowMs = Date.now();
     const cutoff = nowMs - HISTORY_WINDOW_MS;
     historyData = historyData.filter(rec=> (rec.ts || nowMs) >= cutoff);
   }
+
   function getDisplayHistory(){
-    const result = historyData.slice();
-    if(historyReady && currentBucket && currentBucket.sampleCount>0){
-      result.push(bucketToRecord(currentBucket));
-    }
-    return result;
+    // 오직 ESP32에서 받은 historyData만 사용
+    return historyData.slice();
   }
-  function addHistorySampleFromStatus(temp,hum,co2,solar,rssi,led){
-    const nowMs = Date.now();
-    if(!currentBucket){
-      currentBucket = createNewBucket(nowMs);
-    }else if(nowMs - currentBucket.startMs >= BUCKET_MS){
-      if(currentBucket.sampleCount>0){
-        pushMergedRecords([bucketToRecord(currentBucket)]);
-      }
-      currentBucket = createNewBucket(nowMs);
-    }
-    currentBucket.sampleCount++;
-    if(!isNaN(temp)){  currentBucket.tempSum  += temp;  currentBucket.tempCnt++; }
-    if(!isNaN(hum)){   currentBucket.humSum   += hum;   currentBucket.humCnt++; }
-    if(!isNaN(co2)){   currentBucket.co2Sum   += co2;   currentBucket.co2Cnt++; }
-    if(!isNaN(solar)){ currentBucket.solarSum += solar; currentBucket.solarCnt++; }
-    if(!isNaN(rssi)){  currentBucket.rssiSum  += rssi;  currentBucket.rssiCnt++; }
-    currentBucket.lastLed = !!led;
-    rebuildTableAndCharts();
-  }
-  function pushMergedRecords(newRecords){
-    if(!newRecords || !newRecords.length) return;
-    const map = new Map();
-    historyData.forEach(rec=>{ map.set(keyOfRec(rec), rec); });
-    newRecords.forEach(rec=>{ map.set(keyOfRec(rec), rec); });
-    historyData = Array.from(map.values()).sort((a,b)=> (a.ts||0)-(b.ts||0));
-    trimHistoryByTime();
-    if(historyData.length>HISTORY_MAX_MINUTES){
-      historyData.splice(0, historyData.length-HISTORY_MAX_MINUTES);
-    }
-  }
+
   function rebuildTable(){
     const data = getDisplayHistory();
     historyTableBody.innerHTML = "";
@@ -829,9 +772,7 @@
     }
     applyAlarms();
 
-    if(historyReady){
-      addHistorySampleFromStatus(temp,hum,co2,solar,rssi,led);
-    }
+    // ✅ 이제는 status로 테이블/히스토리 만들지 않음 (브라우저마다 차이가 나지 않도록)
   }
 
   /* ===== 히스토리 수신 처리 ===== */
@@ -850,7 +791,6 @@
       return;
     }
 
-    // 응답 받음 → 플래그 세우고, 요청 루프 중단
     historyReceived = true;
     historyReady   = true;
     stopHistoryRequestLoop();
@@ -864,65 +804,10 @@
       return;
     }
 
-    const nowMs = Date.now();
-
-    const numericTs = arr
-      .map(item => typeof item.ts === "number" ? item.ts : NaN)
-      .filter(v => !isNaN(v));
-
-    let mode = "order";  // 기본
-    if (numericTs.length === arr.length) {
-      const maxTs = Math.max(...numericTs);
-      if (maxTs > 1e12) {
-        mode = "epoch_ms";      // 13자리 ms 타임스탬프
-      } else if (maxTs > 1e9) {
-        mode = "epoch_s";       // 초 단위 타임스탬프
-      } else {
-        mode = "relative_ms";   // 부팅 이후 millis (펌웨어 버전)
-      }
-    } else {
-      const allIdxNumeric = arr.every(it => typeof it.idx === "number" && !isNaN(it.idx));
-      if (allIdxNumeric) {
-        mode = "idx";           // idx=0..N
-      } else {
-        mode = "order";
-      }
-    }
-
-    let maxIdx = null;
-    if (mode === "idx") {
-      maxIdx = Math.max(...arr.map(it => it.idx));
-    }
-    let maxRelMs = null;
-    if (mode === "relative_ms") {
-      maxRelMs = Math.max(...arr.map(it => it.ts));
-    }
-
-    const len = arr.length;
-
-    const newRecords = arr.map((item, i) => {
-      let tsMs;
-      if (mode === "epoch_ms") {
-        tsMs = Number(item.ts);
-      } else if (mode === "epoch_s") {
-        tsMs = Number(item.ts) * 1000;
-      } else if (mode === "relative_ms") {
-        const thisMs = (typeof item.ts === "number" && !isNaN(item.ts))
-          ? item.ts
-          : maxRelMs - (len - 1 - i) * BUCKET_MS;
-        const diffMs = maxRelMs - thisMs;
-        tsMs = nowMs - diffMs;
-      } else if (mode === "idx") {
-        const idx = (typeof item.idx === "number" && !isNaN(item.idx))
-          ? item.idx
-          : (len - 1 - i);
-        const minutesAgo = maxIdx - idx;
-        tsMs = nowMs - minutesAgo * 60 * 1000;
-      } else { // order
-        const minutesAgo = (len - 1 - i);
-        tsMs = nowMs - minutesAgo * 60 * 1000;
-      }
-
+    // ✅ ESP32가 보내는 ts는 epoch seconds 라고 가정하고 그대로 변환
+    const newRecords = arr.map((item) => {
+      const tsSec = (typeof item.ts === "number") ? item.ts : 0;
+      const tsMs  = tsSec * 1000; // epoch seconds → ms
       return {
         ts:    tsMs,
         temp:  item.temp  ?? null,
@@ -934,10 +819,11 @@
       };
     });
 
-    pushMergedRecords(newRecords);
-    currentBucket = null;
+    // ❗ 브라우저들 사이 차이가 없도록 완전 덮어쓰기
+    historyData = newRecords;
+
     rebuildTableAndCharts();
-    log("히스토리 수신 및 반영 완료 (" + newRecords.length + "개 레코드, mode=" + mode + ")");
+    log("히스토리 수신 및 반영 완료 (" + newRecords.length + "개 레코드)");
   }
 
   // alive 체크
@@ -946,14 +832,13 @@
     if(Date.now()-lastDeviceMsgAt>30000) setDeviceState(false);
   },2000);
 
-  // 히스토리 타임아웃
+  // 히스토리 타임아웃 → 이제 status로 테이블을 채우지 않고, 단순 로그만
   setInterval(()=>{
     if(historyReady) return;
     if(!client.connected) return;
     if(Date.now() - historyAttemptStart > HISTORY_WAIT_TIMEOUT_MS){
-      historyReady = true;
       stopHistoryRequestLoop();
-      log("히스토리 응답이 없어 현재 시점부터만 테이블을 채웁니다.");
+      log("히스토리 응답이 없어 테이블을 채울 수 없습니다. (ESP32 히스토리 미전송)");
     }
   }, 1000);
 
