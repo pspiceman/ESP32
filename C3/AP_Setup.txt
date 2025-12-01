@@ -1,0 +1,65 @@
+/***************************************************************
+// HTML — WiFi 설정 페이지
+***************************************************************/
+const char PAGE_INDEX[] PROGMEM = R"rawliteral(
+<!DOCTYPE html><html lang='ko'><head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>ESP32 WiFi 설정</title>
+<style>
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:#020617;color:#e5e7eb;padding:24px;margin:0;}
+label{margin-top:12px;display:block}
+input,select{width:100%;padding:8px;margin-top:4px;border:1px solid #4b5563;border-radius:8px;background:#020617;color:#e5e7eb;}
+button{margin-top:16px;padding:10px;background:#2563eb;border-radius:999px;color:white;font-weight:700;}
+body>div{max-width:360px;margin:auto;border:1px solid #1f2937;padding:20px;border-radius:12px;}
+</style>
+<script>
+async function scan(){
+  const r = await fetch('/scan');
+  const list = await r.json();
+  const sel = document.getElementById('ssidList');
+  sel.innerHTML = "<option value=''>SSID 선택…</option>";
+  list.forEach(ap=>{
+    const o=document.createElement('option');
+    o.value=ap.ssid;
+    o.innerText=ap.ssid+" ("+ap.rssi+" dBm)";
+    sel.appendChild(o);
+  });
+}
+function setSSID(){
+  const v=document.getElementById('ssidList').value;
+  if(v) document.getElementById('ssid').value=v;
+}
+window.onload = scan;
+</script>
+</head>
+<body><div>
+<h2 style='font-size:1.6rem;font-weight:700;'>WiFi 설정</h2>
+<label>WiFi 목록 (자동 스캔)</label>
+<select id='ssidList' onchange='setSSID()'><option>스캔 중…</option></select>
+<form method='POST' action='/save'>
+<label>SSID<input id='ssid' name='ssid' required></label>
+<label>비밀번호<input type='password' name='pass'></label>
+<button type='submit'>저장</button>
+</form>
+</div></body></html>
+)rawliteral";
+
+
+/***************************************************************
+ * HTML — 저장 완료 페이지
+ ***************************************************************/
+const char PAGE_SAVED[] PROGMEM = R"rawliteral(
+<!DOCTYPE html><html lang='ko'>
+<head><meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<style>
+body{display:flex;justify-content:center;align-items:center;height:100vh;
+background:#020617;color:#e5e7eb;font-family:-apple-system,'Segoe UI';text-align:center;}
+h2{font-size:1.8rem;font-weight:700;}
+</style></head>
+<body>
+<h2>WiFi 설정이 저장되었습니다.<br>2초 후 재부팅합니다…</h2>
+</body></html>
+)rawliteral";
+
