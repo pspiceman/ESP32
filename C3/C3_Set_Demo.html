@@ -558,13 +558,14 @@
       return `${h}:${m}`;
     }
 
-    // 최신 상태 수신 시각 (브라우저 기준)
     let lastDeviceMsgAt = null;
+    let lastLedState = null;  // 상태 메시지 기준 LED 상태 (true/false)
 
     function applyTheme(theme) {
       document.body.setAttribute("data-theme", theme);
       themeToggleIcon.textContent = theme === "dark" ? "🌙" : "🌞";
     }
+    // 기본 다크 모드
     applyTheme("dark");
     themeToggleBtn.addEventListener("click", () => {
       const cur = document.body.getAttribute("data-theme") || "dark";
@@ -611,12 +612,9 @@
 
     // 히스토리
     const MAX_HISTORY_BUCKETS = 60;
-    const historyBuckets = []; // {start,temp,...}
+    const historyBuckets = []; // {start,temp,hum,co2,solar,rssi,led,_idx}
 
-    // ★ 최신 LED 상태 저장용
-    let latestLedState = null;
-
-    // ★★★ 버킷 → 표시용 시각 계산
+    // 버킷 → 표시용 시각 계산
     function getBucketDisplayDate(bucket) {
       if (!historyBuckets.length) {
         return new Date(lastDeviceMsgAt || Date.now());
@@ -639,6 +637,7 @@
       const sorted = [...historyBuckets].sort((a, b) => a.start - b.start);
       const seenMinutes = new Set();
 
+      // 최신 → 과거 순서로 1분당 1개만 표시
       for (let i = sorted.length - 1; i >= 0; i--) {
         const b = sorted[i];
         const d = getBucketDisplayDate(b);
@@ -661,14 +660,12 @@
         const solar = b.solar != null ? b.solar.toFixed(0) : "-";
         const rssi  = b.rssi  != null ? b.rssi.toFixed(0)  : "-";
 
-        // ★ LED 값 표시 보정 (문자/boolean 모두 ON/OFF로)
         let ledStr = "-";
         if (typeof b.led === "string") {
           ledStr = b.led;
         } else if (typeof b.led === "boolean") {
           ledStr = b.led ? "ON" : "OFF";
         }
-        const led = ledStr;
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -677,7 +674,7 @@
           <td>${hum}</td>
           <td>${co2}</td>
           <td>${solar}</td>
-          <td>${led}</td>
+          <td>${ledStr}</td>
           <td>${rssi}</td>
         `;
         tbody.appendChild(tr);
@@ -699,7 +696,7 @@
             backgroundColor: bgColor,
             tension: 0.2,
             spanGaps: true,
-            pointRadius: 0,
+            pointRadius: 0,        // 점(동그라미) 삭제
             pointHitRadius: 10,
             pointHoverRadius: 0
           }]
@@ -707,11 +704,7 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          elements: {
-            point: {
-              radius: 0
-            }
-          },
+          elements: { point: { radius: 0 } },
           plugins: {
             legend: { display: false },
             tooltip: {
@@ -741,7 +734,10 @@
     }
 
     function ensureChartsInitialized() {
-      if (tempChart && humChart && co2Chart && solarChart) { updateCharts(); return; }
+      if (tempChart && humChart && co2Chart && solarChart) {
+        updateCharts();
+        return;
+      }
       tempChart  = createChart(document.getElementById("tempChart").getContext("2d"),  "온도",   "#f97316", "rgba(249,115,22,0.15)",  "온도 (°C)");
       humChart   = createChart(document.getElementById("humChart").getContext("2d"),   "습도",   "#22c55e", "rgba(34,197,94,0.15)",   "습도 (%)");
       co2Chart   = createChart(document.getElementById("co2Chart").getContext("2d"),   "CO₂",    "#3b82f6", "rgba(59,130,246,0.15)", "CO₂ (ppm)");
@@ -906,11 +902,10 @@
       checkMetricAlarm("solar", sVal, valSolar);
     }
 
-    // MQTT 토픽
+    // 히스토리 메타 / 버킷 토픽 이름
     const HISTORY_META_TOPIC    = "esp32c3/history/meta";
     const HISTORY_BUCKET_PREFIX = "esp32c3/history/bucket/";
 
-    // MQTT 이벤트
     client.on("connect", () => {
       setMqttStatus(true, "MQTT 연결 OK");
       log("MQTT 연결 성공");
@@ -932,21 +927,35 @@
         else     log("히스토리 구독 성공: " + topicHistory);
       });
     });
-    client.on("reconnect", () => { setMqttStatus(false,"MQTT 재연결 시도 중..."); log("재연결 시도..."); });
-    client.on("error", (err) => { setMqttStatus(false,"MQTT 에러"); log("에러: " + err.message); });
-    client.on("close", () =>   { setMqttStatus(false,"MQTT 연결 끊김"); log("MQTT 연결 끊김"); });
+    client.on("reconnect", () => {
+      setMqttStatus(false,"MQTT 재연결 시도 중...");
+      log("재연결 시도...");
+    });
+    client.on("error", (err) => {
+      setMqttStatus(false,"MQTT 에러");
+      log("에러: " + err.message);
+    });
+    client.on("close", () => {
+      setMqttStatus(false,"MQTT 연결 끊김");
+      log("MQTT 연결 끊김");
+    });
 
     client.on("message", (topic, payload) => {
       const text = new TextDecoder().decode(payload);
       log(`수신 (${topic}): ${text}`);
 
       const trimmed = text.trim();
+
+      // 상태 메시지
       if (topic === "esp32c3/status") {
         let data;
         try {
           const fixed = trimmed.replace(/"rssi"\s*:\s*}/, '"rssi":null}');
           data = JSON.parse(fixed);
-        } catch (e) { log("JSON 파싱 실패: " + e.message); return; }
+        } catch (e) {
+          log("JSON 파싱 실패: " + e.message);
+          return;
+        }
 
         lastDeviceMsgAt = Date.now();
         setDeviceState(data.alive !== false);
@@ -969,20 +978,9 @@
           valSolar.textContent = isNaN(s) ? "--" : s.toFixed(0);
         }
         if ("led" in data) {
-          // ★ status 수신시 최신 LED 상태 저장 + 최신 버킷에 반영
           const on = !!data.led;
-          latestLedState = on ? "ON" : "OFF";
-          valLed.textContent = latestLedState;
-
-          if (historyBuckets.length > 0) {
-            let latestIndex = 0;
-            for (let i = 1; i < historyBuckets.length; i++) {
-              if (historyBuckets[i].start > historyBuckets[latestIndex].start) {
-                latestIndex = i;
-              }
-            }
-            historyBuckets[latestIndex].led = latestLedState;
-          }
+          lastLedState = on;
+          valLed.textContent = on ? "ON" : "OFF";
         }
         if ("rssi" in data) {
           const r = Number(data.rssi);
@@ -1014,7 +1012,9 @@
             });
             log("알람 설정 동기화 완료");
             applyAlarms();
-          } catch (e) { log("알람 설정 파싱 실패: " + e.message); }
+          } catch (e) {
+            log("알람 설정 파싱 실패: " + e.message);
+          }
         }
         return;
       }
@@ -1040,11 +1040,13 @@
         if (Number.isNaN(idx)) return;
 
         if (trimmed === "") {
+          // 빈 페이로드 = 버킷 삭제
           for (let i = historyBuckets.length - 1; i >= 0; i--) {
             if (historyBuckets[i]._idx === idx) historyBuckets.splice(i, 1);
           }
           historyBuckets.sort((a,b)=>a.start-b.start);
-          updateCharts(); updateTable();
+          updateCharts();
+          updateTable();
           return;
         }
 
@@ -1059,6 +1061,19 @@
         const startNum = Number(data.start);
         if (!Number.isFinite(startNum)) return;
 
+        // ★ LED 값 파싱을 강화: "ON"/"OFF" / true/false / 1/0 지원
+        let ledVal = null;
+        if (typeof data.led === "string") {
+          const s = data.led.toUpperCase();
+          if (s === "ON" || s === "OFF") {
+            ledVal = s;
+          }
+        } else if (typeof data.led === "boolean") {
+          ledVal = data.led ? "ON" : "OFF";
+        } else if (typeof data.led === "number") {
+          ledVal = data.led > 0 ? "ON" : "OFF";
+        }
+
         const bucket = {
           _idx: idx,
           start: startNum,
@@ -1067,13 +1082,8 @@
           co2:   isFiniteNumber(data.co2)   ? Number(data.co2)   : null,
           solar: isFiniteNumber(data.solar) ? Number(data.solar) : null,
           rssi:  isFiniteNumber(data.rssi)  ? Number(data.rssi)  : null,
-          led:   typeof data.led === "string" ? data.led : null
+          led:   ledVal
         };
-
-        // ★ 버킷에 LED 정보가 없으면 최신 LED 상태로 보정
-        if (!bucket.led && latestLedState) {
-          bucket.led = latestLedState;
-        }
 
         let replaced = false;
         for (let i = 0; i < historyBuckets.length; i++) {
@@ -1098,7 +1108,9 @@
     // 장비 alive 확인
     setInterval(() => {
       if (!lastDeviceMsgAt) return;
-      if (Date.now() - lastDeviceMsgAt > 10000) setDeviceState(false);
+      if (Date.now() - lastDeviceMsgAt > 10000) {
+        setDeviceState(false);
+      }
     }, 2000);
 
     // LED 제어 & 소프트 리셋
