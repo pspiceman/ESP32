@@ -551,6 +551,9 @@
     const alarmCancelBtn     = $("#alarmCancel");
     const alarmSaveBtn       = $("#alarmSave");
 
+    // 로그 최대 줄 수 (안정화용)
+    const LOG_MAX_LINES = 400;
+
     // 시간 포맷: HH:MM
     function formatTimeHHMM(date) {
       const h = date.getHours().toString().padStart(2, "0");
@@ -577,6 +580,13 @@
         hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false
       });
       logEl.textContent += `[${time}] ${msg}\n`;
+
+      // ★ 로그 줄 수 제한 (안정화/최적화)
+      const lines = logEl.textContent.split("\n");
+      if (lines.length > LOG_MAX_LINES + 10) {
+        logEl.textContent = lines.slice(-LOG_MAX_LINES).join("\n");
+      }
+
       logEl.scrollTop = logEl.scrollHeight;
       console.log(msg);
     }
@@ -942,9 +952,12 @@
 
     client.on("message", (topic, payload) => {
       const text = new TextDecoder().decode(payload);
-      log(`수신 (${topic}): ${text}`);
-
       const trimmed = text.trim();
+
+      // ✅ history/bucket/* 토픽은 로그창에 표시하지 않음
+      if (!topic.startsWith(HISTORY_BUCKET_PREFIX)) {
+        log(`수신 (${topic}): ${text}`);
+      }
 
       // 상태 메시지
       if (topic === "esp32c3/status") {
@@ -1061,7 +1074,7 @@
         const startNum = Number(data.start);
         if (!Number.isFinite(startNum)) return;
 
-        // ★ LED 값 파싱을 강화: "ON"/"OFF" / true/false / 1/0 지원
+        // LED 값 파싱: "ON"/"OFF" / true/false / 1/0 모두 지원
         let ledVal = null;
         if (typeof data.led === "string") {
           const s = data.led.toUpperCase();
