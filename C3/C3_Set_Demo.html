@@ -561,18 +561,6 @@
     // 최신 상태 수신 시각 (브라우저 기준)
     let lastDeviceMsgAt = null;
 
-    // 장비에서 받은 start(초/epoch)와 최신 start를 이용해
-    // 브라우저 로컬 기준 표시 시간 계산
-    function getBucketDisplayDate(bucket, newestDeviceStart) {
-      if (!historyBuckets.length) {
-        return new Date(bucket.start * 1000);
-      }
-      const newestStartSec = newestDeviceStart;
-      const anchorClientMs = lastDeviceMsgAt || Date.now();
-      const deltaSec = bucket.start - newestStartSec;
-      return new Date(anchorClientMs + deltaSec * 1000);
-    }
-
     function applyTheme(theme) {
       document.body.setAttribute("data-theme", theme);
       themeToggleIcon.textContent = theme === "dark" ? "🌙" : "🌞";
@@ -625,20 +613,39 @@
     const MAX_HISTORY_BUCKETS = 60;
     const historyBuckets = []; // {start(tempSec), temp, ...}
 
+    // ★★★ 버킷 → 표시용 시각 계산
+    // - ESP32에서 오는 start값은 정렬용으로만 사용
+    // - 가장 최근 버킷은 lastDeviceMsgAt 기준 시각
+    // - 그 이전 버킷은 1분씩 과거로 이동
+    function getBucketDisplayDate(bucket) {
+      if (!historyBuckets.length) {
+        return new Date(lastDeviceMsgAt || Date.now());
+      }
+      const anchorClientMs = lastDeviceMsgAt || Date.now();
+
+      // start 기준으로 정렬된 배열에서의 위치
+      const sorted = [...historyBuckets].sort((a, b) => a.start - b.start);
+      const newestIdx = sorted.length - 1;
+      const idx = sorted.indexOf(bucket);
+      if (idx === -1) return new Date(anchorClientMs);
+
+      const offsetMin = newestIdx - idx; // 최신에서 몇 분 전인지
+      return new Date(anchorClientMs - offsetMin * 60 * 1000);
+    }
+
     function updateTable() {
       const tbody = document.getElementById("historyTableBody");
       if (!tbody) return;
       tbody.innerHTML = "";
       if (!historyBuckets.length) return;
 
-      const newest = historyBuckets[historyBuckets.length - 1];
-      const newestStart = newest.start;
-
+      // 최신 기준으로 정렬된 배열
+      const sorted = [...historyBuckets].sort((a, b) => a.start - b.start);
       const seenMinutes = new Set();
 
-      for (let i = historyBuckets.length - 1; i >= 0; i--) {
-        const b = historyBuckets[i];
-        const d = getBucketDisplayDate(b, newestStart);
+      for (let i = sorted.length - 1; i >= 0; i--) {
+        const b = sorted[i];
+        const d = getBucketDisplayDate(b);
 
         const key =
           d.getFullYear().toString() +
@@ -750,17 +757,12 @@
         return;
       }
 
-      const newest = historyBuckets[historyBuckets.length - 1];
-      const newestStart = newest.start;
-
-      const labels = historyBuckets.map(b => {
-        const d = getBucketDisplayDate(b, newestStart);
-        return formatTimeHHMM(d);
-      });
-      const tempData  = historyBuckets.map(b => b.temp  != null ? b.temp  : null);
-      const humData   = historyBuckets.map(b => b.hum   != null ? b.hum   : null);
-      const co2Data   = historyBuckets.map(b => b.co2   != null ? b.co2   : null);
-      const solarData = historyBuckets.map(b => b.solar != null ? b.solar : null);
+      const sorted = [...historyBuckets].sort((a, b) => a.start - b.start);
+      const labels = sorted.map(b => formatTimeHHMM(getBucketDisplayDate(b)));
+      const tempData  = sorted.map(b => b.temp  != null ? b.temp  : null);
+      const humData   = sorted.map(b => b.hum   != null ? b.hum   : null);
+      const co2Data   = sorted.map(b => b.co2   != null ? b.co2   : null);
+      const solarData = sorted.map(b => b.solar != null ? b.solar : null);
 
       [tempChart, humChart, co2Chart, solarChart].forEach(ch => ch.data.labels = labels);
       tempChart.data.datasets[0].data  = tempData;
@@ -973,6 +975,8 @@
         }
         lastUpdateEl.textContent = formatKoreanDateTime(now);
         applyAlarms();
+        updateTable();
+        updateCharts();
         return;
       }
 
