@@ -611,25 +611,22 @@
 
     // 히스토리
     const MAX_HISTORY_BUCKETS = 60;
-    const historyBuckets = []; // {start(tempSec), temp, ...}
+    const historyBuckets = []; // {start,temp,...}
+
+    // ★ 최신 LED 상태 저장용
+    let latestLedState = null;
 
     // ★★★ 버킷 → 표시용 시각 계산
-    // - ESP32에서 오는 start값은 정렬용으로만 사용
-    // - 가장 최근 버킷은 lastDeviceMsgAt 기준 시각
-    // - 그 이전 버킷은 1분씩 과거로 이동
     function getBucketDisplayDate(bucket) {
       if (!historyBuckets.length) {
         return new Date(lastDeviceMsgAt || Date.now());
       }
       const anchorClientMs = lastDeviceMsgAt || Date.now();
-
-      // start 기준으로 정렬된 배열에서의 위치
       const sorted = [...historyBuckets].sort((a, b) => a.start - b.start);
       const newestIdx = sorted.length - 1;
       const idx = sorted.indexOf(bucket);
       if (idx === -1) return new Date(anchorClientMs);
-
-      const offsetMin = newestIdx - idx; // 최신에서 몇 분 전인지
+      const offsetMin = newestIdx - idx;
       return new Date(anchorClientMs - offsetMin * 60 * 1000);
     }
 
@@ -639,7 +636,6 @@
       tbody.innerHTML = "";
       if (!historyBuckets.length) return;
 
-      // 최신 기준으로 정렬된 배열
       const sorted = [...historyBuckets].sort((a, b) => a.start - b.start);
       const seenMinutes = new Set();
 
@@ -654,7 +650,6 @@
           d.getHours().toString().padStart(2, "0") +
           d.getMinutes().toString().padStart(2, "0");
 
-        // 같은 분(HH:MM)은 한 번만
         if (seenMinutes.has(key)) continue;
         seenMinutes.add(key);
 
@@ -665,7 +660,15 @@
         const co2   = b.co2   != null ? b.co2.toFixed(0)   : "-";
         const solar = b.solar != null ? b.solar.toFixed(0) : "-";
         const rssi  = b.rssi  != null ? b.rssi.toFixed(0)  : "-";
-        const led   = b.led   || "-";
+
+        // ★ LED 값 표시 보정 (문자/boolean 모두 ON/OFF로)
+        let ledStr = "-";
+        if (typeof b.led === "string") {
+          ledStr = b.led;
+        } else if (typeof b.led === "boolean") {
+          ledStr = b.led ? "ON" : "OFF";
+        }
+        const led = ledStr;
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -966,7 +969,20 @@
           valSolar.textContent = isNaN(s) ? "--" : s.toFixed(0);
         }
         if ("led" in data) {
-          valLed.textContent = data.led ? "ON" : "OFF";
+          // ★ status 수신시 최신 LED 상태 저장 + 최신 버킷에 반영
+          const on = !!data.led;
+          latestLedState = on ? "ON" : "OFF";
+          valLed.textContent = latestLedState;
+
+          if (historyBuckets.length > 0) {
+            let latestIndex = 0;
+            for (let i = 1; i < historyBuckets.length; i++) {
+              if (historyBuckets[i].start > historyBuckets[latestIndex].start) {
+                latestIndex = i;
+              }
+            }
+            historyBuckets[latestIndex].led = latestLedState;
+          }
         }
         if ("rssi" in data) {
           const r = Number(data.rssi);
@@ -1053,6 +1069,11 @@
           rssi:  isFiniteNumber(data.rssi)  ? Number(data.rssi)  : null,
           led:   typeof data.led === "string" ? data.led : null
         };
+
+        // ★ 버킷에 LED 정보가 없으면 최신 LED 상태로 보정
+        if (!bucket.led && latestLedState) {
+          bucket.led = latestLedState;
+        }
 
         let replaced = false;
         for (let i = 0; i < historyBuckets.length; i++) {
