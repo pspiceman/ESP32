@@ -337,7 +337,7 @@ function updateDeviceStatus(){
   const now = Date.now();
 
   // 10초 동안 어떤 패킷도 수신하지 않으면 → OFF LINE
-  const offline = (now - lastPacket > 10000);
+  const offline = (now - lastPacket > 15000);
 
   if(offline){
     deviceState.textContent = "OFF LINE";
@@ -353,3 +353,4 @@ setInterval(updateDeviceStatus, 2000);
 
 </body>
 </html>
+
