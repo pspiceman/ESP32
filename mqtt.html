@@ -1,356 +1,992 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>LoRa Mesh + MQTT Monitor</title>
+<meta charset="UTF-8">
+<title>LoRa Mesh 모니터 (MQTT Only)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- MQTT over WebSocket (mqtt.js) CDN -->
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
 <style>
-/* ───────── 기본 테마 변수 ───────── */
-:root {
-  --bg: #f5f6fa;
-  --text: #111;
-  --card: #ffffff;
-  --border: #cfcfcfc;
-  --table-alt: #eef1f5;
-  --log-bg: #fff;
-  --log-fg: #000;
+  :root {
+    --bg-color: #0b1020;
+    --card-bg: #141a30;
+    --accent: #37ff79;
+    --accent-soft: rgba(55,255,121,0.15);
+    --text-main: #f5f7ff;
+    --text-sub: #9fa6c3;
+    --border-subtle: #252b45;
+    --danger: #ff4c4c;
+    --ok: #37ff79;
+  }
 
-  --online-color: #37ff79; /* 초록 */
-  --offline-color: #ff4c4c; /* 빨강 */
-}
+  * { box-sizing: border-box; }
 
-[data-theme="dark"] {
-  --bg: #0d111d;
-  --text: #e9eef6;
-  --card: #141b2d;
-  --border: #2b2f3b;
-  --table-alt: #1b2436;
-  --log-bg: #000;
-  --log-fg: #00ff00;
+  body {
+    margin:0;
+    padding:0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: radial-gradient(circle at top, #202b4d 0, #050814 46%, #02030a 100%);
+    color: var(--text-main);
+    transition: background .25s ease, color .25s ease;
+  }
 
-  --online-color: #37ff79;
-  --offline-color: #ff6666;
-}
+  body.theme-light {
+    --bg-color: #f4f6ff;
+    --card-bg: #ffffff;
+    --accent: #16a34a;
+    --accent-soft: rgba(22,163,74,0.12);
+    --text-main: #111827;
+    --text-sub: #6b7280;
+    --border-subtle: #cbd5f5;
+    --danger: #dc2626;
+    --ok: #16a34a;
+    background: radial-gradient(circle at top, #e5edff 0, #f9fafb 45%, #e5e7eb 100%);
+  }
 
-/* ───────── Layout ───────── */
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: system-ui, sans-serif;
-  margin: 0;
-  padding: 16px;
-}
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 16px 10px 24px;
+  }
 
-.header {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-.title { font-size:22px; font-weight:700; }
-.theme-btn {
-  font-size:25px;
-  border:none;
-  background:none;
-  cursor:pointer;
-  color:var(--text);
-}
+  .header-row {
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-bottom:14px;
+  }
 
-/* 상단 상태 + RESET */
-.top-row {
-  margin-top:10px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
+  .title-row {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
 
-.status-group {
-  display:flex;
-  align-items:center;
-  gap:14px;
-}
+  .title-area {
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+  }
 
-/* [ MQTT: 연결됨 ] 박스 */
-.status-box {
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
+  .title-badge {
+    width:8px;
+    height:32px;
+    border-radius:999px;
+    background:linear-gradient(180deg, var(--accent), transparent);
+    box-shadow:0 0 12px rgba(55,255,121,0.7);
+  }
 
-  padding:6px 12px;
-  background:#2a2a2c;
-  border-radius:8px;
-  border:1px solid #444;
+  body.theme-light .title-badge {
+    box-shadow:0 0 10px rgba(22,163,74,0.6);
+  }
 
-  font-weight:700;
-}
+  .title-text {
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
 
-.label { color:#cfcfcf; }
+  .title-main {
+    font-size:20px;
+    font-weight:700;
+    letter-spacing:0.02em;
+  }
 
-.state-text {
-  font-size:15px;
-  font-weight:700;
-}
+  .title-sub {
+    font-size:12px;
+    color:var(--text-sub);
+  }
 
-.status-on { color: var(--online-color); }
-.status-off { color: var(--offline-color); }
+  .status-chips {
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+    justify-content:flex-start; /* 좌측 정렬 */
+  }
 
-/* RESET 버튼 */
-.reset-btn {
-  padding:6px 12px;
-  background:#ef4444;
-  color:#fff;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-  font-size:14px;
-  font-weight:600;
-}
-.reset-btn:hover { opacity:0.9; }
+  .theme-toggle {
+    border-radius:999px;
+    padding:6px 10px;
+    border:1px solid rgba(148,163,184,0.65);
+    background:rgba(15,23,42,0.9);
+    color:#e5e7eb;
+    font-size:14px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition:all .18s;
+    min-width:40px;
+  }
 
-/* Table */
-.card {
-  background:var(--card);
-  padding:12px;
-  border-radius:12px;
-  box-shadow:0 2px 10px rgba(0,0,0,0.18);
-  margin-top:12px;
-}
-table { width:100%; border-collapse:collapse; font-size:15px; }
-th,td{
-  padding:7px 4px;
-  border-bottom:1px solid var(--border);
-  text-align:center;
-}
-tr:nth-child(even){ background:var(--table-alt); }
-.lowbat { color:red; font-weight:bold; }
-.node-missing { color:#ff3b3b; font-weight:800; }
+  .theme-toggle .icon {
+    font-size:18px;
+    line-height:1;
+  }
 
-/* Debug / Log */
-.debug-bar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-top:6px;
-}
-.log-toggle{
-  font-size:22px;
-  background:none;
-  border:none;
-  cursor:pointer;
-  color:var(--text);
-}
-.log-box{
-  display:none;
-  margin-top:10px;
-  padding:10px;
-  height:220px;
-  overflow-y:auto;
-  border-radius:10px;
-  white-space:pre-line;
-  background:var(--log-bg);
-  color:var(--log-fg);
-  border:1px solid var(--border);
-}
-.time-text { font-size:12px; opacity:0.8; }
+  body.theme-light .theme-toggle {
+    background:#f3f4ff;
+    color:#111827;
+    border-color:#cbd5f5;
+  }
+
+  .chip {
+    border-radius:999px;
+    padding:4px 10px;
+    font-size:11px;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    border:1px solid var(--border-subtle);
+    background:rgba(10,14,30,0.9);
+    color:var(--text-sub);
+  }
+
+  body.theme-light .chip {
+    background:#ffffff;
+    color:var(--text-sub);
+    border-color:#d4d4ff;
+  }
+
+  .chip-label {
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.09em;
+  }
+
+  .chip-value {
+    font-size:11px;
+    font-weight:500;
+    color:var(--text-main);
+  }
+
+  .chip-dot {
+    width:6px;
+    height:6px;
+    border-radius:999px;
+    background:var(--danger);
+    box-shadow:0 0 10px rgba(255,76,76,0.7);
+  }
+
+  .chip-dot.on {
+    background:var(--accent);
+    box-shadow:0 0 10px rgba(55,255,121,0.9);
+  }
+
+  .chip.ok {
+    border-color:rgba(55,255,121,0.6);
+    background:var(--accent-soft);
+    color:var(--ok);
+  }
+
+  .card {
+    background: radial-gradient(circle at top left, rgba(55,255,121,0.12) 0, rgba(20,26,48,0.98) 42%, rgba(5,8,20,0.98) 100%);
+    border-radius:18px;
+    padding:12px 10px 14px;
+    border:1px solid rgba(95,120,200,0.28);
+    box-shadow:
+      0 16px 26px rgba(0,0,0,0.5),
+      0 0 0 1px rgba(5,10,24,0.7);
+    position:relative;
+    overflow:hidden;
+  }
+
+  body.theme-light .card {
+    background:linear-gradient(180deg,#ffffff,#eef2ff);
+    border-color:#d4d4ff;
+    box-shadow:0 14px 30px rgba(15,23,42,0.12);
+  }
+
+  .card::before {
+    content:"";
+    position:absolute;
+    inset:-40%;
+    opacity:0.09;
+    background:
+      radial-gradient(circle at top, rgba(255,255,255,0.18) 0, transparent 35%),
+      radial-gradient(circle at bottom right, rgba(55,255,121,0.16) 0, transparent 45%);
+    pointer-events:none;
+  }
+
+  body.theme-light .card::before { opacity:0.06; }
+
+  .card-header {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:8px;
+    position:relative;
+    z-index:1;
+  }
+
+  .card-title {
+    font-size:13px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.14em;
+    color:#c7d0ff;
+  }
+
+  body.theme-light .card-title { color:#4b5563; }
+
+  .card-sub {
+    font-size:11px;
+    color:var(--text-sub);
+  }
+
+  .tag-pill {
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    padding:3px 8px;
+    border-radius:999px;
+    border:1px solid rgba(95,120,200,0.7);
+    background:rgba(8,10,24,0.9);
+    color:#d4dcff;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+
+  body.theme-light .tag-pill {
+    background:#eef2ff;
+    border-color:#a5b4fc;
+    color:#312e81;
+  }
+
+  .tag-pill span.dot {
+    width:6px;
+    height:6px;
+    border-radius:999px;
+    background:#4ec9ff;
+    box-shadow:0 0 12px rgba(78,201,255,0.9);
+  }
+
+  .device-status-card {
+    margin-top:4px;
+    padding:8px 9px;
+    border-radius:14px;
+    border:1px solid rgba(70,100,210,0.4);
+    background:radial-gradient(circle at top left, rgba(55,255,121,0.08) 0, rgba(8,12,24,0.98) 55%);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:6px;
+    font-size:11px;
+    position:relative;
+    z-index:1;
+  }
+
+  body.theme-light .device-status-card {
+    background:linear-gradient(135deg,#f9fafb,#e5f9ff);
+    border-color:#c4ddff;
+  }
+
+  .device-status-left { display:flex; flex-direction:column; gap:2px; }
+
+  .dev-status-title {
+    font-size:12px;
+    font-weight:600;
+    color:#dfe6ff;
+  }
+
+  body.theme-light .dev-status-title { color:#1f2937; }
+
+  .dev-status-sub { font-size:10px; color:var(--text-sub); }
+
+  .device-status-right { display:flex; align-items:center; gap:6px; }
+
+  .status-dot {
+    width:9px;
+    height:9px;
+    border-radius:999px;
+    background:var(--danger);
+    box-shadow:0 0 12px rgba(255,76,76,0.9);
+  }
+
+  .status-dot.ok {
+    background:var(--accent);
+    box-shadow:0 0 12px rgba(55,255,121,0.95);
+  }
+
+  .status-label {
+    font-size:12px;
+    font-weight:600;
+  }
+
+  .uptime-text { font-size:10px; color:var(--text-sub); }
+
+  .table-wrap {
+    position:relative;
+    border-radius:14px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    border:1px solid rgba(52,72,140,0.7);
+    background: radial-gradient(circle at top, rgba(40,52,120,0.45) 0, #050716 40%, #02030a 100%);
+    box-shadow:inset 0 0 0 1px rgba(5,10,24,0.8);
+    margin-top:10px;
+  }
+
+  body.theme-light .table-wrap {
+    background:linear-gradient(180deg,#f9fafb,#e5e7eb);
+    border-color:#cbd5f5;
+    box-shadow:none;
+  }
+
+  table {
+    width:100%;
+    min-width:520px;
+    border-collapse:collapse;
+    font-size:11px;
+  }
+
+  thead {
+    background:linear-gradient(180deg, rgba(13,18,40,0.96), rgba(5,7,18,0.98));
+  }
+
+  body.theme-light thead {
+    background:linear-gradient(180deg,#e5e7eb,#d1d5db);
+  }
+
+  th, td {
+    padding:6px 4px;
+    text-align:center;
+    white-space:nowrap;
+  }
+
+  th {
+    font-weight:600;
+    color:#c9d3ff;
+    border-bottom:1px solid rgba(60,84,160,0.8);
+    position:relative;
+    line-height:1.2;
+  }
+
+  body.theme-light th {
+    color:#374151;
+    border-bottom-color:#9ca3af;
+  }
+
+  th .unit {
+    display:block;
+    font-size:9px;
+    color:var(--text-sub);
+  }
+
+  th::after {
+    content:"";
+    position:absolute;
+    bottom:0;
+    left:0;
+    right:0;
+    height:1px;
+    box-shadow:0 1px 0 rgba(0,0,0,0.7);
+  }
+
+  tbody tr:nth-child(even) { background:rgba(10,14,32,0.9); }
+  tbody tr:nth-child(odd)  { background:rgba(5,8,22,0.9); }
+
+  body.theme-light tbody tr:nth-child(even) { background:#f3f4ff; }
+  body.theme-light tbody tr:nth-child(odd)  { background:#eef2ff; }
+
+  tbody tr:hover {
+    background:radial-gradient(circle at center, rgba(55,255,121,0.12) 0, rgba(5,8,22,0.95) 60%);
+  }
+
+  body.theme-light tbody tr:hover { background:rgba(191,219,254,0.9); }
+
+  .node-id {
+    font-weight:600;
+    font-size:11px;
+    color:#e8ecff;
+  }
+
+  body.theme-light .node-id { color:#111827; }
+
+  .badge {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:28px;
+    padding:2px 5px;
+    border-radius:999px;
+    border:1px solid rgba(105,120,200,0.85);
+    background:rgba(12,16,32,0.98);
+    font-size:10px;
+    color:var(--text-main);
+  }
+
+  body.theme-light .badge {
+    background:#ffffff;
+    border-color:#c7d2fe;
+    color:#111827;
+  }
+
+  .badge-null {
+    opacity:0.45;
+    font-size:9px;
+  }
+
+  .rss {
+    font-size:10px;
+    color:var(--text-sub);
+  }
+
+  .btn-led {
+    all:unset;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:34px;
+    height:20px;
+    border-radius:999px;
+    border:1px solid rgba(80,100,220,0.7);
+    background:rgba(10,14,34,0.9);
+    cursor:pointer;
+    font-size:10px;
+    color:#c9d3ff;
+    position:relative;
+    overflow:hidden;
+  }
+
+  body.theme-light .btn-led {
+    background:#eef2ff;
+    border-color:#a5b4fc;
+    color:#1d4ed8;
+  }
+
+  .btn-led[data-on="1"] {
+    border-color:rgba(55,255,121,0.8);
+    background:radial-gradient(circle at 20% 0, rgba(55,255,121,0.5), rgba(8,14,32,0.98));
+    color:#eafff4;
+    box-shadow:0 0 16px rgba(55,255,121,0.8);
+  }
+
+  body.theme-light .btn-led[data-on="1"] {
+    background:linear-gradient(135deg,#bbf7d0,#22c55e);
+    color:#064e3b;
+    box-shadow:0 0 14px rgba(22,163,74,0.7);
+  }
+
+  .btn-led span { position:relative; z-index:1; }
+
+  .btn-led::before {
+    content:"";
+    position:absolute;
+    inset:0;
+    background:radial-gradient(circle at left, rgba(55,255,121,0.35), transparent 60%);
+    opacity:0;
+    transition:opacity .2s;
+  }
+
+  .btn-led[data-on="1"]::before { opacity:1; }
+
+  th.col-led, th.col-rssi, th.col-last,
+  td.col-led, td.col-rssi, td.col-last {
+    padding-left:2px;
+    padding-right:2px;
+  }
+
+  .bat-low {
+    color:#ff4c4c !important;
+  }
+
+  .legend {
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:12px; /* 약간 더 아래로 */
+    font-size:10px;
+    color:var(--text-sub);
+  }
+
+  .legend-item {
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+  }
+
+  .rect {
+    width:10px;
+    height:10px;
+    border-radius:4px;
+  }
+
+  .rect-ok  { background:rgba(55,255,121,0.35); border:1px solid rgba(55,255,121,0.9); }
+  .rect-off { background:rgba(255,76,76,0.2);  border:1px solid rgba(255,76,76,0.9); }
+  .rect-na  { background:rgba(148,163,184,0.15); border:1px solid rgba(148,163,184,0.7); }
+
+  .metric-mini {
+    margin-top:6px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    font-size:10px;
+    color:var(--text-sub);
+    align-items:center;
+  }
+
+  .metric-item {
+    padding:4px 6px;
+    border-radius:999px;
+    border:1px solid rgba(70,90,160,0.8);
+    background:rgba(4,7,18,0.96);
+  }
+
+  body.theme-light .metric-item {
+    background:#f9fafb;
+    border-color:#cbd5f5;
+  }
+
+  .btn-log {
+    margin-left:auto;
+    border-radius:999px;
+    padding:4px 9px;
+    border:1px solid rgba(60,80,150,0.8);
+    background:rgba(5,10,24,0.95);
+    color:var(--text-sub);
+    font-size:11px;
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    cursor:pointer;
+    transition:all .12s;
+  }
+
+  .btn-log span.icon { font-size:13px; }
+
+  .btn-log.active {
+    background:linear-gradient(135deg,#3b82f6,#22c55e);
+    color:#f9fbff;
+    box-shadow:0 0 12px rgba(34,197,94,0.8);
+    border-color:transparent;
+  }
+
+  body.theme-light .btn-log {
+    background:#eef2ff;
+    color:#111827;
+    border-color:#cbd5f5;
+  }
+
+  .log-box {
+    margin-top:6px;
+    padding:6px 7px;
+    border-radius:10px;
+    background:rgba(3,6,18,0.96);
+    border:1px solid rgba(40,60,120,0.7);
+    max-height:120px;
+    overflow:auto;
+    font-size:10px;
+    display:none;
+  }
+
+  body.theme-light .log-box {
+    background:#f9fafb;
+    border-color:#cbd5f5;
+  }
+
+  .log-line {
+    margin-bottom:2px;
+    color:#9fa8d1;
+  }
+
+  .log-line span.time {
+    color:#6b7280;
+    margin-right:4px;
+  }
+
+  @media (max-width: 600px){
+    .page { padding:12px 6px 18px; }
+    .title-main { font-size:19px; }
+    .card {
+      padding:10px 7px 10px;
+      border-radius:14px;
+    }
+    .table-wrap { margin-top:8px; }
+    table { min-width:360px; }
+    th, td {
+      padding:5px 2px;
+      font-size:13px;
+    }
+    th .unit { font-size:10px; }
+    .node-id { font-size:13px; }
+    .badge {
+      min-width:auto;
+      padding:2px 4px;
+      font-size:13px;
+    }
+    .badge-null { font-size:11px; }
+    .rss { font-size:13px; }
+    .btn-led {
+      min-width:34px;
+      height:22px;
+      font-size:13px;
+      padding:0 4px;
+    }
+    th.col-led, th.col-rssi, th.col-last,
+    td.col-led, td.col-rssi, td.col-last {
+      padding-left:1px;
+      padding-right:1px;
+    }
+    .metric-item {
+      font-size:11px;
+      padding:3px 5px;
+    }
+    .btn-log {
+      font-size:11px;
+      padding:3px 8px;
+    }
+    .theme-toggle {
+      font-size:13px;
+      padding:4px 9px;
+    }
+  }
 </style>
 </head>
-
 <body>
 
-<!-- Header -->
-<div class="header">
-  <div class="title">LoRa Mesh + MQTT Monitor</div>
-  <button class="theme-btn" id="themeBtn">🌙</button>
-</div>
-
-<!-- 상태 + RESET -->
-<div class="top-row">
-
-  <div class="status-group">
-
-    <!-- MQTT -->
-    <div class="status-box">
-      <span class="label">MQTT:</span>
-      <span id="mqttState" class="state-text status-off">연결안됨</span>
+<div class="page">
+  <div class="header-row">
+    <div class="title-row">
+      <div class="title-area">
+        <div class="title-badge"></div>
+        <div class="title-text">
+          <div class="title-main">LoRa Mesh Gateway Monitor</div>
+          <div class="title-sub">MQTT로 노드 상태 모니터링 & LED 제어</div>
+        </div>
+      </div>
+      <button id="themeToggle" class="theme-toggle" type="button">
+        <span class="icon" id="themeIcon">🌙</span>
+      </button>
     </div>
 
-    <!-- 장비 상태 (옵션 A 적용) -->
-    <div class="status-box">
-      <span class="label">장비 상태:</span>
-      <span id="deviceState" class="state-text status-off">OFF LINE</span>
+    <div class="status-chips">
+      <div class="chip">
+        <span class="chip-label">MQTT</span>
+        <span class="chip-dot" id="mqttDot"></span>
+        <span class="chip-value" id="mqttState">연결안됨</span>
+      </div>
+      <div class="chip ok">
+        <span class="chip-label">BROKER</span>
+        <span class="chip-value" id="brokerLabel">broker.hivemq.com</span>
+      </div>
+      <div class="chip" id="nodeCountChip">
+        <span class="chip-label">NODES</span>
+        <span class="chip-value"><span id="nodeCount">0</span>개</span>
+      </div>
     </div>
-
   </div>
 
-  <button class="reset-btn" onclick="resetESP()">리셋</button>
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Nodes Overview</div>
+        <div class="card-sub">모든 Mesh 노드의 상태 모니터링 & LED 제어</div>
+      </div>
+      <div class="tag-pill">
+        <span class="dot"></span>
+        LIVE STREAM
+      </div>
+    </div>
+
+    <div class="device-status-card">
+      <div class="device-status-left">
+        <div class="dev-status-title">Device Status</div>
+        <div class="dev-status-sub" id="devStatusSub">
+          마지막 패킷: -
+        </div>
+      </div>
+      <div class="device-status-right">
+        <div class="status-dot" id="devStatusDot"></div>
+        <div>
+          <div class="status-label" id="devStatusLabel">Idle</div>
+          <div class="uptime-text" id="uptimeLabel">Uptime: -</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Node</th>
+            <th>Bat<span class="unit">[V]</span></th>
+            <th>Temp<span class="unit">[°C]</span></th>
+            <th>RH<span class="unit">[%]</span></th>
+            <th>CO₂<span class="unit">[ppm]</span></th>
+            <th class="col-led">LED</th>
+            <th class="col-rssi">RSSI<span class="unit">[dBm]</span></th>
+            <th class="col-last">Last OK<span class="unit">[s]</span></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="rect rect-ok"></div>정상 노드</div>
+      <div class="legend-item"><div class="rect rect-off"></div>응답 없음 / INIT</div>
+      <div class="legend-item"><div class="rect rect-na"></div>센서 값 없음(NA)</div>
+    </div>
+
+    <div class="metric-mini">
+      <div class="metric-item" id="metricOk">OK 노드: 0</div>
+      <div class="metric-item" id="metricFail">Fail 노드: 0</div>
+      <div class="metric-item" id="metricNA">센서 NA 노드: 0</div>
+
+      <button id="btnLog" class="btn-log" type="button">
+        <span class="icon">🐞</span>
+        <span class="label">로그</span>
+      </button>
+    </div>
+
+    <div class="log-box" id="logBox"></div>
+  </div>
 </div>
-
-<!-- Table -->
-<div class="card">
-  <table>
-    <thead>
-      <tr>
-        <th>Node</th>
-        <th>Bat</th>
-        <th>Temp</th>
-        <th>RH</th>
-        <th>CO₂</th>
-        <th>RSSI</th>
-        <th>LED</th>
-      </tr>
-    </thead>
-    <tbody id="tbody"></tbody>
-  </table>
-</div>
-
-<!-- Log -->
-<div class="debug-bar">
-  <button class="log-toggle" onclick="toggleLog()">🐞</button>
-  <div id="timeBox" class="time-text">--:--:--</div>
-</div>
-
-<div id="logBox" class="log-box"></div>
-
 
 <script>
-const ESP = "http://192.168.31.200";
+const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
 let client;
 let nodes = {};
+let lastPacket = 0;
+const startTime = Date.now();
 
-let lastPacket = 0;   // ★ Gateway 패킷 수신 기준 시간 저장
+const mqttDot   = document.getElementById("mqttDot");
+const mqttState = document.getElementById("mqttState");
+const brokerLabel = document.getElementById("brokerLabel");
+const nodeCountEl = document.getElementById("nodeCount");
+const nodeCountChip = document.getElementById("nodeCountChip");
 
-/* 기본 다크테마 */
-document.body.setAttribute("data-theme","dark");
-themeBtn.textContent = "☀️";
+const devStatusDot  = document.getElementById("devStatusDot");
+const devStatusLabel= document.getElementById("devStatusLabel");
+const devStatusSub  = document.getElementById("devStatusSub");
+const uptimeLabel   = document.getElementById("uptimeLabel");
 
-/* MQTT 연결 */
+const metricOk   = document.getElementById("metricOk");
+const metricFail = document.getElementById("metricFail");
+const metricNA   = document.getElementById("metricNA");
+
+const logBox  = document.getElementById("logBox");
+const btnLog  = document.getElementById("btnLog");
+
+const themeToggle = document.getElementById("themeToggle");
+const themeIcon   = document.getElementById("themeIcon");
+
+function applyTheme(theme){
+  const isLight = (theme === "light");
+  document.body.classList.toggle("theme-light", isLight);
+  themeIcon.textContent = isLight ? "☀️" : "🌙";
+}
+
+function toggleTheme(){
+  const isLight = document.body.classList.contains("theme-light");
+  const next = isLight ? "dark" : "light";
+  localStorage.setItem("lora-theme", next);
+  applyTheme(next);
+}
+if(themeToggle){
+  themeToggle.addEventListener("click", toggleTheme);
+}
+const savedTheme = localStorage.getItem("lora-theme") || "dark";
+applyTheme(savedTheme);
+
+function addLog(msg){
+  if(!logBox) { console.log(msg); return; }
+  const now = new Date();
+  const time = now.toLocaleTimeString();
+  const div = document.createElement("div");
+  div.className = "log-line";
+  div.innerHTML = `<span class="time">[${time}]</span>${msg}`;
+  logBox.appendChild(div);
+  logBox.scrollTop = logBox.scrollHeight;
+}
+function toggleLog(){
+  if(!logBox || !btnLog) return;
+  const visible = (logBox.style.display === "block");
+  logBox.style.display = visible ? "none" : "block";
+  if(visible) btnLog.classList.remove("active");
+  else        btnLog.classList.add("active");
+}
+if(btnLog){ btnLog.addEventListener("click", toggleLog); }
+
 function connectMQTT(){
-  client = mqtt.connect(
-    "wss://6c56aefe0ddb4d57977c735f5070abe8.s1.eu.hivemq.cloud:8884/mqtt",
-    {
-      username:"mqtt_ESP32",
-      password:"gomqtt_ESP32",
-      reconnectPeriod:3000
-    }
-  );
+  client = mqtt.connect(MQTT_URL, { reconnectPeriod:3000 });
 
   client.on("connect", ()=>{
     mqttState.textContent = "연결됨";
-    mqttState.classList.replace("status-off","status-on");
-
+    mqttDot.classList.add("on");
     client.subscribe("lora/node/+/data");
+    addLog("[MQTT] connected to " + MQTT_URL);
   });
 
   client.on("close", ()=>{
     mqttState.textContent = "연결안됨";
-    mqttState.classList.replace("status-on","status-off");
+    mqttDot.classList.remove("on");
+    addLog("[MQTT] disconnected");
   });
 
   client.on("message", (topic, msg)=>{
-    const id = Number(topic.split("/")[2]);
-    if (!id || id === 99) return;
+    try {
+      const id = Number(topic.split("/")[2]);
+      if (!id || id === 99) return;
 
-    const data = JSON.parse(msg);
+      const data = JSON.parse(msg);
+      const now = Date.now();
 
-    nodes[id] = { ...nodes[id], ...data };
+      let last_ok_ms = now;
+      if (typeof data.last_ok_s === "number") {
+        last_ok_ms = now - data.last_ok_s * 1000;
+      }
 
-    lastPacket = Date.now();   // ★ 패킷 수신 시간 갱신 (옵션 A 핵심)
+      nodes[id] = {
+        ...nodes[id],
+        ...data,
+        last_ok_ms
+      };
 
-    renderTable();
-    updateDeviceStatus();
-    addLog(`[MQTT] ${topic} → ${msg}`);
+      lastPacket = now;
+      renderTable();
+      updateDeviceStatus();
+      addLog(`[MQTT] ${topic} → ${msg}`);
+    } catch(e){
+      addLog("[MQTT] parse error: " + e);
+    }
   });
 }
 connectMQTT();
 
-/* ESP32 리셋 */
-function resetESP(){
-  fetch(ESP+"/reset",{method:"POST"})
-    .then(()=>addLog("[RESET] Reset 호출"))
-    .catch(e=>addLog("[RESET] error: "+e));
-}
-
-/* 테이블 업데이트 */
 function renderTable(){
   const tbody = document.getElementById("tbody");
   tbody.innerHTML = "";
 
-  Object.keys(nodes)
-    .sort((a,b)=>a-b)
-    .forEach(id=>{
-      const d = nodes[id];
+  const ids = Object.keys(nodes)
+    .map(x=>Number(x))
+    .filter(x=>x && x!==99)
+    .sort((a,b)=>a-b);
 
-      const lowbat = d.bat < 3.0;
+  nodeCountEl.textContent = ids.length;
+  if(ids.length>0) nodeCountChip.classList.add("ok");
+  else nodeCountChip.classList.remove("ok");
 
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${id}</td>
-        <td class="${lowbat?'lowbat':''}">${d.bat ?? '--'}</td>
-        <td>${d.t ?? '--'}</td>
-        <td>${d.rh ?? '--'}</td>
-        <td>${d.co2 ?? '--'}</td>
-        <td>${d.rssi ?? '--'}</td>
-        <td><input type="checkbox" onchange="sendLED(${id},this.checked)" ${d.led?'checked':''}></td>
-      `;
-      tbody.appendChild(tr);
-    });
+  let okCount=0, failCount=0, naCount=0;
+  const now = Date.now();
+
+  ids.forEach(id=>{
+    const n = nodes[id];
+    const statusText = (n.status || "INIT/FAIL");
+    const isOk = (statusText==="OK");
+
+    if(isOk) okCount++; else failCount++;
+    if(
+      n.t   == null ||
+      n.rh  == null ||
+      n.co2 == null
+    ) naCount++;
+
+    const tr = document.createElement("tr");
+
+    const tdId = document.createElement("td");
+    tdId.innerHTML = `<span class="node-id">${id}</span>`;
+    if(statusText==="INIT/FAIL") tdId.style.color = "#ff4c4c";
+    tr.appendChild(tdId);
+
+    function cellVal(v, digits=1, type=""){
+      if(v==null) return `<span class="badge badge-null">NA</span>`;
+      const num = Number(v);
+      if(type==="bat" && num <= 3.0){
+        return `<span class="badge bat-low">${num.toFixed(digits)}</span>`;
+      }
+      return `<span class="badge">${num.toFixed(digits)}</span>`;
+    }
+
+    const batTd = document.createElement("td");
+    batTd.innerHTML = cellVal(n.bat,1,"bat"); tr.appendChild(batTd);
+
+    const tTd = document.createElement("td");
+    tTd.innerHTML = cellVal(n.t,1); tr.appendChild(tTd);
+
+    const rhTd = document.createElement("td");
+    rhTd.innerHTML = cellVal(n.rh,0); tr.appendChild(rhTd);
+
+    const coTd = document.createElement("td");
+    coTd.innerHTML = cellVal(n.co2,0); tr.appendChild(coTd);
+
+    const ledTd = document.createElement("td");
+    ledTd.className = "col-led";
+    const ledBtn = document.createElement("button");
+    ledBtn.className = "btn-led";
+    ledBtn.dataset.on = n.led ? "1" : "0";
+    ledBtn.innerHTML = `<span>${n.led ? "ON" : "OFF"}</span>`;
+    ledBtn.onclick = ()=>{
+      const next = ledBtn.dataset.on==="1" ? 0 : 1;
+      sendLED(id, next===1);
+    };
+    ledTd.appendChild(ledBtn);
+    tr.appendChild(ledTd);
+
+    const rssiTd = document.createElement("td");
+    rssiTd.className = "col-rssi";
+    if(n.rssi==null) rssiTd.innerHTML = `<span class="rss">-</span>`;
+    else rssiTd.innerHTML = `<span class="rss">${n.rssi}</span>`;
+    tr.appendChild(rssiTd);
+
+    const lastTd = document.createElement("td");
+    lastTd.className = "col-last";
+    if (typeof n.last_ok_ms === "number") {
+      const diffSec = Math.floor((now - n.last_ok_ms)/1000);
+      lastTd.textContent = diffSec + " s";
+    } else {
+      lastTd.textContent = "-";
+    }
+    tr.appendChild(lastTd);
+
+    tbody.appendChild(tr);
+  });
+
+  metricOk.textContent   = "OK 노드: " + okCount;
+  metricFail.textContent = "Fail 노드: " + failCount;
+  metricNA.textContent   = "센서 NA 노드: " + naCount;
 }
 
-/* LED 제어 */
 function sendLED(id, checked){
+  if(!client || !client.connected) {
+    addLog("[LED] MQTT 미연결");
+    return;
+  }
   client.publish(`lora/node/${id}/cmd`, checked?"1":"0");
   addLog(`[LED] node ${id} → ${checked?1:0}`);
 }
 
-/* 로그 */
-function toggleLog(){
-  logBox.style.display = logBox.style.display==="block" ? "none" : "block";
-}
-function addLog(t){
-  logBox.textContent += t+"\n";
-  logBox.scrollTop = logBox.scrollHeight;
-}
-
-/* 테마 */
-themeBtn.onclick = ()=>{
-  const dark = document.body.getAttribute("data-theme")==="dark";
-  if(dark){
-    document.body.removeAttribute("data-theme");
-    themeBtn.textContent = "🌙";
-  } else {
-    document.body.setAttribute("data-theme","dark");
-    themeBtn.textContent = "☀️";
-  }
-};
-
-/* 시간 */
-setInterval(()=>{
-  const d=new Date();
-  timeBox.textContent =
-    `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} `
-    +`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
-},1000);
-
-/* ★ 옵션 A — Mesh 상태 판단 */
 function updateDeviceStatus(){
   const now = Date.now();
 
-  // 10초 동안 어떤 패킷도 수신하지 않으면 → OFF LINE
-  const offline = (now - lastPacket > 15000);
+  let lastStr = "-";
+  if(lastPacket>0){
+    const diffSec = Math.floor((now-lastPacket)/1000);
+    lastStr = diffSec + "초 전";
+  }
+  devStatusSub.textContent = "마지막 패킷: " + lastStr;
 
-  if(offline){
-    deviceState.textContent = "OFF LINE";
-    deviceState.classList.replace("status-on","status-off");
-  } else {
-    deviceState.textContent = "ON LINE";
-    deviceState.classList.replace("status-off","status-on");
+  const upSec = Math.floor((now - startTime)/1000);
+  uptimeLabel.textContent = "Uptime: " + upSec + " s";
+
+  const ids = Object.keys(nodes).map(x=>Number(x)).filter(x=>x && x!==99);
+  const anyOk = ids.some(id=>nodes[id] && nodes[id].status==="OK");
+
+  if(anyOk){
+    devStatusDot.classList.add("ok");
+    devStatusLabel.textContent = "Nodes Active";
+  }else{
+    devStatusDot.classList.remove("ok");
+    devStatusLabel.textContent = "No Active Node";
   }
 }
-
-setInterval(updateDeviceStatus, 2000);
 </script>
 
 </body>
 </html>
-
