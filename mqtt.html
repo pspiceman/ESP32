@@ -436,7 +436,7 @@
   tbody tr:nth-child(odd)  { background:rgba(5,8,22,0.9); }
 
   body.theme-light tbody tr:nth-child(even) { background:#f3f4ff; }
-  body.theme-light tbody tr:nth-child(odd)  { background:#eef2ff; }
+  body.theme-light tbody tr:nth-child(odd)  { background+#eef2ff; }
 
   tbody tr:hover {
     background:radial-gradient(circle at center, rgba(55,255,121,0.12) 0, rgba(5,8,22,0.95) 60%);
@@ -882,6 +882,9 @@
 <script>
 const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
 
+// ★ 게이트웨이 오프라인 판정 기준 (ms)
+const GATEWAY_TIMEOUT_MS = 20000;
+
 let client;
 let nodes = {};
 let lastPacket = 0;
@@ -982,7 +985,7 @@ function connectMQTT(){
         last_ok_ms
       };
 
-      lastPacket = now;
+      lastPacket = now;         // ★ 마지막 패킷 시각 갱신
       renderTable();
       updateDeviceStatus();
       addLog(`[MQTT] ${topic} → ${msg}`);
@@ -1099,6 +1102,7 @@ function sendLED(id, checked){
 function updateDeviceStatus(){
   const now = Date.now();
 
+  // 마지막 패킷 시간 표시
   let lastStr = "-";
   if(lastPacket>0){
     const diffSec = Math.floor((now-lastPacket)/1000);
@@ -1106,22 +1110,30 @@ function updateDeviceStatus(){
   }
   devStatusSub.textContent = "마지막 패킷: " + lastStr;
 
+  // 페이지 Uptime
   const upSec = Math.floor((now - startTime)/1000);
   uptimeLabel.textContent = "Uptime: " + upSec + " s";
 
   const ids = Object.keys(nodes).map(x=>Number(x)).filter(x=>x && x!==99);
   const anyOk = ids.some(id=>nodes[id] && nodes[id].status==="OK");
 
-  if(anyOk){
+  // ★ 게이트웨이 생존 여부: 최근 패킷이 20초 이내인지로 판단
+  const gatewayAlive = (lastPacket>0) && ((now-lastPacket) < GATEWAY_TIMEOUT_MS);
+
+  // 상태 라벨
+  if(gatewayAlive && anyOk){
     devStatusDot.classList.add("ok");
     devStatusLabel.textContent = "Nodes Active";
+  }else if(!gatewayAlive){
+    devStatusDot.classList.remove("ok");
+    devStatusLabel.textContent = "Gateway Offline";
   }else{
     devStatusDot.classList.remove("ok");
     devStatusLabel.textContent = "No Active Node";
   }
 
-  // 장비 연결 상태: MQTT 연결 + 노드 OK 기준
-  const online = (client && client.connected && anyOk);
+  // 장비연결: MQTT + 게이트웨이 Alive 기준으로 표시
+  const online = (client && client.connected && gatewayAlive);
   if(deviceConn){
     if(online){
       deviceConn.classList.remove("offline");
