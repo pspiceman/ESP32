@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>LoRa Mesh 모니터 (MQTT Only)</title>
+<title>LoRa Mesh Gateway Monitor</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- MQTT over WebSocket (mqtt.js) CDN -->
@@ -182,7 +182,7 @@
     border-color:rgba(55,255,121,0.6);
     background:var(--accent-soft);
     color:var(--ok);
-    padding:3px 12px; /* ON LINE pill과 높이 맞춤 */
+    padding:3px 12px;
   }
 
   /* 장비 연결 상태 버튼 */
@@ -436,7 +436,7 @@
   tbody tr:nth-child(odd)  { background:rgba(5,8,22,0.9); }
 
   body.theme-light tbody tr:nth-child(even) { background:#f3f4ff; }
-  body.theme-light tbody tr:nth-child(odd)  { background+#eef2ff; }
+  body.theme-light tbody tr:nth-child(odd)  { background:#eef2ff; }
 
   tbody tr:hover {
     background:radial-gradient(circle at center, rgba(55,255,121,0.12) 0, rgba(5,8,22,0.95) 60%);
@@ -751,7 +751,7 @@
       font-size:13px;
       padding:4px 9px;
     }
-    /*  모바일(세로 360px 기준)에서 로그 창 폭을 맞춤 */
+    /* 모바일(세로 360px 기준)에서 로그 창 폭을 맞춤 */
     .log-box {
       width:100%;
       max-width:360px;
@@ -770,7 +770,6 @@
         <div class="title-badge"></div>
         <div class="title-text">
           <div class="title-main">LoRa Mesh Gateway Monitor</div>
-          <!-- 상단 설명 텍스트 -->
           <div class="title-sub">모든 Mesh 노드의 상태 모니터링 &amp; LED 제어</div>
         </div>
       </div>
@@ -786,7 +785,6 @@
         <span class="chip-value" id="mqttState">연결안됨</span>
       </div>
 
-      <!-- 장비 연결 상태: ON LINE / OFF LINE -->
       <div class="chip">
         <span class="chip-label">장비연결</span>
         <button id="deviceConn" type="button" class="device-conn-pill offline">OFF LINE</button>
@@ -803,10 +801,8 @@
     <div class="card-header">
       <div>
         <div class="card-title">Nodes Overview</div>
-        <!-- 설명 문구 삭제 -->
         <div class="card-sub"></div>
       </div>
-      <!-- RESET 버튼 (MQTT 이용) -->
       <div class="tag-pill reset-pill" id="resetPill" onclick="openResetDialog()">
         <span class="dot"></span>
         <span>RESET</span>
@@ -816,9 +812,7 @@
     <div class="device-status-card">
       <div class="device-status-left">
         <div class="dev-status-title">Device Status</div>
-        <div class="dev-status-sub" id="devStatusSub">
-          마지막 패킷: -
-        </div>
+        <div class="dev-status-sub" id="devStatusSub">마지막 패킷: -</div>
       </div>
       <div class="device-status-right">
         <div class="status-dot" id="devStatusDot"></div>
@@ -985,7 +979,7 @@ function connectMQTT(){
         last_ok_ms
       };
 
-      lastPacket = now;         // ★ 마지막 패킷 시각 갱신
+      lastPacket = now;         // 마지막 패킷 시각 갱신
       renderTable();
       updateDeviceStatus();
       addLog(`[MQTT] ${topic} → ${msg}`);
@@ -1117,10 +1111,9 @@ function updateDeviceStatus(){
   const ids = Object.keys(nodes).map(x=>Number(x)).filter(x=>x && x!==99);
   const anyOk = ids.some(id=>nodes[id] && nodes[id].status==="OK");
 
-  // ★ 게이트웨이 생존 여부: 최근 패킷이 20초 이내인지로 판단
+  // 게이트웨이 생존 여부: 최근 패킷이 20초 이내인지로 판단
   const gatewayAlive = (lastPacket>0) && ((now-lastPacket) < GATEWAY_TIMEOUT_MS);
 
-  // 상태 라벨
   if(gatewayAlive && anyOk){
     devStatusDot.classList.add("ok");
     devStatusLabel.textContent = "Nodes Active";
@@ -1132,7 +1125,7 @@ function updateDeviceStatus(){
     devStatusLabel.textContent = "No Active Node";
   }
 
-  // 장비연결: MQTT + 게이트웨이 Alive 기준으로 표시
+  // 장비연결 pill: MQTT + 게이트웨이 Alive 기준
   const online = (client && client.connected && gatewayAlive);
   if(deviceConn){
     if(online){
