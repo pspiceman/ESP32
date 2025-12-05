@@ -1,0 +1,43 @@
+///// BOARD_ESP32C3 /////
+// 통신/상태 LED(Active LOW) + AP 모드 전환 버튼
+const int LED_PIN    = 8;  // 통신/상태 LED (Active LOW)
+const int AP_KEY_PIN = 9;  // AP 모드 전환 버튼 (내부 풀업)
+
+// ESP32-C3 핀 맵
+static const uint8_t PIN_LORA_SS   = 7;
+static const uint8_t PIN_LORA_RST  = 2; 
+static const uint8_t PIN_LORA_DIO0 = 3;
+static const int PIN_VSPI_SCK  = 4;
+static const int PIN_VSPI_MISO = 5;
+static const int PIN_VSPI_MOSI = 6;
+
+
+///// BOARD_ESP32 /////
+// 통신/상태 LED(Active HIGH) + AP 모드 전환 버튼
+const int LED_PIN    = 2;  // 통신/상태 LED (Active HIGH)
+const int AP_KEY_PIN = 0;  // AP 모드 전환 버튼 (내부 풀업)
+
+// ESP32 핀 맵
+static const uint8_t PIN_LORA_SS   = 15;
+static const uint8_t PIN_LORA_RST  = 2;
+static const uint8_t PIN_LORA_DIO0 = 4;
+static const int PIN_VSPI_SCK  = 18;
+static const int PIN_VSPI_MISO = 19;
+static const int PIN_VSPI_MOSI = 23;
+
+
+
+
+1. PC 브라우즈에서 문자 폰트가 너무 작음 -> 적절히 키워
+2.  소프트 리셋( /reset ) 기능 추가 그리고 LIVE STREAM 버튼 대신에 리셋 창으로 변경, 소프트 리셋용으로 사용
+
+1. SOFT RESET되면 알림용으로 LED가 빠르게 Blink 하는 것 추가해 줘
+
+2. BROKER broker.hivemq.com -> 장비연결: ON LINE(그린) 혹은 OFF LINE(RED) 버튼 창으로 바궈죠   
+
+1.jpg에서 (MQTT로 reset 명령을 전송합니다) 제거 그리고  2.jpg는 삭제
+
+RESET 명령을 전송하겠습니까?
+       전송         취소
+
+로그 창 수평 폭을 모바일 폰 수직보기(360px)에 맞추어 
