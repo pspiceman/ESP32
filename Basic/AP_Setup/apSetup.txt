@@ -1,0 +1,82 @@
+// ===== WiFi(Default) =====
+#define WIFI_SSID     "Backhome"
+#define WIFI_PASSWORD "1700note"
+
+const int LED_PIN = 8;       	// 통신/상태 LED(Active LOW)
+const int AP_KEY_PIN = 9;  	// AP 모드 전환 버튼 (외부 풀업상태)
+
+1. 와이파이는 Default설정된 것에 연결이 되지만 AP모드로 연결 와이파이를 바꿀수 있다.
+2. ESP가 WiIF에 10초 이상 접속이 안되면 AP모드로 자동 진입하며 정상가동 중에  AP키를 3초이상 계속 누르고 있으면 
+3. LED가 빠르게 Blink 하며 AP모드 진입을 하게 되며 아래 내부 옙을 사용, 와이파이 설정 한 후 재부팅한다. LED가 빠르게 Blink는 이때까지 유지한다. 
+를 만족하도록 첨부 ino코드를 이부분만 수정, 최소 변경으로 하여 전체 코드 줘
+
+// ---------- AP 포털 페이지 ----------
+const char PAGE_INDEX[] PROGMEM = R"rawliteral(
+<!DOCTYPE html><html lang='ko'><head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>ESP32 WiFi 설정</title>
+<style>
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:#020617;color:#e5e7eb;padding:24px;margin:0;}
+label{margin-top:12px;display:block}
+input,select{width:100%;padding:8px;margin-top:4px;border:1px solid #4b5563;border-radius:8px;background:#020617;color:#e5e7eb;}
+button{margin-top:16px;padding:10px;background:#2563eb;border-radius:999px;color:white;font-weight:700;border:none;cursor:pointer;}
+body>div{max-width:360px;margin:auto;border:1px solid #1f2937;padding:20px;border-radius:12px;}
+</style>
+<script>
+async function scan(){
+  const r = await fetch('/scan');
+  const list = await r.json();
+  const sel = document.getElementById('ssidList');
+  sel.innerHTML = "<option value=''>SSID 선택…</option>";
+  list.forEach(ap=>{
+    const o=document.createElement('option');
+    o.value=ap.ssid;
+    o.innerText=ap.ssid+" ("+ap.rssi+" dBm)";
+    sel.appendChild(o);
+  });
+}
+function setSSID(){
+  const v=document.getElementById('ssidList').value;
+  if(v) document.getElementById('ssid').value=v;
+}
+window.onload = scan;
+</script>
+</head>
+<body><div>
+<h2 style='font-size:1.6rem;font-weight:700;'>WiFi 설정</h2>
+<label>WiFi 목록 (자동 스캔)</label>
+<select id='ssidList' onchange='setSSID()'>
+  <option value=''>스캔 중…</option>
+</select>
+<label>SSID</label>
+<input id='ssid' name='ssid' placeholder='SSID 입력'>
+<label>비밀번호</label>
+<input id='pass' name='pass' type='password' placeholder='비밀번호 (없으면 비워두기)'>
+<form method='POST' action='/save'>
+  <input type='hidden' id='ssidHidden' name='ssid'>
+  <input type='hidden' id='passHidden' name='pass'>
+  <button type='submit' onclick="
+    document.getElementById('ssidHidden').value=document.getElementById('ssid').value;
+    document.getElementById('passHidden').value=document.getElementById('pass').value;
+  ">저장 & 재부팅</button>
+</form>
+<p style='font-size:0.85rem;color:#9ca3af;margin-top:12px;'>
+WiFi 설정 후 저장하면 재부팅되어 정상 모드로 동작합니다.
+</p>
+</div></body></html>
+)rawliteral";
+
+const char PAGE_SAVED[] PROGMEM = R"rawliteral(
+<!DOCTYPE html><html lang='ko'>
+<head><meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<style>
+body{display:flex;justify-content:center;align-items:center;height:100vh;
+background:#020617;color:#e5e7eb;font-family:-apple-system,'Segoe UI';text-align:center;}
+h2{font-size:1.8rem;font-weight:700;}
+</style></head>
+<body>
+<h2>WiFi 설정이 저장되었습니다.<br>2초 후 재부팅합니다…</h2>
+</body></html>
+)rawliteral";
