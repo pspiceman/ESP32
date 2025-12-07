@@ -44,7 +44,7 @@ static const int PIN_VSPI_MOSI = 6;
 
 #elif BOARD_ESP32
 // 통신/상태 LED(Active HIGH) + AP 모드 전환 버튼
-const int LED_PIN    = 2;  // 통신/상태 LED (Active HIGH), Module(2 Pin)
+const int LED_PIN    = 27; // 통신/상태 LED (Active HIGH), Module(2 Pin)
 const int AP_KEY_PIN = 0;  // AP 모드 전환 버튼 (내부 풀업)
 
 // ESP32 핀 맵
