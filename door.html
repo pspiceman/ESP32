@@ -2,11 +2,11 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>LoRa 조도 모니터링</title>
+  <title>Door Control</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Paho MQTT JS (WebSocket) -->
-  <script src="https://unpkg.com/paho-mqtt/mqttws31.min.js"></script>
+  <!-- Paho MQTT JS (버전 고정 1.1.0, Paho.Client 사용) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script>
 
   <style>
     * {
@@ -35,11 +35,17 @@
       padding: 16px;
     }
 
+    /* 제목: Georgia + 한 단계 크게 + 입체감 */
     .title {
       text-align: center;
-      font-size: 1.2rem;
-      font-weight: 700;
-      margin-bottom: 8px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2.2rem, 9vw, 3.1rem);
+      font-weight: 800;
+      margin-bottom: 4px;
+      color: #222;
+      text-shadow:
+        0 2px 0 rgba(255,255,255,0.8),
+        0 3px 4px rgba(0,0,0,0.3);
     }
 
     .subtitle {
@@ -90,59 +96,83 @@
       color: #555;
     }
 
-    .lux-value {
-      font-size: 2.3rem;
-      font-weight: 700;
+    .card-header.center {
       text-align: center;
-      margin: 4px 0;
     }
 
-    .lux-unit {
-      font-size: 0.8rem;
+    /* 밝기: 라벨/값 동일 폰트, 진한 그레이, [lx] 표기 */
+    .lux-label {
       text-align: center;
-      color: #777;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #333;
       margin-bottom: 4px;
     }
 
-    .door-state {
-      text-align: center;
-      font-size: 1.2rem;
+    .lux-value {
+      font-size: 1.1rem;
       font-weight: 700;
-      margin-top: 4px;
-    }
-
-    .door-open {
-      color: #1a7f3b;
-    }
-
-    .door-close {
-      color: #d13838;
+      text-align: center;
+      margin: 4px 0;
+      color: #333;
     }
 
     .button-wrap {
-      margin-top: 8px;
       text-align: center;
     }
 
+    /* 큰 파란 Open/Close 버튼 */
     .led-btn {
       display: inline-block;
       width: 100%;
-      padding: 14px;
-      font-size: 1.05rem;
+      padding: 30px;          /* 버튼 높이 크게 */
+      font-size: 2rem;        /* 폰트 크게 */
       font-weight: 700;
-      border-radius: 999px;
+      border-radius: 16px;
       border: none;
       cursor: pointer;
-      background: #007aff;
+      background: #0A84FF;    /* 블루 계열 */
       color: #fff;
-      box-shadow: 0 4px 10px rgba(0,122,255,0.3);
-      transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.1s ease;
+      box-shadow: 0 4px 12px rgba(10,132,255,0.35);
+      transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.1s ease, background 0.1s ease;
     }
 
     .led-btn:active {
       transform: translateY(1px);
-      box-shadow: 0 2px 6px rgba(0,122,255,0.25);
-      opacity: 0.9;
+      box-shadow: 0 2px 8px rgba(10,132,255,0.3);
+      background: #0060d1;    /* 눌렀을 때 */
+      opacity: 0.97;
+    }
+
+    .door-state-row {
+      margin-top: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      font-size: 1rem;
+    }
+
+    .door-label {
+      font-weight: 700;
+    }
+
+    .door-state-badge {
+      min-width: 70px;
+      text-align: center;
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      color: #ffffff;
+      background: #2f3d4f; /* 기본 Close 색 */
+    }
+
+    .door-state-badge.door-open {
+      background: #0b8f2f;
+    }
+
+    .door-state-badge.door-close {
+      background: #2f3d4f;
     }
 
     .footer {
@@ -165,7 +195,7 @@
 </head>
 <body>
   <div class="container">
-    <div class="title">조도 기반 장비 상태 모니터링</div>
+    <div class="title">Door Control</div>
     <div class="subtitle">LoRa(Node) ↔ Gateway ↔ MQTT ↔ Web</div>
 
     <!-- 상태 표시 -->
@@ -182,19 +212,20 @@
       </div>
     </div>
 
-    <!-- 조도 및 OPEN/CLOSE -->
+    <!-- 밝기 표시 -->
     <div class="card">
-      <div class="card-header">조도 센싱값</div>
-      <div id="lux-value" class="lux-value">-.-</div>
-      <div class="lux-unit">lx</div>
-      <div id="door-state" class="door-state door-close">-</div>
+      <div class="lux-label">밝기</div>
+      <div id="lux-value" class="lux-value">-.- [lx]</div>
     </div>
 
-    <!-- LED 제어 버튼 -->
+    <!-- Open/Close 버튼 + Door 상태 -->
     <div class="card">
-      <div class="card-header">Node LED 제어 (D27, 1.5초 ON)</div>
       <div class="button-wrap">
-        <button id="led-btn" class="led-btn">LED 토글 (1.5초 ON)</button>
+        <button id="led-btn" class="led-btn">Open/Close</button>
+      </div>
+      <div class="door-state-row">
+        <span class="door-label">Door상태</span>
+        <span id="door-state" class="door-state-badge door-close">Close</span>
       </div>
     </div>
 
@@ -205,9 +236,6 @@
         <span>RSSI2(GW-공유기): <span id="rssi2">-</span> dBm</span>
       </div>
       <div class="footer-row footer-small">
-        <span>최근 데이터 기준 OPEN/CLOSE: 10 lx</span>
-      </div>
-      <div class="footer-row footer-small">
         <span>업데이트 시각:</span>
         <span id="last-update">-</span>
       </div>
@@ -216,9 +244,7 @@
 
   <script>
     /***************** MQTT WebSocket 설정 *****************/
-    const MQTT_HOST = "broker.hivemq.com";
-    const MQTT_PORT = 8884;      // wss 포트
-    const MQTT_PATH = "/mqtt";   // HiveMQ WebSocket path
+    const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
 
     const TOPIC_LUX_VALUE = "tswell/lux/value";
     const TOPIC_LUX_STATE = "tswell/lux/state";
@@ -229,19 +255,14 @@
 
     const clientId = "WEB-" + Math.random().toString(16).substr(2, 8);
 
-    // Paho MQTT Client (host, port, path, clientId)
-    const client = new Paho.MQTT.Client(
-      MQTT_HOST,
-      Number(MQTT_PORT),
-      MQTT_PATH,
-      clientId
-    );
+    // URL 방식 + Paho.Client 사용 (원본 그대로)
+    const client = new Paho.Client(MQTT_URL, clientId);
 
     /***************** DOM 요소 *****************/
     const mqttStatusPill   = document.getElementById("mqtt-status-pill");
     const deviceStatusPill = document.getElementById("device-status-pill");
     const luxValueEl       = document.getElementById("lux-value");
-    const doorStateEl      = document.getElementById("door-state");
+    const doorStateBadge   = document.getElementById("door-state");
     const rssi1El          = document.getElementById("rssi1");
     const rssi2El          = document.getElementById("rssi2");
     const lastUpdateEl     = document.getElementById("last-update");
@@ -284,7 +305,6 @@
     client.onConnectionLost = function (responseObject) {
       console.log("onConnectionLost:", responseObject.errorMessage);
       setMqttStatus(false);
-      // 자동 재접속 시도
       setTimeout(connectMQTT, 3000);
     };
 
@@ -294,18 +314,21 @@
       console.log("onMessageArrived:", topic, payload);
 
       if (topic === TOPIC_LUX_VALUE) {
-        luxValueEl.textContent = payload;
+        const v = parseFloat(payload);
+        if (!isNaN(v)) {
+          luxValueEl.textContent = v.toFixed(2) + " [lx]";
+        } else {
+          luxValueEl.textContent = payload + " [lx]";
+        }
         lastDataTime = Date.now();
         updateDeviceStatus();
         updateLastUpdateTime();
       } else if (topic === TOPIC_LUX_STATE) {
-        doorStateEl.textContent = payload === "OPEN" ? "OPEN" : "CLOSE";
-        doorStateEl.classList.remove("door-open", "door-close");
-        if (payload === "OPEN") {
-          doorStateEl.classList.add("door-open");
-        } else {
-          doorStateEl.classList.add("door-close");
-        }
+        const isOpen = (payload === "OPEN");
+        doorStateBadge.textContent = isOpen ? "Open" : "Close";
+        doorStateBadge.classList.remove("door-open", "door-close");
+        doorStateBadge.classList.add(isOpen ? "door-open" : "door-close");
+
         lastDataTime = Date.now();
         updateDeviceStatus();
         updateLastUpdateTime();
@@ -314,22 +337,21 @@
       } else if (topic === TOPIC_RSSI2) {
         rssi2El.textContent = payload;
       } else if (topic === TOPIC_STATUS) {
-        // 필요하다면 상태값 사용 가능 (예: "GATEWAY_ONLINE", "DATA_OK" 등)
+        // 필요 시 상태값 활용 가능
       }
     };
 
     /***************** MQTT 연결 *****************/
     function connectMQTT() {
-      console.log("MQTT 연결 시도...", clientId);
+      console.log("MQTT 연결 시도...", MQTT_URL, clientId);
       client.connect({
-        useSSL: true, // GitHub Pages(HTTPS)에서 wss 필요
+        useSSL: true,
         timeout: 10,
         cleanSession: true,
         onSuccess: function () {
           console.log("MQTT 연결 성공");
           setMqttStatus(true);
 
-          // 구독
           client.subscribe(TOPIC_LUX_VALUE);
           client.subscribe(TOPIC_LUX_STATE);
           client.subscribe(TOPIC_RSSI1);
@@ -337,29 +359,28 @@
           client.subscribe(TOPIC_STATUS);
         },
         onFailure: function (err) {
-          console.error("MQTT 연결 실패:", err);
+          console.error("MQTT 연결 실패:", err.errorMessage || err);
           setMqttStatus(false);
           setTimeout(connectMQTT, 4000);
         },
       });
     }
 
-    /***************** LED 버튼 클릭 (Node LED 1.5초 ON 명령) *****************/
+    /***************** Open/Close 버튼 (Node LED PULSE 명령) *****************/
     ledButton.addEventListener("click", function () {
       if (!client.isConnected()) {
         alert("MQTT 연결이 되지 않았습니다.");
         return;
       }
-      const msg = new Paho.MQTT.Message("PULSE");
+      const msg = new Paho.Message("PULSE");
       msg.destinationName = TOPIC_LED_CMD;
       client.send(msg);
 
-      // 간단한 비주얼 피드백
       ledButton.disabled = true;
       ledButton.textContent = "전송 중...";
       setTimeout(() => {
         ledButton.disabled = false;
-        ledButton.textContent = "LED 토글 (1.5초 ON)";
+        ledButton.textContent = "Open/Close";
       }, 1000);
     });
 
