@@ -197,13 +197,13 @@
       text-align: center;
     }
 
-    /* >>> 변경 부분: 버튼 폰트&수직 크기 업 <<< */
+    /* Open/Close 버튼 */
     .led-btn {
       display: inline-block;
       width: 100%;
-      padding: 51px 26px;      /* 34px × 1.5 ≒ 51px */
+      padding: 51px 26px;      /* 수직 높이 크게 */
       font-family: "Georgia", "Times New Roman", serif;
-      font-size: 2.3rem;       /* 2rem → 한 단계 업 */
+      font-size: 2.3rem;       /* 글자 크게 */
       font-weight: 800;
       border-radius: 24px;
       border: none;
@@ -217,7 +217,8 @@
         transform 0.1s ease,
         box-shadow 0.1s ease,
         opacity 0.1s ease,
-        background 0.2s ease;
+        background 0.2s ease,
+        filter 0.2s ease;
     }
 
     .led-btn:hover {
@@ -232,11 +233,25 @@
       opacity: 0.96;
     }
 
+    /* 클릭 후 잠깐 유지되는 하이라이트 상태 */
+    .led-btn.clicked {
+      filter: brightness(1.08);
+      box-shadow:
+        0 0 0 4px rgba(59,130,246,0.35),
+        0 14px 24px rgba(15, 23, 42, 0.6);
+    }
+
     body.night-mode .led-btn {
       background: linear-gradient(145deg, #1d4ed8, #1e40af);
       box-shadow:
         0 10px 22px rgba(15, 23, 42, 0.9),
         inset 0 2px 4px rgba(255, 255, 255, 0.1);
+    }
+
+    body.night-mode .led-btn.clicked {
+      box-shadow:
+        0 0 0 4px rgba(59,130,246,0.7),
+        0 14px 26px rgba(15, 23, 42, 0.95);
     }
 
     .door-state-row {
@@ -382,6 +397,7 @@
 
     let lastDataTime = 0;
     let isNightMode = false;
+    const originalLedLabel = ledButton.textContent;
 
     function setMqttStatus(connected) {
       if (connected) {
@@ -489,11 +505,22 @@
       });
     }
 
+    // Open/Close 버튼 클릭 시 시각적 피드백 + MQTT 전송
     ledButton.addEventListener("click", function () {
       if (!client.isConnected()) {
         alert("MQTT 연결이 되지 않았습니다.");
         return;
       }
+
+      // 시각적 피드백: 하이라이트 + 텍스트 변경
+      ledButton.classList.add("clicked");
+      ledButton.textContent = "명령 전송";
+
+      setTimeout(() => {
+        ledButton.classList.remove("clicked");
+        ledButton.textContent = originalLedLabel;
+      }, 600);  // 0.6초 후 원래 상태로
+
       const msg = new Paho.Message("PULSE");
       msg.destinationName = TOPIC_LED_CMD;
       client.send(msg);
