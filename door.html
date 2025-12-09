@@ -5,7 +5,6 @@
   <title>Door Control</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Paho MQTT JS (버전 고정 1.1.0, Paho.Client 사용) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script>
 
   <style>
@@ -17,19 +16,20 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f3f4f6; /* 라이트 그레이 */
+      background: #f3f4f6;
       color: #222;
+      height: 100vh;
       min-height: 100vh;
+      overflow: hidden;          /* 페이지 스크롤 방지 */
       display: flex;
       justify-content: center;
-      align-items: flex-start;
-      padding: 16px 8px;
+      align-items: flex-start;   /* 위에서부터 배치 */
+      padding: 8px 8px;
       transition: background 0.25s ease, color 0.25s ease;
     }
 
-    /* 야간 모드 */
     body.night-mode {
-      background: #020617; /* 아주 짙은 남색 */
+      background: #020617;
       color: #e5e7eb;
     }
 
@@ -39,8 +39,10 @@
       background: #ffffff;
       border-radius: 18px;
       box-shadow: 0 6px 18px rgba(0,0,0,0.14);
-      padding: 16px 16px 14px;
+      padding: 16px 16px 12px;   /* 위/아래 적당하게 */
       transition: background 0.25s ease, box-shadow 0.25s ease;
+      display: flex;
+      flex-direction: column;
     }
 
     body.night-mode .container {
@@ -52,21 +54,20 @@
     .header-row {
       position: relative;
       margin-bottom: 4px;
-      padding: 0 44px;           /* 우측 버튼 공간 */
+      padding: 0 42px;
       display: flex;
-      justify-content: center;   /* 제목을 센터로 */
+      justify-content: center;
       align-items: center;
     }
 
     .title {
       text-align: center;
       font-family: "Georgia", "Times New Roman", serif;
-      font-size: clamp(1.8rem, 8vw, 2.6rem);
+      font-size: clamp(2rem, 8.5vw, 2.5rem);
       font-weight: 800;
       color: #111827;
       display: inline-block;
-      transform: translateX(6px);  /* 살짝 우측으로 이동 */
-      /* 입체감 */
+      transform: translateX(6px);
       text-shadow:
         0 1px 0 #f9fafb,
         0 3px 6px rgba(15, 23, 42, 0.35),
@@ -85,15 +86,15 @@
       top: 50%;
       right: 0;
       transform: translateY(-50%);
-      width: 34px;        /* 축소 */
-      height: 34px;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
       border: none;
       background: #e5e7eb;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       cursor: pointer;
       transition: background 0.2s ease, box-shadow 0.2s ease;
       box-shadow: 0 2px 6px rgba(0,0,0,0.15);
@@ -109,8 +110,8 @@
     }
 
     .subtitle {
-      text-align: center; /* 센터 배치 */
-      font-size: 0.75rem;
+      text-align: center;
+      font-size: 0.78rem;
       color: #666;
       margin-bottom: 16px;
     }
@@ -128,11 +129,11 @@
 
     .status-pill {
       display: inline-block;
-      padding: 2px 8px;
+      padding: 3px 10px;
       border-radius: 999px;
-      font-size: 0.75rem;
+      font-size: 0.78rem;
       font-weight: 600;
-      background: #e5e5ea; /* 살짝 진한 회색 */
+      background: #e5e5ea;
       color: #333;
     }
 
@@ -161,9 +162,9 @@
 
     .card {
       border-radius: 14px;
-      background: #f5f5f7;  /* 본문보다 살짝 진한, 부드러운 그레이 */
+      background: #f5f5f7;
       padding: 12px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       transition: background 0.25s ease;
     }
 
@@ -171,26 +172,10 @@
       background: #111827;
     }
 
-    .card-header {
-      font-size: 0.9rem;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: #555;
-    }
-
-    .card-header.center {
-      text-align: center;
-    }
-
-    body.night-mode .card-header {
-      color: #cbd5f5;
-    }
-
-    /* 밝기/값 동일 폰트 & Dark Gray */
     .lux-label,
     .lux-value {
       text-align: center;
-      font-size: 1.1rem;
+      font-size: 1.12rem;
       font-weight: 600;
       color: #333333;
     }
@@ -200,7 +185,7 @@
     }
 
     .lux-value {
-      margin-top: 2px;
+      margin-top: 4px;
     }
 
     body.night-mode .lux-label,
@@ -212,21 +197,20 @@
       text-align: center;
     }
 
-    /* Open/Close 버튼 – 네모형 타원, Georgia, 입체감 */
     .led-btn {
       display: inline-block;
       width: 100%;
-      padding: 36px 30px;
+      padding: 34px 26px;      /* 이전보다 약간 줄여서 높이 확보 */
       font-family: "Georgia", "Times New Roman", serif;
       font-size: 2rem;
       font-weight: 800;
-      border-radius: 24px;  /* 네모형 타원 */
+      border-radius: 24px;
       border: none;
       cursor: pointer;
       background: linear-gradient(145deg, #3b82f6, #1d4ed8);
       color: #fff;
       box-shadow:
-        0 10px 18px rgba(15, 23, 42, 0.45),
+        0 12px 20px rgba(15, 23, 42, 0.48),
         inset 0 2px 4px rgba(255, 255, 255, 0.25);
       transition:
         transform 0.1s ease,
@@ -240,7 +224,7 @@
     }
 
     .led-btn:active {
-      transform: translateY(2px); /* 눌린 느낌만 */
+      transform: translateY(2px);
       box-shadow:
         0 4px 10px rgba(15, 23, 42, 0.7),
         inset 0 1px 2px rgba(0, 0, 0, 0.35);
@@ -255,12 +239,12 @@
     }
 
     .door-state-row {
-      margin-top: 26px;
+      margin-top: 20px;
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 8px;
-      font-size: 1rem;
+      gap: 10px;
+      font-size: 1.02rem;
     }
 
     .door-label {
@@ -268,13 +252,13 @@
     }
 
     .door-state-badge {
-      min-width: 80px;
+      min-width: 88px;
       text-align: center;
-      padding: 4px 14px;
-      border-radius: 10px;
+      padding: 5px 16px;
+      border-radius: 12px;
       font-weight: 700;
       color: #ffffff;
-      background: #2f3d4f; /* 기본 Close 색 */
+      background: #2f3d4f;
     }
 
     .door-state-badge.door-open {
@@ -290,10 +274,10 @@
     }
 
     .footer {
-      margin-top: 8px;
-      font-size: 0.7rem;
+      margin-top: 8px;           /* auto 대신 고정 여백 -> 전체 높이 줄이기 */
+      font-size: 0.72rem;
       color: #777;
-      line-height: 1.4;
+      line-height: 1.45;
     }
 
     .footer-row {
@@ -304,22 +288,20 @@
     }
 
     .footer-small {
-      font-size: 0.68rem;
+      font-size: 0.7rem;
     }
 
     body.night-mode .footer {
       color: #9ca3af;
     }
 
-    /* 모바일 세로 레이아웃 보정 */
     @media (max-width: 480px) {
       body {
-        padding: 12px 8px;
-        align-items: stretch;
+        padding: 8px 6px;
       }
       .container {
         max-width: 100%;
-        border-radius: 16px;
+        border-radius: 14px;
       }
     }
   </style>
@@ -328,34 +310,30 @@
   <div class="container">
     <div class="header-row">
       <div class="title">Door Control</div>
-      <!-- 주간/야간 모드 토글 버튼 (해/달) -->
       <button id="mode-toggle-btn" class="mode-toggle-btn" aria-label="Toggle day/night mode">
-       ☀️
+        ☀️
       </button>
     </div>
     <div class="subtitle">LoRa(Node) ↔ Gateway ↔ MQTT ↔ Web</div>
 
-    <!-- 상태 표시 -->
     <div class="card">
       <div class="status-row">
         <div>
-          <span style="font-size:0.75rem;">브라우저 ↔ MQTT</span><br />
+          <span style="font-size:0.78rem;">브라우저 ↔ MQTT</span><br />
           <span id="mqtt-status-pill" class="status-pill bad">연결 안 됨</span>
         </div>
         <div style="text-align:right;">
-          <span style="font-size:0.75rem;">장비 연결 상태</span><br />
+          <span style="font-size:0.78rem;">장비 연결 상태</span><br />
           <span id="device-status-pill" class="status-pill bad">데이터 없음</span>
         </div>
       </div>
     </div>
 
-    <!-- 밝기 표시 -->
     <div class="card">
       <div class="lux-label">밝기</div>
       <div id="lux-value" class="lux-value">-.- [lx]</div>
     </div>
 
-    <!-- Open/Close 버튼 + Door 상태 -->
     <div class="card">
       <div class="button-wrap">
         <button id="led-btn" class="led-btn">Open/Close</button>
@@ -366,7 +344,6 @@
       </div>
     </div>
 
-    <!-- RSSI / 시간 표시 -->
     <div class="footer">
       <div class="footer-row">
         <span>RSSI1(Node-GW): <span id="rssi1">-</span> dBm</span>
@@ -380,7 +357,6 @@
   </div>
 
   <script>
-    /***************** MQTT WebSocket 설정 *****************/
     const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
 
     const TOPIC_LUX_VALUE = "tswell/lux/value";
@@ -391,11 +367,8 @@
     const TOPIC_LED_CMD   = "tswell/cmd/led";
 
     const clientId = "WEB-" + Math.random().toString(16).substr(2, 8);
-
-    // URL 방식 + Paho.Client 사용
     const client = new Paho.Client(MQTT_URL, clientId);
 
-    /***************** DOM 요소 *****************/
     const mqttStatusPill   = document.getElementById("mqtt-status-pill");
     const deviceStatusPill = document.getElementById("device-status-pill");
     const luxValueEl       = document.getElementById("lux-value");
@@ -406,10 +379,9 @@
     const ledButton        = document.getElementById("led-btn");
     const modeToggleBtn    = document.getElementById("mode-toggle-btn");
 
-    let lastDataTime = 0; // 마지막 센서 데이터 수신 시간(ms)
+    let lastDataTime = 0;
     let isNightMode = false;
 
-    /***************** 상태 업데이트 유틸 *****************/
     function setMqttStatus(connected) {
       if (connected) {
         mqttStatusPill.textContent = "연결됨";
@@ -440,7 +412,6 @@
       lastUpdateEl.textContent = now.toLocaleString();
     }
 
-    /***************** 야간/주간 모드 토글 *****************/
     function applyMode() {
       if (isNightMode) {
         document.body.classList.add("night-mode");
@@ -456,7 +427,6 @@
       applyMode();
     });
 
-    /***************** MQTT Event Handler *****************/
     client.onConnectionLost = function (responseObject) {
       console.log("onConnectionLost:", responseObject.errorMessage);
       setMqttStatus(false);
@@ -491,12 +461,9 @@
         rssi1El.textContent = payload;
       } else if (topic === TOPIC_RSSI2) {
         rssi2El.textContent = payload;
-      } else if (topic === TOPIC_STATUS) {
-        // 필요 시 상태값 활용 가능
       }
     };
 
-    /***************** MQTT 연결 *****************/
     function connectMQTT() {
       console.log("MQTT 연결 시도...", MQTT_URL, clientId);
       client.connect({
@@ -521,7 +488,6 @@
       });
     }
 
-    /***************** Open/Close 버튼 (Node LED PULSE 명령) *****************/
     ledButton.addEventListener("click", function () {
       if (!client.isConnected()) {
         alert("MQTT 연결이 되지 않았습니다.");
@@ -532,10 +498,8 @@
       client.send(msg);
     });
 
-    /***************** 주기적으로 장비 연결 상태 갱신 *****************/
     setInterval(updateDeviceStatus, 5000);
 
-    /***************** 시작 시 MQTT 연결 & 기본 모드 적용 *****************/
     applyMode();
     connectMQTT();
   </script>
