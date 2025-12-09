@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>LoRa 조도 모니터링</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Paho MQTT JS (WebSocket) -->
+  <script src="https://unpkg.com/paho-mqtt/mqttws31.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5f5;
+      color: #222;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 16px 8px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 360px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      padding: 16px;
+    }
+
+    .title {
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 0.75rem;
+      color: #666;
+      margin-bottom: 16px;
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      margin-bottom: 8px;
+    }
+
+    .status-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #eee;
+      color: #555;
+    }
+
+    .status-pill.ok {
+      background: #e5f8eb;
+      color: #1a7f3b;
+    }
+
+    .status-pill.bad {
+      background: #ffecec;
+      color: #d13838;
+    }
+
+    .card {
+      border-radius: 12px;
+      background: #fafafa;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .card-header {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #555;
+    }
+
+    .lux-value {
+      font-size: 2.3rem;
+      font-weight: 700;
+      text-align: center;
+      margin: 4px 0;
+    }
+
+    .lux-unit {
+      font-size: 0.8rem;
+      text-align: center;
+      color: #777;
+      margin-bottom: 4px;
+    }
+
+    .door-state {
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .door-open {
+      color: #1a7f3b;
+    }
+
+    .door-close {
+      color: #d13838;
+    }
+
+    .button-wrap {
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    .led-btn {
+      display: inline-block;
+      width: 100%;
+      padding: 14px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      background: #007aff;
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(0,122,255,0.3);
+      transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.1s ease;
+    }
+
+    .led-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 6px rgba(0,122,255,0.25);
+      opacity: 0.9;
+    }
+
+    .footer {
+      margin-top: 8px;
+      font-size: 0.7rem;
+      color: #777;
+      line-height: 1.4;
+    }
+
+    .footer-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2px;
+    }
+
+    .footer-small {
+      font-size: 0.68rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="title">조도 기반 장비 상태 모니터링</div>
+    <div class="subtitle">LoRa(Node) ↔ Gateway ↔ MQTT ↔ Web</div>
+
+    <!-- 상태 표시 -->
+    <div class="card">
+      <div class="status-row">
+        <div>
+          <span style="font-size:0.75rem;">브라우저 ↔ MQTT</span><br />
+          <span id="mqtt-status-pill" class="status-pill bad">연결 안 됨</span>
+        </div>
+        <div style="text-align:right;">
+          <span style="font-size:0.75rem;">장비 연결 상태</span><br />
+          <span id="device-status-pill" class="status-pill bad">데이터 없음</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 조도 및 OPEN/CLOSE -->
+    <div class="card">
+      <div class="card-header">조도 센싱값</div>
+      <div id="lux-value" class="lux-value">-.-</div>
+      <div class="lux-unit">lx</div>
+      <div id="door-state" class="door-state door-close">-</div>
+    </div>
+
+    <!-- LED 제어 버튼 -->
+    <div class="card">
+      <div class="card-header">Node LED 제어 (D27, 1.5초 ON)</div>
+      <div class="button-wrap">
+        <button id="led-btn" class="led-btn">LED 토글 (1.5초 ON)</button>
+      </div>
+    </div>
+
+    <!-- RSSI / 시간 표시 -->
+    <div class="footer">
+      <div class="footer-row">
+        <span>RSSI1(Node-GW): <span id="rssi1">-</span> dBm</span>
+        <span>RSSI2(GW-공유기): <span id="rssi2">-</span> dBm</span>
+      </div>
+      <div class="footer-row footer-small">
+        <span>최근 데이터 기준 OPEN/CLOSE: 10 lx</span>
+      </div>
+      <div class="footer-row footer-small">
+        <span>업데이트 시각:</span>
+        <span id="last-update">-</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /***************** MQTT WebSocket 설정 *****************/
+    const MQTT_HOST = "broker.hivemq.com";
+    const MQTT_PORT = 8884;      // wss 포트
+    const MQTT_PATH = "/mqtt";   // HiveMQ WebSocket path
+
+    const TOPIC_LUX_VALUE = "tswell/lux/value";
+    const TOPIC_LUX_STATE = "tswell/lux/state";
+    const TOPIC_RSSI1     = "tswell/rssi1";
+    const TOPIC_RSSI2     = "tswell/rssi2";
+    const TOPIC_STATUS    = "tswell/status";
+    const TOPIC_LED_CMD   = "tswell/cmd/led";
+
+    const clientId = "WEB-" + Math.random().toString(16).substr(2, 8);
+
+    // Paho MQTT Client (host, port, path, clientId)
+    const client = new Paho.MQTT.Client(
+      MQTT_HOST,
+      Number(MQTT_PORT),
+      MQTT_PATH,
+      clientId
+    );
+
+    /***************** DOM 요소 *****************/
+    const mqttStatusPill   = document.getElementById("mqtt-status-pill");
+    const deviceStatusPill = document.getElementById("device-status-pill");
+    const luxValueEl       = document.getElementById("lux-value");
+    const doorStateEl      = document.getElementById("door-state");
+    const rssi1El          = document.getElementById("rssi1");
+    const rssi2El          = document.getElementById("rssi2");
+    const lastUpdateEl     = document.getElementById("last-update");
+    const ledButton        = document.getElementById("led-btn");
+
+    let lastDataTime = 0; // 마지막 센서 데이터 수신 시간(ms)
+
+    /***************** 상태 업데이트 유틸 *****************/
+    function setMqttStatus(connected) {
+      if (connected) {
+        mqttStatusPill.textContent = "연결됨";
+        mqttStatusPill.classList.remove("bad");
+        mqttStatusPill.classList.add("ok");
+      } else {
+        mqttStatusPill.textContent = "연결 안 됨";
+        mqttStatusPill.classList.remove("ok");
+        mqttStatusPill.classList.add("bad");
+      }
+    }
+
+    function updateDeviceStatus() {
+      const now = Date.now();
+      if (lastDataTime > 0 && now - lastDataTime < 15000) {
+        deviceStatusPill.textContent = "데이터 수신 중";
+        deviceStatusPill.classList.remove("bad");
+        deviceStatusPill.classList.add("ok");
+      } else {
+        deviceStatusPill.textContent = "데이터 없음";
+        deviceStatusPill.classList.remove("ok");
+        deviceStatusPill.classList.add("bad");
+      }
+    }
+
+    function updateLastUpdateTime() {
+      const now = new Date();
+      lastUpdateEl.textContent = now.toLocaleString();
+    }
+
+    /***************** MQTT Event Handler *****************/
+    client.onConnectionLost = function (responseObject) {
+      console.log("onConnectionLost:", responseObject.errorMessage);
+      setMqttStatus(false);
+      // 자동 재접속 시도
+      setTimeout(connectMQTT, 3000);
+    };
+
+    client.onMessageArrived = function (message) {
+      const topic = message.destinationName;
+      const payload = message.payloadString;
+      console.log("onMessageArrived:", topic, payload);
+
+      if (topic === TOPIC_LUX_VALUE) {
+        luxValueEl.textContent = payload;
+        lastDataTime = Date.now();
+        updateDeviceStatus();
+        updateLastUpdateTime();
+      } else if (topic === TOPIC_LUX_STATE) {
+        doorStateEl.textContent = payload === "OPEN" ? "OPEN" : "CLOSE";
+        doorStateEl.classList.remove("door-open", "door-close");
+        if (payload === "OPEN") {
+          doorStateEl.classList.add("door-open");
+        } else {
+          doorStateEl.classList.add("door-close");
+        }
+        lastDataTime = Date.now();
+        updateDeviceStatus();
+        updateLastUpdateTime();
+      } else if (topic === TOPIC_RSSI1) {
+        rssi1El.textContent = payload;
+      } else if (topic === TOPIC_RSSI2) {
+        rssi2El.textContent = payload;
+      } else if (topic === TOPIC_STATUS) {
+        // 필요하다면 상태값 사용 가능 (예: "GATEWAY_ONLINE", "DATA_OK" 등)
+      }
+    };
+
+    /***************** MQTT 연결 *****************/
+    function connectMQTT() {
+      console.log("MQTT 연결 시도...", clientId);
+      client.connect({
+        useSSL: true, // GitHub Pages(HTTPS)에서 wss 필요
+        timeout: 10,
+        cleanSession: true,
+        onSuccess: function () {
+          console.log("MQTT 연결 성공");
+          setMqttStatus(true);
+
+          // 구독
+          client.subscribe(TOPIC_LUX_VALUE);
+          client.subscribe(TOPIC_LUX_STATE);
+          client.subscribe(TOPIC_RSSI1);
+          client.subscribe(TOPIC_RSSI2);
+          client.subscribe(TOPIC_STATUS);
+        },
+        onFailure: function (err) {
+          console.error("MQTT 연결 실패:", err);
+          setMqttStatus(false);
+          setTimeout(connectMQTT, 4000);
+        },
+      });
+    }
+
+    /***************** LED 버튼 클릭 (Node LED 1.5초 ON 명령) *****************/
+    ledButton.addEventListener("click", function () {
+      if (!client.isConnected()) {
+        alert("MQTT 연결이 되지 않았습니다.");
+        return;
+      }
+      const msg = new Paho.MQTT.Message("PULSE");
+      msg.destinationName = TOPIC_LED_CMD;
+      client.send(msg);
+
+      // 간단한 비주얼 피드백
+      ledButton.disabled = true;
+      ledButton.textContent = "전송 중...";
+      setTimeout(() => {
+        ledButton.disabled = false;
+        ledButton.textContent = "LED 토글 (1.5초 ON)";
+      }, 1000);
+    });
+
+    /***************** 주기적으로 장비 연결 상태 갱신 *****************/
+    setInterval(updateDeviceStatus, 5000);
+
+    /***************** 시작 시 MQTT 연결 *****************/
+    connectMQTT();
+  </script>
+</body>
+</html>
