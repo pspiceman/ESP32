@@ -14,16 +14,22 @@
       padding: 0;
     }
 
+    html, body {
+      height: 100%;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: #f3f4f6;
       color: #222;
-      height: 100vh;
       min-height: 100vh;
-      overflow: hidden;          /* 페이지 스크롤 방지 */
+      /* height: 100vh;  <-- 고정 높이 제거해도 OK, auto로 사용 */
+      height: auto;
+      overflow-y: auto;                 /* 스크롤 허용 */
+      -webkit-overflow-scrolling: touch;/* 모바일 부드러운 스크롤 + pull-to-refresh */
       display: flex;
       justify-content: center;
-      align-items: flex-start;   /* 위에서부터 배치 */
+      align-items: flex-start;          /* 위에서부터 배치 */
       padding: 8px 8px;
       transition: background 0.25s ease, color 0.25s ease;
     }
@@ -172,11 +178,10 @@
       background: #111827;
     }
 
-    /* >>> 여기 폰트 크기 업 (1.12rem → 1.25rem) <<< */
     .lux-label,
     .lux-value {
       text-align: center;
-      font-size: 1.25rem;
+      font-size: 1.25rem;   /* 한 단계 키운 밝기 폰트 */
       font-weight: 600;
       color: #333333;
     }
