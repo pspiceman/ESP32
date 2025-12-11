@@ -2,11 +2,9 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>Door Control</title>
+  <title>Door Control - Node</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script>
-
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; }
@@ -16,20 +14,15 @@
       background: #f3f4f6;
       color: #222;
       min-height: 100vh;
-      height: auto;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       display: flex;
       justify-content: center;
       align-items: flex-start;
-      padding: 8px 8px;
+      padding: 8px;
       transition: background 0.25s ease, color 0.25s ease;
     }
-
-    body.night-mode {
-      background: #020617;
-      color: #e5e7eb;
-    }
+    body.night-mode { background: #020617; color: #e5e7eb; }
 
     .container {
       width: 100%;
@@ -38,11 +31,10 @@
       border-radius: 18px;
       box-shadow: 0 6px 18px rgba(0,0,0,0.14);
       padding: 16px 16px 12px;
-      transition: background 0.25s ease, box-shadow 0.25s ease;
       display: flex;
       flex-direction: column;
+      transition: background 0.25s ease, box-shadow 0.25s ease;
     }
-
     body.night-mode .container {
       background: #0f172a;
       box-shadow: 0 10px 30px rgba(15,23,42,0.8);
@@ -56,21 +48,18 @@
       justify-content: center;
       align-items: center;
     }
-
     .title {
       text-align: center;
       font-family: "Georgia", "Times New Roman", serif;
       font-size: clamp(2rem, 8.5vw, 2.5rem);
       font-weight: 800;
       color: #111827;
-      display: inline-block;
       transform: translateX(6px);
       text-shadow:
         0 1px 0 #f9fafb,
         0 3px 6px rgba(15, 23, 42, 0.35),
         0 8px 20px rgba(15, 23, 42, 0.18);
     }
-
     body.night-mode .title {
       color: #e5e7eb;
       text-shadow:
@@ -86,15 +75,15 @@
       border-radius: 50%;
       border: none;
       background: #e5e7eb;
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-size: 0.9rem;
       cursor: pointer;
-      transition: background 0.2s ease, box-shadow 0.2s ease;
       box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      transition: background 0.2s ease, box-shadow 0.2s ease;
     }
-
     .mode-toggle-btn:active { box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
-
     body.night-mode .mode-toggle-btn {
       background: #1e293b;
       box-shadow: 0 3px 10px rgba(15,23,42,0.9);
@@ -124,10 +113,8 @@
       gap: 10px;
       font-size: 0.8rem;
     }
-
     .status-text-group { display: flex; flex-direction: column; gap: 4px; }
     .status-line { display: flex; align-items: center; gap: 6px; }
-
     .status-label { font-size: 0.8rem; color: #555; }
     body.night-mode .status-label { color: #9ca3af; }
 
@@ -142,7 +129,6 @@
     }
     .status-pill.ok  { background: #c8f2d5; color: #1a7f3b; }
     .status-pill.bad { background: #ffd1d1; color: #b91c1c; }
-
     body.night-mode .status-pill { background: #1e293b; color: #e5e7eb; }
     body.night-mode .status-pill.ok {
       background: rgba(22,163,74,0.18); color: #4ade80;
@@ -156,10 +142,10 @@
       font-size: 0.78rem;
       font-weight: 700;
       border-radius: 999px;
-      border: 1px solid #ef4444;
+      border: 1px solid #ef4444;   /* 레드 아웃라인 */
       cursor: pointer;
-      background: #e5e7eb;   /* 밝은 그레이 */
-      color: #111827;        /* 거의 블랙 */
+      background: #e5e7eb;         /* 다크 그레이 계열(연한 회색) */
+      color: #111827;              /* 블랙에 가까운 진회색 글자 */
       box-shadow: 0 2px 4px rgba(0,0,0,0.12);
       white-space: nowrap;
       transition:
@@ -202,6 +188,45 @@
     .lux-value { margin-top: 4px; }
     body.night-mode .lux-label,
     body.night-mode .lux-value { color: #e5e7eb; }
+
+    .threshold-row {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      gap: 6px;
+    }
+    .threshold-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .threshold-input {
+      width: 70px; /* 4자리 */
+      font-size: 0.8rem;
+      padding: 3px 6px;
+      border-radius: 6px;
+      border: 1px solid #d4d4d8;
+      text-align: right;
+    }
+    .threshold-btn {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: none;
+      background: #e5e7eb;
+      cursor: pointer;
+    }
+    body.night-mode .threshold-input {
+      background: #020617;
+      color: #e5e7eb;
+      border-color: #4b5563;
+    }
+    body.night-mode .threshold-btn {
+      background: #1e293b;
+      color: #e5e7eb;
+    }
 
     .button-wrap { text-align: center; }
 
@@ -303,9 +328,7 @@
   <div class="container">
     <div class="header-row">
       <div class="title">Door Control</div>
-      <button id="mode-toggle-btn" class="mode-toggle-btn" aria-label="Toggle day/night mode">
-        ☀️
-      </button>
+      <button id="mode-toggle-btn" class="mode-toggle-btn" aria-label="Toggle day/night mode">☀️</button>
     </div>
     <div class="subtitle">Node ↔ MQTT(HiveMQ) ↔ Web</div>
 
@@ -328,6 +351,21 @@
     <div class="card">
       <div class="lux-label">밝기</div>
       <div id="lux-value" class="lux-value">- [lx]</div>
+
+      <div class="threshold-row">
+        <span>Open 기준(lx): <strong id="threshold-display">-</strong></span>
+        <div class="threshold-right">
+          <input
+            id="threshold-input"
+            class="threshold-input"
+            type="number"
+            min="0"
+            max="9999"
+            placeholder="0~9999"
+          />
+          <button id="threshold-apply" class="threshold-btn">적용</button>
+        </div>
+      </div>
     </div>
 
     <div class="card">
@@ -353,19 +391,22 @@
   </div>
 
   <script>
-    // Node 전용 MQTT 설정
     const MQTT_URL  = "wss://51892257f9da45da963ae82069913afc.s1.eu.hivemq.cloud:8884/mqtt";
     const MQTT_USER = "hivemq.webclient.1765336525937";
     const MQTT_PASS = "&x%m0CB4IS9X1Adgy:a?";
 
-    const TOPIC_LUX_VALUE = "tswell/node1/lux/value";
-    const TOPIC_LUX_STATE = "tswell/node1/lux/state";
-    const TOPIC_RSSI2     = "tswell/node1/rssi2";
-    const TOPIC_LED_CMD   = "tswell/node1/cmd/led";
-    const TOPIC_RESET_CMD = "tswell/node1/cmd/reset";
+    const TOPIC_LUX_VALUE  = "tswell/node1/lux/value";
+    const TOPIC_LUX_STATE  = "tswell/node1/lux/state";
+    const TOPIC_RSSI2      = "tswell/node1/rssi2";
+    const TOPIC_LED_CMD    = "tswell/node1/cmd/led";
+    const TOPIC_RESET_CMD  = "tswell/node1/cmd/reset";
+
+    // threshold: 상태 / 설정 분리
+    const TOPIC_THRESHOLD_STATE = "tswell/node1/config/threshold";       // Node → Web (retain)
+    const TOPIC_THRESHOLD_SET   = "tswell/node1/config/threshold/set";   // Web → Node
 
     const clientId = "WEB-NODE-" + Math.random().toString(16).substr(2, 8);
-    const client = new Paho.Client(MQTT_URL, clientId);
+    const client   = new Paho.Client(MQTT_URL, clientId);
 
     const mqttStatusPill   = document.getElementById("mqtt-status-pill");
     const deviceStatusPill = document.getElementById("device-status-pill");
@@ -377,8 +418,13 @@
     const resetButton      = document.getElementById("reset-btn");
     const modeToggleBtn    = document.getElementById("mode-toggle-btn");
 
-    let lastDataTime = 0;
-    let isNightMode = false;
+    const thresholdDisplay = document.getElementById("threshold-display");
+    const thresholdInput   = document.getElementById("threshold-input");
+    const thresholdApply   = document.getElementById("threshold-apply");
+
+    let lastDataTime  = 0;
+    let isNightMode   = false;
+    let luxThreshold  = null;    // ❗ 초기값 표시 안 함
     const originalLedLabel = ledButton.textContent;
 
     function setMqttStatus(connected) {
@@ -433,14 +479,13 @@
     };
 
     client.onMessageArrived = function (message) {
-      const topic = message.destinationName;
+      const topic   = message.destinationName;
       const payload = message.payloadString;
       console.log("onMessageArrived:", topic, payload);
 
       if (topic === TOPIC_LUX_VALUE) {
         const v = parseFloat(payload);
         if (!isNaN(v)) {
-          // ✅ 정수로 표시
           luxValueEl.textContent = Math.round(v) + " [lx]";
         } else {
           luxValueEl.textContent = payload + " [lx]";
@@ -453,12 +498,19 @@
         doorStateBadge.textContent = isOpen ? "Open" : "Close";
         doorStateBadge.classList.remove("door-open", "door-close");
         doorStateBadge.classList.add(isOpen ? "door-open" : "door-close");
-
         lastDataTime = Date.now();
         updateDeviceStatus();
         updateLastUpdateTime();
       } else if (topic === TOPIC_RSSI2) {
         rssi2NodeEl.textContent = payload;
+      } else if (topic === TOPIC_THRESHOLD_STATE) {
+        const v = parseInt(payload, 10);
+        if (!isNaN(v) && v >= 0 && v <= 9999) {
+          luxThreshold = v;
+          thresholdDisplay.textContent = v;
+          thresholdInput.value = v;
+          console.log("임계값(STATE) 수신:", v);
+        }
       }
     };
 
@@ -477,6 +529,7 @@
           client.subscribe(TOPIC_LUX_VALUE);
           client.subscribe(TOPIC_LUX_STATE);
           client.subscribe(TOPIC_RSSI2);
+          client.subscribe(TOPIC_THRESHOLD_STATE);   // 상태 토픽만 구독
         },
         onFailure: function (err) {
           console.error("MQTT 연결 실패:", err.errorMessage || err);
@@ -485,6 +538,25 @@
         },
       });
     }
+
+    // 기준값 적용 버튼
+    thresholdApply.addEventListener("click", () => {
+      if (!client.isConnected()) {
+        alert("MQTT 연결이 되지 않았습니다.");
+        return;
+      }
+      let v = parseInt(thresholdInput.value, 10);
+      if (isNaN(v) || v < 0 || v > 9999) {
+        alert("0 ~ 9999 사이의 숫자를 입력하세요.");
+        return;
+      }
+      luxThreshold = v;
+      thresholdDisplay.textContent = v;
+
+      const msg = new Paho.Message(String(v));
+      msg.destinationName = TOPIC_THRESHOLD_SET;   // set 토픽으로 전송
+      client.send(msg);
+    });
 
     ledButton.addEventListener("click", function () {
       if (!client.isConnected()) {
@@ -508,17 +580,18 @@
     resetButton.addEventListener("click", function () {
       if (!client.isConnected()) {
         alert("MQTT 연결이 되지 않았습니다.");
-      } else {
-        const ok = confirm("Node를 소프트 리셋할까요?");
-        if (!ok) return;
-
-        const msg = new Paho.Message("RESET_NODE");
-        msg.destinationName = TOPIC_RESET_CMD;
-        client.send(msg);
+        return;
       }
+      const ok = confirm("Node를 소프트 리셋할까요?");
+      if (!ok) return;
+
+      const msg = new Paho.Message("RESET_NODE");
+      msg.destinationName = TOPIC_RESET_CMD;
+      client.send(msg);
     });
 
     setInterval(updateDeviceStatus, 5000);
+
     applyMode();
     connectMQTT();
   </script>
