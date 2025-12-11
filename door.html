@@ -23,13 +23,12 @@
       background: #f3f4f6;
       color: #222;
       min-height: 100vh;
-      /* height: 100vh;  <-- 고정 높이 제거해도 OK, auto로 사용 */
       height: auto;
-      overflow-y: auto;                 /* 스크롤 허용 */
-      -webkit-overflow-scrolling: touch;/* 모바일 부드러운 스크롤 + pull-to-refresh */
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       display: flex;
       justify-content: center;
-      align-items: flex-start;          /* 위에서부터 배치 */
+      align-items: flex-start;
       padding: 8px 8px;
       transition: background 0.25s ease, color 0.25s ease;
     }
@@ -56,7 +55,6 @@
       box-shadow: 0 10px 30px rgba(15,23,42,0.8);
     }
 
-    /* 상단 타이틀 + 모드 토글 */
     .header-row {
       position: relative;
       margin-bottom: 4px;
@@ -126,11 +124,45 @@
       color: #9ca3af;
     }
 
+    .card {
+      border-radius: 14px;
+      background: #f5f5f7;
+      padding: 12px;
+      margin-bottom: 10px;
+      transition: background 0.25s ease;
+    }
+
+    body.night-mode .card {
+      background: #111827;
+    }
+
+    /* === 상태 + RESET 영역 === */
     .status-row {
       display: flex;
       justify-content: space-between;
+      align-items: center;
+      gap: 10px;
       font-size: 0.8rem;
-      margin-bottom: 8px;
+    }
+
+    .status-text-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .status-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-label {
+      font-size: 0.8rem;
+      color: #555;
+    }
+    body.night-mode .status-label {
+      color: #9ca3af;
     }
 
     .status-pill {
@@ -166,22 +198,55 @@
       color: #fecaca;
     }
 
-    .card {
-      border-radius: 14px;
-      background: #f5f5f7;
-      padding: 12px;
-      margin-bottom: 10px;
-      transition: background 0.25s ease;
+    /* ✅ RESET 버튼: 회색 배경 + 빨간 윤곽선 */
+    .reset-btn {
+      padding: 6px 14px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      border-radius: 999px;
+      border: 1px solid #ef4444;
+      cursor: pointer;
+      background: #e5e7eb;
+      color: #b91c1c;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+      white-space: nowrap;
+      transition:
+        background 0.15s ease,
+        transform 0.1s ease,
+        box-shadow 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
     }
 
-    body.night-mode .card {
+    .reset-btn:hover {
+      background: #f3f4f6;
+      border-color: #dc2626;
+      color: #b91c1c;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.16);
+    }
+
+    .reset-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    body.night-mode .reset-btn {
       background: #111827;
+      border-color: #f87171;
+      color: #fecaca;
+      box-shadow: 0 3px 8px rgba(15,23,42,0.9);
+    }
+
+    body.night-mode .reset-btn:hover {
+      background: #020617;
+      border-color: #fb7185;
+      color: #fecaca;
     }
 
     .lux-label,
     .lux-value {
       text-align: center;
-      font-size: 1.25rem;   /* 한 단계 키운 밝기 폰트 */
+      font-size: 1.25rem;
       font-weight: 600;
       color: #333333;
     }
@@ -203,22 +268,22 @@
       text-align: center;
     }
 
-    /* Open/Close 버튼 */
+    /* ✅ Open/Close 버튼: 높이 약간 줄이고, 블루 톤 다운 */
     .led-btn {
       display: inline-block;
       width: 100%;
-      padding: 51px 26px;
+      padding: 40px 26px; /* 이전 51px → 조금 줄임 */
       font-family: "Georgia", "Times New Roman", serif;
-      font-size: 2.3rem;
+      font-size: 2.1rem;  /* 살짝만 줄임 */
       font-weight: 800;
       border-radius: 24px;
       border: none;
       cursor: pointer;
-      background: linear-gradient(145deg, #3b82f6, #1d4ed8);
+      background: linear-gradient(145deg, #60a5fa, #2563eb); /* 톤 다운된 블루 */
       color: #fff;
       box-shadow:
-        0 12px 20px rgba(15, 23, 42, 0.48),
-        inset 0 2px 4px rgba(255, 255, 255, 0.25);
+        0 8px 16px rgba(15, 23, 42, 0.35),
+        inset 0 2px 3px rgba(255, 255, 255, 0.25);
       transition:
         transform 0.1s ease,
         box-shadow 0.1s ease,
@@ -228,36 +293,35 @@
     }
 
     .led-btn:hover {
-      background: linear-gradient(145deg, #2563eb, #1d4ed8);
+      background: linear-gradient(145deg, #3b82f6, #2563eb);
     }
 
     .led-btn:active {
       transform: translateY(2px);
       box-shadow:
-        0 4px 10px rgba(15, 23, 42, 0.7),
-        inset 0 1px 2px rgba(0, 0, 0, 0.35);
-      opacity: 0.96;
+        0 4px 10px rgba(15, 23, 42, 0.6),
+        inset 0 1px 2px rgba(0, 0, 0, 0.25);
+      opacity: 0.97;
     }
 
-    /* 클릭 후 잠깐 유지되는 하이라이트 상태 */
     .led-btn.clicked {
-      filter: brightness(1.08);
+      filter: brightness(1.05);
       box-shadow:
-        0 0 0 4px rgba(59,130,246,0.35),
-        0 14px 24px rgba(15, 23, 42, 0.6);
+        0 0 0 4px rgba(37,99,235,0.30),
+        0 12px 20px rgba(15, 23, 42, 0.55);
     }
 
     body.night-mode .led-btn {
-      background: linear-gradient(145deg, #1d4ed8, #1e40af);
+      background: linear-gradient(145deg, #1d4ed8, #1e3a8a);
       box-shadow:
-        0 10px 22px rgba(15, 23, 42, 0.9),
-        inset 0 2px 4px rgba(255, 255, 255, 0.1);
+        0 8px 18px rgba(15, 23, 42, 0.85),
+        inset 0 2px 3px rgba(255, 255, 255, 0.08);
     }
 
     body.night-mode .led-btn.clicked {
       box-shadow:
-        0 0 0 4px rgba(59,130,246,0.7),
-        0 14px 26px rgba(15, 23, 42, 0.95);
+        0 0 0 4px rgba(59,130,246,0.6),
+        0 12px 22px rgba(15, 23, 42, 0.95);
     }
 
     .door-state-row {
@@ -338,16 +402,20 @@
     </div>
     <div class="subtitle">LoRa(Node) ↔ Gateway ↔ MQTT ↔ Web</div>
 
+    <!-- 상태 + RESET -->
     <div class="card">
       <div class="status-row">
-        <div>
-          <span style="font-size:0.78rem;">브라우저 ↔ MQTT</span><br />
-          <span id="mqtt-status-pill" class="status-pill bad">연결 안 됨</span>
+        <div class="status-text-group">
+          <div class="status-line">
+            <span class="status-label">MQTT:</span>
+            <span id="mqtt-status-pill" class="status-pill bad">연결 안 됨</span>
+          </div>
+          <div class="status-line">
+            <span class="status-label">장비상태:</span>
+            <span id="device-status-pill" class="status-pill bad">데이터 없음</span>
+          </div>
         </div>
-        <div style="text-align:right;">
-          <span style="font-size:0.78rem;">장비 연결 상태</span><br />
-          <span id="device-status-pill" class="status-pill bad">데이터 없음</span>
-        </div>
+        <button id="reset-btn" class="reset-btn">RESET</button>
       </div>
     </div>
 
@@ -379,7 +447,9 @@
   </div>
 
   <script>
-    const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
+    const MQTT_URL  = "wss://51892257f9da45da963ae82069913afc.s1.eu.hivemq.cloud:8884/mqtt";
+    const MQTT_USER = "hivemq.webclient.1765336525937";
+    const MQTT_PASS = "&x%m0CB4IS9X1Adgy:a?";
 
     const TOPIC_LUX_VALUE = "tswell/lux/value";
     const TOPIC_LUX_STATE = "tswell/lux/state";
@@ -387,6 +457,7 @@
     const TOPIC_RSSI2     = "tswell/rssi2";
     const TOPIC_STATUS    = "tswell/status";
     const TOPIC_LED_CMD   = "tswell/cmd/led";
+    const TOPIC_RESET_CMD = "tswell/cmd/reset";
 
     const clientId = "WEB-" + Math.random().toString(16).substr(2, 8);
     const client = new Paho.Client(MQTT_URL, clientId);
@@ -399,6 +470,7 @@
     const rssi2El          = document.getElementById("rssi2");
     const lastUpdateEl     = document.getElementById("last-update");
     const ledButton        = document.getElementById("led-btn");
+    const resetButton      = document.getElementById("reset-btn");
     const modeToggleBtn    = document.getElementById("mode-toggle-btn");
 
     let lastDataTime = 0;
@@ -484,6 +556,8 @@
         rssi1El.textContent = payload;
       } else if (topic === TOPIC_RSSI2) {
         rssi2El.textContent = payload;
+      } else if (topic === TOPIC_STATUS) {
+        console.log("STATUS:", payload);
       }
     };
 
@@ -493,6 +567,8 @@
         useSSL: true,
         timeout: 10,
         cleanSession: true,
+        userName: MQTT_USER,
+        password: MQTT_PASS,
         onSuccess: function () {
           console.log("MQTT 연결 성공");
           setMqttStatus(true);
@@ -511,24 +587,36 @@
       });
     }
 
-    // Open/Close 버튼 클릭 시 시각적 피드백 + MQTT 전송
     ledButton.addEventListener("click", function () {
       if (!client.isConnected()) {
         alert("MQTT 연결이 되지 않았습니다.");
         return;
       }
 
-      // 시각적 피드백: 하이라이트 + 텍스트 변경
       ledButton.classList.add("clicked");
       ledButton.textContent = "명령 전송";
 
       setTimeout(() => {
         ledButton.classList.remove("clicked");
         ledButton.textContent = originalLedLabel;
-      }, 600);  // 0.6초 후 원래 상태로
+      }, 600);
 
       const msg = new Paho.Message("PULSE");
       msg.destinationName = TOPIC_LED_CMD;
+      client.send(msg);
+    });
+
+    resetButton.addEventListener("click", function () {
+      if (!client.isConnected()) {
+        alert("MQTT 연결이 되지 않았습니다.");
+        return;
+      }
+
+      const ok = confirm("Gateway와 Node를 순차적으로 재시작할까요?");
+      if (!ok) return;
+
+      const msg = new Paho.Message("SOFT_RESET");
+      msg.destinationName = TOPIC_RESET_CMD;
       client.send(msg);
     });
 
