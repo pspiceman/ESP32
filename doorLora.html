@@ -8,15 +8,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html, body {
-      height: 100%;
-    }
+    /* 스타일은 Node용과 동일한 테마, 그대로 재사용 */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -77,7 +71,6 @@
         0 3px 6px rgba(15, 23, 42, 0.35),
         0 8px 20px rgba(15, 23, 42, 0.18);
     }
-
     body.night-mode .title {
       color: #e5e7eb;
       text-shadow:
@@ -87,27 +80,19 @@
 
     .mode-toggle-btn {
       position: absolute;
-      top: 50%;
-      right: 0;
+      top: 50%; right: 0;
       transform: translateY(-50%);
-      width: 30px;
-      height: 30px;
+      width: 30px; height: 30px;
       border-radius: 50%;
       border: none;
       background: #e5e7eb;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       font-size: 0.9rem;
       cursor: pointer;
       transition: background 0.2s ease, box-shadow 0.2s ease;
       box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
-
-    .mode-toggle-btn:active {
-      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
-    }
-
+    .mode-toggle-btn:active { box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
     body.night-mode .mode-toggle-btn {
       background: #1e293b;
       box-shadow: 0 3px 10px rgba(15,23,42,0.9);
@@ -119,10 +104,7 @@
       color: #666;
       margin-bottom: 16px;
     }
-
-    body.night-mode .subtitle {
-      color: #9ca3af;
-    }
+    body.night-mode .subtitle { color: #9ca3af; }
 
     .card {
       border-radius: 14px;
@@ -131,12 +113,8 @@
       margin-bottom: 10px;
       transition: background 0.25s ease;
     }
+    body.night-mode .card { background: #111827; }
 
-    body.night-mode .card {
-      background: #111827;
-    }
-
-    /* === 상태 + RESET 영역 === */
     .status-row {
       display: flex;
       justify-content: space-between;
@@ -145,25 +123,11 @@
       font-size: 0.8rem;
     }
 
-    .status-text-group {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
+    .status-text-group { display: flex; flex-direction: column; gap: 4px; }
+    .status-line { display: flex; align-items: center; gap: 6px; }
 
-    .status-line {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .status-label {
-      font-size: 0.8rem;
-      color: #555;
-    }
-    body.night-mode .status-label {
-      color: #9ca3af;
-    }
+    .status-label { font-size: 0.8rem; color: #555; }
+    body.night-mode .status-label { color: #9ca3af; }
 
     .status-pill {
       display: inline-block;
@@ -175,30 +139,17 @@
       color: #333;
     }
 
-    .status-pill.ok {
-      background: #c8f2d5;
-      color: #1a7f3b;
-    }
+    .status-pill.ok  { background: #c8f2d5; color: #1a7f3b; }
+    .status-pill.bad { background: #ffd1d1; color: #b91c1c; }
 
-    .status-pill.bad {
-      background: #ffd1d1;
-      color: #b91c1c;
-    }
-
-    body.night-mode .status-pill {
-      background: #1e293b;
-      color: #e5e7eb;
-    }
+    body.night-mode .status-pill { background: #1e293b; color: #e5e7eb; }
     body.night-mode .status-pill.ok {
-      background: rgba(22,163,74,0.18);
-      color: #4ade80;
+      background: rgba(22,163,74,0.18); color: #4ade80;
     }
     body.night-mode .status-pill.bad {
-      background: rgba(248,113,113,0.2);
-      color: #fecaca;
+      background: rgba(248,113,113,0.2); color: #fecaca;
     }
 
-    /* ✅ RESET 버튼: 회색 배경 + 빨간 윤곽선 */
     .reset-btn {
       padding: 6px 14px;
       font-size: 0.78rem;
@@ -207,7 +158,7 @@
       border: 1px solid #ef4444;
       cursor: pointer;
       background: #e5e7eb;
-      color: #b91c1c;
+      color: #111827;
       box-shadow: 0 2px 4px rgba(0,0,0,0.12);
       white-space: nowrap;
       transition:
@@ -217,30 +168,26 @@
         border-color 0.15s ease,
         color 0.15s ease;
     }
-
     .reset-btn:hover {
-      background: #f3f4f6;
+      background: #f9fafb;
       border-color: #dc2626;
-      color: #b91c1c;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.16);
+      color: #111827;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.18);
     }
-
     .reset-btn:active {
       transform: translateY(1px);
       box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
-
     body.night-mode .reset-btn {
       background: #111827;
-      border-color: #f87171;
-      color: #fecaca;
+      border-color: #fb7185;
+      color: #e5e7eb;
       box-shadow: 0 3px 8px rgba(15,23,42,0.9);
     }
-
     body.night-mode .reset-btn:hover {
       background: #020617;
-      border-color: #fb7185;
-      color: #fecaca;
+      border-color: #fca5a5;
+      color: #f9fafb;
     }
 
     .lux-label,
@@ -250,36 +197,24 @@
       font-weight: 600;
       color: #333333;
     }
-
-    .lux-label {
-      margin-bottom: 4px;
-    }
-
-    .lux-value {
-      margin-top: 4px;
-    }
-
+    .lux-label { margin-bottom: 4px; }
+    .lux-value { margin-top: 4px; }
     body.night-mode .lux-label,
-    body.night-mode .lux-value {
-      color: #e5e7eb;
-    }
+    body.night-mode .lux-value { color: #e5e7eb; }
 
-    .button-wrap {
-      text-align: center;
-    }
+    .button-wrap { text-align: center; }
 
-    /* ✅ Open/Close 버튼: 높이 약간 줄이고, 블루 톤 다운 */
     .led-btn {
       display: inline-block;
       width: 100%;
-      padding: 40px 26px; /* 이전 51px → 조금 줄임 */
+      padding: 40px 26px;
       font-family: "Georgia", "Times New Roman", serif;
-      font-size: 2.1rem;  /* 살짝만 줄임 */
+      font-size: 2.1rem;
       font-weight: 800;
       border-radius: 24px;
       border: none;
       cursor: pointer;
-      background: linear-gradient(145deg, #60a5fa, #2563eb); /* 톤 다운된 블루 */
+      background: linear-gradient(145deg, #60a5fa, #2563eb);
       color: #fff;
       box-shadow:
         0 8px 16px rgba(15, 23, 42, 0.35),
@@ -291,11 +226,9 @@
         background 0.2s ease,
         filter 0.2s ease;
     }
-
     .led-btn:hover {
       background: linear-gradient(145deg, #3b82f6, #2563eb);
     }
-
     .led-btn:active {
       transform: translateY(2px);
       box-shadow:
@@ -303,21 +236,18 @@
         inset 0 1px 2px rgba(0, 0, 0, 0.25);
       opacity: 0.97;
     }
-
     .led-btn.clicked {
       filter: brightness(1.05);
       box-shadow:
         0 0 0 4px rgba(37,99,235,0.30),
         0 12px 20px rgba(15, 23, 42, 0.55);
     }
-
     body.night-mode .led-btn {
       background: linear-gradient(145deg, #1d4ed8, #1e3a8a);
       box-shadow:
         0 8px 18px rgba(15, 23, 42, 0.85),
         inset 0 2px 3px rgba(255, 255, 255, 0.08);
     }
-
     body.night-mode .led-btn.clicked {
       box-shadow:
         0 0 0 4px rgba(59,130,246,0.6),
@@ -332,10 +262,7 @@
       gap: 10px;
       font-size: 1.02rem;
     }
-
-    .door-label {
-      font-weight: 700;
-    }
+    .door-label { font-weight: 700; }
 
     .door-state-badge {
       min-width: 88px;
@@ -346,18 +273,9 @@
       color: #ffffff;
       background: #2f3d4f;
     }
-
-    .door-state-badge.door-open {
-      background: #0b8f2f;
-    }
-
-    .door-state-badge.door-close {
-      background: #2f3d4f;
-    }
-
-    body.night-mode .door-state-badge.door-open {
-      background: #16a34a;
-    }
+    .door-state-badge.door-open { background: #0b8f2f; }
+    .door-state-badge.door-close { background: #2f3d4f; }
+    body.night-mode .door-state-badge.door-open { background: #16a34a; }
 
     .footer {
       margin-top: 8px;
@@ -365,30 +283,18 @@
       color: #777;
       line-height: 1.45;
     }
-
     .footer-row {
       display: flex;
       justify-content: space-between;
       margin-bottom: 2px;
       gap: 6px;
     }
-
-    .footer-small {
-      font-size: 0.7rem;
-    }
-
-    body.night-mode .footer {
-      color: #9ca3af;
-    }
+    .footer-small { font-size: 0.7rem; }
+    body.night-mode .footer { color: #9ca3af; }
 
     @media (max-width: 480px) {
-      body {
-        padding: 8px 6px;
-      }
-      .container {
-        max-width: 100%;
-        border-radius: 14px;
-      }
+      body { padding: 8px 6px; }
+      .container { max-width: 100%; border-radius: 14px; }
     }
   </style>
 </head>
@@ -402,7 +308,6 @@
     </div>
     <div class="subtitle">LoRa(Node) ↔ Gateway ↔ MQTT ↔ Web</div>
 
-    <!-- 상태 + RESET -->
     <div class="card">
       <div class="status-row">
         <div class="status-text-group">
@@ -421,7 +326,7 @@
 
     <div class="card">
       <div class="lux-label">밝기</div>
-      <div id="lux-value" class="lux-value">-.- [lx]</div>
+      <div id="lux-value" class="lux-value">- [lx]</div>
     </div>
 
     <div class="card">
@@ -447,6 +352,7 @@
   </div>
 
   <script>
+    // Gateway용 MQTT 설정
     const MQTT_URL  = "wss://51892257f9da45da963ae82069913afc.s1.eu.hivemq.cloud:8884/mqtt";
     const MQTT_USER = "hivemq.webclient.1765336525937";
     const MQTT_PASS = "&x%m0CB4IS9X1Adgy:a?";
@@ -459,7 +365,7 @@
     const TOPIC_LED_CMD   = "tswell/cmd/led";
     const TOPIC_RESET_CMD = "tswell/cmd/reset";
 
-    const clientId = "WEB-" + Math.random().toString(16).substr(2, 8);
+    const clientId = "WEB-GW-" + Math.random().toString(16).substr(2, 8);
     const client = new Paho.Client(MQTT_URL, clientId);
 
     const mqttStatusPill   = document.getElementById("mqtt-status-pill");
@@ -536,7 +442,8 @@
       if (topic === TOPIC_LUX_VALUE) {
         const v = parseFloat(payload);
         if (!isNaN(v)) {
-          luxValueEl.textContent = v.toFixed(2) + " [lx]";
+          // ✅ 정수 lux 표시
+          luxValueEl.textContent = Math.round(v) + " [lx]";
         } else {
           luxValueEl.textContent = payload + " [lx]";
         }
@@ -621,7 +528,6 @@
     });
 
     setInterval(updateDeviceStatus, 5000);
-
     applyMode();
     connectMQTT();
   </script>
