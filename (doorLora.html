@@ -8,6 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script>
 
   <style>
+    /* 스타일은 Node용과 동일한 테마, 그대로 재사용 */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; }
 
@@ -70,7 +71,6 @@
         0 3px 6px rgba(15, 23, 42, 0.35),
         0 8px 20px rgba(15, 23, 42, 0.18);
     }
-
     body.night-mode .title {
       color: #e5e7eb;
       text-shadow:
@@ -92,9 +92,7 @@
       transition: background 0.2s ease, box-shadow 0.2s ease;
       box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
-
     .mode-toggle-btn:active { box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
-
     body.night-mode .mode-toggle-btn {
       background: #1e293b;
       box-shadow: 0 3px 10px rgba(15,23,42,0.9);
@@ -140,6 +138,7 @@
       background: #e5e5ea;
       color: #333;
     }
+
     .status-pill.ok  { background: #c8f2d5; color: #1a7f3b; }
     .status-pill.bad { background: #ffd1d1; color: #b91c1c; }
 
@@ -158,8 +157,8 @@
       border-radius: 999px;
       border: 1px solid #ef4444;
       cursor: pointer;
-      background: #e5e7eb;   /* 밝은 그레이 */
-      color: #111827;        /* 거의 블랙 */
+      background: #e5e7eb;
+      color: #111827;
       box-shadow: 0 2px 4px rgba(0,0,0,0.12);
       white-space: nowrap;
       transition:
@@ -307,7 +306,7 @@
         ☀️
       </button>
     </div>
-    <div class="subtitle">Node ↔ MQTT(HiveMQ) ↔ Web</div>
+    <div class="subtitle">LoRa(Node) ↔ Gateway ↔ MQTT ↔ Web</div>
 
     <div class="card">
       <div class="status-row">
@@ -341,9 +340,9 @@
     </div>
 
     <div class="footer">
-      <div class="footer-row footer-small">
-        <span>RSSI(Node-공유기):</span>
-        <span><span id="rssi2-node">-</span> dBm</span>
+      <div class="footer-row">
+        <span>RSSI1(Node-GW): <span id="rssi1">-</span> dBm</span>
+        <span>RSSI2(GW-공유기): <span id="rssi2">-</span> dBm</span>
       </div>
       <div class="footer-row footer-small">
         <span>업데이트 시각:</span>
@@ -353,26 +352,29 @@
   </div>
 
   <script>
-    // Node 전용 MQTT 설정
+    // Gateway용 MQTT 설정
     const MQTT_URL  = "wss://51892257f9da45da963ae82069913afc.s1.eu.hivemq.cloud:8884/mqtt";
     const MQTT_USER = "hivemq.webclient.1765336525937";
     const MQTT_PASS = "&x%m0CB4IS9X1Adgy:a?";
 
-    const TOPIC_LUX_VALUE = "tswell/node1/lux/value";
-    const TOPIC_LUX_STATE = "tswell/node1/lux/state";
-    const TOPIC_RSSI2     = "tswell/node1/rssi2";
-    const TOPIC_LED_CMD   = "tswell/node1/cmd/led";
-    const TOPIC_RESET_CMD = "tswell/node1/cmd/reset";
+    const TOPIC_LUX_VALUE = "tswell/lux/value";
+    const TOPIC_LUX_STATE = "tswell/lux/state";
+    const TOPIC_RSSI1     = "tswell/rssi1";
+    const TOPIC_RSSI2     = "tswell/rssi2";
+    const TOPIC_STATUS    = "tswell/status";
+    const TOPIC_LED_CMD   = "tswell/cmd/led";
+    const TOPIC_RESET_CMD = "tswell/cmd/reset";
 
-    const clientId = "WEB-NODE-" + Math.random().toString(16).substr(2, 8);
+    const clientId = "WEB-GW-" + Math.random().toString(16).substr(2, 8);
     const client = new Paho.Client(MQTT_URL, clientId);
 
     const mqttStatusPill   = document.getElementById("mqtt-status-pill");
     const deviceStatusPill = document.getElementById("device-status-pill");
     const luxValueEl       = document.getElementById("lux-value");
     const doorStateBadge   = document.getElementById("door-state");
+    const rssi1El          = document.getElementById("rssi1");
+    const rssi2El          = document.getElementById("rssi2");
     const lastUpdateEl     = document.getElementById("last-update");
-    const rssi2NodeEl      = document.getElementById("rssi2-node");
     const ledButton        = document.getElementById("led-btn");
     const resetButton      = document.getElementById("reset-btn");
     const modeToggleBtn    = document.getElementById("mode-toggle-btn");
@@ -440,7 +442,7 @@
       if (topic === TOPIC_LUX_VALUE) {
         const v = parseFloat(payload);
         if (!isNaN(v)) {
-          // ✅ 정수로 표시
+          // ✅ 정수 lux 표시
           luxValueEl.textContent = Math.round(v) + " [lx]";
         } else {
           luxValueEl.textContent = payload + " [lx]";
@@ -457,8 +459,12 @@
         lastDataTime = Date.now();
         updateDeviceStatus();
         updateLastUpdateTime();
+      } else if (topic === TOPIC_RSSI1) {
+        rssi1El.textContent = payload;
       } else if (topic === TOPIC_RSSI2) {
-        rssi2NodeEl.textContent = payload;
+        rssi2El.textContent = payload;
+      } else if (topic === TOPIC_STATUS) {
+        console.log("STATUS:", payload);
       }
     };
 
@@ -476,7 +482,9 @@
 
           client.subscribe(TOPIC_LUX_VALUE);
           client.subscribe(TOPIC_LUX_STATE);
+          client.subscribe(TOPIC_RSSI1);
           client.subscribe(TOPIC_RSSI2);
+          client.subscribe(TOPIC_STATUS);
         },
         onFailure: function (err) {
           console.error("MQTT 연결 실패:", err.errorMessage || err);
@@ -508,14 +516,15 @@
     resetButton.addEventListener("click", function () {
       if (!client.isConnected()) {
         alert("MQTT 연결이 되지 않았습니다.");
-      } else {
-        const ok = confirm("Node를 소프트 리셋할까요?");
-        if (!ok) return;
-
-        const msg = new Paho.Message("RESET_NODE");
-        msg.destinationName = TOPIC_RESET_CMD;
-        client.send(msg);
+        return;
       }
+
+      const ok = confirm("Gateway와 Node를 순차적으로 재시작할까요?");
+      if (!ok) return;
+
+      const msg = new Paho.Message("SOFT_RESET");
+      msg.destinationName = TOPIC_RESET_CMD;
+      client.send(msg);
     });
 
     setInterval(updateDeviceStatus, 5000);
