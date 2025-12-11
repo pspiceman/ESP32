@@ -324,11 +324,11 @@
     }
   </style>
 </head>
-<body>
+<body class="night-mode">
   <div class="container">
     <div class="header-row">
       <div class="title">Door Control</div>
-      <button id="mode-toggle-btn" class="mode-toggle-btn" aria-label="Toggle day/night mode">☀️</button>
+      <button id="mode-toggle-btn" class="mode-toggle-btn" aria-label="Toggle day/night mode">🌙</button>
     </div>
     <div class="subtitle">LoRa(Node) ↔ Gateway ↔ MQTT ↔ Web</div>
 
@@ -403,7 +403,6 @@
     const TOPIC_LED_CMD   = "tswell/cmd/led";
     const TOPIC_RESET_CMD = "tswell/cmd/reset";
 
-    // Node 임계값 state/set
     const TOPIC_THRESHOLD_STATE = "tswell/node1/config/threshold";
     const TOPIC_THRESHOLD_SET   = "tswell/node1/config/threshold/set";
 
@@ -426,8 +425,8 @@
     const thresholdApply   = document.getElementById("threshold-apply");
 
     let lastDataTime = 0;
-    let isNightMode  = false;
-    let luxThreshold = null;   // ❗ 초기값 표시 안 함
+    let isNightMode  = true;   // ✅ 기본 야간 모드
+    let luxThreshold = null;
     const originalLedLabel = ledButton.textContent;
 
     function setMqttStatus(connected) {
@@ -538,7 +537,7 @@
           client.subscribe(TOPIC_RSSI1);
           client.subscribe(TOPIC_RSSI2);
           client.subscribe(TOPIC_STATUS);
-          client.subscribe(TOPIC_THRESHOLD_STATE);   // 상태 토픽만 구독
+          client.subscribe(TOPIC_THRESHOLD_STATE);
         },
         onFailure: function (err) {
           console.error("MQTT 연결 실패:", err.errorMessage || err);
@@ -562,7 +561,7 @@
       thresholdDisplay.textContent = v;
 
       const msg = new Paho.Message(String(v));
-      msg.destinationName = TOPIC_THRESHOLD_SET;   // set 토픽
+      msg.destinationName = TOPIC_THRESHOLD_SET;
       client.send(msg);
     });
 
@@ -600,7 +599,7 @@
 
     setInterval(updateDeviceStatus, 5000);
 
-    applyMode();
+    applyMode();  // ✅ 처음부터 야간 모드 반영
     connectMQTT();
   </script>
 </body>

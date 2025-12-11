@@ -324,11 +324,11 @@
     }
   </style>
 </head>
-<body>
+<body class="night-mode">
   <div class="container">
     <div class="header-row">
       <div class="title">Door Control</div>
-      <button id="mode-toggle-btn" class="mode-toggle-btn" aria-label="Toggle day/night mode">☀️</button>
+      <button id="mode-toggle-btn" class="mode-toggle-btn" aria-label="Toggle day/night mode">🌙</button>
     </div>
     <div class="subtitle">Node ↔ MQTT(HiveMQ) ↔ Web</div>
 
@@ -401,9 +401,8 @@
     const TOPIC_LED_CMD    = "tswell/node1/cmd/led";
     const TOPIC_RESET_CMD  = "tswell/node1/cmd/reset";
 
-    // threshold: 상태 / 설정 분리
-    const TOPIC_THRESHOLD_STATE = "tswell/node1/config/threshold";       // Node → Web (retain)
-    const TOPIC_THRESHOLD_SET   = "tswell/node1/config/threshold/set";   // Web → Node
+    const TOPIC_THRESHOLD_STATE = "tswell/node1/config/threshold";
+    const TOPIC_THRESHOLD_SET   = "tswell/node1/config/threshold/set";
 
     const clientId = "WEB-NODE-" + Math.random().toString(16).substr(2, 8);
     const client   = new Paho.Client(MQTT_URL, clientId);
@@ -423,8 +422,8 @@
     const thresholdApply   = document.getElementById("threshold-apply");
 
     let lastDataTime  = 0;
-    let isNightMode   = false;
-    let luxThreshold  = null;    // ❗ 초기값 표시 안 함
+    let isNightMode   = true;   // ✅ 기본 야간 모드
+    let luxThreshold  = null;
     const originalLedLabel = ledButton.textContent;
 
     function setMqttStatus(connected) {
@@ -529,7 +528,7 @@
           client.subscribe(TOPIC_LUX_VALUE);
           client.subscribe(TOPIC_LUX_STATE);
           client.subscribe(TOPIC_RSSI2);
-          client.subscribe(TOPIC_THRESHOLD_STATE);   // 상태 토픽만 구독
+          client.subscribe(TOPIC_THRESHOLD_STATE);
         },
         onFailure: function (err) {
           console.error("MQTT 연결 실패:", err.errorMessage || err);
@@ -539,7 +538,6 @@
       });
     }
 
-    // 기준값 적용 버튼
     thresholdApply.addEventListener("click", () => {
       if (!client.isConnected()) {
         alert("MQTT 연결이 되지 않았습니다.");
@@ -554,7 +552,7 @@
       thresholdDisplay.textContent = v;
 
       const msg = new Paho.Message(String(v));
-      msg.destinationName = TOPIC_THRESHOLD_SET;   // set 토픽으로 전송
+      msg.destinationName = TOPIC_THRESHOLD_SET;
       client.send(msg);
     });
 
@@ -592,7 +590,7 @@
 
     setInterval(updateDeviceStatus, 5000);
 
-    applyMode();
+    applyMode();  // ✅ 처음부터 야간 모드 반영
     connectMQTT();
   </script>
 </body>
