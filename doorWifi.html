@@ -193,43 +193,9 @@
       margin-top: 8px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center; /* 🔹 가운데 정렬 */
       font-size: 0.75rem;
       gap: 6px;
-    }
-    .threshold-right {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .threshold-input {
-      width: 70px;
-      font-size: 0.8rem;
-      padding: 3px 6px;
-      border-radius: 6px;
-      border: 1px solid #9ca3af; /* 🔹 테두리 살짝 진하게 */
-      text-align: right;
-      background: #f9fafb;
-    }
-    .threshold-btn {
-      font-size: 0.75rem;
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: none;
-      background: #d1d5db; /* 🔹 어둡게 */
-      cursor: pointer;
-    }
-    .threshold-btn:hover {
-      background: #e5e7eb;
-    }
-    body.night-mode .threshold-input {
-      background: #020617;
-      color: #e5e7eb;
-      border-color: #4b5563;
-    }
-    body.night-mode .threshold-btn {
-      background: #1e293b;
-      color: #e5e7eb;
     }
 
     .button-wrap { text-align: center; }
@@ -357,19 +323,9 @@
       <div class="lux-label">밝기</div>
       <div id="lux-value" class="lux-value">- [lx]</div>
 
+      <!-- 🔹 입력창 제거, 표시만 -->
       <div class="threshold-row">
         <span>Open 기준(lx): <strong id="threshold-display">-</strong></span>
-        <div class="threshold-right">
-          <input
-            id="threshold-input"
-            class="threshold-input"
-            type="number"
-            min="0"
-            max="9999"
-            placeholder="0~9999"
-          />
-          <button id="threshold-apply" class="threshold-btn">적용</button>
-        </div>
       </div>
     </div>
 
@@ -407,7 +363,6 @@
     const TOPIC_RESET_CMD  = "tswell/node1/cmd/reset";
 
     const TOPIC_THRESHOLD_STATE = "tswell/node1/config/threshold";
-    const TOPIC_THRESHOLD_SET   = "tswell/node1/config/threshold/set";
 
     const clientId = "WEB-NODE-" + Math.random().toString(16).substr(2, 8);
     const client   = new Paho.Client(MQTT_URL, clientId);
@@ -423,8 +378,6 @@
     const modeToggleBtn    = document.getElementById("mode-toggle-btn");
 
     const thresholdDisplay = document.getElementById("threshold-display");
-    const thresholdInput   = document.getElementById("threshold-input");
-    const thresholdApply   = document.getElementById("threshold-apply");
 
     let lastDataTime  = 0;
     let isNightMode   = true;   // 기본 야간
@@ -509,10 +462,9 @@
         rssi2NodeEl.textContent = payload;
       } else if (topic === TOPIC_THRESHOLD_STATE) {
         const v = parseInt(payload, 10);
-        if (!isNaN(v) && v >= 0 && v <= 9999) {
+        if (!isNaN(v)) {
           luxThreshold = v;
           thresholdDisplay.textContent = v;
-          thresholdInput.value = v;
           console.log("임계값(STATE) 수신:", v);
         }
       }
@@ -542,24 +494,6 @@
         },
       });
     }
-
-    thresholdApply.addEventListener("click", () => {
-      if (!client.isConnected()) {
-        alert("MQTT 연결이 되지 않았습니다.");
-        return;
-      }
-      let v = parseInt(thresholdInput.value, 10);
-      if (isNaN(v) || v < 0 || v > 9999) {
-        alert("0 ~ 9999 사이의 숫자를 입력하세요.");
-        return;
-      }
-      luxThreshold = v;
-      thresholdDisplay.textContent = v;
-
-      const msg = new Paho.Message(String(v));
-      msg.destinationName = TOPIC_THRESHOLD_SET;
-      client.send(msg);
-    });
 
     ledButton.addEventListener("click", function () {
       if (!client.isConnected()) {
