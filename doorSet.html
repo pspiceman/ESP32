@@ -597,7 +597,19 @@
 
     let lastDataNode = 0;
     let lastDataGw   = 0;
-    let luxThreshold = null;
+    let luxThreshold = null;   // 기준값 (lx)
+
+    /* Door 상태 업데이트 헬퍼 */
+    function updateDoorNode(isOpen) {
+      doorNodeBadge.textContent = isOpen ? "Open" : "Close";
+      doorNodeBadge.classList.remove("door-open", "door-close");
+      doorNodeBadge.classList.add(isOpen ? "door-open" : "door-close");
+    }
+    function updateDoorGw(isOpen) {
+      doorGwBadge.textContent = isOpen ? "Open" : "Close";
+      doorGwBadge.classList.remove("door-open", "door-close");
+      doorGwBadge.classList.add(isOpen ? "door-open" : "door-close");
+    }
 
     function setMqttStatus(connected) {
       [mqttStatusNode, mqttStatusGw].forEach(p => {
@@ -728,38 +740,60 @@
 
       if (topic === N_TOP_LUX_VALUE) {
         const v = parseFloat(payload);
-        if (!isNaN(v)) luxNodeEl.textContent = Math.round(v) + " [lx]";
-        else          luxNodeEl.textContent = payload + " [lx]";
+        if (!isNaN(v)) {
+          const iv = Math.round(v);
+          luxNodeEl.textContent = iv + " [lx]";
+          // 기준값이 설정되어 있으면 → 여기서 Door상태 결정
+          if (luxThreshold != null) {
+            const isOpen = iv > luxThreshold;  // iv > threshold → Open
+            updateDoorNode(isOpen);
+          }
+        } else {
+          luxNodeEl.textContent = payload + " [lx]";
+        }
         lastDataNode = Date.now();
         updateDeviceStatusNode();
         lastUpdateNodeEl.textContent = new Date().toLocaleString();
+
       } else if (topic === N_TOP_LUX_STATE) {
-        const isOpen = (payload === "OPEN");
-        doorNodeBadge.textContent = isOpen ? "Open" : "Close";
-        doorNodeBadge.classList.remove("door-open", "door-close");
-        doorNodeBadge.classList.add(isOpen ? "door-open" : "door-close");
+        // 기준값을 아직 못 받은 상태일 때만 lux_state 사용
+        if (luxThreshold == null) {
+          const isOpen = (payload === "OPEN");
+          updateDoorNode(isOpen);
+        }
         lastDataNode = Date.now();
         updateDeviceStatusNode();
         lastUpdateNodeEl.textContent = new Date().toLocaleString();
+
       } else if (topic === N_TOP_RSSI2) {
         rssi2NodeEl.textContent = payload;
       }
 
       else if (topic === G_TOP_LUX_VALUE) {
         const v = parseFloat(payload);
-        if (!isNaN(v)) luxGwEl.textContent = Math.round(v) + " [lx]";
-        else          luxGwEl.textContent = payload + " [lx]";
+        if (!isNaN(v)) {
+          const iv = Math.round(v);
+          luxGwEl.textContent = iv + " [lx]";
+          if (luxThreshold != null) {
+            const isOpen = iv > luxThreshold;
+            updateDoorGw(isOpen);
+          }
+        } else {
+          luxGwEl.textContent = payload + " [lx]";
+        }
         lastDataGw = Date.now();
         updateDeviceStatusGw();
         lastUpdateGwEl.textContent = new Date().toLocaleString();
+
       } else if (topic === G_TOP_LUX_STATE) {
-        const isOpen = (payload === "OPEN");
-        doorGwBadge.textContent = isOpen ? "Open" : "Close";
-        doorGwBadge.classList.remove("door-open", "door-close");
-        doorGwBadge.classList.add(isOpen ? "door-open" : "door-close");
+        if (luxThreshold == null) {
+          const isOpen = (payload === "OPEN");
+          updateDoorGw(isOpen);
+        }
         lastDataGw = Date.now();
         updateDeviceStatusGw();
         lastUpdateGwEl.textContent = new Date().toLocaleString();
+
       } else if (topic === G_TOP_RSSI1) {
         rssi1GwEl.textContent = payload;
       } else if (topic === G_TOP_RSSI2) {
