@@ -5,13 +5,14 @@
   <title>Door Control - WiFi / LoRa</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script>
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #e5e7eb;  /* 주간: 어둡게 */
+      background: #e5e7eb;
       color: #222;
       min-height: 100vh;
       overflow-y: auto;
@@ -91,7 +92,7 @@
     }
 
     .subtitle {
-      text-align: center;   /* 가운데 정렬 */
+      text-align: center;
       font-size: 0.78rem;
       color: #555;
       margin-bottom: 4px;
@@ -103,7 +104,7 @@
       display: flex;
       gap: 8px;
       margin-bottom: 8px;
-      justify-content: flex-start; /* 좌측 정렬 */
+      justify-content: flex-start;
     }
     .mode-btn {
       padding: 4px 14px;
@@ -133,14 +134,33 @@
       box-shadow: 0 2px 8px rgba(248, 113, 113, 0.6);
     }
 
+    /* =========================================================
+       카드(3영역) 스타일 개선
+       - 주간: 뉴모피즘/입체감(양방향 그림자 + 미세 그라데이션)
+       - 야간: 구분선(그레이 윤곽선) + 입체감(미세 그라데이션+하이라이트)
+       ========================================================= */
     .card {
       border-radius: 14px;
-      background: #e5e7eb;
       padding: 12px;
       margin-bottom: 8px;
-      transition: background 0.25s ease;
+      background: linear-gradient(145deg, #f0f2f5, #d9dde4); /* 주간 입체감 */
+      border: 1px solid rgba(255,255,255,0.55);
+      box-shadow:
+        10px 10px 22px rgba(17, 24, 39, 0.18),
+        -10px -10px 22px rgba(255, 255, 255, 0.90),
+        inset 0 1px 0 rgba(255, 255, 255, 0.65);
+      transition: background 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
     }
-    body.night-mode .card { background: #111827; }
+    /* ✅ 야간모드 카드: 윤곽선 유지 + 입체감 조금 올림 */
+    body.night-mode .card {
+      background: linear-gradient(145deg, #0f172a, #0a1222);
+      border: 1px solid rgba(148, 163, 184, 0.34);
+      box-shadow:
+        0 14px 28px rgba(0, 0, 0, 0.55),
+        0 -2px 10px rgba(148, 163, 184, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+    }
 
     .status-row {
       display: flex;
@@ -342,6 +362,7 @@
     }
   </style>
 </head>
+
 <body class="night-mode">
   <div class="container">
     <div class="header-row">
@@ -376,7 +397,6 @@
       <div class="card">
         <div class="lux-label">밝기</div>
         <div id="lux-node" class="lux-value">- [lx]</div>
-
         <div class="threshold-row">
           <span>Open 기준(lx): <strong id="threshold-node">-</strong></span>
         </div>
@@ -427,7 +447,6 @@
       <div class="card">
         <div class="lux-label">밝기</div>
         <div id="lux-gw" class="lux-value">- [lx]</div>
-
         <div class="threshold-row">
           <span>Open 기준(lx): <strong id="threshold-gw">-</strong></span>
         </div>
@@ -514,9 +533,8 @@
 
     let lastDataNode = 0;
     let lastDataGw   = 0;
-    let luxThreshold = null;   // 기준값 (lx)
+    let luxThreshold = null;
 
-    /* Door 상태 업데이트 헬퍼 */
     function updateDoorNode(isOpen) {
       doorNodeBadge.textContent = isOpen ? "Open" : "Close";
       doorNodeBadge.classList.remove("door-open", "door-close");
@@ -613,11 +631,7 @@
         if (!isNaN(v)) {
           const iv = Math.round(v);
           luxNodeEl.textContent = iv + " [lx]";
-          // 기준값이 설정되어 있으면 여기서 Door상태 계산
-          if (luxThreshold != null) {
-            const isOpen = iv > luxThreshold;  // iv > threshold → Open
-            updateDoorNode(isOpen);
-          }
+          if (luxThreshold != null) updateDoorNode(iv > luxThreshold);
         } else {
           luxNodeEl.textContent = payload + " [lx]";
         }
@@ -626,11 +640,7 @@
         lastUpdateNodeEl.textContent = new Date().toLocaleString();
 
       } else if (topic === N_TOP_LUX_STATE) {
-        // 기준값을 아직 못 받은 상태일 때만 lux_state 사용
-        if (luxThreshold == null) {
-          const isOpen = (payload === "OPEN");
-          updateDoorNode(isOpen);
-        }
+        if (luxThreshold == null) updateDoorNode(payload === "OPEN");
         lastDataNode = Date.now();
         updateDeviceStatusNode();
         lastUpdateNodeEl.textContent = new Date().toLocaleString();
@@ -644,10 +654,7 @@
         if (!isNaN(v)) {
           const iv = Math.round(v);
           luxGwEl.textContent = iv + " [lx]";
-          if (luxThreshold != null) {
-            const isOpen = iv > luxThreshold;
-            updateDoorGw(isOpen);
-          }
+          if (luxThreshold != null) updateDoorGw(iv > luxThreshold);
         } else {
           luxGwEl.textContent = payload + " [lx]";
         }
@@ -656,10 +663,7 @@
         lastUpdateGwEl.textContent = new Date().toLocaleString();
 
       } else if (topic === G_TOP_LUX_STATE) {
-        if (luxThreshold == null) {
-          const isOpen = (payload === "OPEN");
-          updateDoorGw(isOpen);
-        }
+        if (luxThreshold == null) updateDoorGw(payload === "OPEN");
         lastDataGw = Date.now();
         updateDeviceStatusGw();
         lastUpdateGwEl.textContent = new Date().toLocaleString();
@@ -716,10 +720,7 @@
     }
 
     ledBtnNode.addEventListener("click", function () {
-      if (!client.isConnected()) {
-        alert("MQTT 연결이 되지 않았습니다.");
-        return;
-      }
+      if (!client.isConnected()) { alert("MQTT 연결이 되지 않았습니다."); return; }
       ledBtnNode.classList.add("clicked");
       ledBtnNode.textContent = "명령 전송";
       setTimeout(() => {
@@ -733,10 +734,7 @@
     });
 
     resetBtnNode.addEventListener("click", function () {
-      if (!client.isConnected()) {
-        alert("MQTT 연결이 되지 않았습니다.");
-        return;
-      }
+      if (!client.isConnected()) { alert("MQTT 연결이 되지 않았습니다."); return; }
       const ok = confirm("Node를 소프트 리셋할까요?");
       if (!ok) return;
       const msg = new Paho.Message("RESET_NODE");
@@ -745,10 +743,7 @@
     });
 
     ledBtnGw.addEventListener("click", function () {
-      if (!client.isConnected()) {
-        alert("MQTT 연결이 되지 않았습니다.");
-        return;
-      }
+      if (!client.isConnected()) { alert("MQTT 연결이 되지 않았습니다."); return; }
       ledBtnGw.classList.add("clicked");
       ledBtnGw.textContent = "명령 전송";
       setTimeout(() => {
@@ -762,10 +757,7 @@
     });
 
     resetBtnGw.addEventListener("click", function () {
-      if (!client.isConnected()) {
-        alert("MQTT 연결이 되지 않았습니다.");
-        return;
-      }
+      if (!client.isConnected()) { alert("MQTT 연결이 되지 않았습니다."); return; }
       const ok = confirm("Gateway와 Node를 순차적으로 재시작할까요?");
       if (!ok) return;
       const msg = new Paho.Message("SOFT_RESET");
