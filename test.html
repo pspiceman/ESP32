@@ -804,7 +804,31 @@ function confirmReset(){
 }
 
 setInterval(updateDeviceStatus, 1000);
-</script>
+/* === persist time inputs across refresh (localStorage) === */
+(function(){
+  const KEY_AWAKE = "mesh_awakeTime";
+  const KEY_SLEEP = "mesh_sleepTime";
 
+  function loadTime(id, key){
+    const el = document.getElementById(id);
+    if(!el) return;
+    const v = localStorage.getItem(key);
+    if(v){
+      el.value = v;
+      // trigger any listeners that depend on value
+      el.dispatchEvent(new Event("input", {bubbles:true}));
+      el.dispatchEvent(new Event("change", {bubbles:true}));
+    }
+    el.addEventListener("input", ()=> localStorage.setItem(key, el.value));
+    el.addEventListener("change", ()=> localStorage.setItem(key, el.value));
+  }
+
+  document.addEventListener("DOMContentLoaded", ()=>{
+    loadTime("awakeTime", KEY_AWAKE);
+    loadTime("sleepTime", KEY_SLEEP);
+  });
+})();
+
+</script>
 </body>
 </html>
