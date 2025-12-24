@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>LoRa Mesh Gateway Monitor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+
+<!-- MQTT over WebSocket (mqtt.js) CDN -->
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+<style>
+  /* ======= (원본 CSS 그대로) ======= */
+  :root {
+    --bg-color: #0b1020;
+    --card-bg: #141a30;
+    --accent: #37ff79;
+    --accent-soft: rgba(55,255,121,0.15);
+    --text-main: #f5f7ff;
+    --text-sub: #9fa6c3;
+    --border-subtle: #252b45;
+    --danger: #ff4c4c;
+    --ok: #37ff79;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0;
+    padding:0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: radial-gradient(circle at top, #202b4d 0, #050814 46%, #02030a 100%);
+    color: var(--text-main);
+    transition: background .25s ease, color .25s ease;
+    font-size: 16px;
+  }
+  body.theme-light {
+    --bg-color: #f4f6ff;
+    --card-bg: #ffffff;
+    --accent: #16a34a;
+    --accent-soft: rgba(22,163,74,0.12);
+    --text-main: #111827;
+    --text-sub: #6b7280;
+    --border-subtle: #cbd5f5;
+    --danger: #dc2626;
+    --ok: #16a34a;
+    background: radial-gradient(circle at top, #e5edff 0, #f9fafb 45%, #e5e7eb 100%);
+  }
+  .page { max-width: 1100px; margin: 0 auto; padding: 16px 10px 24px; }
+  .header-row { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+  .title-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .title-area { display:flex; align-items:flex-start; gap:10px; }
+  .title-badge { width:8px; height:32px; border-radius:999px; background:linear-gradient(180deg, var(--accent), transparent); box-shadow:0 0 12px rgba(55,255,121,0.7); }
+  body.theme-light .title-badge { box-shadow:0 0 10px rgba(22,163,74,0.6); }
+  .title-text { display:flex; flex-direction:column; gap:4px; }
+  .title-main { font-size:22px; font-weight:700; letter-spacing:0.02em; }
+  .title-sub { font-size:14px; color:var(--text-sub); }
+  .status-chips { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-start; }
+  .theme-toggle { border-radius:999px; padding:6px 10px; border:1px solid rgba(148,163,184,0.65); background:rgba(15,23,42,0.9); color:#e5e7eb; font-size:15px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; transition:all .18s; min-width:40px; }
+  .theme-toggle .icon { font-size:18px; line-height:1; }
+  body.theme-light .theme-toggle { background:#f3f4ff; color:#111827; border-color:#cbd5f5; }
+  .chip { border-radius:999px; padding:4px 10px; font-size:12px; display:inline-flex; align-items:center; gap:6px; border:1px solid var(--border-subtle); background:rgba(10,14,30,0.9); color:var(--text-sub); }
+  body.theme-light .chip { background:#ffffff; color:var(--text-sub); border-color:#d4d4ff; }
+  .chip-label { font-size:11px; text-transform:uppercase; letter-spacing:0.09em; }
+  .chip-value { font-size:12px; font-weight:500; color:var(--text-main); }
+  .chip-dot { width:6px; height:6px; border-radius:999px; background:var(--danger); box-shadow:0 0 10px rgba(255,76,76,0.7); }
+  .chip-dot.on { background:var(--accent); box-shadow:0 0 10px rgba(55,255,121,0.9); }
+  .chip.ok { border-color:rgba(55,255,121,0.6); background:var(--accent-soft); color:var(--ok); padding:3px 12px; }
+
+  .device-conn-pill { border-radius:999px; padding:3px 12px; font-size:11px; border:1px solid var(--border-subtle); background:rgba(10,14,30,0.9); color:var(--text-sub); min-width:80px; text-align:center; cursor:default; }
+  .device-conn-pill.online { background:var(--accent-soft); border-color:rgba(55,255,121,0.9); color:var(--ok); box-shadow:0 0 10px rgba(55,255,121,0.7); }
+  .device-conn-pill.offline { background:rgba(127,29,29,0.30); border-color:rgba(239,68,68,0.95); color:#fecaca; box-shadow:0 0 8px rgba(239,68,68,0.8); }
+  body.theme-light .device-conn-pill.online { background:rgba(22,163,74,0.12); }
+  body.theme-light .device-conn-pill.offline { background:rgba(248,113,113,0.12); }
+
+  .card { background: radial-gradient(circle at top left, rgba(55,255,121,0.12) 0, rgba(20,26,48,0.98) 42%, rgba(5,8,20,0.98) 100%); border-radius:18px; padding:12px 10px 14px; border:1px solid rgba(95,120,200,0.28); box-shadow: 0 16px 26px rgba(0,0,0,0.5), 0 0 0 1px rgba(5,10,24,0.7); position:relative; overflow:hidden; }
+  body.theme-light .card { background:linear-gradient(180deg,#ffffff,#eef2ff); border-color:#d4d4ff; box-shadow:0 14px 30px rgba(15,23,42,0.12); }
+  .card::before { content:""; position:absolute; inset:-40%; opacity:0.09; background: radial-gradient(circle at top, rgba(255,255,255,0.18) 0, transparent 35%), radial-gradient(circle at bottom right, rgba(55,255,121,0.16) 0, transparent 45%); pointer-events:none; }
+  body.theme-light .card::before { opacity:0.06; }
+  .card-header { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; position:relative; z-index:1; }
+  .card-title { font-size:14px; font-weight:600; text-transform:uppercase; letter-spacing:0.14em; color:#c7d0ff; }
+  body.theme-light .card-title { color:#4b5563; }
+  .card-sub { font-size:12px; color:var(--text-sub); }
+  .tag-pill { font-size:11px; text-transform:uppercase; letter-spacing:0.12em; padding:5px 10px; border-radius:999px; border:1px solid rgba(95,120,200,0.7); background:rgba(8,10,24,0.9); color:#d4dcff; display:inline-flex; align-items:center; gap:6px; }
+  body.theme-light .tag-pill { background:#eef2ff; border-color:#a5b4fc; color:#312e81; }
+  .tag-pill span.dot { width:6px; height:6px; border-radius:999px; background:#4ec9ff; box-shadow:0 0 12px rgba(78,201,255,0.9); }
+  .tag-pill.reset-pill { cursor:pointer; transition:transform .12s, box-shadow .12s, filter .12s; }
+  .tag-pill.reset-pill:hover { filter:brightness(1.1); transform:translateY(-0.5px); box-shadow:0 0 12px rgba(248,250,252,0.5); }
+
+  .device-status-card { margin-top:4px; padding:8px 9px; border-radius:14px; border:1px solid rgba(70,100,210,0.4); background:radial-gradient(circle at top left, rgba(55,255,121,0.08) 0, rgba(8,12,24,0.98) 55%); display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:12px; position:relative; z-index:1; }
+  body.theme-light .device-status-card { background:linear-gradient(135deg,#f9fafb,#e5f9ff); border-color:#c4ddff; }
+  .device-status-left { display:flex; flex-direction:column; gap:2px; }
+  .dev-status-title { font-size:13px; font-weight:600; color:#dfe6ff; }
+  body.theme-light .dev-status-title { color:#1f2937; }
+  .dev-status-sub { font-size:11px; color:var(--text-sub); }
+  .device-status-right { display:flex; align-items:center; gap:6px; }
+  .status-dot { width:9px; height:9px; border-radius:999px; background:var(--danger); box-shadow:0 0 12px rgba(255,76,76,0.9); }
+  .status-dot.ok { background:var(--accent); box-shadow:0 0 12px rgba(55,255,121,0.95); }
+  .status-label { font-size:13px; font-weight:600; }
+  .uptime-text { font-size:11px; color:var(--text-sub); }
+
+  .table-wrap { position:relative; border-radius:14px; overflow-x:auto; overflow-y:hidden; border:1px solid rgba(52,72,140,0.7); background: radial-gradient(circle at top, rgba(40,52,120,0.45) 0, #050716 40%, #02030a 100%); box-shadow:inset 0 0 0 1px rgba(5,10,24,0.8); margin-top:10px; }
+  body.theme-light .table-wrap { background:linear-gradient(180deg,#f9fafb,#e5e7eb); border-color:#cbd5f5; box-shadow:none; }
+  table { width:100%; min-width:0; border-collapse:collapse; font-size:13px; }
+  thead { background:linear-gradient(180deg, rgba(13,18,40,0.96), rgba(5,7,18,0.98)); }
+  body.theme-light thead { background:linear-gradient(180deg,#e5e7eb,#d1d5db); }
+  th, td { padding:6px 4px; text-align:center; white-space:nowrap; font-size: 13px; }
+  th { font-weight:600; color:#c9d3ff; border-bottom:1px solid rgba(60,84,160,0.8); position:relative; line-height:1.2; }
+  body.theme-light th { color:#374151; border-bottom-color:#9ca3af; }
+  th .unit { display:block; font-size:11px; color:var(--text-sub); }
+  tbody tr:nth-child(even) { background:rgba(10,14,32,0.9); }
+  tbody tr:nth-child(odd)  { background:rgba(5,8,22,0.9); }
+  body.theme-light tbody tr:nth-child(even) { background:#f3f4ff; }
+  body.theme-light tbody tr:nth-child(odd)  { background:#eef2ff; }
+  tbody tr:hover { background:radial-gradient(circle at center, rgba(55,255,121,0.12) 0, rgba(5,8,22,0.95) 60%); }
+  body.theme-light tbody tr:hover { background:rgba(191,219,254,0.9); }
+
+  .node-id { font-weight:600; font-size:13px; color:#e8ecff; }
+  body.theme-light .node-id { color:#111827; }
+
+  .badge { display:inline-block; font-size:13px; color:var(--text-main); background:transparent; border:none; padding:0; }
+  body.theme-light .badge { color:#111827; }
+  .badge-null { display:inline-block; font-size:13px; color:var(--text-sub); background:transparent; border:none; padding:0; opacity:1; }
+  .rss { font-size:12px; color:var(--text-sub); }
+
+  .btn-led { all:unset; display:inline-flex; align-items:center; justify-content:center; min-width:34px; height:20px; border-radius:999px; border:1px solid rgba(80,100,220,0.7); background:rgba(10,14,34,0.9); cursor:pointer; font-size:12px; color:#c9d3ff; position:relative; overflow:hidden; }
+  body.theme-light .btn-led { background:#eef2ff; border-color:#a5b4fc; color:#1d4ed8; }
+  .btn-led[data-on="1"] { border-color:rgba(55,255,121,0.8); background:radial-gradient(circle at 20% 0, rgba(55,255,121,0.5), rgba(8,14,32,0.98)); color:#eafff4; box-shadow:0 0 16px rgba(55,255,121,0.8); }
+  body.theme-light .btn-led[data-on="1"] { background:linear-gradient(135deg,#bbf7d0,#22c55e); color:#064e3b; box-shadow:0 0 14px rgba(22,163,74,0.7); }
+  .btn-led span { position:relative; z-index:1; }
+
+  .bat-low { color:#ff4c4c !important; }
+
+  .legend { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; font-size:12px; color:var(--text-sub); }
+  .legend-item { display:inline-flex; align-items:center; gap:4px; }
+  .rect { width:10px; height:10px; border-radius:4px; }
+  .rect-ok  { background:rgba(55,255,121,0.35); border:1px solid rgba(55,255,121,0.9); }
+  .rect-off { background:rgba(255,76,76,0.2);  border:1px solid rgba(255,76,76,0.9); }
+  .rect-na  { background:rgba(148,163,184,0.15); border:1px solid rgba(148,163,184,0.7); }
+
+  .metric-mini { margin-top:6px; display:flex; flex-wrap:wrap; gap:6px; font-size:12px; color:var(--text-sub); align-items:center; }
+  .metric-item { padding:4px 6px; border-radius:999px; border:1px solid rgba(70,90,160,0.8); background:rgba(4,7,18,0.96); font-size:12px; }
+  body.theme-light .metric-item { background:#f9fafb; border-color:#cbd5f5; }
+  .btn-log { margin-left:auto; border-radius:999px; padding:4px 9px; border:1px solid rgba(60,80,150,0.8); background:rgba(5,10,24,0.95); color:var(--text-sub); font-size:12px; display:inline-flex; align-items:center; gap:5px; cursor:pointer; transition:all .12s; }
+  .btn-log span.icon { font-size:13px; }
+  .btn-log.active { background:linear-gradient(135deg,#3b82f6,#22c55e); color:#f9fbff; box-shadow:0 0 12px rgba(34,197,94,0.8); border-color:transparent; }
+  body.theme-light .btn-log { background:#eef2ff; color:#111827; border-color:#cbd5f5; }
+  .log-box { margin-top:6px; padding:6px 7px; border-radius:10px; background:rgba(3,6,18,0.96); border:1px solid rgba(40,60,120,0.7); max-height:120px; overflow:auto; font-size:12px; display:none; }
+  body.theme-light .log-box { background:#f9fafb; border-color:#cbd5f5; }
+  .log-line { margin-bottom:2px; color:#9fa8d1; }
+  .log-line span.time { color:#6b7280; margin-right:4px; }
+
+  .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.55); display:none; align-items:center; justify-content:center; z-index:999; }
+  .modal-box { background:#020617; border-radius:14px; padding:18px 18px 14px; border:1px solid rgba(148,163,184,0.6); max-width:320px; width:80%; color:#e5e7eb; box-shadow:0 18px 40px rgba(0,0,0,0.7); }
+  body.theme-light .modal-box { background:#f9fafb; color:#111827; border-color:#cbd5f5; }
+  .modal-title { font-size:14px; margin-bottom:14px; }
+  .modal-actions { display:flex; justify-content:flex-end; gap:8px; }
+  .modal-btn { border-radius:999px; padding:6px 14px; font-size:13px; border:1px solid rgba(148,163,184,0.8); background:transparent; color:#e5e7eb; cursor:pointer; }
+  body.theme-light .modal-btn { color:#111827; background:#e5e7eb; border-color:#cbd5f5; }
+  .modal-btn.primary { border-color:rgba(52,211,153,0.85); background:#16a34a; color:#ecfdf5; }
+  body.theme-light .modal-btn.primary { background:#22c55e; border-color:#16a34a; }
+
+  /* ✅ (최소 추가) SCHED 입력 UI */
+  .sched-chip {
+    border-radius:999px;
+    padding:4px 10px;
+    border:1px solid var(--border-subtle);
+    background:rgba(10,14,30,0.9);
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  body.theme-light .sched-chip {
+    background:#ffffff;
+    border-color:#d4d4ff;
+  }
+  .sched-chip input[type="time"]{
+    border-radius:999px;
+    padding:4px 8px;
+    border:1px solid rgba(80,100,220,0.7);
+    background:rgba(5,10,24,0.95);
+    color:var(--text-main);
+    font-size:12px;
+    outline:none;
+  }
+  
+
+/* === time input width fix (show full '오전 06:00') === */
+#awakeTime, #sleepTime{
+  width: 104px !important;          /* 실제 픽셀로 고정: '오전 06:00' 풀표시 */
+  min-width: 104px !important;
+  max-width: 104px !important;
+  box-sizing: content-box !important;
+
+  padding: 0 10px !important;       /* 텍스트 잘리지 않게 */
+  margin: 0 !important;
+
+  text-align: center !important;
+  font: inherit !important;
+  
+  font-size: 13px !important;      /* 시간 폰트 사이즈 축소 */
+font-variant-numeric: tabular-nums !important;
+
+  color: var(--text) !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+
+  overflow: visible !important;     /* 일부 브라우저에서 텍스트 잘림 방지 */
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+
+  -webkit-text-fill-color: var(--text) !important;
+}
+body.theme-light .sched-chip input[type="time"]{
+    background:#eef2ff;
+    color:#111827;
+    border-color:#a5b4fc;
+  }
+  .sched-chip button{
+    border-radius:999px;
+    padding:4px 10px;
+    border:1px solid rgba(55,255,121,0.7);
+    background:var(--accent-soft);
+    color:var(--ok);
+    font-size:12px;
+    cursor:pointer;
+  }
+/* ===== mesh_final mobile fix (360px full) ===== */
+@media (max-width: 420px){
+  .page{ padding:8px 6px 12px !important; }
+  .card{ padding:10px 8px 12px !important; border-radius:14px !important; }
+  .table-wrap{ overflow-x:hidden !important; }
+  table{ width:100% !important; min-width:0 !important; max-width:100% !important; table-layout:fixed !important; }
+  th, td{ padding:2px 1px !important; font-size:11px !important; line-height:1.1 !important; white-space:nowrap !important; }
+  th .unit{ display:none !important; }
+  .node-id, .badge, .badge-null{ font-size:11px !important; }
+  .btn-led{ min-width:28px !important; height:18px !important; font-size:11px !important; padding:0 3px !important; }
+  #schedChip{ flex-wrap:nowrap !important; gap:4px !important; }
+  #schedTarget{ width:54px !important; font-size:11px !important; padding:2px 6px !important; }
+  #awakeInput, #sleepInput{
+    box-sizing:border-box !important;
+    width:52px !important; min-width:52px !important; max-width:52px !important;
+    padding:2px 2px !important; margin:0 !important;
+    text-align:center !important;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace !important;
+    flex:0 0 auto !important;
+    -webkit-appearance:none !important; appearance:none !important;
+  }
+  #btnSendSched{ padding:3px 6px !important; font-size:11px !important; }
+}
+/* Sleep row gray */
+tr.sleep-row, tr.sleep-row *{ color:#9fa6c3 !important; }
+
+/* time field no trailing gap */
+#schedChip{ padding-right:0 !important; }
+#awakeInput, #sleepInput{
+  width:46px !important;
+  min-width:46px !important;
+  max-width:46px !important;
+  display:inline-block !important;
+}
+
+
+/* === HARD REMOVE trailing space in time pills === */
+#awakeInput, #sleepInput{
+  width:5ch !important;
+  min-width:5ch !important;
+  max-width:5ch !important;
+  padding-left:0 !important;
+  padding-right:0 !important;
+  text-indent:0 !important;
+  background:transparent !important;
+}
+
+
+/* === FORCE time as plain 5-char text === */
+.time-mini{
+  width:5ch !important;
+  min-width:5ch !important;
+  max-width:5ch !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+  outline:none !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:var(--text-main) !important;
+  font-size:12px !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace !important;
+  text-align:center !important;
+  -webkit-appearance:none !important;
+  appearance:none !important;
+}
+.time-mini::-ms-clear{ display:none; }
+.time-mini::-webkit-inner-spin-button,
+.time-mini::-webkit-outer-spin-button{ -webkit-appearance:none; margin:0; }
+
+/* === mobile portrait: remove extra blank space after time (tighter) === */
+@media (max-width: 520px){
+  #awakeTime, #sleepTime{
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    padding: 0 3px !important;   /* 더 타이트 */
+    font-size: 12px !important;  /* 모바일에서만 약간 축소 */
+    flex: 0 0 auto !important;
+  }
+}
+
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="header-row">
+    <div class="title-row">
+      <div class="title-area">
+        <div class="title-badge"></div>
+        <div class="title-text">
+          <div class="title-main">LoRa Mesh Gateway Monitor</div>
+          <div class="title-sub">모든 Mesh 노드의 상태 모니터링 &amp; LED 제어</div>
+        </div>
+      </div>
+      <button id="themeToggle" class="theme-toggle" type="button">
+        <span class="icon" id="themeIcon">🌙</span>
+      </button>
+    </div>
+
+    <div class="status-chips">
+      <div class="chip">
+        <span class="chip-label">MQTT</span>
+        <span class="chip-dot" id="mqttDot"></span>
+        <span class="chip-value" id="mqttState">연결안됨</span>
+      </div>
+
+      <div class="chip">
+        <span class="chip-label">장비연결</span>
+        <button id="deviceConn" type="button" class="device-conn-pill offline">OFF LINE</button>
+      </div>
+
+      <div class="chip" id="nodeCountChip">
+        <span class="chip-label">NODES</span>
+        <span class="chip-value"><span id="nodeCount">0</span>개</span>
+      </div>
+
+      <!-- ✅ (최소 추가) SCHED 입력창 -->
+      <div class="sched-chip">
+        <span class="chip-label" style="opacity:.85;">WORK</span>
+        <select id="schedTarget" style="border-radius:999px;padding:4px 8px;border:1px solid rgba(80,100,220,0.7);background:rgba(5,10,24,0.95);color:var(--text-main);font-size:13px;outline:none;">
+          <option value="ALL">ALL</option>
+        </select>
+        <input id="awakeTime" type="time" value="06:00">
+        <span style="opacity:.7;">→</span>
+        <!-- 24:00 입력이 어려워서 00:00을 24:00으로 전송 -->
+        <input id="sleepTime" type="time" value="00:00">
+        <button type="button" onclick="sendSched()">전송</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Nodes Overview</div>
+        <div class="card-sub"></div>
+      </div>
+      <div class="tag-pill reset-pill" id="resetPill" onclick="openResetDialog()">
+        <span class="dot"></span>
+        <span>RESET</span>
+      </div>
+    </div>
+
+    <div class="device-status-card">
+      <div class="device-status-left">
+        <div class="dev-status-title">Device Status</div>
+        <div class="dev-status-sub" id="devStatusSub">마지막 패킷: -</div>
+      </div>
+      <div class="device-status-right">
+        <div class="status-dot" id="devStatusDot"></div>
+        <div>
+          <div class="status-label" id="devStatusLabel">Idle</div>
+          <div class="uptime-text" id="uptimeLabel">Uptime: -</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Node</th><th>Bat<span class="unit">[V]</span></th>
+            <th>Temp<span class="unit">[°C]</span></th>
+            <th>RH<span class="unit">[%]</span></th>
+            <th>CO₂<span class="unit">[ppm]</span></th>
+            <th class="col-led">LED</th>
+            <th class="col-rssi">RSSI<span class="unit">[dBm]</span></th>
+            <th class="col-last">Last OK<span class="unit">[s]</span></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="rect rect-ok"></div>정상 노드</div>
+      <div class="legend-item"><div class="rect rect-off"></div>응답 없음 / INIT</div>
+      <div class="legend-item"><div class="rect rect-na"></div>센서 값 없음(NA)</div>
+    </div>
+
+    <div class="metric-mini">
+      <div class="metric-item" id="metricOk">OK 노드: 0</div>
+      <div class="metric-item" id="metricFail">Fail 노드: 0</div>
+      <div class="metric-item" id="metricNA">센서 NA 노드: 0</div>
+
+      <button id="btnLog" class="btn-log" type="button">
+        <span class="icon">🐞</span>
+        <span class="label">로그</span>
+      </button>
+    </div>
+
+    <div class="log-box" id="logBox"></div>
+  </div>
+</div>
+
+<!-- RESET 확인용 커스텀 모달 -->
+<div id="resetModal" class="modal-backdrop">
+  <div class="modal-box">
+    <div class="modal-title">RESET 명령을 전송하겠습니까?</div>
+    <div class="modal-actions">
+      <button class="modal-btn" type="button" onclick="closeResetDialog()">취소</button>
+      <button class="modal-btn primary" type="button" onclick="confirmReset()">전송</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
+
+// ★ 게이트웨이 오프라인 판정 기준 (ms)
+const GATEWAY_TIMEOUT_MS = 20000;
+
+let client;
+let nodes = {};
+let lastPacket = 0;
+const startTime = Date.now();
+
+const mqttDot   = document.getElementById("mqttDot");
+const mqttState = document.getElementById("mqttState");
+const nodeCountEl = document.getElementById("nodeCount");
+const nodeCountChip = document.getElementById("nodeCountChip");
+const deviceConn = document.getElementById("deviceConn");
+
+const devStatusDot  = document.getElementById("devStatusDot");
+const devStatusLabel= document.getElementById("devStatusLabel");
+const devStatusSub  = document.getElementById("devStatusSub");
+const uptimeLabel   = document.getElementById("uptimeLabel");
+
+const metricOk   = document.getElementById("metricOk");
+const metricFail = document.getElementById("metricFail");
+const metricNA   = document.getElementById("metricNA");
+
+const logBox  = document.getElementById("logBox");
+const btnLog  = document.getElementById("btnLog");
+
+const themeToggle = document.getElementById("themeToggle");
+const themeIcon   = document.getElementById("themeIcon");
+
+const resetModal  = document.getElementById("resetModal");
+
+function applyTheme(theme){
+  const isLight = (theme === "light");
+  document.body.classList.toggle("theme-light", isLight);
+  themeIcon.textContent = isLight ? "☀️" : "🌙";
+}
+function toggleTheme(){
+  const isLight = document.body.classList.contains("theme-light");
+  const next = isLight ? "dark" : "light";
+  localStorage.setItem("lora-theme", next);
+  applyTheme(next);
+}
+if(themeToggle){
+  themeToggle.addEventListener("click", toggleTheme);
+}
+const savedTheme = localStorage.getItem("lora-theme") || "dark";
+applyTheme(savedTheme);
+
+function addLog(msg){
+  if(!logBox) { console.log(msg); return; }
+  const now = new Date();
+  const time = now.toLocaleTimeString();
+  const div = document.createElement("div");
+  div.className = "log-line";
+  div.innerHTML = `<span class="time">[${time}]</span>${msg}`;
+  logBox.appendChild(div);
+  logBox.scrollTop = logBox.scrollHeight;
+}
+function toggleLog(){
+  if(!logBox || !btnLog) return;
+  const visible = (logBox.style.display === "block");
+  logBox.style.display = visible ? "none" : "block";
+  if(visible) btnLog.classList.remove("active");
+  else        btnLog.classList.add("active");
+}
+if(btnLog){ btnLog.addEventListener("click", toggleLog); }
+
+function connectMQTT(){
+  client = mqtt.connect(MQTT_URL, { reconnectPeriod:3000 });
+
+  client.on("connect", ()=>{
+    mqttState.textContent = "연결됨";
+    mqttDot.classList.add("on");
+    client.subscribe("lora/node/+/data");
+    addLog("[MQTT] connected to " + MQTT_URL);
+  });
+
+  client.on("close", ()=>{
+    mqttState.textContent = "연결안됨";
+    mqttDot.classList.remove("on");
+    addLog("[MQTT] disconnected");
+  });
+
+  client.on("message", (topic, msg)=>{
+    try {
+      const id = Number(topic.split("/")[2]);
+      if (!id || id === 99 || !topic.startsWith("lora/node/")) return;
+
+      const data = JSON.parse(msg);
+      const now = Date.now();
+
+      let last_ok_ms = now;
+      if (typeof data.last_ok_s === "number") {
+        last_ok_ms = now - data.last_ok_s * 1000;
+      }
+
+      nodes[id] = {
+        ...nodes[id],
+        ...data,
+        last_ok_ms
+      };
+
+      lastPacket = now;
+      renderTable();
+      updateDeviceStatus();
+      addLog(`[MQTT] ${topic} → ${msg}`);
+    } catch(e){
+      addLog("[MQTT] parse error: " + e);
+    }
+  });
+}
+connectMQTT();
+/* ===== mesh_final helpers ===== */
+function normHHMM(v){
+  v = (v||"").trim();
+  const digits = v.replace(/[^0-9]/g,"");
+  if(digits.length===3) v = "0"+digits[0]+":"+digits.slice(1);
+  else if(digits.length===4) v = digits.slice(0,2)+":"+digits.slice(2);
+  if(/^[0-2]\d:[0-5]\d$/.test(v)) return v;
+  return "";
+}
+["awakeInput","sleepInput"].forEach(id=>{
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.addEventListener("blur", ()=>{
+    const nv = normHHMM(el.value);
+    if(nv) el.value = nv;
+  });
+});
+
+function renderTable(){
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
+
+  const ids = Object.keys(nodes)
+    .map(x=>Number(x))
+    .filter(x=>x && x!==99)
+    .sort((a,b)=>a-b);
+
+  nodeCountEl.textContent = ids.length;
+
+  // update target selector
+  const sel = document.getElementById("schedTarget");
+  if(sel){
+    const cur = sel.value;
+    sel.innerHTML = `<option value="ALL">ALL</option>` + ids.map(x=>`<option value="${x}">${x}</option>`).join("");
+    if(ids.includes(Number(cur)) || cur==="ALL") sel.value = cur;
+  }
+  if(ids.length>0) nodeCountChip.classList.add("ok");
+  else nodeCountChip.classList.remove("ok");
+
+  let okCount=0, failCount=0, naCount=0;
+  const now = Date.now();
+
+  ids.forEach(id=>{
+    const n = nodes[id];
+    const statusText = (n.status || "INIT/FAIL");
+    const isSleep = (statusText==="SLEEP");
+    const isOk = (statusText==="OK");
+
+    if(isOk) okCount++; else failCount++;
+    if(n.t==null || n.rh==null || n.co2==null) naCount++;
+
+    const tr = document.createElement("tr");
+    if(isSleep) tr.classList.add("sleep-row");
+
+    const tdId = document.createElement("td");
+    tdId.innerHTML = `<span class="node-id">${id}</span>`;
+    if(statusText==="INIT/FAIL") tdId.style.color = "#ff4c4c";
+    tr.appendChild(tdId);function cellVal(v, digits=1, type=""){
+      if(v==null) return `<span class="badge-null">NA</span>`;
+      const num = Number(v);
+      if(type==="bat" && num <= 3.0){
+        return `<span class="badge bat-low">${num.toFixed(digits)}</span>`;
+      }
+      return `<span class="badge">${num.toFixed(digits)}</span>`;
+    }
+
+    const batTd = document.createElement("td");
+    batTd.innerHTML = cellVal(n.bat,1,"bat"); tr.appendChild(batTd);
+
+    const tTd = document.createElement("td");
+    tTd.innerHTML = cellVal(n.t,1); tr.appendChild(tTd);
+
+    const rhTd = document.createElement("td");
+    rhTd.innerHTML = cellVal(n.rh,0); tr.appendChild(rhTd);
+
+    const coTd = document.createElement("td");
+    coTd.innerHTML = cellVal(n.co2,0); tr.appendChild(coTd);
+
+    const ledTd = document.createElement("td");
+    ledTd.className = "col-led";
+    const ledBtn = document.createElement("button");
+    ledBtn.className = "btn-led";
+    ledBtn.dataset.on = n.led ? "1" : "0";
+    ledBtn.innerHTML = `<span>${n.led ? "ON" : "OFF"}</span>`;
+    ledBtn.onclick = ()=>{
+      const next = ledBtn.dataset.on==="1" ? 0 : 1;
+      sendLED(id, next===1);
+    };
+    ledTd.appendChild(ledBtn);
+    tr.appendChild(ledTd);
+
+    const rssiTd = document.createElement("td");
+    rssiTd.className = "col-rssi";
+    if(n.rssi==null) rssiTd.innerHTML = `<span class="rss">-</span>`;
+    else rssiTd.innerHTML = `<span class="rss">${n.rssi}</span>`;
+    tr.appendChild(rssiTd);
+
+    const lastTd = document.createElement("td");
+    lastTd.className = "col-last";
+    if (typeof n.last_ok_ms === "number") {
+      const diffSec = Math.floor((now - n.last_ok_ms)/1000);
+      lastTd.textContent = diffSec + " s";
+    } else {
+      lastTd.textContent = "-";
+    }
+    tr.appendChild(lastTd);
+
+    tbody.appendChild(tr);
+  });
+
+  metricOk.textContent   = "OK 노드: " + okCount;
+  metricFail.textContent = "Fail 노드: " + failCount;
+  metricNA.textContent   = "센서 NA 노드: " + naCount;
+}
+
+function sendLED(id, checked){
+  if(!client || !client.connected) {
+    addLog("[LED] MQTT 미연결");
+    alert("MQTT가 연결되지 않았습니다. 잠시 후 다시 시도하세요.");
+    return;
+  }
+  client.publish(`lora/node/${id}/cmd`, checked?"1":"0");
+  addLog(`[LED] node ${id} → ${checked?1:0}`);
+}
+
+// ✅ (최소 추가) SCHED 전송
+function sendSched(){
+  if(!client || !client.connected){
+    alert("MQTT가 연결되지 않았습니다. SCHED를 보낼 수 없습니다.");
+    addLog("[SCHED] MQTT 미연결");
+    return;
+  }
+  const a = (document.getElementById("awakeTime")?.value || "06:00").trim();
+  let s  = (document.getElementById("sleepTime")?.value || "00:00").trim();
+
+  // 브라우저 time 입력은 24:00이 안 되므로 00:00을 24:00으로 전송
+  if(s === "00:00") s = "24:00";
+
+  const target = (document.getElementById("schedTarget")?.value || "ALL").trim();
+  const payload = `${target} SCHED:${a},${s}`;
+  client.publish("lora/gateway/sched", payload);
+  addLog(`[SCHED] MQTT → lora/gateway/sched : ${payload}`);
+  alert("전송: " + payload);
+}
+
+function updateDeviceStatus(){
+  const now = Date.now();
+
+  let lastStr = "-";
+  if(lastPacket>0){
+    const diffSec = Math.floor((now-lastPacket)/1000);
+    lastStr = diffSec + "초 전";
+  }
+  devStatusSub.textContent = "마지막 패킷: " + lastStr;
+
+  const upSec = Math.floor((now - startTime)/1000);
+  uptimeLabel.textContent = "Uptime: " + upSec + " s";
+
+  const ids = Object.keys(nodes).map(x=>Number(x)).filter(x=>x && x!==99);
+  const anyOk = ids.some(id=>nodes[id] && nodes[id].status==="OK");
+
+  const gatewayAlive = (lastPacket>0) && ((now-lastPacket) < GATEWAY_TIMEOUT_MS);
+
+  if(gatewayAlive && anyOk){
+    devStatusDot.classList.add("ok");
+    devStatusLabel.textContent = "Nodes Active";
+  }else if(!gatewayAlive){
+    devStatusDot.classList.remove("ok");
+    devStatusLabel.textContent = "Gateway Offline";
+  }else{
+    devStatusDot.classList.remove("ok");
+    devStatusLabel.textContent = "No Active Node";
+  }
+
+  const online = (client && client.connected && gatewayAlive);
+  if(deviceConn){
+    if(online){
+      deviceConn.classList.remove("offline");
+      deviceConn.classList.add("online");
+      deviceConn.textContent = "ON LINE";
+    }else{
+      deviceConn.classList.remove("online");
+      deviceConn.classList.add("offline");
+      deviceConn.textContent = "OFF LINE";
+    }
+  }
+}
+
+/* RESET 다이얼로그 열기 */
+function openResetDialog(){
+  if(!client || !client.connected){
+    alert("MQTT가 연결되지 않았습니다. RESET 명령을 보낼 수 없습니다.");
+    addLog("[RESET] MQTT 미연결 → 명령 전송 불가");
+    return;
+  }
+  if(resetModal){
+    resetModal.style.display = "flex";
+  }
+}
+
+/* RESET 다이얼로그 닫기 */
+function closeResetDialog(){
+  if(resetModal){
+    resetModal.style.display = "none";
+  }
+}
+
+/* RESET: MQTT 토픽으로 리셋 명령 전송 */
+function softReset(){
+  if(!client || !client.connected){
+    addLog("[RESET] MQTT 미연결 → 명령 전송 불가");
+    return;
+  }
+
+  const topic   = "lora/gateway/cmd";
+  const payload = "reset";
+
+  client.publish(topic, payload);
+  addLog(`[RESET] MQTT → ${topic} : ${payload}`);
+}
+
+/* 모달에서 '전송' 버튼 클릭 */
+function confirmReset(){
+  closeResetDialog();
+  softReset();
+}
+
+setInterval(updateDeviceStatus, 1000);
+</script>
+
+</body>
+</html>
