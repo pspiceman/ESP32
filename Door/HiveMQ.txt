@@ -1,0 +1,19 @@
+* baekdc@gmail.com
+HiveMQ webClient
+ID : hivemq.webclient.1765336525937
+PW : &x%m0CB4IS9X1Adgy:a?
+
+* Free1
+URL : 51892257f9da45da963ae82069913afc.s1.eu.hivemq.cloud
+Port : 8883
+Web socket Port : 8884
+TLS MQTT URL : 51892257f9da45da963ae82069913afc.s1.eu.hivemq.cloud:8883
+TLS Web socket URL : 51892257f9da45da963ae82069913afc.s1.eu.hivemq.cloud:8884/mqtt
+
+* Free2
+URL : 6c56aefe0ddb4d57977c735f5070abe8.s1.eu.hivemq.cloud
+Port : 8883
+Web socket Port : 8884
+TLS MQTT URL : 6c56aefe0ddb4d57977c735f5070abe8.s1.eu.hivemq.cloud:8883
+TLS Web socket URL : 6c56aefe0ddb4d57977c735f5070abe8.s1.eu.hivemq.cloud:8884/mqtt
+
