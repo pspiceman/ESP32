@@ -452,7 +452,6 @@
 
   body.theme-light .node-id { color:#111827; }
 
-  /* 테이블 숫자/NA용: 배경/테두리 없는 텍스트 */
   .badge {
     display:inline-block;
     font-size:13px;
@@ -751,7 +750,6 @@
       font-size:13px;
       padding:4px 9px;
     }
-    /* 모바일(세로 360px 기준)에서 로그 창 폭을 맞춤 */
     .log-box {
       width:100%;
       max-width:360px;
@@ -879,6 +877,14 @@ const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
 // ★ 게이트웨이 오프라인 판정 기준 (ms)
 const GATEWAY_TIMEOUT_MS = 20000;
 
+// ★ 노드 오프라인 판정 기준 (ms)
+const NODE_TIMEOUT_MS = 25000;
+
+// ★ Gateway 펌웨어 MQTT Topic Prefix
+const TOPIC_NODE_PREFIX = "tswell/lora/node/";       // Gateway -> Web
+const TOPIC_LED_CMD     = "tswell/lora/led";         // Web -> Gateway (LED)
+const TOPIC_GW_CMD      = "tswell/lora/gateway/cmd"; // Web -> Gateway (RESET)
+
 let client;
 let nodes = {};
 let lastPacket = 0;
@@ -935,6 +941,7 @@ function addLog(msg){
   logBox.appendChild(div);
   logBox.scrollTop = logBox.scrollHeight;
 }
+
 function toggleLog(){
   if(!logBox || !btnLog) return;
   const visible = (logBox.style.display === "block");
@@ -950,8 +957,12 @@ function connectMQTT(){
   client.on("connect", ()=>{
     mqttState.textContent = "연결됨";
     mqttDot.classList.add("on");
-    client.subscribe("lora/node/+/data");
+
+    // ✅ Gateway publish 토픽과 일치
+    client.subscribe(TOPIC_NODE_PREFIX + "+");
+
     addLog("[MQTT] connected to " + MQTT_URL);
+    addLog("[MQTT] subscribed: " + TOPIC_NODE_PREFIX + "+");
   });
 
   client.on("close", ()=>{
@@ -962,24 +973,38 @@ function connectMQTT(){
 
   client.on("message", (topic, msg)=>{
     try {
-      const id = Number(topic.split("/")[2]);
-      if (!id || id === 99 || !topic.startsWith("lora/node/")) return;
+      // topic 예: tswell/lora/node/2
+      if (!topic.startsWith(TOPIC_NODE_PREFIX)) return;
+
+      const idStr = topic.substring(TOPIC_NODE_PREFIX.length);
+      const id = Number(idStr);
+      if (!id || id === 99) return;
 
       const data = JSON.parse(msg);
       const now = Date.now();
 
-      let last_ok_ms = now;
-      if (typeof data.last_ok_s === "number") {
-        last_ok_ms = now - data.last_ok_s * 1000;
-      }
+      // ✅ Gateway payload 맵핑
+      // vcc(mV) -> bat(V)
+      // h -> rh
+      // v(진동) -> co2 칼럼에 표시 (UI 유지)
+      const mapped = {
+        bat: (typeof data.vcc === "number") ? (data.vcc / 1000.0) : null,
+        t:   (typeof data.t   === "number") ? data.t : null,
+        rh:  (typeof data.h   === "number") ? data.h : null,
+        co2: (typeof data.v   === "number") ? data.v : null,
+        led: (typeof data.led === "number") ? data.led : 0,
+        rssi:(typeof data.rssi=== "number") ? data.rssi : null,
+        uptime: (typeof data.uptime === "number") ? data.uptime : null
+      };
 
       nodes[id] = {
         ...nodes[id],
-        ...data,
-        last_ok_ms
+        ...mapped,
+        last_ok_ms: now
       };
 
-      lastPacket = now;         // 마지막 패킷 시각 갱신
+      lastPacket = now;
+
       renderTable();
       updateDeviceStatus();
       addLog(`[MQTT] ${topic} → ${msg}`);
@@ -1008,21 +1033,18 @@ function renderTable(){
 
   ids.forEach(id=>{
     const n = nodes[id];
-    const statusText = (n.status || "INIT/FAIL");
-    const isOk = (statusText==="OK");
 
-    if(isOk) okCount++; else failCount++;
-    if(
-      n.t   == null ||
-      n.rh  == null ||
-      n.co2 == null
-    ) naCount++;
+    // ✅ last_ok_ms 기준으로 alive 판단
+    const alive = (typeof n.last_ok_ms === "number") && ((now - n.last_ok_ms) < NODE_TIMEOUT_MS);
+
+    if(alive) okCount++; else failCount++;
+    if(n.t == null || n.rh == null || n.co2 == null) naCount++;
 
     const tr = document.createElement("tr");
 
     const tdId = document.createElement("td");
     tdId.innerHTML = `<span class="node-id">${id}</span>`;
-    if(statusText==="INIT/FAIL") tdId.style.color = "#ff4c4c";
+    if(!alive) tdId.style.color = "#ff4c4c";
     tr.appendChild(tdId);
 
     function cellVal(v, digits=1, type=""){
@@ -1089,14 +1111,18 @@ function sendLED(id, checked){
     alert("MQTT가 연결되지 않았습니다. 잠시 후 다시 시도하세요.");
     return;
   }
-  client.publish(`lora/node/${id}/cmd`, checked?"1":"0");
-  addLog(`[LED] node ${id} → ${checked?1:0}`);
+
+  // ✅ Gateway가 기대하는 형식
+  // topic: tswell/lora/led
+  // payload: {"id":<nodeId>,"on":0|1}
+  const payload = JSON.stringify({ id: id, on: checked ? 1 : 0 });
+  client.publish(TOPIC_LED_CMD, payload);
+  addLog(`[LED] publish → ${TOPIC_LED_CMD} : ${payload}`);
 }
 
 function updateDeviceStatus(){
   const now = Date.now();
 
-  // 마지막 패킷 시간 표시
   let lastStr = "-";
   if(lastPacket>0){
     const diffSec = Math.floor((now-lastPacket)/1000);
@@ -1104,15 +1130,17 @@ function updateDeviceStatus(){
   }
   devStatusSub.textContent = "마지막 패킷: " + lastStr;
 
-  // 페이지 Uptime
   const upSec = Math.floor((now - startTime)/1000);
   uptimeLabel.textContent = "Uptime: " + upSec + " s";
 
   const ids = Object.keys(nodes).map(x=>Number(x)).filter(x=>x && x!==99);
-  const anyOk = ids.some(id=>nodes[id] && nodes[id].status==="OK");
 
-  // 게이트웨이 생존 여부: 최근 패킷이 20초 이내인지로 판단
   const gatewayAlive = (lastPacket>0) && ((now-lastPacket) < GATEWAY_TIMEOUT_MS);
+
+  const anyOk = ids.some(id=>{
+    const n = nodes[id];
+    return n && typeof n.last_ok_ms==="number" && ((now - n.last_ok_ms) < NODE_TIMEOUT_MS);
+  });
 
   if(gatewayAlive && anyOk){
     devStatusDot.classList.add("ok");
@@ -1125,7 +1153,6 @@ function updateDeviceStatus(){
     devStatusLabel.textContent = "No Active Node";
   }
 
-  // 장비연결 pill: MQTT + 게이트웨이 Alive 기준
   const online = (client && client.connected && gatewayAlive);
   if(deviceConn){
     if(online){
@@ -1140,7 +1167,7 @@ function updateDeviceStatus(){
   }
 }
 
-/* RESET 다이얼로그 열기 */
+// RESET dialog
 function openResetDialog(){
   if(!client || !client.connected){
     alert("MQTT가 연결되지 않았습니다. RESET 명령을 보낼 수 없습니다.");
@@ -1152,28 +1179,24 @@ function openResetDialog(){
   }
 }
 
-/* RESET 다이얼로그 닫기 */
 function closeResetDialog(){
   if(resetModal){
     resetModal.style.display = "none";
   }
 }
 
-/* RESET: MQTT 토픽으로 리셋 명령 전송 */
 function softReset(){
   if(!client || !client.connected){
     addLog("[RESET] MQTT 미연결 → 명령 전송 불가");
     return;
   }
 
-  const topic   = "lora/gateway/cmd";
+  // ✅ Gateway reset topic
   const payload = "reset";
-
-  client.publish(topic, payload);
-  addLog(`[RESET] MQTT → ${topic} : ${payload}`);
+  client.publish(TOPIC_GW_CMD, payload);
+  addLog(`[RESET] publish → ${TOPIC_GW_CMD} : ${payload}`);
 }
 
-/* 모달에서 '전송' 버튼 클릭 */
 function confirmReset(){
   closeResetDialog();
   softReset();
