@@ -829,7 +829,7 @@
             <th>Bat<span class="unit">[V]</span></th>
             <th>Temp<span class="unit">[°C]</span></th>
             <th>RH<span class="unit">[%]</span></th>
-            <th>CO₂<span class="unit">[ppm]</span></th>
+            <th>Vib<span class="unit">[mm]</span></th>
             <th class="col-led">LED</th>
             <th class="col-rssi">RSSI<span class="unit">[dBm]</span></th>
             <th class="col-last">Last OK<span class="unit">[s]</span></th>
@@ -880,10 +880,13 @@ const GATEWAY_TIMEOUT_MS = 20000;
 // ★ 노드 오프라인 판정 기준 (ms)
 const NODE_TIMEOUT_MS = 25000;
 
-// ★ Gateway 펌웨어 MQTT Topic Prefix
-const TOPIC_NODE_PREFIX = "tswell/lora/node/";       // Gateway -> Web
-const TOPIC_LED_CMD     = "tswell/lora/led";         // Web -> Gateway (LED)
-const TOPIC_GW_CMD      = "tswell/lora/gateway/cmd"; // Web -> Gateway (RESET)
+// ✅ Router는 60초 주기 송신이므로 타임아웃을 더 크게
+const ROUTER_ID = 60;
+const ROUTER_TIMEOUT_MS = 90000;
+
+const TOPIC_TELEM_SUB   = "tswell/lora/node/+/telemetry";
+const TOPIC_LED_PREFIX  = "tswell/lora/node/";
+const TOPIC_GW_CMD      = "tswell/lora/gateway/cmd";
 
 let client;
 let nodes = {};
@@ -913,12 +916,12 @@ const themeIcon   = document.getElementById("themeIcon");
 
 const resetModal  = document.getElementById("resetModal");
 
+// theme
 function applyTheme(theme){
   const isLight = (theme === "light");
   document.body.classList.toggle("theme-light", isLight);
   themeIcon.textContent = isLight ? "☀️" : "🌙";
 }
-
 function toggleTheme(){
   const isLight = document.body.classList.contains("theme-light");
   const next = isLight ? "dark" : "light";
@@ -928,9 +931,9 @@ function toggleTheme(){
 if(themeToggle){
   themeToggle.addEventListener("click", toggleTheme);
 }
-const savedTheme = localStorage.getItem("lora-theme") || "dark";
-applyTheme(savedTheme);
+applyTheme(localStorage.getItem("lora-theme") || "dark");
 
+// log
 function addLog(msg){
   if(!logBox) { console.log(msg); return; }
   const now = new Date();
@@ -941,7 +944,6 @@ function addLog(msg){
   logBox.appendChild(div);
   logBox.scrollTop = logBox.scrollHeight;
 }
-
 function toggleLog(){
   if(!logBox || !btnLog) return;
   const visible = (logBox.style.display === "block");
@@ -951,6 +953,14 @@ function toggleLog(){
 }
 if(btnLog){ btnLog.addEventListener("click", toggleLog); }
 
+function isAlive(id, last_ok_ms){
+  if(typeof last_ok_ms !== "number") return false;
+  const now = Date.now();
+  const timeout = (id === ROUTER_ID) ? ROUTER_TIMEOUT_MS : NODE_TIMEOUT_MS;
+  return ((now - last_ok_ms) < timeout);
+}
+
+// MQTT
 function connectMQTT(){
   client = mqtt.connect(MQTT_URL, { reconnectPeriod:3000 });
 
@@ -958,11 +968,10 @@ function connectMQTT(){
     mqttState.textContent = "연결됨";
     mqttDot.classList.add("on");
 
-    // ✅ Gateway publish 토픽과 일치
-    client.subscribe(TOPIC_NODE_PREFIX + "+");
+    client.subscribe(TOPIC_TELEM_SUB);
 
     addLog("[MQTT] connected to " + MQTT_URL);
-    addLog("[MQTT] subscribed: " + TOPIC_NODE_PREFIX + "+");
+    addLog("[MQTT] subscribed: " + TOPIC_TELEM_SUB);
   });
 
   client.on("close", ()=>{
@@ -973,33 +982,26 @@ function connectMQTT(){
 
   client.on("message", (topic, msg)=>{
     try {
-      // topic 예: tswell/lora/node/2
-      if (!topic.startsWith(TOPIC_NODE_PREFIX)) return;
+      if (!topic.startsWith("tswell/lora/node/")) return;
+      if (!topic.endsWith("/telemetry")) return;
 
-      const idStr = topic.substring(TOPIC_NODE_PREFIX.length);
-      const id = Number(idStr);
+      const parts = topic.split("/");
+      if(parts.length < 5) return;
+
+      const id = Number(parts[3]);
       if (!id || id === 99) return;
 
-      const data = JSON.parse(msg);
+      const data = JSON.parse(msg.toString());
       const now = Date.now();
-
-      // ✅ Gateway payload 맵핑
-      // vcc(mV) -> bat(V)
-      // h -> rh
-      // v(진동) -> co2 칼럼에 표시 (UI 유지)
-      const mapped = {
-        bat: (typeof data.vcc === "number") ? (data.vcc / 1000.0) : null,
-        t:   (typeof data.t   === "number") ? data.t : null,
-        rh:  (typeof data.h   === "number") ? data.h : null,
-        co2: (typeof data.v   === "number") ? data.v : null,
-        led: (typeof data.led === "number") ? data.led : 0,
-        rssi:(typeof data.rssi=== "number") ? data.rssi : null,
-        uptime: (typeof data.uptime === "number") ? data.uptime : null
-      };
 
       nodes[id] = {
         ...nodes[id],
-        ...mapped,
+        bat:  (typeof data.vbat === "number") ? data.vbat : null,
+        t:    (typeof data.t    === "number") ? data.t    : null,
+        rh:   (typeof data.h    === "number") ? data.h    : null,
+        vib:  (typeof data.vib  === "number") ? data.vib  : null,
+        led:  (typeof data.led  === "number") ? data.led  : 0,
+        rssi: (typeof data.rssi === "number") ? data.rssi : null,
         last_ok_ms: now
       };
 
@@ -1007,7 +1009,7 @@ function connectMQTT(){
 
       renderTable();
       updateDeviceStatus();
-      addLog(`[MQTT] ${topic} → ${msg}`);
+      addLog(`[MQTT] ${topic} → ${msg.toString()}`);
     } catch(e){
       addLog("[MQTT] parse error: " + e);
     }
@@ -1033,17 +1035,16 @@ function renderTable(){
 
   ids.forEach(id=>{
     const n = nodes[id];
-
-    // ✅ last_ok_ms 기준으로 alive 판단
-    const alive = (typeof n.last_ok_ms === "number") && ((now - n.last_ok_ms) < NODE_TIMEOUT_MS);
+    const alive = isAlive(id, n.last_ok_ms);
 
     if(alive) okCount++; else failCount++;
-    if(n.t == null || n.rh == null || n.co2 == null) naCount++;
+    if(n.t == null || n.rh == null || n.vib == null) naCount++;
 
     const tr = document.createElement("tr");
 
     const tdId = document.createElement("td");
-    tdId.innerHTML = `<span class="node-id">${id}</span>`;
+    const label = (id === ROUTER_ID) ? `Router ${id}` : `${id}`;
+    tdId.innerHTML = `<span class="node-id">${label}</span>`;
     if(!alive) tdId.style.color = "#ff4c4c";
     tr.appendChild(tdId);
 
@@ -1057,7 +1058,7 @@ function renderTable(){
     }
 
     const batTd = document.createElement("td");
-    batTd.innerHTML = cellVal(n.bat,1,"bat"); tr.appendChild(batTd);
+    batTd.innerHTML = cellVal(n.bat,2,"bat"); tr.appendChild(batTd);
 
     const tTd = document.createElement("td");
     tTd.innerHTML = cellVal(n.t,1); tr.appendChild(tTd);
@@ -1065,20 +1066,24 @@ function renderTable(){
     const rhTd = document.createElement("td");
     rhTd.innerHTML = cellVal(n.rh,0); tr.appendChild(rhTd);
 
-    const coTd = document.createElement("td");
-    coTd.innerHTML = cellVal(n.co2,0); tr.appendChild(coTd);
+    const vibTd = document.createElement("td");
+    vibTd.innerHTML = cellVal(n.vib,0); tr.appendChild(vibTd);
 
     const ledTd = document.createElement("td");
     ledTd.className = "col-led";
-    const ledBtn = document.createElement("button");
-    ledBtn.className = "btn-led";
-    ledBtn.dataset.on = n.led ? "1" : "0";
-    ledBtn.innerHTML = `<span>${n.led ? "ON" : "OFF"}</span>`;
-    ledBtn.onclick = ()=>{
-      const next = ledBtn.dataset.on==="1" ? 0 : 1;
-      sendLED(id, next===1);
-    };
-    ledTd.appendChild(ledBtn);
+    if(id === ROUTER_ID){
+      ledTd.innerHTML = `<span class="badge-null">-</span>`;
+    }else{
+      const ledBtn = document.createElement("button");
+      ledBtn.className = "btn-led";
+      ledBtn.dataset.on = n.led ? "1" : "0";
+      ledBtn.innerHTML = `<span>${n.led ? "ON" : "OFF"}</span>`;
+      ledBtn.onclick = ()=>{
+        const next = ledBtn.dataset.on==="1" ? 0 : 1;
+        sendLED(id, next===1);
+      };
+      ledTd.appendChild(ledBtn);
+    }
     tr.appendChild(ledTd);
 
     const rssiTd = document.createElement("td");
@@ -1106,18 +1111,19 @@ function renderTable(){
 }
 
 function sendLED(id, checked){
+  if(id === ROUTER_ID){
+    addLog("[LED] Router는 LED 제어 대상 아님");
+    return;
+  }
   if(!client || !client.connected) {
     addLog("[LED] MQTT 미연결");
     alert("MQTT가 연결되지 않았습니다. 잠시 후 다시 시도하세요.");
     return;
   }
-
-  // ✅ Gateway가 기대하는 형식
-  // topic: tswell/lora/led
-  // payload: {"id":<nodeId>,"on":0|1}
-  const payload = JSON.stringify({ id: id, on: checked ? 1 : 0 });
-  client.publish(TOPIC_LED_CMD, payload);
-  addLog(`[LED] publish → ${TOPIC_LED_CMD} : ${payload}`);
+  const topic = TOPIC_LED_PREFIX + id + "/led";
+  const payload = checked ? "1" : "0";
+  client.publish(topic, payload);
+  addLog(`[LED] publish → ${topic} : ${payload}`);
 }
 
 function updateDeviceStatus(){
@@ -1139,7 +1145,7 @@ function updateDeviceStatus(){
 
   const anyOk = ids.some(id=>{
     const n = nodes[id];
-    return n && typeof n.last_ok_ms==="number" && ((now - n.last_ok_ms) < NODE_TIMEOUT_MS);
+    return n && isAlive(id, n.last_ok_ms);
   });
 
   if(gatewayAlive && anyOk){
@@ -1190,11 +1196,8 @@ function softReset(){
     addLog("[RESET] MQTT 미연결 → 명령 전송 불가");
     return;
   }
-
-  // ✅ Gateway reset topic
-  const payload = "reset";
-  client.publish(TOPIC_GW_CMD, payload);
-  addLog(`[RESET] publish → ${TOPIC_GW_CMD} : ${payload}`);
+  client.publish(TOPIC_GW_CMD, "reset");
+  addLog(`[RESET] publish → ${TOPIC_GW_CMD} : reset`);
 }
 
 function confirmReset(){
