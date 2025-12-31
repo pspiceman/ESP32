@@ -298,6 +298,32 @@
     background:#16a34a;
     color:#ecfdf5;
   }
+
+  /* ✅ (추가) 모바일 세로보기 최적화: 테이블 간격 줄이기 */
+  @media (max-width: 520px) {
+    table { 
+      min-width: 0px; 
+      font-size: 12px;
+    }
+    th, td { 
+      padding: 4px 2px; 
+    }
+    .node-id { 
+      font-size: 12px; 
+    }
+    .badge, .badge-null { 
+      font-size: 12px; 
+    }
+    .btn-led { 
+      min-width: 30px; 
+      height: 18px; 
+      font-size: 11px; 
+    }
+    .chip { 
+      padding: 3px 8px; 
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -624,7 +650,7 @@ function renderTable(){
     const tr = document.createElement("tr");
 
     const tdId = document.createElement("td");
-    const label = (id === ROUTER_ID) ? `Router ${id}` : `${id}`;
+    const label = `${id}`;
     tdId.innerHTML = `<span class="node-id">${label}</span>`;
     if(!alive) tdId.style.color = "#ff4c4c";
     tr.appendChild(tdId);
