@@ -86,11 +86,15 @@
   .chip.ok { border-color:rgba(55,255,121,0.6); background:var(--accent-soft); color:var(--ok); padding:3px 12px; }
 
   .device-conn-pill {
-    border-radius:999px; padding:3px 12px; font-size:11px;
+    border-radius:999px; padding: 3px 14px; font-size:11px;
     border:1px solid var(--border-subtle);
     background:rgba(10,14,30,0.9); color:var(--text-sub);
-    min-width:80px; text-align:center; cursor:default;
-  }
+    min-width: unset; text-align:center; cursor:default;
+    display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
   .device-conn-pill.online {
     background:var(--accent-soft); border-color:rgba(55,255,121,0.9);
     color:var(--ok); box-shadow:0 0 10px rgba(55,255,121,0.7);
@@ -209,9 +213,9 @@
     box-shadow:inset 0 0 0 1px rgba(5,10,24,0.8);
     margin-top:10px;
   }
-  table { width:100%; min-width:520px; border-collapse:collapse; font-size:13px; }
+  table { width:100%; min-width:0px; border-collapse:collapse; font-size:13px; table-layout:fixed; }
   thead { background:linear-gradient(180deg, rgba(13,18,40,0.96), rgba(5,7,18,0.98)); }
-  th, td { padding:6px 4px; text-align:center; white-space:nowrap; }
+  th, td { padding:5px 3px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:clip; }
   th {
     font-weight:600;
     color:#c9d3ff;
@@ -333,45 +337,55 @@
     color:#ecfdf5;
   }
 
-  /* ✅ (추가) 모바일 세로보기 최적화: 테이블 간격 줄이기 */
-  @media (max-width: 520px) {
-    table { 
-      min-width: 0px; 
-      font-size: 12px;
-    }
-    th, td { 
-      padding: 4px 2px; 
-    }
-    .node-id { 
-      font-size: 12px; 
-    }
-    .badge, .badge-null { 
-      font-size: 12px; 
-    }
-    .btn-led { 
-      min-width: 30px; 
-      height: 18px; 
-      font-size: 11px; 
-    }
-    .chip { 
-      padding: 3px 8px; 
-    }
+  
+  /* ✅ (추가) ON LINE 버튼 내부 WiFi RSSI 표시 (회색 톤) */
+  .wifi-rssi{
+    font-size: 12px;
+    color: #cbd5e1;
+    opacity: 0.95;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+  body.theme-light .wifi-rssi{
+    color: #6b7280;
+    opacity: 0.9;
   }
 
-  /* ✅ Light theme: 하단 pill/버튼(OK/Fail/NA/로그) 밝게 */
-  body.theme-light .metric-item{
-    background:#ffffff;
-    border-color:rgba(99,102,241,0.25);
-    color:#111827;
-  }
-  body.theme-light .btn-log{
-    background:#ffffff;
-    border-color:rgba(99,102,241,0.28);
-    color:#111827;
-  }
-  body.theme-light .btn-log.active{
-    color:#ffffff;
-  }
+
+/* ✅ Light theme: 하단 3개 metric pill + 로그 버튼을 주간모드 톤으로 강제 */
+body.theme-light .metric-item{
+  background: #ffffff !important;
+  border-color: rgba(99,102,241,0.25) !important; /* 연보라 */
+  color: #111827 !important;
+  box-shadow: 0 4px 10px rgba(15,23,42,0.06) !important;
+}
+
+body.theme-light .btn-log{
+  background: #ffffff !important;
+  border-color: rgba(99,102,241,0.25) !important;
+  color: #111827 !important;
+  box-shadow: 0 4px 10px rgba(15,23,42,0.06) !important;
+}
+
+/* ✅ Light theme: 로그 버튼 active 상태 */
+body.theme-light .btn-log.active{
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 6px 14px rgba(34,197,94,0.25) !important;
+}
+
+/* ✅ Light theme: 로그 박스도 밝게 */
+body.theme-light .log-box{
+  background: #ffffff !important;
+  border-color: rgba(99,102,241,0.18) !important;
+}
+body.theme-light .log-line{
+  color: #374151 !important;
+}
+body.theme-light .log-line span.time{
+  color: #6b7280 !important;
+}
+
 </style>
 </head>
 <body>
@@ -399,7 +413,10 @@
       </div>
 
       <div class="chip">
-        <button id="deviceConn" type="button" class="device-conn-pill offline">OFF LINE</button>
+        <button id="deviceConn" type="button" class="device-conn-pill offline">
+          <span class="conn-text">OFF LINE</span>
+          <span id="wifiRssiText" class="wifi-rssi">- dBm</span>
+        </button>
       </div>
 
       <div class="chip" id="nodeCountChip">
@@ -488,10 +505,12 @@
 const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
 
 const GATEWAY_TIMEOUT_MS = 120000;
-const NODE_TIMEOUT_MS = 25000;
+const NODE_TIMEOUT_MS = 60000; // ✅ 1분(10초 폴링 기준 여유)
+
 
 const ROUTER_ID = 60;
-const ROUTER_TIMEOUT_MS = 120000;
+const ROUTER_TIMEOUT_MS = 60000; // ✅ 라우터도 동일 기준
+
 
 const CACHE_GRACE_MS = 30000; // ✅ 캐시 복원 후 30초는 OFFLINE 강등 유예
 
@@ -500,6 +519,9 @@ const TOPIC_LED_CMD_PREFIX  = "tswell/lora/node/";
 const TOPIC_LED_ACK_SUB     = "tswell/lora/node/+/led"; // GNR: same topic used for LED set
 const TOPIC_GW_CMD      = "tswell/lora/gateway/cmd";
 const TOPIC_GW_HB       = null; // GNR gateway does not publish heartbeat
+
+// ✅ (추가) WiFi RSSI 토픽
+const TOPIC_WIFI_RSSI   = "tswell/lora/gateway/wifi_rssi";
 
 const STORAGE_KEY = "lora_nodes_cache_v1";
 
@@ -519,6 +541,8 @@ const mqttState = document.getElementById("mqttState");
 const nodeCountEl = document.getElementById("nodeCount");
 const nodeCountChip = document.getElementById("nodeCountChip");
 const deviceConn = document.getElementById("deviceConn");
+const wifiRssiText = document.getElementById("wifiRssiText");
+const connTextEl = document.querySelector("#deviceConn .conn-text");
 
 const devStatusDot  = document.getElementById("devStatusDot");
 const devStatusLabel= document.getElementById("devStatusLabel");
@@ -549,6 +573,7 @@ function loadCache(){
       Object.keys(nodes).forEach(k=>{
         if(nodes[k] && typeof nodes[k] === "object"){
           nodes[k].last_ok_ms = null; // 새로 열면 '-'부터 시작
+          nodes[k].cacheOnly = true; // ✅ 캐시에서만 복원된 노드(실수신 전)
         }
       });
       lastPacket = 0; // Node telemetry 수신 시 갱신
@@ -616,7 +641,7 @@ if(btnLog){ btnLog.addEventListener("click", toggleLog); }
 function isAlive(id, last_ok_ms){
   if(typeof last_ok_ms !== "number") return false;
   const now = Date.now();
-  const timeout = (id === ROUTER_ID) ? ROUTER_TIMEOUT_MS : NODE_TIMEOUT_MS;
+  const timeout = NODE_TIMEOUT_MS; // ✅ 노드/라우터 동일 기준
   return ((now - last_ok_ms) < timeout);
 }
 
@@ -641,7 +666,9 @@ function connectMQTT(){
   client.on("connect", ()=>{
     mqttState.textContent = "연결됨";
     mqttDot.classList.add("on");
-    client.subscribe(TOPIC_TELEM_SUB);    addLog("[MQTT] connected to " + MQTT_URL);
+    client.subscribe(TOPIC_TELEM_SUB);
+    client.subscribe(TOPIC_WIFI_RSSI);
+    addLog("[MQTT] connected to " + MQTT_URL);
     addLog("[MQTT] subscribed: " + TOPIC_TELEM_SUB);
   });
 
@@ -653,6 +680,16 @@ function connectMQTT(){
 
   client.on("message", (topic, msg)=>{
     try {
+      // ✅ (추가) WiFi RSSI 수신 → "-62 dBm" 형태로만 표시
+      if(topic === TOPIC_WIFI_RSSI){
+        const rssi = Number(msg.toString());
+        if(wifiRssiText){
+          if(Number.isFinite(rssi)) wifiRssiText.textContent = `${rssi} dBm`;
+          else wifiRssiText.textContent = `- dBm`;
+        }
+        return;
+      }
+
       // ✅ LED ACK 처리
       if(topic.endsWith("/led_ack")){
         const parts = topic.split("/");
@@ -663,7 +700,8 @@ function connectMQTT(){
           nodes[id] = {
             ...nodes[id],
             led: applied,
-            last_ok_ms: now
+            last_ok_ms: now,
+            cacheOnly: false
           };
           delete ledPending[id];
           saveCache();
@@ -694,7 +732,8 @@ function connectMQTT(){
         vib:  (typeof data.vib  === "number") ? data.vib  : null,
         led:  (typeof data.led  === "number") ? data.led  : 0,
         rssi: (typeof data.rssi === "number") ? data.rssi : null,
-        last_ok_ms: now
+        last_ok_ms: now,
+        cacheOnly: false
       };
 
       lastPacket = now;
@@ -764,7 +803,7 @@ function renderTable(){
     const n = nodes[id];
     const alive = isAlive(id, n.last_ok_ms);
 
-    if(alive) okCount++; else failCount++;
+    if(!n.cacheOnly && typeof n.last_ok_ms === "number"){ if(alive) okCount++; else failCount++; }
     if(n.t == null || n.rh == null || n.vib == null) naCount++;
 
     const tr = document.createElement("tr");
@@ -908,11 +947,11 @@ function updateDeviceStatus(){
     if(online){
       deviceConn.classList.remove("offline");
       deviceConn.classList.add("online");
-      deviceConn.textContent = "ON LINE";
+      if(connTextEl) connTextEl.textContent = "ON LINE"; else deviceConn.textContent = "ON LINE";
     }else{
       deviceConn.classList.remove("online");
       deviceConn.classList.add("offline");
-      deviceConn.textContent = "OFF LINE";
+      if(connTextEl) connTextEl.textContent = "OFF LINE"; else deviceConn.textContent = "OFF LINE";
     }
   }
 }
