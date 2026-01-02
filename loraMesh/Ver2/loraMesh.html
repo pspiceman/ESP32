@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>LoRa Mesh Gateway Monitor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+<style>
+  /* ✅ UI는 그대로 (원본 그대로 유지) */
+  :root {
+    --bg-color: #0b1020;
+    --card-bg: #141a30;
+    --accent: #37ff79;
+    --accent-soft: rgba(55,255,121,0.15);
+    --text-main: #f5f7ff;
+    --text-sub: #9fa6c3;
+    --border-subtle: #252b45;
+    --danger: #ff4c4c;
+    --ok: #37ff79;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0;padding:0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: radial-gradient(circle at top, #202b4d 0, #050814 46%, #02030a 100%);
+    color: var(--text-main);
+    transition: background .25s ease, color .25s ease;
+    font-size: 16px;
+  }
+  body.theme-light {
+    --bg-color: #f4f6ff;
+    --card-bg: #ffffff;
+    --accent: #16a34a;
+    --accent-soft: rgba(22,163,74,0.12);
+    --text-main: #111827;
+    --text-sub: #6b7280;
+    --border-subtle: #cbd5f5;
+    --danger: #dc2626;
+    --ok: #16a34a;
+    background: radial-gradient(circle at top, #e5edff 0, #f9fafb 45%, #e5e7eb 100%);
+  }
+  .page { max-width:1100px; margin:0 auto; padding:16px 10px 24px; }
+  .header-row { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+  .title-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .title-area { display:flex; align-items:flex-start; gap:10px; }
+  .title-badge {
+    width:8px;height:32px;border-radius:999px;
+    background:linear-gradient(180deg,var(--accent),transparent);
+    box-shadow:0 0 12px rgba(55,255,121,0.7);
+  }
+  body.theme-light .title-badge { box-shadow:0 0 10px rgba(22,163,74,0.6); }
+  .title-text { display:flex; flex-direction:column; gap:4px; }
+  .title-main { font-size:22px; font-weight:700; letter-spacing:0.02em; }
+  .title-sub { font-size:14px; color:var(--text-sub); }
+  .status-chips { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-start; }
+  .theme-toggle {
+    border-radius:999px; padding:6px 10px;
+    border:1px solid rgba(148,163,184,0.65);
+    background:rgba(15,23,42,0.9);
+    color:#e5e7eb;font-size:15px;
+    display:inline-flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:all .18s; min-width:40px;
+  }
+  body.theme-light .theme-toggle {
+    background:#f3f4ff; color:#111827; border-color:#cbd5f5;
+  }
+  .chip {
+    border-radius:999px; padding:4px 10px; font-size:12px;
+    display:inline-flex; align-items:center; gap:6px;
+    border:1px solid var(--border-subtle);
+    background:rgba(10,14,30,0.9);
+    color:var(--text-sub);
+  }
+  body.theme-light .chip {
+    background:#ffffff; color:var(--text-sub); border-color:#d4d4ff;
+  }
+  .chip-label { font-size:11px; text-transform:uppercase; letter-spacing:0.09em; }
+  .chip-value { font-size:12px; font-weight:500; color:var(--text-main); }
+  .chip-dot {
+    width:6px;height:6px;border-radius:999px;background:var(--danger);
+    box-shadow:0 0 10px rgba(255,76,76,0.7);
+  }
+  .chip-dot.on { background:var(--accent); box-shadow:0 0 10px rgba(55,255,121,0.9); }
+  .chip.ok { border-color:rgba(55,255,121,0.6); background:var(--accent-soft); color:var(--ok); padding:3px 12px; }
+
+  .device-conn-pill {
+    border-radius:999px; padding: 3px 14px; font-size:11px;
+    border:1px solid var(--border-subtle);
+    background:rgba(10,14,30,0.9); color:var(--text-sub);
+    min-width: unset; text-align:center; cursor:default;
+    display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+  .device-conn-pill.online {
+    background:var(--accent-soft); border-color:rgba(55,255,121,0.9);
+    color:var(--ok); box-shadow:0 0 10px rgba(55,255,121,0.7);
+  }
+  .device-conn-pill.offline {
+    background:rgba(127,29,29,0.30); border-color:rgba(239,68,68,0.95);
+    color:#fecaca; box-shadow:0 0 8px rgba(239,68,68,0.8);
+  }
+  body.theme-light .device-conn-pill.online { background:rgba(22,163,74,0.12); }
+  body.theme-light .device-conn-pill.offline { background:rgba(248,113,113,0.12); }
+
+  .card {
+    background: radial-gradient(circle at top left, rgba(55,255,121,0.12) 0, rgba(20,26,48,0.98) 42%, rgba(5,8,20,0.98) 100%);
+    border-radius:18px;
+    padding:12px 10px 14px;
+    border:1px solid rgba(95,120,200,0.28);
+    box-shadow:0 16px 26px rgba(0,0,0,0.5), 0 0 0 1px rgba(5,10,24,0.7);
+    position:relative;
+    overflow:hidden;
+  }
+  body.theme-light .card {
+    background:linear-gradient(180deg,#ffffff,#eef2ff);
+    border-color:#d4d4ff;
+    box-shadow:0 14px 30px rgba(15,23,42,0.12);
+  }
+  .card-header {
+    display:flex; align-items:center; justify-content:space-between;
+    gap:8px; margin-bottom:8px; position:relative; z-index:1;
+  }
+  .card-title {
+    font-size:14px; font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.14em;
+    color:#c7d0ff;
+  }
+  body.theme-light .card-title { color:#4b5563; }
+  .tag-pill {
+    font-size:11px; text-transform:uppercase; letter-spacing:0.12em;
+    padding:5px 10px; border-radius:999px;
+    border:1px solid rgba(95,120,200,0.7);
+    background:rgba(8,10,24,0.9); color:#d4dcff;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  body.theme-light .tag-pill {
+    background:#eef2ff; border-color:#a5b4fc; color:#312e81;
+  }
+  .tag-pill span.dot {
+    width:6px;height:6px;border-radius:999px;
+    background:#4ec9ff; box-shadow:0 0 12px rgba(78,201,255,0.9);
+  }
+  .tag-pill.reset-pill { cursor:pointer; transition:transform .12s, box-shadow .12s, filter .12s; }
+  .tag-pill.reset-pill:hover {
+    filter:brightness(1.1);
+    transform:translateY(-0.5px);
+    box-shadow:0 0 12px rgba(248,250,252,0.5);
+  }
+
+  .device-status-card {
+    margin-top:4px; padding:8px 9px;
+    border-radius:14px;
+    border:1px solid rgba(70,100,210,0.4);
+    background:radial-gradient(circle at top left, rgba(55,255,121,0.08) 0, rgba(8,12,24,0.98) 55%);
+    display:flex; align-items:center; justify-content:space-between;
+    gap:6px; font-size:12px; position:relative; z-index:1;
+  }
+  .device-status-left { display:flex; flex-direction:column; gap:2px; }
+  .dev-status-title { font-size:13px; font-weight:600; color:#dfe6ff; }
+  body.theme-light .dev-status-title { color:#1f2937; }
+
+  body.theme-light .device-status-card{
+    background: linear-gradient(180deg, #ffffff, #eef2ff);
+    border-color:#d4d4ff;
+  }
+  body.theme-light .log-box{
+    background:#ffffff;
+  }
+
+  /* ✅ Light theme: table/background 밝게 */
+  body.theme-light .table-wrap{
+    background: linear-gradient(180deg,#ffffff,#eef2ff);
+    border-color:#d4d4ff;
+    box-shadow: inset 0 0 0 1px rgba(99,102,241,0.15);
+  }
+  body.theme-light thead{
+    background: linear-gradient(180deg,#f8fafc,#eef2ff);
+  }
+  body.theme-light th{
+    color:#111827;
+    border-bottom:1px solid rgba(99,102,241,0.25);
+  }
+  body.theme-light th .unit{ color:#6b7280; }
+  body.theme-light tbody tr:nth-child(even){ background:rgba(239,246,255,0.9); }
+  body.theme-light tbody tr:nth-child(odd){  background:#ffffff; }
+  body.theme-light .node-id{ color:#111827; }
+  body.theme-light .rss{ color:#374151; }
+  body.theme-light .badge-null{ color:#6b7280; }
+  body.theme-light .btn-led{
+    border-color:rgba(99,102,241,0.35);
+    background:#ffffff;
+    color:#1f2937;
+  }
+
+  .dev-status-sub { font-size:11px; color:var(--text-sub); }
+  .device-status-right { display:flex; align-items:center; gap:6px; }
+  .status-dot { width:9px;height:9px;border-radius:999px;background:var(--danger); box-shadow:0 0 12px rgba(255,76,76,0.9); }
+  .status-dot.ok { background:var(--accent); box-shadow:0 0 12px rgba(55,255,121,0.95); }
+  .status-label { font-size:13px; font-weight:600; }
+  .uptime-text { font-size:11px; color:var(--text-sub); }
+
+  .table-wrap {
+    position:relative;
+    border-radius:14px;
+    overflow-x:auto; overflow-y:hidden;
+    border:1px solid rgba(52,72,140,0.7);
+    background: radial-gradient(circle at top, rgba(40,52,120,0.45) 0, #050716 40%, #02030a 100%);
+    box-shadow:inset 0 0 0 1px rgba(5,10,24,0.8);
+    margin-top:10px;
+  }
+  table { width:100%; min-width:0px; border-collapse:collapse; font-size:13px; table-layout:fixed; }
+  thead { background:linear-gradient(180deg, rgba(13,18,40,0.96), rgba(5,7,18,0.98)); }
+  th, td { padding:5px 3px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:clip; }
+  th {
+    font-weight:600;
+    color:#c9d3ff;
+    border-bottom:1px solid rgba(60,84,160,0.8);
+    position:relative;
+    line-height:1.2;
+  }
+  th .unit { display:block; font-size:11px; color:var(--text-sub); }
+  tbody tr:nth-child(even) { background:rgba(10,14,32,0.9); }
+  tbody tr:nth-child(odd)  { background:rgba(5,8,22,0.9); }
+
+  .node-id { font-weight:600; font-size:13px; color:#e8ecff; }
+  .badge { display:inline-block; font-size:13px; color:var(--text-main); background:transparent; border:none; padding:0; }
+  .badge-null { display:inline-block; font-size:13px; color:var(--text-sub); background:transparent; border:none; padding:0; }
+  .rss { font-size:12px; color:var(--text-sub); }
+
+  .btn-led {
+    all:unset;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:34px;
+    height:20px;
+    border-radius:999px;
+    border:1px solid rgba(80,100,220,0.7);
+    background:rgba(10,14,34,0.9);
+    cursor:pointer;
+    font-size:12px;
+    color:#c9d3ff;
+    position:relative;
+    overflow:hidden;
+  }
+  .btn-led[data-on="1"] {
+    border-color:rgba(55,255,121,0.8);
+    background:radial-gradient(circle at 20% 0, rgba(55,255,121,0.5), rgba(8,14,32,0.98));
+    color:#eafff4;
+    box-shadow:0 0 16px rgba(55,255,121,0.8);
+  }
+
+  .bat-low { color:#ff4c4c !important; }
+
+  .legend { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; font-size:12px; color:var(--text-sub); }
+  .legend-item { display:inline-flex; align-items:center; gap:4px; }
+  .rect { width:10px; height:10px; border-radius:4px; }
+  .rect-ok  { background:rgba(55,255,121,0.35); border:1px solid rgba(55,255,121,0.9); }
+  .rect-off { background:rgba(255,76,76,0.2);  border:1px solid rgba(255,76,76,0.9); }
+  .rect-na  { background:rgba(148,163,184,0.15); border:1px solid rgba(148,163,184,0.7); }
+
+  .metric-mini { margin-top:6px; display:flex; flex-wrap:wrap; gap:6px; font-size:12px; color:var(--text-sub); align-items:center; }
+  .metric-item { padding:4px 6px; border-radius:999px; border:1px solid rgba(70,90,160,0.8); background:rgba(4,7,18,0.96); font-size:12px; }
+
+  .btn-log {
+    margin-left:auto;
+    border-radius:999px;
+    padding:4px 9px;
+    border:1px solid rgba(60,80,150,0.8);
+    background:rgba(5,10,24,0.95);
+    color:var(--text-sub);
+    font-size:12px;
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    cursor:pointer;
+    transition:all .12s;
+  }
+  .btn-log.active {
+    background:linear-gradient(135deg,#3b82f6,#22c55e);
+    color:#f9fbff;
+    box-shadow:0 0 12px rgba(34,197,94,0.8);
+    border-color:transparent;
+  }
+  .log-box {
+    margin-top:6px;
+    padding:6px 7px;
+    border-radius:10px;
+    background:rgba(3,6,18,0.96);
+    border:1px solid rgba(40,60,120,0.7);
+    max-height:120px;
+    overflow:auto;
+    font-size:12px;
+    display:none;
+  }
+  .log-line { margin-bottom:2px; color:#9fa8d1; }
+  .log-line span.time { color:#6b7280; margin-right:4px; }
+
+  .modal-backdrop {
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:999;
+  }
+  .modal-box {
+    background:#020617;
+    border-radius:14px;
+    padding:18px 18px 14px;
+    border:1px solid rgba(148,163,184,0.6);
+    max-width:320px;
+    width:80%;
+    color:#e5e7eb;
+    box-shadow:0 18px 40px rgba(0,0,0,0.7);
+  }
+  .modal-title { font-size:14px; margin-bottom:14px; }
+  .modal-actions { display:flex; justify-content:flex-end; gap:8px; }
+  .modal-btn {
+    border-radius:999px;
+    padding:6px 14px;
+    font-size:13px;
+    border:1px solid rgba(148,163,184,0.8);
+    background:transparent;
+    color:#e5e7eb;
+    cursor:pointer;
+  }
+  .modal-btn.primary {
+    border-color:rgba(52,211,153,0.85);
+    background:#16a34a;
+    color:#ecfdf5;
+  }
+
+  
+  /* ✅ (추가) ON LINE 버튼 내부 WiFi RSSI 표시 (회색 톤) */
+  .wifi-rssi{
+    font-size: 12px;
+    color: #cbd5e1;
+    opacity: 0.95;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+  body.theme-light .wifi-rssi{
+    color: #6b7280;
+    opacity: 0.9;
+  }
+
+
+/* ✅ Light theme: 하단 3개 metric pill + 로그 버튼을 주간모드 톤으로 강제 */
+body.theme-light .metric-item{
+  background: #ffffff !important;
+  border-color: rgba(99,102,241,0.25) !important; /* 연보라 */
+  color: #111827 !important;
+  box-shadow: 0 4px 10px rgba(15,23,42,0.06) !important;
+}
+
+body.theme-light .btn-log{
+  background: #ffffff !important;
+  border-color: rgba(99,102,241,0.25) !important;
+  color: #111827 !important;
+  box-shadow: 0 4px 10px rgba(15,23,42,0.06) !important;
+}
+
+/* ✅ Light theme: 로그 버튼 active 상태 */
+body.theme-light .btn-log.active{
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 6px 14px rgba(34,197,94,0.25) !important;
+}
+
+/* ✅ Light theme: 로그 박스도 밝게 */
+body.theme-light .log-box{
+  background: #ffffff !important;
+  border-color: rgba(99,102,241,0.18) !important;
+}
+body.theme-light .log-line{
+  color: #374151 !important;
+}
+body.theme-light .log-line span.time{
+  color: #6b7280 !important;
+}
+
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="header-row">
+    <div class="title-row">
+      <div class="title-area">
+        <div class="title-badge"></div>
+        <div class="title-text">
+          <div class="title-main">LoRa Mesh Gateway Monitor</div>
+          <div class="title-sub">모든 Mesh 노드의 상태 모니터링 &amp; LED 제어</div>
+        </div>
+      </div>
+      <button id="themeToggle" class="theme-toggle" type="button">
+        <span class="icon" id="themeIcon">🌙</span>
+      </button>
+    </div>
+
+    <div class="status-chips">
+      <div class="chip">
+        <span class="chip-label">MQTT</span>
+        <span class="chip-dot" id="mqttDot"></span>
+        <span class="chip-value" id="mqttState">연결안됨</span>
+      </div>
+
+      <div class="chip">
+        <button id="deviceConn" type="button" class="device-conn-pill offline">
+          <span class="conn-text">OFF LINE</span>
+          <span id="wifiRssiText" class="wifi-rssi">- dBm</span>
+        </button>
+      </div>
+
+      <div class="chip" id="nodeCountChip">
+        <span class="chip-label">NODES</span>
+        <span class="chip-value"><span id="nodeCount">0</span>개</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Nodes Overview</div>
+        <div class="card-sub"></div>
+      </div>
+      <div class="tag-pill reset-pill" id="resetPill" onclick="openResetDialog()">
+        <span class="dot"></span>
+        <span>RESET</span>
+      </div>
+    </div>
+
+    <div class="device-status-card">
+      <div class="device-status-left">
+        <div class="dev-status-title">Device Status</div>
+        <div class="dev-status-sub" id="devStatusSub">마지막 패킷: -</div>
+      </div>
+      <div class="device-status-right">
+        <div class="status-dot" id="devStatusDot"></div>
+        <div>
+          <div class="status-label" id="devStatusLabel">Idle</div>
+          <div class="uptime-text" id="uptimeLabel">Uptime: -</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Node</th>
+            <th>Bat<span class="unit">[V]</span></th>
+            <th>Temp<span class="unit">[°C]</span></th>
+            <th>RH<span class="unit">[%]</span></th>
+            <th>Vib<span class="unit">[mm]</span></th>
+            <th class="col-led">LED</th>
+            <th class="col-rssi">RSSI<span class="unit">[dBm]</span></th>
+            <th class="col-last">Last OK<span class="unit">[s]</span></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="rect rect-ok"></div>정상 노드</div>
+      <div class="legend-item"><div class="rect rect-off"></div>응답 없음 / INIT</div>
+      <div class="legend-item"><div class="rect rect-na"></div>센서 값 없음(NA)</div>
+    </div>
+
+    <div class="metric-mini">
+      <div class="metric-item" id="metricOk">OK 노드: 0</div>
+      <div class="metric-item" id="metricFail">Fail 노드: 0</div>
+      <div class="metric-item" id="metricNA">센서 NA 노드: 0</div>
+
+      <button id="btnLog" class="btn-log" type="button">
+        <span class="icon">🐞</span>
+        <span class="label">로그</span>
+      </button>
+    </div>
+
+    <div class="log-box" id="logBox"></div>
+  </div>
+</div>
+
+<div id="resetModal" class="modal-backdrop">
+  <div class="modal-box">
+    <div class="modal-title">RESET 명령을 전송하겠습니까?</div>
+    <div class="modal-actions">
+      <button class="modal-btn" type="button" onclick="closeResetDialog()">취소</button>
+      <button class="modal-btn primary" type="button" onclick="confirmReset()">전송</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
+
+const GATEWAY_TIMEOUT_MS = 120000;
+const NODE_TIMEOUT_MS = 60000; // ✅ 1분(10초 폴링 기준 여유)
+
+
+const ROUTER_ID = 60;
+const ROUTER_TIMEOUT_MS = 60000; // ✅ 라우터도 동일 기준
+
+
+const CACHE_GRACE_MS = 30000; // ✅ 캐시 복원 후 30초는 OFFLINE 강등 유예
+
+const TOPIC_TELEM_SUB   = "tswell/lora/node/+/telemetry";
+const TOPIC_LED_CMD_PREFIX  = "tswell/lora/node/";
+const TOPIC_LED_ACK_SUB     = "tswell/lora/node/+/led"; // GNR: same topic used for LED set
+const TOPIC_GW_CMD      = "tswell/lora/gateway/cmd";
+const TOPIC_GW_HB       = null; // GNR gateway does not publish heartbeat
+
+// ✅ (추가) WiFi RSSI 토픽
+const TOPIC_WIFI_RSSI   = "tswell/lora/gateway/wifi_rssi";
+
+const STORAGE_KEY = "lora_nodes_cache_v1";
+
+let client;
+let nodes = {};
+let lastPacket = 0;
+let lastGwHb = 0;  // (unused)
+let cacheMode = false;
+let cacheRestoredAt = 0;
+
+// ✅ LED pending 상태 저장 (ACK 오기 전 ... 표시)
+let ledPending = {}; // {id:{target:0/1, ts:ms}}
+const startTime = Date.now();
+
+const mqttDot   = document.getElementById("mqttDot");
+const mqttState = document.getElementById("mqttState");
+const nodeCountEl = document.getElementById("nodeCount");
+const nodeCountChip = document.getElementById("nodeCountChip");
+const deviceConn = document.getElementById("deviceConn");
+const wifiRssiText = document.getElementById("wifiRssiText");
+const connTextEl = document.querySelector("#deviceConn .conn-text");
+
+const devStatusDot  = document.getElementById("devStatusDot");
+const devStatusLabel= document.getElementById("devStatusLabel");
+const devStatusSub  = document.getElementById("devStatusSub");
+const uptimeLabel   = document.getElementById("uptimeLabel");
+
+const metricOk   = document.getElementById("metricOk");
+const metricFail = document.getElementById("metricFail");
+const metricNA   = document.getElementById("metricNA");
+
+const logBox  = document.getElementById("logBox");
+const btnLog  = document.getElementById("btnLog");
+
+const themeToggle = document.getElementById("themeToggle");
+const themeIcon   = document.getElementById("themeIcon");
+
+const resetModal  = document.getElementById("resetModal");
+
+// ✅ (1) 로컬 캐시 복원: 새로고침 직후 직전 데이터 표시
+function loadCache(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    const obj = JSON.parse(raw);
+    if(obj && typeof obj === "object"){
+      // ✅ 센서/LED 값은 복원하지만, "Last OK" 타이머는 새로 시작(=새 기기 접속 시 과거 누적시간 표시 방지)
+      nodes = obj.nodes || {};
+      Object.keys(nodes).forEach(k=>{
+        if(nodes[k] && typeof nodes[k] === "object"){
+          nodes[k].last_ok_ms = null; // 새로 열면 '-'부터 시작
+          nodes[k].cacheOnly = true; // ✅ 캐시에서만 복원된 노드(실수신 전)
+        }
+      });
+      lastPacket = 0; // Node telemetry 수신 시 갱신
+      lastGwHb  = 0; // (unused)
+
+      // ✅✅ [최소수정-1] 캐시 복원 상태 세팅 (grace 적용)
+      cacheMode = true;
+      cacheRestoredAt = Date.now();
+
+      renderTable();
+      updateDeviceStatus();
+      addLog("[CACHE] restored last state (timer reset)");
+    }
+  }catch(e){}
+}
+
+// ✅ 로컬 캐시 저장: 새 데이터 수신 시 갱신
+function saveCache(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      nodes,
+      lastPacket,
+      lastGwHb
+    }));
+  }catch(e){}
+}
+
+// theme
+function applyTheme(theme){
+  const isLight = (theme === "light");
+  document.body.classList.toggle("theme-light", isLight);
+  themeIcon.textContent = isLight ? "☀️" : "🌙";
+}
+function toggleTheme(){
+  const isLight = document.body.classList.contains("theme-light");
+  const next = isLight ? "dark" : "light";
+  localStorage.setItem("lora-theme", next);
+  applyTheme(next);
+}
+if(themeToggle){
+  themeToggle.addEventListener("click", toggleTheme);
+}
+applyTheme(localStorage.getItem("lora-theme") || "dark");
+
+// log
+function addLog(msg){
+  if(!logBox) { console.log(msg); return; }
+  const now = new Date();
+  const time = now.toLocaleTimeString();
+  const div = document.createElement("div");
+  div.className = "log-line";
+  div.innerHTML = `<span class="time">[${time}]</span>${msg}`;
+  logBox.appendChild(div);
+  logBox.scrollTop = logBox.scrollHeight;
+}
+function toggleLog(){
+  if(!logBox || !btnLog) return;
+  const visible = (logBox.style.display === "block");
+  logBox.style.display = visible ? "none" : "block";
+  if(visible) btnLog.classList.remove("active");
+  else        btnLog.classList.add("active");
+}
+if(btnLog){ btnLog.addEventListener("click", toggleLog); }
+
+function isAlive(id, last_ok_ms){
+  if(typeof last_ok_ms !== "number") return false;
+  const now = Date.now();
+  const timeout = NODE_TIMEOUT_MS; // ✅ 노드/라우터 동일 기준
+  return ((now - last_ok_ms) < timeout);
+}
+
+// ✅ (2) 정렬: 2/3/4 다음에 Router 60 바로 오게
+function sortIds(ids){
+  return ids.sort((a,b)=>{
+    const order = (x)=>{
+      if(x===2) return 0;
+      if(x===3) return 1;
+      if(x===4) return 2;
+      if(x===ROUTER_ID) return 3;
+      return 100 + x;
+    };
+    return order(a) - order(b);
+  });
+}
+
+// MQTT
+function connectMQTT(){
+  client = mqtt.connect(MQTT_URL, { reconnectPeriod:3000 });
+
+  client.on("connect", ()=>{
+    mqttState.textContent = "연결됨";
+    mqttDot.classList.add("on");
+    client.subscribe(TOPIC_TELEM_SUB);
+    client.subscribe(TOPIC_WIFI_RSSI);
+    addLog("[MQTT] connected to " + MQTT_URL);
+    addLog("[MQTT] subscribed: " + TOPIC_TELEM_SUB);
+  });
+
+  client.on("close", ()=>{
+    mqttState.textContent = "연결안됨";
+    mqttDot.classList.remove("on");
+    addLog("[MQTT] disconnected");
+  });
+
+  client.on("message", (topic, msg)=>{
+    try {
+      // ✅ (추가) WiFi RSSI 수신 → "-62 dBm" 형태로만 표시
+      if(topic === TOPIC_WIFI_RSSI){
+        const rssi = Number(msg.toString());
+        if(wifiRssiText){
+          if(Number.isFinite(rssi)) wifiRssiText.textContent = `${rssi} dBm`;
+          else wifiRssiText.textContent = `- dBm`;
+        }
+        return;
+      }
+
+      // ✅ LED ACK 처리
+      if(topic.endsWith("/led_ack")){
+        const parts = topic.split("/");
+        if(parts.length >= 5){
+          const id = Number(parts[3]);
+          const applied = Number(msg.toString()) ? 1 : 0;
+          const now = Date.now();
+          nodes[id] = {
+            ...nodes[id],
+            led: applied,
+            last_ok_ms: now,
+            cacheOnly: false
+          };
+          delete ledPending[id];
+          saveCache();
+          renderTable();
+          updateDeviceStatus();
+          addLog(`[ACK] node ${id} applied=${applied}`);
+        }
+        return;
+      }
+      if (!topic.startsWith("tswell/lora/node/")) return;
+      if (!topic.endsWith("/telemetry")) return;
+
+      const parts = topic.split("/");
+      if(parts.length < 5) return;
+
+      const id = Number(parts[3]);
+      if (!id || id === 99) return;
+
+      cacheMode = false; // ✅ 실데이터 수신 → CACHE 모드 해제
+      const data = JSON.parse(msg.toString());
+      const now = Date.now();
+
+      nodes[id] = {
+        ...nodes[id],
+        bat:  (typeof data.vbat === "number") ? data.vbat : null,
+        t:    (typeof data.t    === "number") ? data.t    : null,
+        rh:   (typeof data.h    === "number") ? data.h    : null,
+        vib:  (typeof data.vib  === "number") ? data.vib  : null,
+        led:  (typeof data.led  === "number") ? data.led  : 0,
+        rssi: (typeof data.rssi === "number") ? data.rssi : null,
+        last_ok_ms: now,
+        cacheOnly: false
+      };
+
+      lastPacket = now;
+
+      saveCache();       // ✅ 새로 수신되면 캐시 저장
+      renderTable();
+      updateDeviceStatus();
+      addLog(`[MQTT] ${topic} → ${msg.toString()}`);
+    } catch(e){
+      addLog("[MQTT] parse error: " + e);
+    }
+  });
+}
+
+/* ✅✅ [최소수정-2] 부팅 로직: 처음 Open vs Refresh 구분 */
+function clearAllState(){
+  // ✅ 처음 Open이면 완전 초기화 (캐시 삭제 + 리스트 비움)
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+  nodes = {};
+  lastPacket = 0;
+  lastGwHb = 0;
+  cacheMode = false;
+  cacheRestoredAt = 0;
+
+  renderTable();
+  updateDeviceStatus();
+  addLog("[INIT] OPEN → FULL RESET (cache cleared)");
+}
+
+(function boot(){
+  let navType = "navigate";
+  try{
+    const nav = performance.getEntriesByType("navigation");
+    if(nav && nav.length) navType = nav[0].type; // "navigate" | "reload"
+  }catch(e){}
+
+  if(navType === "reload"){
+    // ✅ Refresh: 캐시 복원 + Last OK는 '-'로 시작
+    loadCache();
+    addLog("[BOOT] RELOAD → cache restored (Last OK = '-')");
+  }else{
+    // ✅ 처음 Open: 완전 초기화
+    clearAllState();
+  }
+
+  connectMQTT();
+})();
+
+function renderTable(){
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
+
+  let ids = Object.keys(nodes)
+    .map(x=>Number(x))
+    .filter(x=>x && x!==99);
+
+  ids = sortIds(ids);
+
+  nodeCountEl.textContent = ids.length;
+  if(ids.length>0) nodeCountChip.classList.add("ok");
+  else nodeCountChip.classList.remove("ok");
+
+  let okCount=0, failCount=0, naCount=0;
+  const now = Date.now();
+
+  ids.forEach(id=>{
+    const n = nodes[id];
+    const alive = isAlive(id, n.last_ok_ms);
+
+    if(!n.cacheOnly && typeof n.last_ok_ms === "number"){ if(alive) okCount++; else failCount++; }
+    if(n.t == null || n.rh == null || n.vib == null) naCount++;
+
+    const tr = document.createElement("tr");
+
+    const tdId = document.createElement("td");
+    const label = `${id}`;
+    tdId.innerHTML = `<span class="node-id">${label}</span>`;
+    if(!alive) tdId.style.color = "#ff4c4c";
+    tr.appendChild(tdId);
+
+    function cellVal(v, digits=1, type=""){
+      if(v==null) return `<span class="badge-null">NA</span>`;
+      const num = Number(v);
+      if(type==="bat" && num <= 3.0){
+        return `<span class="badge bat-low">${num.toFixed(digits)}</span>`;
+      }
+      return `<span class="badge">${num.toFixed(digits)}</span>`;
+    }
+
+    const batTd = document.createElement("td");
+    batTd.innerHTML = cellVal(n.bat,2,"bat"); tr.appendChild(batTd);
+
+    const tTd = document.createElement("td");
+    tTd.innerHTML = cellVal(n.t,1); tr.appendChild(tTd);
+
+    const rhTd = document.createElement("td");
+    rhTd.innerHTML = cellVal(n.rh,0); tr.appendChild(rhTd);
+
+    const vibTd = document.createElement("td");
+    vibTd.innerHTML = cellVal(n.vib,0); tr.appendChild(vibTd);
+
+    const ledTd = document.createElement("td");
+    ledTd.className = "col-led";
+    if(id === ROUTER_ID){
+      ledTd.innerHTML = `<span class="badge-null">-</span>`;
+    }else{
+      const ledBtn = document.createElement("button");
+      ledBtn.className = "btn-led";
+      const pend = ledPending[id];
+      const showLed = pend ? pend.target : (n.led ? 1 : 0);
+      ledBtn.dataset.on = showLed ? "1" : "0";
+      ledBtn.innerHTML = `<span>${pend ? "..." : (showLed ? "ON" : "OFF")}</span>`;
+      ledBtn.onclick = ()=>{
+        const next = ledBtn.dataset.on==="1" ? 0 : 1;
+        sendLED(id, next===1);
+      };
+      ledTd.appendChild(ledBtn);
+    }
+    tr.appendChild(ledTd);
+
+    const rssiTd = document.createElement("td");
+    rssiTd.className = "col-rssi";
+    if(n.rssi==null) rssiTd.innerHTML = `<span class="rss">-</span>`;
+    else rssiTd.innerHTML = `<span class="rss">${n.rssi}</span>`;
+    tr.appendChild(rssiTd);
+
+    const lastTd = document.createElement("td");
+    lastTd.className = "col-last";
+    if (typeof n.last_ok_ms === "number") {
+      const diffSec = Math.floor((now - n.last_ok_ms)/1000);
+      lastTd.textContent = diffSec + " s";
+    } else {
+      lastTd.textContent = "-";
+    }
+    tr.appendChild(lastTd);
+
+    tbody.appendChild(tr);
+  });
+
+  metricOk.textContent   = "OK 노드: " + okCount;
+  metricFail.textContent = "Fail 노드: " + failCount;
+  metricNA.textContent   = "센서 NA 노드: " + naCount;
+}
+
+function sendLED(id, checked){
+  if(id === ROUTER_ID){
+    addLog("[LED] Router는 LED 제어 대상 아님");
+    return;
+  }
+  if(!client || !client.connected) {
+    addLog("[LED] MQTT 미연결");
+    alert("MQTT가 연결되지 않았습니다. 잠시 후 다시 시도하세요.");
+    return;
+  }
+  const topic = TOPIC_LED_CMD_PREFIX + id + "/led";
+  const payload = checked ? "1" : "0";
+
+  // ✅ pending 등록
+  ledPending[id] = { target: checked ? 1 : 0, ts: Date.now() };
+
+  client.publish(topic, payload);
+  addLog(`[LED CMD] publish → ${topic} : ${payload}`);
+
+  renderTable();
+
+  // ✅ ACK 타임아웃
+  setTimeout(()=>{
+    if(ledPending[id]){
+      addLog(`[LED CMD] pending timeout node ${id}`);
+      delete ledPending[id];
+      renderTable();
+    }
+  }, 8000);
+}
+
+function updateDeviceStatus(){
+  const now = Date.now();
+
+  let lastStr = "-";
+  if(lastPacket>0){
+    const diffSec = Math.floor((now-lastPacket)/1000);
+    lastStr = diffSec + "초 전";
+  }
+  devStatusSub.textContent = "마지막 패킷: " + lastStr + (cacheMode ? " (CACHE)" : "");
+
+  const upSec = Math.floor((now - startTime)/1000);
+  uptimeLabel.textContent = "Uptime: " + upSec + " s";
+
+  const ids = Object.keys(nodes).map(x=>Number(x)).filter(x=>x && x!==99);
+  const gatewayAlive = true; // heartbeat disabled; UI uses MQTT connection + telemetry
+
+  const anyOk = ids.some(id=>{
+    const n = nodes[id];
+    return n && isAlive(id, n.last_ok_ms);
+  });
+
+  if(anyOk){
+    devStatusDot.classList.add("ok");
+    devStatusLabel.textContent = "Nodes Active";
+  }else if(!gatewayAlive){
+    devStatusDot.classList.remove("ok");
+    devStatusLabel.textContent = "Gateway Offline";
+  }else{
+    devStatusDot.classList.remove("ok");
+    devStatusLabel.textContent = "No Active Node";
+  }
+
+  const cacheGrace = cacheMode && (Date.now() - cacheRestoredAt < CACHE_GRACE_MS);
+  const online = (client && client.connected);
+  if(deviceConn){
+    if(online){
+      deviceConn.classList.remove("offline");
+      deviceConn.classList.add("online");
+      if(connTextEl) connTextEl.textContent = "ON LINE"; else deviceConn.textContent = "ON LINE";
+    }else{
+      deviceConn.classList.remove("online");
+      deviceConn.classList.add("offline");
+      if(connTextEl) connTextEl.textContent = "OFF LINE"; else deviceConn.textContent = "OFF LINE";
+    }
+  }
+}
+
+// RESET dialog
+function openResetDialog(){
+  if(!client || !client.connected){
+    alert("MQTT가 연결되지 않았습니다. RESET 명령을 보낼 수 없습니다.");
+    addLog("[RESET] MQTT 미연결 → 명령 전송 불가");
+    return;
+  }
+  if(resetModal){
+    resetModal.style.display = "flex";
+  }
+}
+function closeResetDialog(){
+  if(resetModal){
+    resetModal.style.display = "none";
+  }
+}
+function softReset(){
+  if(!client || !client.connected){
+    addLog("[RESET] MQTT 미연결 → 명령 전송 불가");
+    return;
+  }
+  client.publish(TOPIC_GW_CMD, "reset", {qos:1, retain:false}, (err)=>{
+    if(err) addLog("[RESET] publish error: " + err);
+    else    addLog("[RESET] publish ack");
+  });
+  addLog(`[RESET] publish → ${TOPIC_GW_CMD} : reset`);
+}
+function confirmReset(){
+  closeResetDialog();
+  softReset();
+}
+
+setInterval(updateDeviceStatus, 1000);
+</script>
+
+</body>
+</html>
