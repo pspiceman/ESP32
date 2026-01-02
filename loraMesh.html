@@ -159,6 +159,40 @@
   .device-status-left { display:flex; flex-direction:column; gap:2px; }
   .dev-status-title { font-size:13px; font-weight:600; color:#dfe6ff; }
   body.theme-light .dev-status-title { color:#1f2937; }
+
+  body.theme-light .device-status-card{
+    background: linear-gradient(180deg, #ffffff, #eef2ff);
+    border-color:#d4d4ff;
+  }
+  body.theme-light .log-box{
+    background:#ffffff;
+  }
+
+  /* ✅ Light theme: table/background 밝게 */
+  body.theme-light .table-wrap{
+    background: linear-gradient(180deg,#ffffff,#eef2ff);
+    border-color:#d4d4ff;
+    box-shadow: inset 0 0 0 1px rgba(99,102,241,0.15);
+  }
+  body.theme-light thead{
+    background: linear-gradient(180deg,#f8fafc,#eef2ff);
+  }
+  body.theme-light th{
+    color:#111827;
+    border-bottom:1px solid rgba(99,102,241,0.25);
+  }
+  body.theme-light th .unit{ color:#6b7280; }
+  body.theme-light tbody tr:nth-child(even){ background:rgba(239,246,255,0.9); }
+  body.theme-light tbody tr:nth-child(odd){  background:#ffffff; }
+  body.theme-light .node-id{ color:#111827; }
+  body.theme-light .rss{ color:#374151; }
+  body.theme-light .badge-null{ color:#6b7280; }
+  body.theme-light .btn-led{
+    border-color:rgba(99,102,241,0.35);
+    background:#ffffff;
+    color:#1f2937;
+  }
+
   .dev-status-sub { font-size:11px; color:var(--text-sub); }
   .device-status-right { display:flex; align-items:center; gap:6px; }
   .status-dot { width:9px;height:9px;border-radius:999px;background:var(--danger); box-shadow:0 0 12px rgba(255,76,76,0.9); }
@@ -324,6 +358,20 @@
     }
   }
 
+  /* ✅ Light theme: 하단 pill/버튼(OK/Fail/NA/로그) 밝게 */
+  body.theme-light .metric-item{
+    background:#ffffff;
+    border-color:rgba(99,102,241,0.25);
+    color:#111827;
+  }
+  body.theme-light .btn-log{
+    background:#ffffff;
+    border-color:rgba(99,102,241,0.28);
+    color:#111827;
+  }
+  body.theme-light .btn-log.active{
+    color:#ffffff;
+  }
 </style>
 </head>
 <body>
@@ -351,7 +399,6 @@
       </div>
 
       <div class="chip">
-        <span class="chip-label">장비연결</span>
         <button id="deviceConn" type="button" class="device-conn-pill offline">OFF LINE</button>
       </div>
 
@@ -440,21 +487,31 @@
 <script>
 const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
 
-const GATEWAY_TIMEOUT_MS = 20000;
+const GATEWAY_TIMEOUT_MS = 120000;
 const NODE_TIMEOUT_MS = 25000;
 
 const ROUTER_ID = 60;
-const ROUTER_TIMEOUT_MS = 90000;
+const ROUTER_TIMEOUT_MS = 120000;
+
+const CACHE_GRACE_MS = 30000; // ✅ 캐시 복원 후 30초는 OFFLINE 강등 유예
 
 const TOPIC_TELEM_SUB   = "tswell/lora/node/+/telemetry";
-const TOPIC_LED_PREFIX  = "tswell/lora/node/";
+const TOPIC_LED_CMD_PREFIX  = "tswell/lora/node/";
+const TOPIC_LED_ACK_SUB     = "tswell/lora/node/+/led"; // GNR: same topic used for LED set
 const TOPIC_GW_CMD      = "tswell/lora/gateway/cmd";
+const TOPIC_GW_HB       = null; // GNR gateway does not publish heartbeat
 
 const STORAGE_KEY = "lora_nodes_cache_v1";
 
 let client;
 let nodes = {};
 let lastPacket = 0;
+let lastGwHb = 0;  // (unused)
+let cacheMode = false;
+let cacheRestoredAt = 0;
+
+// ✅ LED pending 상태 저장 (ACK 오기 전 ... 표시)
+let ledPending = {}; // {id:{target:0/1, ts:ms}}
 const startTime = Date.now();
 
 const mqttDot   = document.getElementById("mqttDot");
@@ -487,11 +544,23 @@ function loadCache(){
     if(!raw) return;
     const obj = JSON.parse(raw);
     if(obj && typeof obj === "object"){
+      // ✅ 센서/LED 값은 복원하지만, "Last OK" 타이머는 새로 시작(=새 기기 접속 시 과거 누적시간 표시 방지)
       nodes = obj.nodes || {};
-      lastPacket = obj.lastPacket || 0;
+      Object.keys(nodes).forEach(k=>{
+        if(nodes[k] && typeof nodes[k] === "object"){
+          nodes[k].last_ok_ms = null; // 새로 열면 '-'부터 시작
+        }
+      });
+      lastPacket = 0; // Node telemetry 수신 시 갱신
+      lastGwHb  = 0; // (unused)
+
+      // ✅✅ [최소수정-1] 캐시 복원 상태 세팅 (grace 적용)
+      cacheMode = true;
+      cacheRestoredAt = Date.now();
+
       renderTable();
       updateDeviceStatus();
-      addLog("[CACHE] restored last state");
+      addLog("[CACHE] restored last state (timer reset)");
     }
   }catch(e){}
 }
@@ -501,7 +570,8 @@ function saveCache(){
   try{
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       nodes,
-      lastPacket
+      lastPacket,
+      lastGwHb
     }));
   }catch(e){}
 }
@@ -571,8 +641,7 @@ function connectMQTT(){
   client.on("connect", ()=>{
     mqttState.textContent = "연결됨";
     mqttDot.classList.add("on");
-    client.subscribe(TOPIC_TELEM_SUB);
-    addLog("[MQTT] connected to " + MQTT_URL);
+    client.subscribe(TOPIC_TELEM_SUB);    addLog("[MQTT] connected to " + MQTT_URL);
     addLog("[MQTT] subscribed: " + TOPIC_TELEM_SUB);
   });
 
@@ -584,6 +653,26 @@ function connectMQTT(){
 
   client.on("message", (topic, msg)=>{
     try {
+      // ✅ LED ACK 처리
+      if(topic.endsWith("/led_ack")){
+        const parts = topic.split("/");
+        if(parts.length >= 5){
+          const id = Number(parts[3]);
+          const applied = Number(msg.toString()) ? 1 : 0;
+          const now = Date.now();
+          nodes[id] = {
+            ...nodes[id],
+            led: applied,
+            last_ok_ms: now
+          };
+          delete ledPending[id];
+          saveCache();
+          renderTable();
+          updateDeviceStatus();
+          addLog(`[ACK] node ${id} applied=${applied}`);
+        }
+        return;
+      }
       if (!topic.startsWith("tswell/lora/node/")) return;
       if (!topic.endsWith("/telemetry")) return;
 
@@ -593,6 +682,7 @@ function connectMQTT(){
       const id = Number(parts[3]);
       if (!id || id === 99) return;
 
+      cacheMode = false; // ✅ 실데이터 수신 → CACHE 모드 해제
       const data = JSON.parse(msg.toString());
       const now = Date.now();
 
@@ -619,9 +709,39 @@ function connectMQTT(){
   });
 }
 
-// ✅ 페이지 시작 시 캐시 먼저 출력
-loadCache();
-connectMQTT();
+/* ✅✅ [최소수정-2] 부팅 로직: 처음 Open vs Refresh 구분 */
+function clearAllState(){
+  // ✅ 처음 Open이면 완전 초기화 (캐시 삭제 + 리스트 비움)
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+  nodes = {};
+  lastPacket = 0;
+  lastGwHb = 0;
+  cacheMode = false;
+  cacheRestoredAt = 0;
+
+  renderTable();
+  updateDeviceStatus();
+  addLog("[INIT] OPEN → FULL RESET (cache cleared)");
+}
+
+(function boot(){
+  let navType = "navigate";
+  try{
+    const nav = performance.getEntriesByType("navigation");
+    if(nav && nav.length) navType = nav[0].type; // "navigate" | "reload"
+  }catch(e){}
+
+  if(navType === "reload"){
+    // ✅ Refresh: 캐시 복원 + Last OK는 '-'로 시작
+    loadCache();
+    addLog("[BOOT] RELOAD → cache restored (Last OK = '-')");
+  }else{
+    // ✅ 처음 Open: 완전 초기화
+    clearAllState();
+  }
+
+  connectMQTT();
+})();
 
 function renderTable(){
   const tbody = document.getElementById("tbody");
@@ -683,8 +803,10 @@ function renderTable(){
     }else{
       const ledBtn = document.createElement("button");
       ledBtn.className = "btn-led";
-      ledBtn.dataset.on = n.led ? "1" : "0";
-      ledBtn.innerHTML = `<span>${n.led ? "ON" : "OFF"}</span>`;
+      const pend = ledPending[id];
+      const showLed = pend ? pend.target : (n.led ? 1 : 0);
+      ledBtn.dataset.on = showLed ? "1" : "0";
+      ledBtn.innerHTML = `<span>${pend ? "..." : (showLed ? "ON" : "OFF")}</span>`;
       ledBtn.onclick = ()=>{
         const next = ledBtn.dataset.on==="1" ? 0 : 1;
         sendLED(id, next===1);
@@ -727,10 +849,25 @@ function sendLED(id, checked){
     alert("MQTT가 연결되지 않았습니다. 잠시 후 다시 시도하세요.");
     return;
   }
-  const topic = TOPIC_LED_PREFIX + id + "/led";
+  const topic = TOPIC_LED_CMD_PREFIX + id + "/led";
   const payload = checked ? "1" : "0";
+
+  // ✅ pending 등록
+  ledPending[id] = { target: checked ? 1 : 0, ts: Date.now() };
+
   client.publish(topic, payload);
-  addLog(`[LED] publish → ${topic} : ${payload}`);
+  addLog(`[LED CMD] publish → ${topic} : ${payload}`);
+
+  renderTable();
+
+  // ✅ ACK 타임아웃
+  setTimeout(()=>{
+    if(ledPending[id]){
+      addLog(`[LED CMD] pending timeout node ${id}`);
+      delete ledPending[id];
+      renderTable();
+    }
+  }, 8000);
 }
 
 function updateDeviceStatus(){
@@ -741,20 +878,20 @@ function updateDeviceStatus(){
     const diffSec = Math.floor((now-lastPacket)/1000);
     lastStr = diffSec + "초 전";
   }
-  devStatusSub.textContent = "마지막 패킷: " + lastStr;
+  devStatusSub.textContent = "마지막 패킷: " + lastStr + (cacheMode ? " (CACHE)" : "");
 
   const upSec = Math.floor((now - startTime)/1000);
   uptimeLabel.textContent = "Uptime: " + upSec + " s";
 
   const ids = Object.keys(nodes).map(x=>Number(x)).filter(x=>x && x!==99);
-  const gatewayAlive = (lastPacket>0) && ((now-lastPacket) < GATEWAY_TIMEOUT_MS);
+  const gatewayAlive = true; // heartbeat disabled; UI uses MQTT connection + telemetry
 
   const anyOk = ids.some(id=>{
     const n = nodes[id];
     return n && isAlive(id, n.last_ok_ms);
   });
 
-  if(gatewayAlive && anyOk){
+  if(anyOk){
     devStatusDot.classList.add("ok");
     devStatusLabel.textContent = "Nodes Active";
   }else if(!gatewayAlive){
@@ -765,7 +902,8 @@ function updateDeviceStatus(){
     devStatusLabel.textContent = "No Active Node";
   }
 
-  const online = (client && client.connected && gatewayAlive);
+  const cacheGrace = cacheMode && (Date.now() - cacheRestoredAt < CACHE_GRACE_MS);
+  const online = (client && client.connected);
   if(deviceConn){
     if(online){
       deviceConn.classList.remove("offline");
@@ -800,7 +938,10 @@ function softReset(){
     addLog("[RESET] MQTT 미연결 → 명령 전송 불가");
     return;
   }
-  client.publish(TOPIC_GW_CMD, "reset");
+  client.publish(TOPIC_GW_CMD, "reset", {qos:1, retain:false}, (err)=>{
+    if(err) addLog("[RESET] publish error: " + err);
+    else    addLog("[RESET] publish ack");
+  });
   addLog(`[RESET] publish → ${TOPIC_GW_CMD} : reset`);
 }
 function confirmReset(){
