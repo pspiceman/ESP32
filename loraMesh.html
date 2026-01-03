@@ -7,7 +7,7 @@
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
 <style>
-/* ✅ UI/CSS는 그대로 유지 (사용자 제공 원본 스타일 기반) */
+/* ✅ UI/CSS는 그대로 유지 */
 :root {
   --bg-color:#0b1020; --card-bg:#141a30; --accent:#37ff79;
   --accent-soft:rgba(55,255,121,0.15); --text-main:#f5f7ff;
@@ -144,6 +144,11 @@ body.theme-light .node-id{color:#111827;}
   border-color:rgba(55,255,121,0.8);
   background:radial-gradient(circle at 20% 0, rgba(55,255,121,0.5), rgba(8,14,32,0.98));
   color:#eafff4;box-shadow:0 0 16px rgba(55,255,121,0.8);
+}
+.btn-led[disabled]{
+  opacity:0.65;
+  cursor:not-allowed;
+  filter:grayscale(0.15);
 }
 
 .legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;font-size:12px;color:var(--text-sub);}
@@ -289,28 +294,32 @@ body.theme-light .log-line{color:#374151 !important;}
 <script>
 const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
 
-// ✅ Router도 동일하게 LED 제어 지원
 const ROUTER_ID = 50;
 
-// timeouts
+// ✅ GW online 판정
+const GW_TIMEOUT_MS = 12000;
 const NODE_TIMEOUT_MS   = 60000;
 const ROUTER_TIMEOUT_MS = 60000;
 
-const TOPIC_TELEM_SUB       = "tswell/lora/node/+/telemetry";
-const TOPIC_LED_CMD_PREFIX  = "tswell/lora/node/";
-const TOPIC_GW_CMD          = "tswell/lora/gateway/cmd";
-const TOPIC_WIFI_RSSI       = "tswell/lora/gateway/wifi_rssi";
-const STORAGE_KEY = "lora_nodes_cache_v1";
+// Topics
+const TOPIC_TELEM_SUB      = "tswell/lora/node/+/telemetry";
+const TOPIC_LEDSTATE_SUB   = "tswell/lora/node/+/led_state";   // ✅ 추가
+const TOPIC_LED_CMD_PREFIX = "tswell/lora/node/";
+const TOPIC_GW_CMD         = "tswell/lora/gateway/cmd";
+const TOPIC_WIFI_RSSI      = "tswell/lora/gateway/wifi_rssi";
+
+const FIXED_NODE_ORDER = [2,3,4,ROUTER_ID];
+const STORAGE_KEY = "lora_nodes_cache_v4";
 
 let client;
 let nodes = {};
 let lastPacket = 0;
-
-// ✅ pending: telemetry 확정될 때까지 "..." 유지
-let ledPending = {}; // {id:{target, ts}}
+let lastGwSeenMs = 0;
+let ledPending = {}; // {id:{target,ts}}
 
 const startTime = Date.now();
 
+// DOM
 const mqttDot   = document.getElementById("mqttDot");
 const mqttState = document.getElementById("mqttState");
 const nodeCountEl = document.getElementById("nodeCount");
@@ -335,6 +344,7 @@ const themeToggle = document.getElementById("themeToggle");
 const themeIcon   = document.getElementById("themeIcon");
 const resetModal  = document.getElementById("resetModal");
 
+// log
 function addLog(msg){
   const now = new Date();
   const time = now.toLocaleTimeString();
@@ -344,7 +354,6 @@ function addLog(msg){
   logBox.appendChild(div);
   logBox.scrollTop = logBox.scrollHeight;
 }
-
 function toggleLog(){
   const visible = (logBox.style.display === "block");
   logBox.style.display = visible ? "none" : "block";
@@ -352,6 +361,7 @@ function toggleLog(){
 }
 btnLog.addEventListener("click", toggleLog);
 
+// theme
 function applyTheme(theme){
   const isLight = (theme === "light");
   document.body.classList.toggle("theme-light", isLight);
@@ -373,17 +383,17 @@ function loadCache(){
     if(!raw) return;
     const obj = JSON.parse(raw);
     nodes = obj.nodes || {};
-    Object.keys(nodes).forEach(k=>{
-      nodes[k].last_ok_ms = null;
-      nodes[k].cacheOnly = true;
-    });
+    lastPacket = obj.lastPacket || 0;
+    lastGwSeenMs = obj.lastGwSeenMs || 0;
+    Object.keys(nodes).forEach(k=>{ nodes[k].cacheOnly = true; });
     renderTable();
-    addLog("[CACHE] restored (Last OK reset)");
+    updateDeviceStatus();
+    addLog("[CACHE] restored");
   }catch(e){}
 }
 function saveCache(){
   try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({nodes,lastPacket}));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({nodes,lastPacket,lastGwSeenMs}));
   }catch(e){}
 }
 
@@ -394,30 +404,19 @@ function isAlive(id, last_ok_ms){
   return ((now - last_ok_ms) < tout);
 }
 
-// sort: 2,3,4,50
-function sortIds(ids){
-  return ids.sort((a,b)=>{
-    const order = (x)=>{
-      if(x===2) return 0;
-      if(x===3) return 1;
-      if(x===4) return 2;
-      if(x===ROUTER_ID) return 3;
-      return 100 + x;
-    };
-    return order(a)-order(b);
-  });
-}
-
 function connectMQTT(){
   client = mqtt.connect(MQTT_URL, { reconnectPeriod:3000 });
 
   client.on("connect", ()=>{
     mqttState.textContent = "연결됨";
     mqttDot.classList.add("on");
+
     client.subscribe(TOPIC_TELEM_SUB);
+    client.subscribe(TOPIC_LEDSTATE_SUB); // ✅ 추가
     client.subscribe(TOPIC_WIFI_RSSI);
+
     addLog("[MQTT] connected");
-    addLog("[MQTT] subscribed: " + TOPIC_TELEM_SUB);
+    addLog("[MQTT] subscribed: telemetry + led_state + wifi_rssi");
   });
 
   client.on("close", ()=>{
@@ -427,57 +426,93 @@ function connectMQTT(){
   });
 
   client.on("message", (topic, msg)=>{
-    try{
-      if(topic === TOPIC_WIFI_RSSI){
-        const rssi = Number(msg.toString());
-        wifiRssiText.textContent = Number.isFinite(rssi) ? `${rssi} dBm` : `- dBm`;
-        return;
-      }
+    const now = Date.now();
 
-      if(!topic.startsWith("tswell/lora/node/")) return;
-      if(!topic.endsWith("/telemetry")) return;
+    // wifi_rssi
+    if(topic === TOPIC_WIFI_RSSI){
+      const rssi = Number(msg.toString());
+      wifiRssiText.textContent = Number.isFinite(rssi) ? `${rssi} dBm` : `- dBm`;
+      lastGwSeenMs = now;
+      saveCache();
+      return;
+    }
 
+    // ✅ led_state 확정값
+    if(topic.endsWith("/led_state")){
       const parts = topic.split("/");
       const id = Number(parts[3]);
       if(!id) return;
 
-      const data = JSON.parse(msg.toString());
-      const now = Date.now();
-
-      const ledVal = (typeof data.led === "number") ? data.led : 0;
+      const val = Number(msg.toString());
+      const ledVal = val ? 1 : 0;
 
       nodes[id] = {
         ...nodes[id],
-        bat:  (typeof data.vbat === "number") ? data.vbat : null,
-        t:    (typeof data.t    === "number") ? data.t    : null,
-        rh:   (typeof data.h    === "number") ? data.h    : null,
-        vib:  (typeof data.vib  === "number") ? data.vib  : null,
-        led:  ledVal,
-        rssi: (typeof data.rssi === "number") ? data.rssi : null,
-        last_ok_ms: now,
-        cacheOnly: false
+        led_confirm: ledVal,
+        last_led_ms: now
       };
 
-      lastPacket = now;
-
-      // ✅ pending 해제 조건: telemetry 확정
+      // pending 해제
       if(ledPending[id] && ledPending[id].target === ledVal){
-        addLog(`[LED DONE][TELEM] node ${id} applied=${ledVal}`);
+        addLog(`[LED DONE][STATE] node ${id} applied=${ledVal}`);
         delete ledPending[id];
       }
+
+      // GW 살아있음 신호로 인정
+      lastGwSeenMs = now;
 
       saveCache();
       renderTable();
       updateDeviceStatus();
-    }catch(e){
-      addLog("[MQTT] parse error: " + e);
+      return;
+    }
+
+    // telemetry
+    if(topic.endsWith("/telemetry")){
+      try{
+        const parts = topic.split("/");
+        const id = Number(parts[3]);
+        if(!id) return;
+
+        const data = JSON.parse(msg.toString());
+        const ledVal = (typeof data.led === "number") ? (data.led ? 1 : 0) : 0;
+
+        lastPacket = now;
+        lastGwSeenMs = now;
+
+        nodes[id] = {
+          ...nodes[id],
+          bat:  (typeof data.vbat === "number") ? data.vbat : null,
+          t:    (typeof data.t    === "number") ? data.t    : null,
+          rh:   (typeof data.h    === "number") ? data.h    : null,
+          vib:  (typeof data.vib  === "number") ? data.vib  : null,
+          led:  ledVal,
+          rssi: (typeof data.rssi === "number") ? data.rssi : null,
+          last_ok_ms: now,
+          cacheOnly: false
+        };
+
+        // pending 해제 (telemetry fallback)
+        if(ledPending[id]){
+          const confirm = (typeof nodes[id].led_confirm === "number") ? nodes[id].led_confirm : null;
+          if(confirm === null && ledPending[id].target === ledVal){
+            addLog(`[LED DONE][TELEM] node ${id} applied=${ledVal}`);
+            delete ledPending[id];
+          }
+        }
+
+        saveCache();
+        renderTable();
+        updateDeviceStatus();
+      }catch(e){
+        addLog("[MQTT] telemetry parse error: " + e);
+      }
     }
   });
 }
 
 // boot
 (function boot(){
-  // reload면 cache 복원, 처음이면 clear
   let navType = "navigate";
   try{
     const nav = performance.getEntriesByType("navigation");
@@ -491,17 +526,30 @@ function connectMQTT(){
     localStorage.removeItem(STORAGE_KEY);
     nodes = {};
     lastPacket = 0;
+    lastGwSeenMs = 0;
     addLog("[INIT] OPEN -> reset cache");
   }
   connectMQTT();
 })();
 
+function getRenderIds(){
+  const existing = Object.keys(nodes).map(x=>Number(x)).filter(x=>x);
+  const merged = new Set([...FIXED_NODE_ORDER, ...existing]);
+  const ordered = [];
+
+  FIXED_NODE_ORDER.forEach(id=>{ if(merged.has(id)) ordered.push(id); });
+  existing.sort((a,b)=>a-b).forEach(id=>{
+    if(!ordered.includes(id) && id) ordered.push(id);
+  });
+
+  return ordered;
+}
+
 function renderTable(){
   const tbody = document.getElementById("tbody");
   tbody.innerHTML = "";
 
-  let ids = Object.keys(nodes).map(x=>Number(x)).filter(x=>x);
-  ids = sortIds(ids);
+  const ids = getRenderIds();
 
   nodeCountEl.textContent = ids.length;
   nodeCountChip.classList.toggle("ok", ids.length>0);
@@ -510,12 +558,13 @@ function renderTable(){
   const now = Date.now();
 
   ids.forEach(id=>{
-    const n = nodes[id];
+    const n = nodes[id] || {};
     const alive = isAlive(id, n.last_ok_ms);
 
     if(typeof n.last_ok_ms === "number"){
       if(alive) okCount++; else failCount++;
-    }
+    }else failCount++;
+
     if(n.t==null || n.rh==null || n.vib==null) naCount++;
 
     const tr = document.createElement("tr");
@@ -535,32 +584,40 @@ function renderTable(){
     const rhTd=document.createElement("td"); rhTd.innerHTML=cellVal(n.rh,0); tr.appendChild(rhTd);
     const vibTd=document.createElement("td"); vibTd.innerHTML=cellVal(n.vib,0); tr.appendChild(vibTd);
 
-    // ✅ Router(50)도 LED 버튼 활성화
+    // ✅ LED 표시 우선순위:
+    // 1) led_confirm(led_state 토픽) 있으면 그것이 진실
+    // 2) 없으면 telemetry led
+    const ledBase =
+      (typeof n.led_confirm === "number") ? (n.led_confirm ? 1 : 0) :
+      (typeof n.led === "number") ? (n.led ? 1 : 0) : 0;
+
+    const teleLed = ledBase;
+
+    // pending 처리
+    const pend = ledPending[id];
+
+    let displayLed = teleLed;
+    let label = teleLed ? "ON" : "OFF";
+
+    if(pend){
+      displayLed = pend.target;
+      label = pend.target ? "ON…" : "OFF…";
+    }
+
     const ledTd = document.createElement("td");
     const ledBtn = document.createElement("button");
     ledBtn.className = "btn-led";
+    ledBtn.dataset.on = displayLed ? "1" : "0";
+    ledBtn.innerHTML = `<span>${label}</span>`;
 
-    const pend = ledPending[id];
-    const showLed = (n.led ? 1 : 0); // ✅ 항상 telemetry 기준
-    ledBtn.dataset.on = showLed ? "1" : "0";
-
-    if(pend){
-      ledBtn.innerHTML = `<span>...</span>`; // ✅ pending이면 고정
-    }else{
-      ledBtn.innerHTML = `<span>${showLed ? "ON" : "OFF"}</span>`;
-    }
+    // ✅ pending이면 클릭 방지
+    if(pend) ledBtn.disabled = true;
 
     ledBtn.onclick = ()=>{
-      // telemetry 기준으로 토글
-      const next = (showLed === 1) ? 0 : 1;
+      if(ledPending[id]) return;
+      const next = (teleLed === 1) ? 0 : 1;
       sendLED(id, next===1);
     };
-
-    // pending 중에는 클릭 방지(선택)
-    // if(pend) ledBtn.style.pointerEvents="none";
-
-    // on 스타일
-    if(showLed) ledBtn.dataset.on="1"; else ledBtn.dataset.on="0";
 
     ledTd.appendChild(ledBtn);
     tr.appendChild(ledTd);
@@ -595,36 +652,44 @@ function sendLED(id, checked){
   const payload = checked ? "1" : "0";
 
   ledPending[id] = { target: checked ? 1 : 0, ts: Date.now() };
-
   client.publish(topic, payload);
+
   addLog(`[LED CMD] publish -> ${topic} : ${payload}`);
-
   renderTable();
+  updateDeviceStatus();
 
-  // pending timeout
+  // ✅ 12초 timeout 후 pending 해제 → 확정 led_state 값으로 복귀
   setTimeout(()=>{
-    if(ledPending[id]){
-      addLog(`[LED CMD] pending timeout node ${id}`);
+    const p = ledPending[id];
+    if(!p) return;
+
+    const age = Date.now() - p.ts;
+    if(age >= 12000){
+      addLog(`[LED CMD] pending timeout node ${id} -> follow led_state`);
       delete ledPending[id];
       renderTable();
+      updateDeviceStatus();
     }
-  }, 9000);
+  }, 12500);
 }
 
 function updateDeviceStatus(){
-  const online = (client && client.connected);
+  const onlineMqtt = (client && client.connected);
+  const now = Date.now();
 
-  if(online){
+  const seen = Math.max(lastGwSeenMs || 0, lastPacket || 0);
+  const gwAlive = (seen > 0 && (now - seen) < GW_TIMEOUT_MS);
+
+  if(onlineMqtt && gwAlive){
     deviceConn.classList.remove("offline");
     deviceConn.classList.add("online");
-    connTextEl.textContent = "Gateway";   // ✅ ON LINE -> Gateway
+    connTextEl.textContent = "Gateway";
   }else{
     deviceConn.classList.remove("online");
     deviceConn.classList.add("offline");
     connTextEl.textContent = "OFF LINE";
   }
 
-  const now = Date.now();
   let lastStr = "-";
   if(lastPacket>0){
     const diffSec = Math.floor((now-lastPacket)/1000);
@@ -647,6 +712,7 @@ function updateDeviceStatus(){
   }
 }
 
+// Reset dialog
 function openResetDialog(){
   if(!client || !client.connected){
     alert("MQTT 미연결");
@@ -662,7 +728,11 @@ function confirmReset(){
   addLog(`[RESET] publish -> ${TOPIC_GW_CMD} : reset`);
 }
 
-setInterval(updateDeviceStatus, 1000);
+// ✅ 1초마다 갱신
+setInterval(()=>{
+  renderTable();
+  updateDeviceStatus();
+}, 1000);
 </script>
 </body>
 </html>
