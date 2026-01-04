@@ -128,7 +128,7 @@ body.theme-light .table-wrap{background:linear-gradient(180deg,#ffffff,#eef2ff);
 table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;}
 thead{background:linear-gradient(180deg, rgba(13,18,40,0.96), rgba(5,7,18,0.98));}
 body.theme-light thead{background:linear-gradient(180deg,#f8fafc,#eef2ff);}
-th,td{padding:5px 3px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:clip;}
+th,td{padding:3px 1px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:clip;}
 th{font-weight:600;color:#c9d3ff;border-bottom:1px solid rgba(60,84,160,0.8);line-height:1.2;}
 body.theme-light th{color:#111827;border-bottom:1px solid rgba(99,102,241,0.25);}
 th .unit{display:block;font-size:11px;color:var(--text-sub);}
@@ -142,6 +142,9 @@ body.theme-light .node-id{color:#111827;}
 .badge-null{display:inline-block;font-size:13px;color:var(--text-sub);background:transparent;border:none;padding:0;}
 .rss{font-size:12px;color:var(--text-sub);}
 
+body.theme-light .btn-led{background:#eef2ff;color:#111827;border-color:#a5b4fc;}
+body.theme-light .btn-led[data-on="1"]{background:rgba(22,163,74,0.12);color:#065f46;border-color:rgba(22,163,74,0.8);box-shadow:0 0 10px rgba(22,163,74,0.25);}
+body.theme-light .btn-led[disabled]{background:#f3f4f6;color:#6b7280;border-color:#d1d5db;}
 .btn-led{
   all:unset;display:inline-flex;align-items:center;justify-content:center;
   min-width:34px;height:20px;border-radius:999px;border:1px solid rgba(80,100,220,0.7);
@@ -189,6 +192,37 @@ body.theme-light .log-box{background:#ffffff !important;border-color:rgba(99,102
 .log-line{margin-bottom:2px;color:#9fa8d1;}
 body.theme-light .log-line{color:#374151 !important;}
 .log-line span.time{color:#6b7280;margin-right:4px;}
+
+
+@media (max-width: 430px){
+  table{font-size:12px;}
+  th{letter-spacing:0.02em;}
+  th .unit{font-size:9px;}
+  th,td{padding:2px 1px;}
+
+  /* ✅ 전체 폭이 넓어지지 않도록 '좁게' 재배분 + Last OK만 살짝 확보 */
+  th:nth-child(1), td:nth-child(1){width:34px;}  /* Node */
+  th:nth-child(2), td:nth-child(2){width:44px;}  /* Bat */
+  th:nth-child(3), td:nth-child(3){width:44px;}  /* Temp */
+  th:nth-child(4), td:nth-child(4){width:34px;}  /* RH */
+  th:nth-child(5), td:nth-child(5){width:34px;}  /* Vib */
+  th:nth-child(6), td:nth-child(6){width:46px;}  /* LED */
+  th:nth-child(7), td:nth-child(7){width:46px;}  /* RSSI */
+  th:nth-child(8), td:nth-child(8){width:52px;}  /* Last OK (K 보이게 최소 확보) */
+
+  /* 헤더 잘림 방지 */
+  th{overflow:visible;text-overflow:clip;}
+}
+  th{letter-spacing:0.04em;}
+  th .unit{font-size:10px;}
+}
+
+
+/* ✅ Battery voltage highlight */
+.bat-warn{ color:#f59e0b; font-weight:800; }
+.bat-low{  color:#ef4444; font-weight:900; }
+body.theme-light .bat-warn{ color:#d97706; }
+body.theme-light .bat-low{  color:#dc2626; }
 
 </style>
 </head>
@@ -523,10 +557,11 @@ function connectMQTT(){
     liveStarted = false;
     addLog("[BOOT] reload -> EMPTY table (rows=0), ignore retained, wait live");
   }else{
-    isReload = false;
-    ignoreRetained = false;
-    liveStarted = true;
-    addLog("[BOOT] open -> EMPTY table (rows=0)");
+    // ✅ 브라우저 새로 열기에서도 cached/retained 값 표시 방지
+    isReload = true;
+    ignoreRetained = true;
+    liveStarted = false;
+    addLog("[BOOT] open -> EMPTY table (rows=0), ignore retained, wait live");
   }
 
   renderTable();
@@ -557,9 +592,15 @@ function renderTable(){
     if(n.t==null || n.rh==null || n.vib==null) naCount++;
 
     const tr = document.createElement("tr");
+    
+    let batClass = "";
+    if(n.bat!=null){
+      if(n.bat <= 3.00) batClass = "bat-low";
+      else if(n.bat < 3.30) batClass = "bat-warn";
+    }
     tr.innerHTML = `
       <td><span class="node-id">${id}</span></td>
-      <td>${n.bat!=null ? n.bat.toFixed(2) : `<span class="badge-null">NA</span>`}</td>
+      <td class="${batClass}">${n.bat!=null ? n.bat.toFixed(2) : `<span class="badge-null">NA</span>`}</td>
       <td>${n.t!=null ? n.t.toFixed(1) : `<span class="badge-null">NA</span>`}</td>
       <td>${n.rh!=null ? n.rh : `<span class="badge-null">NA</span>`}</td>
       <td>${n.vib!=null ? n.vib : `<span class="badge-null">NA</span>`}</td>
