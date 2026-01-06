@@ -63,12 +63,16 @@ static const uint8_t NCOUNT  = sizeof(NODES)/sizeof(NODES[0]);
 #define BEACON_REPEAT   3
 #define BEACON_GAP_MS   160
 
-// ===== RESCUE 설정 (핵심) =====
-static const uint32_t RESCUE_AGE_MS     = 60000UL;  // ✅ 60초 이상 미응답이면 rescue
-static const uint8_t  RESCUE_FAIL_TH   = 3;         // ✅ 연속 3회 실패 시 rescue
-static const uint8_t  RESCUE_TRY_COUNT = 3;         // ✅ rescue 3회 시도
-static const uint32_t RESCUE_RXWAIT_MS = 4800;      // ✅ rescue는 RX를 더 길게
-static const uint32_t RESCUE_GAP_MS    = 220;       // ✅ rescue 재시도 간격
+// ===== RESCUE 설정 =====
+static const uint32_t RESCUE_AGE_MS     = 60000UL;  // 60초 이상 미응답이면 rescue
+static const uint8_t  RESCUE_FAIL_TH   = 3;         // 연속 3회 실패 시 rescue
+static const uint8_t  RESCUE_TRY_COUNT = 3;         // rescue 3회 시도
+static const uint32_t RESCUE_RXWAIT_MS = 4800;      // rescue는 RX 더 길게
+static const uint32_t RESCUE_GAP_MS    = 220;       // rescue 재시도 간격
+
+// ===== Router Alive Timeout (표시용) =====
+static const uint32_t ROUTER_ALIVE_MS   = 130000UL; // Router는 130초 이내 마지막 수신이면 YES
+static const uint32_t NODE_SLOT_OK_HOLD_MS = 1500UL; // Node 슬롯 OK로 인정하는 lastOk fresh 기준(보조)
 
 // ===== LED pending =====
 struct LedPending{
@@ -125,14 +129,14 @@ struct BeaconPayload{
 #pragma pack(pop)
 
 struct NodeState{
-  bool ok=false;
-  uint32_t lastOkMs=0;
+  bool ok=false;                 // 최근 수신 성공 플래그
+  uint32_t lastOkMs=0;           // 마지막 수신 시간(ms)
   int16_t rssi=-999;
   float vbat=0;
   int16_t t=0,h=0,vib=0;
   uint8_t led=0;
 
-  // ✅ 연속 실패 카운트(Rescue 트리거)
+  // ✅ 내부 로직용 (출력에서는 제거)
   uint8_t failCount=0;
 };
 NodeState stNode[NCOUNT];
@@ -261,11 +265,25 @@ static void publishTele(uint8_t nodeId, const NodeState& s){
   publishLedState(nodeId, s.led);
 }
 
-static void printLineNode(uint8_t nodeId, const NodeState& s){
-  uint32_t ageSec = s.ok ? (millis()-s.lastOkMs)/1000 : 0;
+// =====================================================
+// ✅ 출력 정책 (failCount 제거)
+// - Node: 이번 슬롯에서 받았으면 YES / 못 받았으면 NO
+// - Router: 최근 ROUTER_ALIVE_MS 이내 lastOk면 YES, 아니면 NO (정책상 60초 응답)
+// =====================================================
+static void printLineNode(uint8_t nodeId, const NodeState& s, bool slotOk){
+  uint32_t ageSec = (s.lastOkMs>0) ? (millis()-s.lastOkMs)/1000 : 999999;
   const char* label = isRouterId(nodeId) ? "Router" : "Node  ";
-  Serial.printf("%s %3u ->  %5.2f | %3d | %3d | %3d |  %u  | %4d | %4lu | fail:%u | %s\n",
-    label,nodeId,s.vbat,s.t,s.h,s.vib,s.led,s.rssi,(unsigned long)ageSec,s.failCount,s.ok?"YES":"NO");
+
+  bool showYes;
+  if(isRouterId(nodeId)){
+    showYes = (s.lastOkMs>0) && ((millis()-s.lastOkMs) < ROUTER_ALIVE_MS);
+  }else{
+    showYes = slotOk;
+  }
+
+  Serial.printf("%s %3u ->  %5.2f | %3d | %3d | %3d |  %u  | %4d | %4lu | %s\n",
+    label,nodeId,s.vbat,s.t,s.h,s.vib,s.led,s.rssi,(unsigned long)ageSec,
+    showYes ? "YES" : "NO");
 }
 
 // =====================================================
@@ -309,7 +327,7 @@ static bool recvTele(uint32_t waitMs){
             Serial.printf("[LED DONE][TELEM] node %u applied=%u\n", from, p.led_state);
             ledPend[from].active=false;
             publishLedState(from, p.led_state);
-            pollAbortReq = false; // 꼬임 방지
+            pollAbortReq = false;
           }
 
           gotAny=true;
@@ -364,8 +382,7 @@ static uint8_t sendPollSafeBurst(uint8_t nodeId, uint8_t* req, uint8_t len, bool
 }
 
 // =====================================================
-// ✅ RESCUE POLL (강제 복구 시도)
-// - LED 모드급 burst + 긴 RX wait + 3회 재시도
+// ✅ RESCUE POLL
 // =====================================================
 static void rescuePoll(uint8_t nodeId){
   int i = idxOf(nodeId);
@@ -379,13 +396,9 @@ static void rescuePoll(uint8_t nodeId){
   uint8_t req[2] = {PKT_POLL, 0xFF};
 
   for(uint8_t r=0; r<RESCUE_TRY_COUNT; r++){
-    // ✅ rescue는 LED 모드급으로 강하게
     sendPollSafeBurst(nodeId, req, sizeof(req), true);
-
-    // ✅ 긴 수신 대기
     recvTele(RESCUE_RXWAIT_MS);
 
-    // ✅ 최근에 성공했다면 종료
     if(stNode[i].ok && (millis() - stNode[i].lastOkMs < 2000UL)){
       Serial.printf("[RESCUE OK] node %u\n\n", nodeId);
       stNode[i].failCount = 0;
@@ -407,7 +420,6 @@ static bool pollInSlot(uint8_t nodeId, uint32_t slotDeadline){
 
   while(millis()<slotDeadline){
 
-    // FAST 사이클 재시작 요청이 있으면 (다른 노드라면) 즉시 중단
     if(pollAbortReq){
       if(!(fastCycleReq && nodeId==fastNodeId)){
         Serial.printf("[POLL ABORT] break slot node %u (fast=%u)\n", nodeId, fastNodeId);
@@ -430,7 +442,6 @@ static bool pollInSlot(uint8_t nodeId, uint32_t slotDeadline){
     if(err==RH_ROUTER_ERROR_NONE){
       if(recvTele(rxWait)){
         got=true;
-        // LED pending이 끝났으면 slot에서 즉시 종료
         if(!ledPend[nodeId].active) break;
       }
     }
@@ -454,13 +465,22 @@ static bool pollInSlot(uint8_t nodeId, uint32_t slotDeadline){
     }
   }
 
-  // 성공/실패 기록
+  // =====================================================
+  // ✅ 성공/실패 기록
+  //  - Router는 60초 응답 정책 → 슬롯 미수신을 fail 처리하지 않음
+  // =====================================================
   int i=idxOf(nodeId);
   if(i>=0){
     if(got){
       stNode[i].failCount = 0;
+      stNode[i].ok = true;
     }else{
-      // LED pending이 아닌데 못받았으면 failCount++
+      if(isRouterId(nodeId)){
+        // Router miss는 상태 변화 없음
+        return got;
+      }
+
+      // Node만 failCount 증가 (LED pending 아닐 때)
       if(!ledPend[nodeId].active){
         if(stNode[i].failCount < 255) stNode[i].failCount++;
         stNode[i].ok=false;
@@ -505,7 +525,7 @@ void setup(){
   ensureMqtt();
 
   randomSeed(esp_random());
-  Serial.println("GW: FINAL (FIXED LOOP 2->3->4->50, LED PRIORITY ONCE, RESCUE POLL)");
+  Serial.println("GW: FINAL (FIXED LOOP 2->3->4->50, LED PRIORITY ONCE, RESCUE POLL, SLOT YES/NO)");
 }
 
 void loop(){
@@ -538,7 +558,7 @@ void loop(){
     fastUsedOnce = true;
     Serial.printf("[FAST APPLY ONCE] startIdx=%u (node %u)\n", startIdx, NODES[startIdx]);
   } else {
-    fastUsedOnce = false; // 다음 cycle은 다시 0부터
+    fastUsedOnce = false;
   }
 
   sendBeacon(cycleId, startIdx);
@@ -559,14 +579,14 @@ void loop(){
     uint32_t slotStart = millis();
     uint32_t deadline  = slotStart + SLOT_MS;
 
-    pollInSlot(nodeId, deadline);
+    // ✅ 이번 슬롯 수신 성공 여부
+    bool slotOk = pollInSlot(nodeId, deadline);
 
     // =====================================================
-    // ✅ (중요) SLOT 끝나기 전에 Rescue 조건 체크
-    // - 실패가 누적된 노드는 다음 cycle까지 기다리지 않고 즉시 복구 시도
+    // ✅ Rescue 조건 체크 (Router 제외)
     // =====================================================
-    if(!isRouterId(nodeId)){ // 라우터(50)는 상태 보고가 느려도 문제 덜함
-      uint32_t age = stNode[i].ok ? (millis()-stNode[i].lastOkMs) : 99999999UL;
+    if(!isRouterId(nodeId)){
+      uint32_t age = (stNode[i].lastOkMs>0) ? (millis()-stNode[i].lastOkMs) : 99999999UL;
 
       bool needRescue = (age > RESCUE_AGE_MS) || (stNode[i].failCount >= RESCUE_FAIL_TH);
       if(needRescue){
@@ -574,7 +594,6 @@ void loop(){
       }
     }
 
-    // slot 잔여시간 소진
     while(millis() < deadline){
       mqtt.loop();
       recvTele(20);
@@ -582,7 +601,8 @@ void loop(){
       if(pollAbortReq) break;
     }
 
-    printLineNode(nodeId, stNode[i]);
+    // ✅ 출력: failCount 제거 + slotOk 기반 YES/NO
+    printLineNode(nodeId, stNode[i], slotOk);
 
     mqtt.loop();
     recvTele(10);
