@@ -1,7 +1,7 @@
 {
   "id": "/ESP32/",
   "name": "Home Control System",
-  "short_name": "HomeControl",
+  "short_name": "HomeRMC",
   "start_url": "./homeRMC.html",
   "scope": "./",
   "display": "standalone",
