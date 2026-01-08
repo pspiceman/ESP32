@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <title>LoRa Mesh Gateway Monitor</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- ✅ [PWA] Android(Chrome) 설치용 manifest + theme + 아이콘(1개만 사용) -->
+<link rel="manifest" href="/loraMesh/manifest.webmanifest">
+<meta name="theme-color" content="#0b1020">
+<link rel="icon" href="/loraMesh/loraMesh.png" type="image/png">
+
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <style>
 
@@ -193,30 +199,26 @@ body.theme-light .log-box{background:#ffffff !important;border-color:rgba(99,102
 body.theme-light .log-line{color:#374151 !important;}
 .log-line span.time{color:#6b7280;margin-right:4px;}
 
-
 @media (max-width: 430px){
   table{font-size:12px;}
   th{letter-spacing:0.02em;}
   th .unit{font-size:9px;}
   th,td{padding:2px 1px;}
 
-  /* ✅ 전체 폭이 넓어지지 않도록 '좁게' 재배분 + Last OK만 살짝 확보 */
-  th:nth-child(1), td:nth-child(1){width:34px;}  /* Node */
-  th:nth-child(2), td:nth-child(2){width:44px;}  /* Bat */
-  th:nth-child(3), td:nth-child(3){width:44px;}  /* Temp */
-  th:nth-child(4), td:nth-child(4){width:34px;}  /* RH */
-  th:nth-child(5), td:nth-child(5){width:34px;}  /* Vib */
-  th:nth-child(6), td:nth-child(6){width:46px;}  /* LED */
-  th:nth-child(7), td:nth-child(7){width:46px;}  /* RSSI */
-  th:nth-child(8), td:nth-child(8){width:52px;}  /* Last OK (K 보이게 최소 확보) */
+  th:nth-child(1), td:nth-child(1){width:34px;}
+  th:nth-child(2), td:nth-child(2){width:44px;}
+  th:nth-child(3), td:nth-child(3){width:44px;}
+  th:nth-child(4), td:nth-child(4){width:34px;}
+  th:nth-child(5), td:nth-child(5){width:34px;}
+  th:nth-child(6), td:nth-child(6){width:46px;}
+  th:nth-child(7), td:nth-child(7){width:46px;}
+  th:nth-child(8), td:nth-child(8){width:52px;}
 
-  /* 헤더 잘림 방지 */
   th{overflow:visible;text-overflow:clip;}
 }
   th{letter-spacing:0.04em;}
   th .unit{font-size:10px;}
 }
-
 
 /* ✅ Battery voltage highlight */
 .bat-warn{ color:#f59e0b; font-weight:800; }
@@ -332,7 +334,6 @@ body.theme-light .bat-low{  color:#dc2626; }
     </div>
   </div>
 </div>
-
 
 <script>
 
@@ -557,7 +558,6 @@ function connectMQTT(){
     liveStarted = false;
     addLog("[BOOT] reload -> EMPTY table (rows=0), ignore retained, wait live");
   }else{
-    // ✅ 브라우저 새로 열기에서도 cached/retained 값 표시 방지
     isReload = true;
     ignoreRetained = true;
     liveStarted = false;
@@ -682,7 +682,6 @@ function updateDeviceStatus(){
     connTextEl.textContent = "OFF LINE";
     wifiRssiText.textContent = "";
   }else if(onlineMqtt && !gwAlive){
-    // ✅ GW 패킷이 안 들어오면 'Waiting'을 쓰지 않고 OFF LINE으로 표시 (요구사항)
     deviceConn.classList.remove("online","waiting");
     deviceConn.classList.add("offline");
     connTextEl.textContent = "OFF LINE";
@@ -737,5 +736,15 @@ setInterval(()=>{
 }, 1000);
 /* ========= END UPDATED LOGIC ========= */
 </script>
+
+<!-- ✅ [PWA] Service Worker 등록 (Android Chrome 설치 인식용) -->
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/loraMesh/sw.js");
+    });
+  }
+</script>
+
 </body>
 </html>
