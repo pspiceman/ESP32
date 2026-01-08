@@ -1,4 +1,4 @@
-const CACHE_NAME = "lora-mesh-pwa-v1";
+const CACHE_NAME = "lora-mesh-pwa-v2";
 const ASSETS = [
   "/loraMesh/",
   "/loraMesh/loraMesh.html",
