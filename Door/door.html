@@ -361,6 +361,13 @@
       .container { max-width: 100%; border-radius: 14px; }
     }
   </style>
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="icon" href="./doorCOntrol.png" type="image/png">
+  <link rel="apple-touch-icon" href="./doorCOntrol.png">
+
 </head>
 
 <body class="night-mode">
@@ -772,5 +779,14 @@
     showWifi();
     connectMQTT();
   </script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js");
+      });
+    }
+  </script>
+
 </body>
 </html>
