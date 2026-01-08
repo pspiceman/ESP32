@@ -1,0 +1,21 @@
+{
+  "name": "LoRa Mesh Gateway Monitor",
+  "short_name": "LoRaMesh",
+  "start_url": "/loraMesh/loraMesh.html",
+  "scope": "/loraMesh/",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "icons": [
+    {
+      "src": "/loraMesh/loraMesh.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/loraMesh/loraMesh.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
