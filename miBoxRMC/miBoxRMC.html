@@ -5,15 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1"/>
 <title>MiBox3 Remote</title>
 
-<!-- ✅ PWA / Icons (중요) -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1f2430">
-
-<link rel="icon" type="image/png" sizes="192x192" href="mibox_icon.png">
-<link rel="icon" type="image/png" sizes="512x512" href="mibox_icon.png">
-<link rel="apple-touch-icon" sizes="180x180" href="mibox_icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
 <link rel="stylesheet" as="style" crossorigin
   href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
@@ -27,14 +20,7 @@
     --greenSoft:rgba(55,255,121,.14);
     --shadow: 0 14px 30px rgba(0,0,0,.35);
     --shadowSoft: 0 10px 22px rgba(0,0,0,.22);
-
-    --volA: rgba(59,130,246,.35);
-    --volStroke: rgba(59,130,246,.55);
-
-    --muteA: rgba(244,63,94,.20);
-    --muteStroke: rgba(244,63,94,.55);
   }
-
   *{box-sizing:border-box;}
   body{
     margin:0; padding:0;
@@ -44,7 +30,6 @@
     display:flex; justify-content:center;
     padding: 10px 0;
   }
-
   .frame{
     width:360px; max-width:100vw;
     padding:14px 12px 18px;
@@ -54,7 +39,6 @@
     background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
     overflow:hidden;
   }
-
   .topRow{
     display:flex; align-items:center; justify-content:space-between;
     gap:12px; margin: 4px 0 10px;
@@ -65,7 +49,6 @@
     letter-spacing:.02em;
     line-height:1.1;
   }
-
   .pill{
     height:34px; padding:0 12px; border-radius:999px;
     display:flex; align-items:center;
@@ -82,13 +65,11 @@
     color: var(--text);
     box-shadow: 0 0 14px rgba(55,255,121,.25);
   }
-
-  /* ✅ DPAD 미세 보정(현재 -8px) */
   .dpad{
     margin-top: 16px;
     width: 340px;
-    margin-left: auto;
-    margin-right: auto;
+    margin-left:auto;
+    margin-right:auto;
     display:grid;
     grid-template-columns: 110px 110px 110px;
     grid-template-rows: 110px 110px 110px;
@@ -97,7 +78,6 @@
     align-items:center;
     transform: translateX(-8px);
   }
-
   .btn{
     width:110px; height:110px;
     border-radius:999px;
@@ -115,44 +95,28 @@
     font-weight:900;
     cursor:pointer;
     user-select:none;
-    position:relative;
-    overflow:hidden;
-    transition: transform .12s, filter .15s, box-shadow .2s;
+    transition: transform .12s, filter .15s;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
-
   .btn:active{ transform: translateY(3px) scale(.985); }
   .btn.sent{ filter: brightness(1.12); }
-
   .ok{
     background: linear-gradient(180deg, rgba(55,255,121,.32), rgba(0,0,0,.18));
     border-color: rgba(55,255,121,0.55);
   }
-
   .row2{
     margin-top: 14px;
     display:grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
   }
-
   .wide{
     height: 64px;
     border-radius: 16px;
     font-size: 18px;
     width:100%;
   }
-
-  .volBtn{
-    border-color: var(--volStroke);
-    background: linear-gradient(180deg, var(--volA), rgba(0,0,0,.18));
-  }
-  .muteBtn{
-    border-color: var(--muteStroke);
-    background: linear-gradient(180deg, var(--muteA), rgba(0,0,0,.18));
-  }
-
   .footer{
     margin-top:12px;
     display:flex;
@@ -167,7 +131,7 @@
 <div class="frame">
   <div class="topRow">
     <div class="title">MiBox3 Remote</div>
-    <div id="mqttPill" class="pill">MQTT</div>
+    <div id="blePill" class="pill">BLE</div>
   </div>
 
   <div class="dpad">
@@ -185,17 +149,17 @@
   </div>
 
   <div class="row2">
-    <button class="btn wide" data-cmd="MB:2000">⟵ BACK</button>
-    <button class="btn wide ok" data-cmd="MB:0080">HOME</button>
+    <button class="btn wide" data-cmd="back">⟵ BACK</button>
+    <button class="btn wide ok" data-cmd="home">HOME</button>
   </div>
 
   <div class="row2">
-    <button class="btn wide volBtn" data-cmd="voldown">🔉 VOL -</button>
-    <button class="btn wide volBtn" data-cmd="volup">🔊 VOL +</button>
+    <button class="btn wide" data-cmd="voldown">🔉 VOL -</button>
+    <button class="btn wide" data-cmd="volup">🔊 VOL +</button>
   </div>
 
   <div class="row2">
-    <button class="btn wide muteBtn" data-cmd="mute">🔇 MUTE</button>
+    <button class="btn wide" data-cmd="mute">🔇 MUTE</button>
     <button class="btn wide" data-cmd="reset">♻ RESET</button>
   </div>
 
@@ -205,17 +169,12 @@
 </div>
 
 <script>
-/* ✅ Service Worker 등록 (PWA 설치 + 캐시 안정화) */
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch(()=>{});
-  });
-}
-
+/* MQTT */
 const MQTT_URL  = "wss://broker.hivemq.com:8884/mqtt";
-const TOPIC_CMD = "tswell/mibox3/cmd";
+const TOPIC_CMD    = "tswell/mibox3/cmd";
+const TOPIC_STATUS = "tswell/mibox3/status";
 
-const mqttPill = document.getElementById("mqttPill");
+const blePill = document.getElementById("blePill");
 const dtEl = document.getElementById("dt");
 
 function now(){
@@ -233,12 +192,27 @@ dtEl.textContent = now();
 let client = mqtt.connect(MQTT_URL, { reconnectPeriod: 3000 });
 
 client.on("connect", ()=>{
-  mqttPill.className = "pill ok";
-  mqttPill.textContent = "MQTT OK";
+  // ✅ status 토픽 구독
+  client.subscribe(TOPIC_STATUS);
 });
-client.on("close", ()=>{
-  mqttPill.className = "pill";
-  mqttPill.textContent = "MQTT OFF";
+
+client.on("message", (topic, payload)=>{
+  if(topic === TOPIC_STATUS){
+    try{
+      const j = JSON.parse(payload.toString());
+      if(j.ble === true){
+        blePill.className = "pill ok";
+        blePill.textContent = "BLE OK";
+      }else{
+        blePill.className = "pill";
+        blePill.textContent = "BLE OFF";
+      }
+    }catch(e){
+      // parse 실패시 표시만 OFF
+      blePill.className = "pill";
+      blePill.textContent = "BLE OFF";
+    }
+  }
 });
 
 function publish(cmd){
