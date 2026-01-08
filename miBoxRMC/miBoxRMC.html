@@ -65,6 +65,8 @@
     color: var(--text);
     box-shadow: 0 0 14px rgba(55,255,121,.25);
   }
+
+  /* ✅ DPAD 센터 정렬(좌측 -8px 보정) */
   .dpad{
     margin-top: 16px;
     width: 340px;
@@ -78,6 +80,7 @@
     align-items:center;
     transform: translateX(-8px);
   }
+
   .btn{
     width:110px; height:110px;
     border-radius:999px;
@@ -101,10 +104,12 @@
   }
   .btn:active{ transform: translateY(3px) scale(.985); }
   .btn.sent{ filter: brightness(1.12); }
+
   .ok{
     background: linear-gradient(180deg, rgba(55,255,121,.32), rgba(0,0,0,.18));
     border-color: rgba(55,255,121,0.55);
   }
+
   .row2{
     margin-top: 14px;
     display:grid;
@@ -149,8 +154,9 @@
   </div>
 
   <div class="row2">
-    <button class="btn wide" data-cmd="back">⟵ BACK</button>
-    <button class="btn wide ok" data-cmd="home">HOME</button>
+    <!-- ✅ 원본(v2) 방식 고정 -->
+    <button class="btn wide" data-cmd="MB:2000">⟵ BACK</button>
+    <button class="btn wide ok" data-cmd="MB:0080">HOME</button>
   </div>
 
   <div class="row2">
@@ -169,7 +175,6 @@
 </div>
 
 <script>
-/* MQTT */
 const MQTT_URL  = "wss://broker.hivemq.com:8884/mqtt";
 const TOPIC_CMD    = "tswell/mibox3/cmd";
 const TOPIC_STATUS = "tswell/mibox3/status";
@@ -192,7 +197,6 @@ dtEl.textContent = now();
 let client = mqtt.connect(MQTT_URL, { reconnectPeriod: 3000 });
 
 client.on("connect", ()=>{
-  // ✅ status 토픽 구독
   client.subscribe(TOPIC_STATUS);
 });
 
@@ -208,7 +212,6 @@ client.on("message", (topic, payload)=>{
         blePill.textContent = "BLE OFF";
       }
     }catch(e){
-      // parse 실패시 표시만 OFF
       blePill.className = "pill";
       blePill.textContent = "BLE OFF";
     }
