@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>TSWell Unified Remote</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;background:#0b1020;color:#e8eefc;}
+    header{padding:14px 16px;font-weight:700;font-size:18px;position:sticky;top:0;background:rgba(11,16,32,.9);backdrop-filter: blur(10px);border-bottom:1px solid rgba(255,255,255,.08)}
+    .wrap{max-width:420px;margin:0 auto;padding:14px 12px 90px;}
+    .card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:18px;padding:14px;margin:12px 0;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .title{font-size:14px;opacity:.9;margin:0 0 10px}
+    .grid{display:grid;gap:10px}
+    .grid3{grid-template-columns:repeat(3,1fr)}
+    .grid2{grid-template-columns:repeat(2,1fr)}
+    button{border:0;border-radius:16px;padding:14px 10px;font-weight:700;font-size:14px;background:#2a55ff;color:white}
+    button.secondary{background:rgba(255,255,255,.12)}
+    button.danger{background:#ff3b5c}
+    button:active{transform:scale(.98)}
+    input,select{width:100%;box-sizing:border-box;border-radius:14px;border:1px solid rgba(255,255,255,.12);padding:12px;background:rgba(255,255,255,.06);color:#e8eefc}
+    small{opacity:.75}
+    .row{display:flex;gap:10px}
+    .row>*{flex:1}
+    #log{white-space:pre-wrap;font-size:12px;line-height:1.35;max-height:160px;overflow:auto}
+    .pill{display:inline-flex;align-items:center;gap:8px;font-size:12px;padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10)}
+    .dot{width:8px;height:8px;border-radius:50%;background:#999}
+    .dot.ok{background:#36d399}
+    .dot.bad{background:#ff3b5c}
+    footer{position:fixed;left:0;right:0;bottom:0;padding:10px 12px;background:rgba(11,16,32,.95);border-top:1px solid rgba(255,255,255,.08)}
+  </style>
+</head>
+<body>
+<header>TSWell Unified Remote</header>
+
+<div class="wrap">
+  <div class="card">
+    <p class="title">연결</p>
+    <div class="row">
+      <div class="pill"><span id="wsdot" class="dot bad"></span> MQTT WebSocket</div>
+      <div class="pill"><span id="subdot" class="dot bad"></span> Status 구독</div>
+    </div>
+    <small>GitHub Pages에서는 MQTT WebSocket이 필요합니다. 기본: HiveMQ (wss://broker.hivemq.com:8884/mqtt)</small>
+  </div>
+
+  <div class="card">
+    <p class="title">MiBox (BLE Keyboard)</p>
+    <div class="grid grid3">
+      <button class="secondary" onclick="mibox('up')">▲</button>
+      <button class="secondary" onclick="mibox('enter')">OK</button>
+      <button class="secondary" onclick="mibox('back')">Back</button>
+      <button class="secondary" onclick="mibox('left')">◀</button>
+      <button class="secondary" onclick="mibox('home')">Home</button>
+      <button class="secondary" onclick="mibox('right')">▶</button>
+      <button class="secondary" onclick="mibox('down')">▼</button>
+      <button onclick="mibox('play')">Play/Pause</button>
+      <button class="danger" onclick="mibox('mute')">Mute</button>
+    </div>
+    <div class="grid grid2" style="margin-top:10px">
+      <button onclick="mibox('volup')">Vol +</button>
+      <button onclick="mibox('voldown')">Vol -</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="title">IR (적외선)</p>
+    <div class="grid grid2">
+      <button class="secondary" onclick="irStartLearn()">학습 시작(수신)</button>
+      <button onclick="irSendLearned()">학습코드 송신</button>
+    </div>
+
+    <div style="margin-top:10px" class="grid">
+      <div class="row">
+        <select id="irProto">
+          <option value="nec">NEC</option>
+          <option value="samsung">SAMSUNG</option>
+          <option value="lg">LG</option>
+          <option value="sony">SONY</option>
+        </select>
+        <input id="irBits" type="number" value="32" min="8" max="64" />
+      </div>
+      <input id="irValue" placeholder="HEX 값 (예: 0x20DF10EF)" />
+      <button onclick="irSendCustom()">IR 커스텀 송신</button>
+      <small>학습으로 받은 value/bits를 그대로 넣어도 됩니다.</small>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="title">433MHz (RF)</p>
+    <div class="grid">
+      <input id="rfValue" type="number" placeholder="value (예: 123456)" />
+      <div class="row">
+        <input id="rfBits" type="number" value="24" min="8" max="32" />
+        <input id="rfPulse" type="number" value="350" min="100" max="1000" />
+        <input id="rfRepeat" type="number" value="10" min="1" max="30" />
+      </div>
+      <button onclick="rfSend()">433 송신</button>
+      <small>bits/pulse/repeat는 리모컨에 맞춰 조정하세요.</small>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="title">로그 (Status)</p>
+    <div id="log">-</div>
+  </div>
+</div>
+
+<footer>
+  <small>
+    CMD Topic: <b>tswell/unified/cmd</b> · STATUS Topic: <b>tswell/unified/status</b>
+  </small>
+</footer>
+
+<script src="https://unpkg.com/paho-mqtt/mqttws31.min.js"></script>
+<script>
+  // ===== Config =====
+  const WS_URL = "wss://broker.hivemq.com:8884/mqtt";
+  const CMD_TOPIC = "tswell/unified/cmd";
+  const STATUS_TOPIC = "tswell/unified/status";
+
+  const wsdot = document.getElementById('wsdot');
+  const subdot = document.getElementById('subdot');
+  const logEl = document.getElementById('log');
+
+  function log(obj){
+    const t = new Date().toLocaleTimeString();
+    const line = `[${t}] ${typeof obj === 'string' ? obj : JSON.stringify(obj)}\n`;
+    logEl.textContent = (logEl.textContent === "-" ? "" : logEl.textContent) + line;
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  const clientId = "tswell-web-" + Math.random().toString(16).slice(2);
+  const client = new Paho.MQTT.Client(WS_URL, clientId);
+
+  client.onConnectionLost = (resp) => {
+    wsdot.className = "dot bad";
+    subdot.className = "dot bad";
+    log("MQTT 연결 끊김: " + resp.errorMessage);
+    setTimeout(connect, 1500);
+  };
+
+  client.onMessageArrived = (msg) => {
+    try { log(JSON.parse(msg.payloadString)); }
+    catch(e){ log(msg.payloadString); }
+  };
+
+  function connect(){
+    client.connect({
+      useSSL:true,
+      timeout:5,
+      onSuccess: () => {
+        wsdot.className = "dot ok";
+        log("MQTT WebSocket 연결됨");
+        client.subscribe(STATUS_TOPIC, {
+          onSuccess: ()=>{ subdot.className="dot ok"; log("STATUS 구독됨"); },
+          onFailure: ()=>{ subdot.className="dot bad"; log("STATUS 구독 실패"); }
+        });
+      },
+      onFailure: (e)=>{ wsdot.className="dot bad"; log("연결 실패: " + (e.errorMessage||e.errorCode)); setTimeout(connect, 2000); }
+    });
+  }
+  connect();
+
+  // ===== Send helpers =====
+  function sendCmd(payload){
+    const m = new Paho.MQTT.Message(JSON.stringify(payload));
+    m.destinationName = CMD_TOPIC;
+    client.send(m);
+  }
+
+  // MiBox
+  function mibox(action){ sendCmd({device:"mibox", action}); }
+
+  // IR
+  function irStartLearn(){ sendCmd({device:"ir", action:"start_learn"}); }
+  function irSendLearned(){ sendCmd({device:"ir", action:"send_learned"}); }
+  function irSendCustom(){
+    const proto = document.getElementById('irProto').value;
+    const bits = parseInt(document.getElementById('irBits').value || "32", 10);
+    let v = document.getElementById('irValue').value.trim();
+    if(!v){ alert("IR value를 입력하세요"); return; }
+    // Allow 0x prefix or decimal
+    let value = v.startsWith("0x") ? parseInt(v,16) : (v.match(/[a-fA-F]/) ? parseInt(v,16) : parseInt(v,10));
+    sendCmd({device:"ir", action:"send", proto, bits, value});
+  }
+
+  // 433
+  function rfSend(){
+    const value = parseInt(document.getElementById('rfValue').value || "0", 10);
+    const bits = parseInt(document.getElementById('rfBits').value || "24", 10);
+    const pulse = parseInt(document.getElementById('rfPulse').value || "350", 10);
+    const repeat = parseInt(document.getElementById('rfRepeat').value || "10", 10);
+    sendCmd({device:"rf433", action:"send", value, bits, pulse, repeat});
+  }
+</script>
+</body>
+</html>
