@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Universal RMC</title>
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b0f14">
+  <meta name="background-color" content="#0b0f14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Universal RMC">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <style>
+    :root { --pad: 12px; }
+    body{ margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif; background:#0b0f14; color:#e6eef8;}
+    header{ position:sticky; top:0; z-index:10; background:rgba(11,15,20,.92); backdrop-filter: blur(8px); padding: var(--pad); border-bottom:1px solid rgba(255,255,255,.08);}
+    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+    .pill{ padding:6px 10px; border-radius:999px; font-size:12px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.10);}
+    .ok{ background:rgba(52,211,153,.15); border-color:rgba(52,211,153,.35);}
+    .bad{ background:rgba(248,113,113,.15); border-color:rgba(248,113,113,.35);}
+    main{ padding: var(--pad); display:grid; gap:12px;}
+    section{ background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10); border-radius:18px; padding:12px;}
+    h2{ margin:0 0 10px; font-size:14px; opacity:.9; display:flex; justify-content:space-between; align-items:center; gap:10px;}
+    .grid{ display:grid; grid-template-columns: repeat(3,1fr); gap:10px;}
+    button{ width:100%; padding:14px 10px; border-radius:14px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.08); color:#fff; font-size:14px; font-weight:600;}
+    button:active{ transform: translateY(1px); }
+    .wide{ grid-column: span 3; }
+    .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
+    input{ width:100%; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.24); background:rgba(0,0,0,.25); color:#fff; font-size:14px;}
+    .log{ max-height:170px; overflow:auto; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; line-height:1.35; padding:10px; background:rgba(0,0,0,.30); border-radius:12px; border:1px solid rgba(255,255,255,.10);}
+    .muted{ opacity:.75; font-size:12px;}
+button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12); }
+
+
+        .logbtn-left{
+      width:54px; padding:10px 0; text-align:center;
+      border:1px solid rgba(255,255,255,.24);
+      box-shadow: 0 14px 26px rgba(0,0,0,.70),
+                  inset 0 1px 0 rgba(255,255,255,.12), inset 0 -6px 14px rgba(0,0,0,.40);
+    }
+    .logbtn-right{ width:110px; padding:10px 0; text-align:center; font-size:13px; letter-spacing:.3px; }
+
+
+    /* Pressed feedback */
+    .btn:active, .logbtn:active{
+      transform: translateY(3px) scale(0.985);
+      filter: brightness(0.90);
+    }
+    .pressed{
+      transform: translateY(3px) scale(0.985);
+      filter: brightness(0.90);
+      box-shadow: inset 0 6px 14px rgba(0,0,0,.45) !important;
+    }
+
+
+    /* Universal RMC depth up */
+    .pill{
+      box-shadow: 0 10px 22px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.18), inset 0 -4px 10px rgba(0,0,0,.35);
+    }
+
+
+    /* Status pills (OK like attach) */
+    .pill{
+      padding:8px 14px;
+      border-radius:999px;
+      font-weight:800;
+      letter-spacing:.2px;
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: 0 10px 22px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.10);
+    }
+    .pill.ok, .pill.good{
+      background: linear-gradient(180deg,#1f262f,#151a21);
+      border:1px solid rgba(34,197,94,.85); /* green outline */
+      box-shadow: 0 0 0 1px rgba(34,197,94,.35),
+                  0 0 18px rgba(34,197,94,.22),
+                  0 12px 26px rgba(0,0,0,.65),
+                  inset 0 1px 0 rgba(255,255,255,.14), inset 0 -6px 14px rgba(0,0,0,.40);
+      color:#eafff1;
+      text-shadow: 0 1px 0 rgba(0,0,0,.55);
+    }
+    .pill.bad{
+      background: linear-gradient(180deg,#2a313b,#1a2028);
+      color:#e6eef8;
+      border:1px solid rgba(255,255,255,.10);
+    }
+
+
+    /* Remote vs button separation + 3D */
+    .section{
+      background: linear-gradient(180deg,#0c1016,#070a0f);
+      border: 2px solid rgba(255,255,255,.32);
+      box-shadow: 0 26px 52px rgba(0,0,0,.80), inset 0 1px 0 rgba(255,255,255,.05);
+    }
+    .btn{
+      background: linear-gradient(180deg,#465566,#2f3a48);
+      border:1px solid rgba(255,255,255,.32);
+      box-shadow: 0 22px 44px rgba(0,0,0,.85), 0 8px 18px rgba(0,0,0,.60),
+                  inset 0 1px 0 rgba(255,255,255,.24), inset 0 -10px 18px rgba(0,0,0,.38);
+      color:#f2f7ff;
+    }
+    .btn.ok{
+      background: linear-gradient(180deg,#465566,#2f3a48);
+      border:1px solid rgba(255,255,255,.32);
+      box-shadow: 0 22px 44px rgba(0,0,0,.85), 0 8px 18px rgba(0,0,0,.60),
+                  inset 0 1px 0 rgba(255,255,255,.24), inset 0 -10px 18px rgba(0,0,0,.38);
+      color:#f2f7ff;
+    }
+
+
+    .logbtn{
+      border:1px solid rgba(255,255,255,.24);
+      background: linear-gradient(180deg,#1f262f,#151a21);
+      box-shadow: 0 14px 26px rgba(0,0,0,.70), inset 0 1px 0 rgba(255,255,255,.12), inset 0 -6px 14px rgba(0,0,0,.40);
+    }
+    .logbtn-left{
+      width:54px; padding:10px 0; text-align:center;
+      border:1px solid rgba(255,255,255,.24);
+      box-shadow: 0 14px 26px rgba(0,0,0,.70),
+                  inset 0 1px 0 rgba(255,255,255,.12), inset 0 -6px 14px rgba(0,0,0,.40);
+    }
+
+
+    /* Status row compact (prevent RSSI wrap) */
+    .status-row{
+      display:flex;
+      flex-wrap:nowrap;
+      gap:8px;
+      overflow:hidden;
+    }
+    .status-row .pill{
+      padding:6px 10px;
+      font-size:13px;
+      white-space:nowrap;
+      flex:0 0 auto;
+    }
+    #st-rssi{
+      border:1px solid rgba(59,130,246,.85);
+      box-shadow: 0 0 0 1px rgba(59,130,246,.30),
+                  0 0 16px rgba(59,130,246,.18),
+                  0 10px 22px rgba(0,0,0,.60),
+                  inset 0 1px 0 rgba(255,255,255,.14), inset 0 -6px 14px rgba(0,0,0,.40);
+    }
+
+
+    /* Section tint (clearer separation among 3 remotes) */
+    section:nth-of-type(1){
+      background: linear-gradient(180deg, rgba(59,130,246,.18), rgba(59,130,246,.10));
+    }
+    section:nth-of-type(2){
+      background: linear-gradient(180deg, rgba(34,197,94,.18), rgba(34,197,94,.10));
+    }
+    section:nth-of-type(3){
+      background: linear-gradient(180deg, rgba(168,85,247,.18), rgba(168,85,247,.10));
+    }
+    /* Log/Reset section (neutral) */
+    section:nth-of-type(4){
+      background: rgba(255,255,255,.07);
+    }
+
+</style>
+</head>
+<body>
+<header>
+  <div class="row" style="justify-content:space-between">
+    <div style="font-weight:800; letter-spacing:.2px; font-size:22px;">Universal RMC</div>
+    <div class="pill" id="clock">--:--</div>
+  </div>
+  <div class="row status-row" style="margin-top:10px">
+    <div class="pill bad" id="st-mqtt">MQTT: --</div>
+    <div class="pill bad" id="st-gw">Gateway: --</div>
+    <div class="pill bad" id="st-ble">BLE: --</div>
+    <div class="pill" id="st-rssi">RSSI: --</div>
+  </div>
+</header>
+
+<main>
+<section>
+    <h2>MiBox RMC</h2>
+
+
+    <div class="grid">
+      <button onclick="sendMi('up')" class="wide">▲</button>
+      <button onclick="sendMi('left')">◀</button>
+      <button onclick="sendMi('ok1')">OK</button>
+      <button onclick="sendMi('right')">▶</button>
+      <button onclick="sendMi('down')" class="wide">▼</button>
+
+      <button onclick="sendMi('voldown')">VOL-</button>
+      <button onclick="sendMi('mute')">MUTE</button>
+      <button onclick="sendMi('volup')">VOL+</button>
+    </div>
+
+    <div style="height:10px"></div>
+    <div class="grid2">
+      <button onclick="sendMi('MB:2000')">⟵ BACK</button>
+      <button onclick="sendMi('MB:0080')">HOME</button>
+    </div>
+
+</section>
+<section>
+    <h2>433 RMC</h2>
+
+
+    <div class="grid2">
+      <button onclick="send433('LIGHT')">LIGHT</button>
+      <button onclick="send433('DOOR')">DOOR</button>
+      <button onclick="send433('SPK1')">SPK1</button>
+      <button onclick="send433('SPK2')">SPK2</button>
+    </div>
+
+
+</section>
+<section>
+    <h2>IR RMC</h2>
+
+
+    <div class="grid">
+      <button onclick="sendIR('POWER1')" class="wide">POWER1</button>
+    </div>
+    <div class="grid2" style="margin-top:10px">
+      <button onclick="sendIR('VOL-1')">VOL-</button>
+      <button onclick="sendIR('VOL+1')">VOL+</button>
+    </div>
+
+    <div style="height:10px"></div>
+
+    <div class="grid">
+      <button onclick="sendIR('POWER2')" class="wide">POWER2</button>
+    </div>
+    <div class="grid2" style="margin-top:10px">
+      <button onclick="sendIR('VOL-2')">VOL-</button>
+      <button onclick="sendIR('VOL+2')">VOL+</button>
+    </div>
+
+</section>
+<section>
+    <h2 style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+      <button id="toggleLog" class="logbtn logbtn-left" onclick="toggleLog()">🪲</button>
+      <button class="logbtn logbtn-right" onclick="sendReset()">RESET</button>
+    </h2>
+    <div class="log" id="log" style="display:none"></div>
+  </section>
+</main>
+
+<script>
+  // Topics (ESP32 firmware와 동일)
+  // IR auth token (ESP32 AUTH_TOKEN과 동일)
+  const IR_TOKEN = "YOUR_TOKEN";
+
+  const TOPIC = {
+    miboxCmd: "tswell/mibox3/cmd",
+    miboxStatus: "tswell/mibox3/status",
+    irCmd: "tswell/ir/cmd",
+    irStatus: "tswell/ir/status",
+    r433Cmd: "tswell/433home/cmd",
+    r433Status: "tswell/433home/status",
+    r433Log: "tswell/433home/log",
+  };
+
+  let client = null;
+  let gw = { wifi:null, mqtt:null, rssi:null };
+  let gwLastTs = 0; // ms timestamp of last 433 status update (gateway heartbeat)
+  const GW_STALE_MS = 7000; // 7s without 433 status => gateway offline
+
+  let ble = null;
+  let bleLastTs = 0; // ms timestamp of last BLE status update
+  const BLE_STALE_MS = 6000; // stable: 6s timeout
+  let bleOffStart = 0; // UI-side OFF debounce start (ms)
+  const BLE_UI_OFF_CONFIRM_MS = 4000; // require 4s continuous OFF before showing OFF
+  let mqttOk = false;
+
+
+  const $ = (id)=>document.getElementById(id);
+  const logEl = $("log");
+  const stMqtt = $("st-mqtt");
+  const stGw = $("st-gw");
+  const stBle = $("st-ble");
+  const stRssi = $("st-rssi");
+
+  function toggleLog(){
+    const el = $("log");
+    const showing = el.style.display !== "none";
+    el.style.display = showing ? "none" : "block";
+  }
+
+  function addLog(line){
+    const ts = new Date().toLocaleTimeString();
+    logEl.innerText = `[${ts}] ${line}\n` + logEl.innerText;
+  }
+
+  function setPill(el, ok, text){
+    el.classList.remove("ok","bad");
+    el.classList.add(ok ? "ok":"bad");
+    el.innerText = text;
+  }
+
+  function connect(){
+    const url = "wss://broker.hivemq.com:8884/mqtt";
+    const cid = "web_" + Math.random().toString(16).slice(2);
+    client = mqtt.connect(url, {
+      clientId: cid,
+      clean: true,
+      reconnectPeriod: 1500,
+      keepalive: 30,
+    });
+
+    client.on("connect", ()=>{ mqttOk = true; 
+      setPill(stMqtt, true, "MQTT: OK");
+      addLog("MQTT connected");
+      client.subscribe(Object.values(TOPIC), { qos:0 }, (err)=>{
+        if(err) addLog("SUB ERR: " + err.message);
+        else addLog("Subscribed topics");
+      });
+    });
+
+    client.on("reconnect", ()=>{
+      mqttOk = false;
+      setPill(stMqtt, false, "MQTT: --");
+      // MQTT가 흔들릴 때 Gateway/BLE는 판정 보류
+      gwLastTs = 0;
+      setPill(stGw, false, "Gateway: --");
+      stRssi.innerText = "RSSI: --";
+      bleLastTs = 0;
+      setPill(stBle, false, "BLE: --");
+    });
+
+    client.on("close", ()=>{
+      mqttOk = false;
+      setPill(stMqtt, false, "MQTT: --");
+      gwLastTs = 0;
+      setPill(stGw, false, "Gateway: --");
+      stRssi.innerText = "RSSI: --";
+      bleLastTs = 0;
+      setPill(stBle, false, "BLE: --");
+    });
+    client.on("error", (e)=> addLog("MQTT ERR: " + e.message));
+
+    client.on("message", (topic, payload)=>{
+      const msg = payload.toString();
+      if(topic === TOPIC.r433Status){
+        try{
+          const j = JSON.parse(msg);
+          gw = j;
+          gwLastTs = Date.now();
+          const ok = (j.wifi===1 && j.mqtt===1);
+          setPill(stGw, ok, "Gateway: " + (ok ? "OK":"BAD"));
+          stRssi.innerText = "RSSI: " + (j.rssi ?? "--");
+        }catch(e){}
+      }
+      if(topic === TOPIC.miboxStatus){
+        try{
+          const j = JSON.parse(msg);
+          const now = Date.now();
+
+          // If LWT/offline marker arrives (ts==0), don't flicker OFF immediately.
+          // Reset freshness and show unknown; stale checker will turn it to OFF if no heartbeat follows.
+          if(j.ts === 0){
+            // LWT/offline marker can arrive briefly during reconnect.
+            // If we recently had a fresh heartbeat, ignore this marker to prevent flicker.
+            if(bleLastTs && (now - bleLastTs) <= BLE_STALE_MS){
+              return;
+            }
+            ble = false;
+            bleLastTs = 0;
+            bleOffStart = 0;
+            setPill(stBle, false, "BLE: --");
+            return;
+          }
+
+          // Ignore stale retained snapshots (prevents OFF/OK flicker on first load)
+          if(j.ts && j.ts > 1700000000){
+            const age = now - (j.ts*1000);
+            if(age > BLE_STALE_MS){
+              return;
+            }
+          }
+
+          const cand = !!j.ble;
+          bleLastTs = now; // use receive-time
+
+          if(cand){
+            // ON: clear OFF debounce and reflect immediately
+            bleOffStart = 0;
+            ble = true;
+            setPill(stBle, true, "BLE: OK");
+          }else{
+            // OFF: debounce so brief BLE hiccups don't flip the UI
+            if(!bleOffStart) bleOffStart = now;
+            const offLongEnough = (now - bleOffStart) >= BLE_UI_OFF_CONFIRM_MS;
+            if(offLongEnough){
+              ble = false;
+              setPill(stBle, false, "BLE: OFF");
+            }else{
+              // keep previous OK during the debounce window
+              ble = true;
+              setPill(stBle, true, "BLE: OK");
+            }
+          }
+        }catch(e){}
+      }
+      if(topic === TOPIC.r433Log){
+        addLog(msg);
+      }
+      if(topic === TOPIC.irStatus){
+        addLog("IR: " + msg);
+      }
+    });
+  }
+
+  function disconnect(){
+    if(client){
+      client.end(true);
+      client = null;
+      setPill(stMqtt, false, "MQTT: --");
+      gwLastTs = 0;
+      setPill(stGw, false, "Gateway: --");
+      stRssi.innerText = "RSSI: --";
+      bleLastTs = 0;
+      setPill(stBle, false, "BLE: --");
+      addLog("MQTT disconnected");
+    }
+  }
+
+  function pub(topic, msg){
+    if(!client || !client.connected){
+      addLog("Not connected");
+      return;
+    }
+    client.publish(topic, msg, { qos:0, retain:false });
+  }
+
+  // --- Commands ---
+  function sendReset(){
+    send433('reset');
+    addLog('RESET requested');
+  }
+
+  function sendMi(cmd){
+    if(!canBleControl()){
+      addLog("BLE not connected -> blocked: " + cmd);
+      setPill(stBle, false, "BLE: --");
+      return;
+    }
+    pub(TOPIC.miboxCmd, cmd);
+    addLog("MiBox cmd: " + cmd);
+  }
+  function sendMiRaw(){
+    const v = $("mbraw").value.trim();
+    if(!v) return;
+    pub(TOPIC.miboxCmd, v);
+    addLog("MiBox cmd: " + v);
+  }
+  function sendIR(cmd){
+    // ESP32는 JSON {token,cmd} 형태를 기대함
+    const payload = JSON.stringify({ token: IR_TOKEN, cmd });
+    pub(TOPIC.irCmd, payload);
+    addLog("IR cmd: " + cmd);
+  }
+  function sendIRCustom(){
+    const cmd = $("ircustom").value.trim();
+    if(!cmd) return;
+    sendIR(cmd);
+  }
+
+  function send433(cmd){ pub(TOPIC.r433Cmd, cmd); addLog("433 cmd: " + cmd); }
+
+  // Gateway/BLE stale checker
+  setInterval(()=>{
+    // MQTT 끊김이면 전부 판정 보류
+    if(!mqttOk){
+      gwLastTs = 0;
+      setPill(stGw, false, "Gateway: --");
+      stRssi.innerText = "RSSI: --";
+
+      ble = false;
+      bleLastTs = 0;
+      setPill(stBle, false, "BLE: --");
+      return;
+    }
+
+    // Gateway(433 status) freshness
+    if(!gwLastTs){
+      setPill(stGw, false, "Gateway: --");
+      stRssi.innerText = "RSSI: --";
+    }else{
+      const gwStale = (Date.now() - gwLastTs) > GW_STALE_MS;
+      if(gwStale){
+        gwLastTs = 0;
+        setPill(stGw, false, "Gateway: --");
+        stRssi.innerText = "RSSI: --";
+        // Gateway 오프라인이면 BLE도 -- 로
+        ble = false;
+        bleLastTs = 0;
+        setPill(stBle, false, "BLE: --");
+        return;
+      }
+    }
+
+    // BLE freshness (Gateway가 살아있을 때만 의미 있음)
+    if(!bleLastTs){
+      setPill(stBle, false, "BLE: --");
+      return;
+    }
+
+    const bleStale = (Date.now() - bleLastTs) > BLE_STALE_MS;
+    if(bleStale){
+      ble = false;
+      bleLastTs = 0;
+      setPill(stBle, false, "BLE: --");
+    }
+  }, 1000);
+
+  function canBleControl(){
+    const fresh = bleLastTs && (Date.now() - bleLastTs) <= BLE_STALE_MS;
+    return mqttOk && !!ble && fresh;
+  }
+window.addEventListener('load', ()=>{ connect(); });
+
+  // Clock
+  setInterval(()=>{$("clock").innerText=new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});}, 1000);
+</script>
+
+<script>
+  // Visual pressed feedback for touch/click
+  function addPressedFeedback(){
+    document.querySelectorAll('button').forEach(btn=>{
+      const down = ()=>btn.classList.add('pressed');
+      const up = ()=>btn.classList.remove('pressed');
+      btn.addEventListener('mousedown', down);
+      btn.addEventListener('touchstart', down, {passive:true});
+      btn.addEventListener('mouseup', up);
+      btn.addEventListener('mouseleave', up);
+      btn.addEventListener('touchend', up);
+      btn.addEventListener('touchcancel', up);
+      // for programmatic clicks: briefly flash
+      btn.addEventListener('click', ()=>{
+        btn.classList.add('pressed');
+        setTimeout(()=>btn.classList.remove('pressed'), 120);
+      });
+    });
+  }
+  window.addEventListener('DOMContentLoaded', addPressedFeedback);
+</script>
+
+<script>
+  // PWA Service Worker registration
+  (function(){
+    if (!('serviceWorker' in navigator)) return;
+    window.addEventListener('load', async () => {
+      try{
+        await navigator.serviceWorker.register('./sw.js', { scope: './' });
+      }catch(e){
+        // ignore
+      }
+    });
+  })();
+</script>
+</body>
+</html>
