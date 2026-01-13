@@ -154,26 +154,25 @@
       background: rgba(255,255,255,.07);
     }
 
-    /* ===================== Schedule UI (NEW) ===================== */
+    /* ===================== Schedule button ===================== */
     .clock-btn{
-      width:44px;
-      height:44px;
+      width:32px;
+      height:32px;
       padding:0;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.24);
-      background: linear-gradient(180deg,#1f262f,#151a21);
-      box-shadow: 0 14px 26px rgba(0,0,0,.70),
-                  inset 0 1px 0 rgba(255,255,255,.12),
-                  inset 0 -6px 14px rgba(0,0,0,.40);
-      display:flex;              /* ✅ 아이콘 중앙정렬 */
-      align-items:center;        /* ✅ 수직 중앙 */
-      justify-content:center;    /* ✅ 수평 중앙 */
-      line-height:1;             /* ✅ 이모지 베이스라인 문제 방지 */
-      font-size:18px;
+      border:none;
+      background:transparent;
+      box-shadow:none;
+      border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      line-height:1;
+      font-size:16px;
+      color:#e6eef8;
       flex:0 0 auto;
+      -webkit-tap-highlight-color: transparent;
     }
-    .clock-btn:active{ transform: translateY(3px) scale(0.985); filter: brightness(0.90); }
+    .clock-btn:active{ transform: translateY(1px); filter: brightness(0.95); }
 
+    /* ===================== Schedule modal (match screenshot, keep mobile time picker) ===================== */
     .modal-backdrop{
       position:fixed; inset:0;
       background: rgba(0,0,0,.55);
@@ -185,38 +184,84 @@
       z-index:999;
     }
     .modal{
-      width:min(520px, 96vw);
+      width:min(560px, 96vw);
       border-radius:18px;
       border:1px solid rgba(255,255,255,.14);
       background: linear-gradient(180deg, rgba(31,38,47,.92), rgba(21,26,33,.92));
       box-shadow: 0 26px 52px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.10);
-      padding:14px;
+      padding:16px;
     }
-    .modal h3{ margin:0 0 10px; font-size:15px; }
-    .modal .row2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
-    .modal .help{ margin-top:8px; font-size:12px; opacity:.75; line-height:1.4; }
-    .modal .actions{ margin-top:12px; display:flex; gap:10px; }
-    .modal .actions button{ padding:12px 10px; }
-    .modal .actions .ghost{
+    .sched-title{
+      font-size:16px;
+      font-weight:800;
+      margin:0 0 12px;
+    }
+    .sched-row{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:10px;
+    }
+    .sched-label{
+      width:52px;
+      font-weight:800;
+      opacity:.9;
+    }
+
+    /* placeholder overlay so --:-- always shows when empty */
+    .time-wrap{ position:relative; flex:1; }
+    .time-wrap input[type="time"]{
+      width:100%;
+      padding:12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.24);
+      background:rgba(0,0,0,.25);
+      color:#fff;
+      font-size:14px;
+    }
+    .time-ph{
+      position:absolute;
+      left:14px;
+      top:50%;
+      transform:translateY(-50%);
+      font-size:14px;
+      opacity:.55;
+      pointer-events:none;
+      user-select:none;
+      white-space:nowrap;
+    }
+
+    .sched-actions{
+      margin-top:14px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    .sched-actions button{
+      padding:14px 10px;
+      border-radius:14px;
+    }
+    .sched-actions .ghost{
       background: rgba(255,255,255,.06);
       border:1px solid rgba(255,255,255,.16);
     }
-    .modal .actions .danger{
-      background: rgba(248,113,113,.12);
-      border:1px solid rgba(248,113,113,.35);
-    }
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:6px 10px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
+    .sched-help{
+      margin-top:10px;
       font-size:12px;
-      font-weight:700;
-      opacity:.95;
+      opacity:.75;
+      line-height:1.5;
     }
+    .sched-help .link{
+      display:inline-block;
+      margin-top:6px;
+      opacity:.9;
+      text-decoration: underline;
+      cursor:pointer;
+    }
+
+    /* ===== UI tweaks requested ===== */
+    section{ padding:10px 12px 12px; } /* title area smaller */
+    h2{ margin:0 0 8px; font-size:15px; font-weight:800; opacity:.95; gap:8px; line-height:1.1; }
   </style>
 </head>
 <body>
@@ -309,34 +354,41 @@
 </section>
 </main>
 
-<!-- ===================== Schedule Modal (NEW) ===================== -->
+<!-- ===================== Schedule Modal (UPDATED) ===================== -->
 <div class="modal-backdrop" id="schedBackdrop" onclick="closeSchedule(true)">
   <div class="modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
-    <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-      <h3 style="margin:0" id="schedTitle">스케줄 설정</h3>
-      <span class="badge" id="schedTargetBadge">target: --</span>
-    </div>
+    <div class="sched-title" id="schedTitle">스케줄 설정</div>
 
-    <div class="row2">
-      <div>
-        <div class="muted" style="margin:0 0 6px;">시작시간</div>
-        <input id="schedStart" type="time" />
-      </div>
-      <div>
-        <div class="muted" style="margin:0 0 6px;">종료시간 (선택)</div>
-        <input id="schedEnd" type="time" />
+    <div class="sched-row">
+      <div class="sched-label">시작</div>
+      <div class="time-wrap">
+        <span class="time-ph" id="schedStartPh">--:--</span>
+        <input id="schedStart" type="time"
+               oninput="phSync()"
+               onchange="phSync()"/>
       </div>
     </div>
 
-    <div class="help">
-      - 종료시간을 비우면 <b>시작만</b> 매일 1회 실행됩니다.<br/>
-      - 저장하면 ESP32에 저장되어, 웹을 꺼도 ESP32가 매일 반복 실행합니다.
+    <div class="sched-row">
+      <div class="sched-label">종료</div>
+      <div class="time-wrap">
+        <span class="time-ph" id="schedEndPh">--:--</span>
+        <input id="schedEnd" type="time"
+               oninput="phSync()"
+               onchange="phSync()"/>
+      </div>
     </div>
 
-    <div class="actions">
+    <div class="sched-actions">
       <button class="ghost" onclick="closeSchedule(false)">닫기</button>
-      <button class="danger" onclick="clearSchedule()">지우기</button>
       <button onclick="saveSchedule()">저장</button>
+    </div>
+
+    <div class="sched-help">
+      • ESP32가 NTP 시간 기준으로 매일 반복 실행합니다. (웹은 설정할 때만 필요)<br/>
+      • 종료시간을 비우면 시작만 1회 실행됩니다.<br/>
+      • IR은 HTML의 IR_TOKEN과 ESP32의 AUTH_TOKEN이 같아야 합니다.<br/>
+      <span class="link" onclick="clearSchedule()">스케줄 지우기</span>
     </div>
   </div>
 </div>
@@ -355,7 +407,7 @@
     r433Status: "tswell/433home/status",
     r433Log: "tswell/433home/log",
 
-    // ✅ ESP32 스케줄 설정 토픽 (NEW)
+    // ESP32 스케줄 설정 토픽 (B안)
     scheduleSet: "tswell/schedule/set",
   };
 
@@ -370,6 +422,46 @@
   let bleOffStart = 0; // UI-side OFF debounce start (ms)
   const BLE_UI_OFF_CONFIRM_MS = 4000; // require 4s continuous OFF before showing OFF
   let mqttOk = false;
+
+  // Schedule state
+  let schedTarget = null;
+
+
+  // ===== Schedule UI persistence (per remote) =====
+  // NOTE: ESP32 is the real scheduler. This is UI-side memory so the user can see what they set.
+  const SCHED_UI_KEY = "tswell_sched_ui_v1";
+
+  function schedLoadAll(){
+    try{ return JSON.parse(localStorage.getItem(SCHED_UI_KEY) || "{}"); }catch(e){ return {}; }
+  }
+  function schedSaveAll(map){
+    try{ localStorage.setItem(SCHED_UI_KEY, JSON.stringify(map || {})); }catch(e){}
+  }
+  function schedGet(target){
+    const m = schedLoadAll();
+    return m[target] || null;
+  }
+  function schedSet(target, start, end){
+    const m = schedLoadAll();
+    m[target] = { start: start || "", end: end || "" };
+    schedSaveAll(m);
+  }
+  function schedDel(target){
+    const m = schedLoadAll();
+    delete m[target];
+    schedSaveAll(m);
+  }
+
+  // placeholder visibility helper (for our overlay)
+  function phSync(){
+    const s = document.getElementById('schedStart');
+    const e = document.getElementById('schedEnd');
+    const sPh = document.getElementById('schedStartPh');
+    const ePh = document.getElementById('schedEndPh');
+    if(s && sPh) sPh.style.display = s.value ? 'none' : 'block';
+    if(e && ePh) ePh.style.display = e.value ? 'none' : 'block';
+  }
+
 
   const $ = (id)=>document.getElementById(id);
   const logEl = $("log");
@@ -508,20 +600,6 @@
     });
   }
 
-  function disconnect(){
-    if(client){
-      client.end(true);
-      client = null;
-      setPill(stMqtt, false, "MQTT: --");
-      gwLastTs = 0;
-      setPill(stGw, false, "Gateway: --");
-      stRssi.innerText = "RSSI: --";
-      bleLastTs = 0;
-      setPill(stBle, false, "BLE: --");
-      addLog("MQTT disconnected");
-    }
-  }
-
   function pub(topic, msg){
     if(!client || !client.connected){
       addLog("Not connected");
@@ -545,22 +623,12 @@
     pub(TOPIC.miboxCmd, cmd);
     addLog("MiBox cmd: " + cmd);
   }
-  function sendMiRaw(){
-    const v = $("mbraw").value.trim();
-    if(!v) return;
-    pub(TOPIC.miboxCmd, v);
-    addLog("MiBox cmd: " + v);
-  }
+
   function sendIR(cmd){
     // ESP32는 JSON {token,cmd} 형태를 기대함
     const payload = JSON.stringify({ token: IR_TOKEN, cmd });
     pub(TOPIC.irCmd, payload);
     addLog("IR cmd: " + cmd);
-  }
-  function sendIRCustom(){
-    const cmd = $("ircustom").value.trim();
-    if(!cmd) return;
-    sendIR(cmd);
   }
 
   function send433(cmd){ pub(TOPIC.r433Cmd, cmd); addLog("433 cmd: " + cmd); }
@@ -615,31 +683,29 @@
     const fresh = bleLastTs && (Date.now() - bleLastTs) <= BLE_STALE_MS;
     return mqttOk && !!ble && fresh;
   }
-  window.addEventListener('load', ()=>{ connect(); });
 
-  // Clock
-  setInterval(()=>{$("clock").innerText=new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});}, 1000);
-
-  /* ===================== Schedule logic (NEW) ===================== */
-  let schedTarget = null;
-
+  // ===================== Schedule functions (B안) =====================
   function openSchedule(target, title){
     schedTarget = target;
-    $("schedTitle").innerText = `${title} 스케줄`;
-    $("schedTargetBadge").innerText = `target: ${target}`;
-    $("schedStart").value = "";
-    $("schedEnd").value = "";
+    $("schedTitle").innerText = `스케줄 설정 - ${title}`;
+
+    // load saved UI values for this remote
+    const saved = schedGet(target);
+    $("schedStart").value = (saved && saved.start) ? saved.start : "";
+    $("schedEnd").value = (saved && saved.end) ? saved.end : "";
+
+    phSync();
     $("schedBackdrop").style.display = "flex";
   }
 
-  function closeSchedule(byBackdrop){
+  function closeSchedule(){
     $("schedBackdrop").style.display = "none";
   }
 
   function saveSchedule(){
     if(!schedTarget){
       addLog("Schedule: target missing");
-      closeSchedule(false);
+      closeSchedule();
       return;
     }
     const start = $("schedStart").value?.trim();
@@ -650,35 +716,53 @@
       return;
     }
 
+    // persist for UI display
+    schedSet(schedTarget, start, end || "");
+
     const payloadObj = { target: schedTarget, start };
-    if(end) payloadObj.end = end; // 종료시간은 선택
+    if(end) payloadObj.end = end;
 
     const payload = JSON.stringify(payloadObj);
     pub(TOPIC.scheduleSet, payload);
     addLog(`Schedule set -> ${payload}`);
-    closeSchedule(false);
+
+    phSync();
+    closeSchedule();
   }
 
   function clearSchedule(){
     if(!schedTarget){
       addLog("Schedule clear: target missing");
-      closeSchedule(false);
+      closeSchedule();
       return;
     }
-    // disable 플래그로 지우기(ESP32 측에서 처리)
+
+    // clear UI memory
+    schedDel(schedTarget);
+
+    // reset inputs
+    $("schedStart").value = "";
+    $("schedEnd").value = "";
+    phSync();
+
     const payload = JSON.stringify({ target: schedTarget, disable: true });
     pub(TOPIC.scheduleSet, payload);
     addLog(`Schedule cleared -> ${payload}`);
-    closeSchedule(false);
+    closeSchedule();
   }
 
   // ESC로 모달 닫기
   window.addEventListener('keydown', (e)=>{
     if(e.key === 'Escape'){
       const b = $("schedBackdrop");
-      if(b && b.style.display === "flex") closeSchedule(false);
+      if(b && b.style.display === "flex") closeSchedule();
     }
   });
+
+  window.addEventListener('load', ()=>{ connect(); });
+
+  // Clock
+  setInterval(()=>{$("clock").innerText=new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});}, 1000);
 </script>
 
 <script>
@@ -704,17 +788,8 @@
 </script>
 
 <script>
-  // PWA Service Worker registration
-  (function(){
-    if (!('serviceWorker' in navigator)) return;
-    window.addEventListener('load', async () => {
-      try{
-        await navigator.serviceWorker.register('./sw.js', { scope: './' });
-      }catch(e){
-        // ignore
-      }
-    });
-  })();
+  // PWA Service Worker registration (DISABLED for debug)
+  // if you want it back, restore the original block.
 </script>
 </body>
 </html>
