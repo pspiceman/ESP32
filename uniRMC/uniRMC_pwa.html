@@ -34,17 +34,15 @@
     input{ width:100%; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.24); background:rgba(0,0,0,.25); color:#fff; font-size:14px;}
     .log{ max-height:170px; overflow:auto; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; line-height:1.35; padding:10px; background:rgba(0,0,0,.30); border-radius:12px; border:1px solid rgba(255,255,255,.10);}
     .muted{ opacity:.75; font-size:12px;}
-button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12); }
+    button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12); }
 
-
-        .logbtn-left{
+    .logbtn-left{
       width:54px; padding:10px 0; text-align:center;
       border:1px solid rgba(255,255,255,.24);
       box-shadow: 0 14px 26px rgba(0,0,0,.70),
                   inset 0 1px 0 rgba(255,255,255,.12), inset 0 -6px 14px rgba(0,0,0,.40);
     }
     .logbtn-right{ width:110px; padding:10px 0; text-align:center; font-size:13px; letter-spacing:.3px; }
-
 
     /* Pressed feedback */
     .btn:active, .logbtn:active{
@@ -57,12 +55,10 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
       box-shadow: inset 0 6px 14px rgba(0,0,0,.45) !important;
     }
 
-
     /* Universal RMC depth up */
     .pill{
       box-shadow: 0 10px 22px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.18), inset 0 -4px 10px rgba(0,0,0,.35);
     }
-
 
     /* Status pills (OK like attach) */
     .pill{
@@ -89,7 +85,6 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
       border:1px solid rgba(255,255,255,.10);
     }
 
-
     /* Remote vs button separation + 3D */
     .section{
       background: linear-gradient(180deg,#0c1016,#070a0f);
@@ -111,7 +106,6 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
       color:#f2f7ff;
     }
 
-
     .logbtn{
       border:1px solid rgba(255,255,255,.24);
       background: linear-gradient(180deg,#1f262f,#151a21);
@@ -123,7 +117,6 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
       box-shadow: 0 14px 26px rgba(0,0,0,.70),
                   inset 0 1px 0 rgba(255,255,255,.12), inset 0 -6px 14px rgba(0,0,0,.40);
     }
-
 
     /* Status row compact (prevent RSSI wrap) */
     .status-row{
@@ -146,7 +139,6 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
                   inset 0 1px 0 rgba(255,255,255,.14), inset 0 -6px 14px rgba(0,0,0,.40);
     }
 
-
     /* Section tint (clearer separation among 3 remotes) */
     section:nth-of-type(1){
       background: linear-gradient(180deg, rgba(59,130,246,.18), rgba(59,130,246,.10));
@@ -162,7 +154,70 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
       background: rgba(255,255,255,.07);
     }
 
-</style>
+    /* ===================== Schedule UI (NEW) ===================== */
+    .clock-btn{
+      width:44px;
+      height:44px;
+      padding:0;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.24);
+      background: linear-gradient(180deg,#1f262f,#151a21);
+      box-shadow: 0 14px 26px rgba(0,0,0,.70),
+                  inset 0 1px 0 rgba(255,255,255,.12),
+                  inset 0 -6px 14px rgba(0,0,0,.40);
+      display:flex;              /* ✅ 아이콘 중앙정렬 */
+      align-items:center;        /* ✅ 수직 중앙 */
+      justify-content:center;    /* ✅ 수평 중앙 */
+      line-height:1;             /* ✅ 이모지 베이스라인 문제 방지 */
+      font-size:18px;
+      flex:0 0 auto;
+    }
+    .clock-btn:active{ transform: translateY(3px) scale(0.985); filter: brightness(0.90); }
+
+    .modal-backdrop{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(6px);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      z-index:999;
+    }
+    .modal{
+      width:min(520px, 96vw);
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, rgba(31,38,47,.92), rgba(21,26,33,.92));
+      box-shadow: 0 26px 52px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.10);
+      padding:14px;
+    }
+    .modal h3{ margin:0 0 10px; font-size:15px; }
+    .modal .row2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    .modal .help{ margin-top:8px; font-size:12px; opacity:.75; line-height:1.4; }
+    .modal .actions{ margin-top:12px; display:flex; gap:10px; }
+    .modal .actions button{ padding:12px 10px; }
+    .modal .actions .ghost{
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.16);
+    }
+    .modal .actions .danger{
+      background: rgba(248,113,113,.12);
+      border:1px solid rgba(248,113,113,.35);
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      font-size:12px;
+      font-weight:700;
+      opacity:.95;
+    }
+  </style>
 </head>
 <body>
 <header>
@@ -180,8 +235,10 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
 
 <main>
 <section>
-    <h2>MiBox RMC</h2>
-
+    <h2>
+      <span>MiBox RMC</span>
+      <button class="clock-btn" onclick="openSchedule('mibox','MiBox (MUTE)')" aria-label="MiBox schedule">🕒</button>
+    </h2>
 
     <div class="grid">
       <button onclick="sendMi('up')" class="wide">▲</button>
@@ -202,9 +259,12 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
     </div>
 
 </section>
-<section>
-    <h2>433 RMC</h2>
 
+<section>
+    <h2>
+      <span>433 RMC</span>
+      <button class="clock-btn" onclick="openSchedule('rf433','433 (LIGHT)')" aria-label="433 schedule">🕒</button>
+    </h2>
 
     <div class="grid2">
       <button onclick="send433('LIGHT')">LIGHT</button>
@@ -212,12 +272,13 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
       <button onclick="send433('SPK1')">SPK1</button>
       <button onclick="send433('SPK2')">SPK2</button>
     </div>
-
-
 </section>
-<section>
-    <h2>IR RMC</h2>
 
+<section>
+    <h2>
+      <span>IR RMC</span>
+      <button class="clock-btn" onclick="openSchedule('ir','IR (POWER1)')" aria-label="IR schedule">🕒</button>
+    </h2>
 
     <div class="grid">
       <button onclick="sendIR('POWER1')" class="wide">POWER1</button>
@@ -238,14 +299,47 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
     </div>
 
 </section>
+
 <section>
     <h2 style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
       <button id="toggleLog" class="logbtn logbtn-left" onclick="toggleLog()">🪲</button>
       <button class="logbtn logbtn-right" onclick="sendReset()">RESET</button>
     </h2>
     <div class="log" id="log" style="display:none"></div>
-  </section>
+</section>
 </main>
+
+<!-- ===================== Schedule Modal (NEW) ===================== -->
+<div class="modal-backdrop" id="schedBackdrop" onclick="closeSchedule(true)">
+  <div class="modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
+    <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+      <h3 style="margin:0" id="schedTitle">스케줄 설정</h3>
+      <span class="badge" id="schedTargetBadge">target: --</span>
+    </div>
+
+    <div class="row2">
+      <div>
+        <div class="muted" style="margin:0 0 6px;">시작시간</div>
+        <input id="schedStart" type="time" />
+      </div>
+      <div>
+        <div class="muted" style="margin:0 0 6px;">종료시간 (선택)</div>
+        <input id="schedEnd" type="time" />
+      </div>
+    </div>
+
+    <div class="help">
+      - 종료시간을 비우면 <b>시작만</b> 매일 1회 실행됩니다.<br/>
+      - 저장하면 ESP32에 저장되어, 웹을 꺼도 ESP32가 매일 반복 실행합니다.
+    </div>
+
+    <div class="actions">
+      <button class="ghost" onclick="closeSchedule(false)">닫기</button>
+      <button class="danger" onclick="clearSchedule()">지우기</button>
+      <button onclick="saveSchedule()">저장</button>
+    </div>
+  </div>
+</div>
 
 <script>
   // Topics (ESP32 firmware와 동일)
@@ -260,6 +354,9 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
     r433Cmd: "tswell/433home/cmd",
     r433Status: "tswell/433home/status",
     r433Log: "tswell/433home/log",
+
+    // ✅ ESP32 스케줄 설정 토픽 (NEW)
+    scheduleSet: "tswell/schedule/set",
   };
 
   let client = null;
@@ -273,7 +370,6 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
   let bleOffStart = 0; // UI-side OFF debounce start (ms)
   const BLE_UI_OFF_CONFIRM_MS = 4000; // require 4s continuous OFF before showing OFF
   let mqttOk = false;
-
 
   const $ = (id)=>document.getElementById(id);
   const logEl = $("log");
@@ -309,7 +405,7 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
       keepalive: 30,
     });
 
-    client.on("connect", ()=>{ mqttOk = true; 
+    client.on("connect", ()=>{ mqttOk = true;
       setPill(stMqtt, true, "MQTT: OK");
       addLog("MQTT connected");
       client.subscribe(Object.values(TOPIC), { qos:0 }, (err)=>{
@@ -519,10 +615,70 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
     const fresh = bleLastTs && (Date.now() - bleLastTs) <= BLE_STALE_MS;
     return mqttOk && !!ble && fresh;
   }
-window.addEventListener('load', ()=>{ connect(); });
+  window.addEventListener('load', ()=>{ connect(); });
 
   // Clock
   setInterval(()=>{$("clock").innerText=new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});}, 1000);
+
+  /* ===================== Schedule logic (NEW) ===================== */
+  let schedTarget = null;
+
+  function openSchedule(target, title){
+    schedTarget = target;
+    $("schedTitle").innerText = `${title} 스케줄`;
+    $("schedTargetBadge").innerText = `target: ${target}`;
+    $("schedStart").value = "";
+    $("schedEnd").value = "";
+    $("schedBackdrop").style.display = "flex";
+  }
+
+  function closeSchedule(byBackdrop){
+    $("schedBackdrop").style.display = "none";
+  }
+
+  function saveSchedule(){
+    if(!schedTarget){
+      addLog("Schedule: target missing");
+      closeSchedule(false);
+      return;
+    }
+    const start = $("schedStart").value?.trim();
+    const end = $("schedEnd").value?.trim();
+
+    if(!start){
+      addLog("Schedule: start time required");
+      return;
+    }
+
+    const payloadObj = { target: schedTarget, start };
+    if(end) payloadObj.end = end; // 종료시간은 선택
+
+    const payload = JSON.stringify(payloadObj);
+    pub(TOPIC.scheduleSet, payload);
+    addLog(`Schedule set -> ${payload}`);
+    closeSchedule(false);
+  }
+
+  function clearSchedule(){
+    if(!schedTarget){
+      addLog("Schedule clear: target missing");
+      closeSchedule(false);
+      return;
+    }
+    // disable 플래그로 지우기(ESP32 측에서 처리)
+    const payload = JSON.stringify({ target: schedTarget, disable: true });
+    pub(TOPIC.scheduleSet, payload);
+    addLog(`Schedule cleared -> ${payload}`);
+    closeSchedule(false);
+  }
+
+  // ESC로 모달 닫기
+  window.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape'){
+      const b = $("schedBackdrop");
+      if(b && b.style.display === "flex") closeSchedule(false);
+    }
+  });
 </script>
 
 <script>
