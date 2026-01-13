@@ -409,6 +409,7 @@
 
     // ESP32 스케줄 설정 토픽 (B안)
     scheduleSet: "tswell/schedule/set",
+    scheduleStatus: "tswell/schedule/status",
   };
 
   let client = null;
@@ -430,6 +431,20 @@
   // ===== Schedule UI persistence (per remote) =====
   // NOTE: ESP32 is the real scheduler. This is UI-side memory so the user can see what they set.
   const SCHED_UI_KEY = "tswell_sched_ui_v1";
+  const SCHED_ESP_KEY = "tswell_sched_esp_v1"; // last schedule snapshot from ESP32 (retained MQTT)
+
+  function espSchedSave(obj){
+    try{ localStorage.setItem(SCHED_ESP_KEY, JSON.stringify(obj||{})); }catch(e){}
+  }
+  function espSchedLoad(){
+    try{ return JSON.parse(localStorage.getItem(SCHED_ESP_KEY) || "{}"); }catch(e){ return {}; }
+  }
+  function espSchedGet(target){
+    const s = espSchedLoad();
+    // payload shape: {mibox:{enabled,start,end}, rf433:{...}, ir:{...}}
+    return s && s[target] ? s[target] : null;
+  }
+
 
   function schedLoadAll(){
     try{ return JSON.parse(localStorage.getItem(SCHED_UI_KEY) || "{}"); }catch(e){ return {}; }
@@ -597,6 +612,38 @@
       if(topic === TOPIC.irStatus){
         addLog("IR: " + msg);
       }
+
+      if(topic === TOPIC.scheduleStatus){
+        try{
+          const j = JSON.parse(msg);
+          espSchedSave(j);
+
+          // also mirror into UI memory so even without esp snapshot next time shows
+          ["mibox","rf433","ir"].forEach(k=>{
+            const it = j[k];
+            if(it && it.enabled && it.start){
+              schedSet(k, it.start, (it.end || ""));
+            }else if(it && it.enabled===false){
+              // disabled -> clear UI memory for that target
+              schedDel(k);
+            }
+          });
+
+          // if modal is open for current target, refresh fields live
+          const b = $("schedBackdrop");
+          if(b && b.style.display === "flex" && schedTarget){
+            const cur = espSchedGet(schedTarget);
+            if(cur && cur.enabled){
+              $("schedStart").value = cur.start || "";
+              $("schedEnd").value = cur.end || "";
+            }else{
+              $("schedStart").value = "";
+              $("schedEnd").value = "";
+            }
+            phSync();
+          }
+        }catch(e){}
+      }
     });
   }
 
@@ -689,10 +736,15 @@
     schedTarget = target;
     $("schedTitle").innerText = `스케줄 설정 - ${title}`;
 
-    // load saved UI values for this remote
+    // Prefer ESP32 stored schedule (MQTT retained), fallback to local UI memory
+    const esp = espSchedGet(target);
     const saved = schedGet(target);
-    $("schedStart").value = (saved && saved.start) ? saved.start : "";
-    $("schedEnd").value = (saved && saved.end) ? saved.end : "";
+
+    const startVal = (esp && esp.enabled && esp.start) ? esp.start : (saved?.start || "");
+    const endVal   = (esp && esp.enabled && esp.end)   ? esp.end   : (saved?.end   || "");
+
+    $("schedStart").value = startVal || "";
+    $("schedEnd").value = endVal || "";
 
     phSync();
     $("schedBackdrop").style.display = "flex";
