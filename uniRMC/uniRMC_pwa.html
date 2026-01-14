@@ -4,16 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Universal RMC</title>
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0b0f14">
-  <meta name="background-color" content="#0b0f14">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Universal RMC">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <style>
     :root { --pad: 12px; }
@@ -34,15 +24,17 @@
     input{ width:100%; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.24); background:rgba(0,0,0,.25); color:#fff; font-size:14px;}
     .log{ max-height:170px; overflow:auto; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; line-height:1.35; padding:10px; background:rgba(0,0,0,.30); border-radius:12px; border:1px solid rgba(255,255,255,.10);}
     .muted{ opacity:.75; font-size:12px;}
-    button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12); }
+button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12); }
 
-    .logbtn-left{
+
+        .logbtn-left{
       width:54px; padding:10px 0; text-align:center;
       border:1px solid rgba(255,255,255,.24);
       box-shadow: 0 14px 26px rgba(0,0,0,.70),
                   inset 0 1px 0 rgba(255,255,255,.12), inset 0 -6px 14px rgba(0,0,0,.40);
     }
     .logbtn-right{ width:110px; padding:10px 0; text-align:center; font-size:13px; letter-spacing:.3px; }
+
 
     /* Pressed feedback */
     .btn:active, .logbtn:active{
@@ -55,10 +47,12 @@
       box-shadow: inset 0 6px 14px rgba(0,0,0,.45) !important;
     }
 
+
     /* Universal RMC depth up */
     .pill{
       box-shadow: 0 10px 22px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.18), inset 0 -4px 10px rgba(0,0,0,.35);
     }
+
 
     /* Status pills (OK like attach) */
     .pill{
@@ -85,6 +79,7 @@
       border:1px solid rgba(255,255,255,.10);
     }
 
+
     /* Remote vs button separation + 3D */
     .section{
       background: linear-gradient(180deg,#0c1016,#070a0f);
@@ -106,6 +101,7 @@
       color:#f2f7ff;
     }
 
+
     .logbtn{
       border:1px solid rgba(255,255,255,.24);
       background: linear-gradient(180deg,#1f262f,#151a21);
@@ -117,6 +113,7 @@
       box-shadow: 0 14px 26px rgba(0,0,0,.70),
                   inset 0 1px 0 rgba(255,255,255,.12), inset 0 -6px 14px rgba(0,0,0,.40);
     }
+
 
     /* Status row compact (prevent RSSI wrap) */
     .status-row{
@@ -139,6 +136,7 @@
                   inset 0 1px 0 rgba(255,255,255,.14), inset 0 -6px 14px rgba(0,0,0,.40);
     }
 
+
     /* Section tint (clearer separation among 3 remotes) */
     section:nth-of-type(1){
       background: linear-gradient(180deg, rgba(59,130,246,.18), rgba(59,130,246,.10));
@@ -154,115 +152,7 @@
       background: rgba(255,255,255,.07);
     }
 
-    /* ===================== Schedule button ===================== */
-    .clock-btn{
-      width:32px;
-      height:32px;
-      padding:0;
-      border:none;
-      background:transparent;
-      box-shadow:none;
-      border-radius:12px;
-      display:flex; align-items:center; justify-content:center;
-      line-height:1;
-      font-size:16px;
-      color:#e6eef8;
-      flex:0 0 auto;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .clock-btn:active{ transform: translateY(1px); filter: brightness(0.95); }
-
-    /* ===================== Schedule modal (match screenshot, keep mobile time picker) ===================== */
-    .modal-backdrop{
-      position:fixed; inset:0;
-      background: rgba(0,0,0,.55);
-      backdrop-filter: blur(6px);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding:16px;
-      z-index:999;
-    }
-    .modal{
-      width:min(560px, 96vw);
-      border-radius:18px;
-      border:1px solid rgba(255,255,255,.14);
-      background: linear-gradient(180deg, rgba(31,38,47,.92), rgba(21,26,33,.92));
-      box-shadow: 0 26px 52px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.10);
-      padding:16px;
-    }
-    .sched-title{
-      font-size:16px;
-      font-weight:800;
-      margin:0 0 12px;
-    }
-    .sched-row{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      margin-bottom:10px;
-    }
-    .sched-label{
-      width:52px;
-      font-weight:800;
-      opacity:.9;
-    }
-
-    /* placeholder overlay so --:-- always shows when empty */
-    .time-wrap{ position:relative; flex:1; }
-    .time-wrap input[type="time"]{
-      width:100%;
-      padding:12px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.24);
-      background:rgba(0,0,0,.25);
-      color:#fff;
-      font-size:14px;
-    }
-    .time-ph{
-      position:absolute;
-      left:14px;
-      top:50%;
-      transform:translateY(-50%);
-      font-size:14px;
-      opacity:.55;
-      pointer-events:none;
-      user-select:none;
-      white-space:nowrap;
-    }
-
-    .sched-actions{
-      margin-top:14px;
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:12px;
-    }
-    .sched-actions button{
-      padding:14px 10px;
-      border-radius:14px;
-    }
-    .sched-actions .ghost{
-      background: rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.16);
-    }
-    .sched-help{
-      margin-top:10px;
-      font-size:12px;
-      opacity:.75;
-      line-height:1.5;
-    }
-    .sched-help .link{
-      display:inline-block;
-      margin-top:6px;
-      opacity:.9;
-      text-decoration: underline;
-      cursor:pointer;
-    }
-
-    /* ===== UI tweaks requested ===== */
-    section{ padding:10px 12px 12px; } /* title area smaller */
-    h2{ margin:0 0 8px; font-size:15px; font-weight:800; opacity:.95; gap:8px; line-height:1.1; }
-  </style>
+</style>
 </head>
 <body>
 <header>
@@ -280,10 +170,8 @@
 
 <main>
 <section>
-    <h2>
-      <span>MiBox RMC</span>
-      <button class="clock-btn" onclick="openSchedule('mibox','MiBox (MUTE)')" aria-label="MiBox schedule">🕒</button>
-    </h2>
+    <h2>MiBox RMC</h2>
+
 
     <div class="grid">
       <button onclick="sendMi('up')" class="wide">▲</button>
@@ -304,12 +192,9 @@
     </div>
 
 </section>
-
 <section>
-    <h2>
-      <span>433 RMC</span>
-      <button class="clock-btn" onclick="openSchedule('rf433','433 (LIGHT)')" aria-label="433 schedule">🕒</button>
-    </h2>
+    <h2>433 RMC</h2>
+
 
     <div class="grid2">
       <button onclick="send433('LIGHT')">LIGHT</button>
@@ -317,13 +202,12 @@
       <button onclick="send433('SPK1')">SPK1</button>
       <button onclick="send433('SPK2')">SPK2</button>
     </div>
-</section>
 
+
+</section>
 <section>
-    <h2>
-      <span>IR RMC</span>
-      <button class="clock-btn" onclick="openSchedule('ir','IR (POWER1)')" aria-label="IR schedule">🕒</button>
-    </h2>
+    <h2>IR RMC</h2>
+
 
     <div class="grid">
       <button onclick="sendIR('POWER1')" class="wide">POWER1</button>
@@ -344,54 +228,14 @@
     </div>
 
 </section>
-
 <section>
     <h2 style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
       <button id="toggleLog" class="logbtn logbtn-left" onclick="toggleLog()">🪲</button>
       <button class="logbtn logbtn-right" onclick="sendReset()">RESET</button>
     </h2>
     <div class="log" id="log" style="display:none"></div>
-</section>
+  </section>
 </main>
-
-<!-- ===================== Schedule Modal (UPDATED) ===================== -->
-<div class="modal-backdrop" id="schedBackdrop" onclick="closeSchedule(true)">
-  <div class="modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
-    <div class="sched-title" id="schedTitle">스케줄 설정</div>
-
-    <div class="sched-row">
-      <div class="sched-label">시작</div>
-      <div class="time-wrap">
-        <span class="time-ph" id="schedStartPh">--:--</span>
-        <input id="schedStart" type="time"
-               oninput="phSync()"
-               onchange="phSync()"/>
-      </div>
-    </div>
-
-    <div class="sched-row">
-      <div class="sched-label">종료</div>
-      <div class="time-wrap">
-        <span class="time-ph" id="schedEndPh">--:--</span>
-        <input id="schedEnd" type="time"
-               oninput="phSync()"
-               onchange="phSync()"/>
-      </div>
-    </div>
-
-    <div class="sched-actions">
-      <button class="ghost" onclick="closeSchedule(false)">닫기</button>
-      <button onclick="saveSchedule()">저장</button>
-    </div>
-
-    <div class="sched-help">
-      • ESP32가 NTP 시간 기준으로 매일 반복 실행합니다. (웹은 설정할 때만 필요)<br/>
-      • 종료시간을 비우면 시작만 1회 실행됩니다.<br/>
-      • IR은 HTML의 IR_TOKEN과 ESP32의 AUTH_TOKEN이 같아야 합니다.<br/>
-      <span class="link" onclick="clearSchedule()">스케줄 지우기</span>
-    </div>
-  </div>
-</div>
 
 <script>
   // Topics (ESP32 firmware와 동일)
@@ -406,10 +250,6 @@
     r433Cmd: "tswell/433home/cmd",
     r433Status: "tswell/433home/status",
     r433Log: "tswell/433home/log",
-
-    // ESP32 스케줄 설정 토픽 (B안)
-    scheduleSet: "tswell/schedule/set",
-    scheduleStatus: "tswell/schedule/status",
   };
 
   let client = null;
@@ -423,59 +263,6 @@
   let bleOffStart = 0; // UI-side OFF debounce start (ms)
   const BLE_UI_OFF_CONFIRM_MS = 4000; // require 4s continuous OFF before showing OFF
   let mqttOk = false;
-
-  // Schedule state
-  let schedTarget = null;
-
-
-  // ===== Schedule UI persistence (per remote) =====
-  // NOTE: ESP32 is the real scheduler. This is UI-side memory so the user can see what they set.
-  const SCHED_UI_KEY = "tswell_sched_ui_v1";
-  const SCHED_ESP_KEY = "tswell_sched_esp_v1"; // last schedule snapshot from ESP32 (retained MQTT)
-
-  function espSchedSave(obj){
-    try{ localStorage.setItem(SCHED_ESP_KEY, JSON.stringify(obj||{})); }catch(e){}
-  }
-  function espSchedLoad(){
-    try{ return JSON.parse(localStorage.getItem(SCHED_ESP_KEY) || "{}"); }catch(e){ return {}; }
-  }
-  function espSchedGet(target){
-    const s = espSchedLoad();
-    // payload shape: {mibox:{enabled,start,end}, rf433:{...}, ir:{...}}
-    return s && s[target] ? s[target] : null;
-  }
-
-
-  function schedLoadAll(){
-    try{ return JSON.parse(localStorage.getItem(SCHED_UI_KEY) || "{}"); }catch(e){ return {}; }
-  }
-  function schedSaveAll(map){
-    try{ localStorage.setItem(SCHED_UI_KEY, JSON.stringify(map || {})); }catch(e){}
-  }
-  function schedGet(target){
-    const m = schedLoadAll();
-    return m[target] || null;
-  }
-  function schedSet(target, start, end){
-    const m = schedLoadAll();
-    m[target] = { start: start || "", end: end || "" };
-    schedSaveAll(m);
-  }
-  function schedDel(target){
-    const m = schedLoadAll();
-    delete m[target];
-    schedSaveAll(m);
-  }
-
-  // placeholder visibility helper (for our overlay)
-  function phSync(){
-    const s = document.getElementById('schedStart');
-    const e = document.getElementById('schedEnd');
-    const sPh = document.getElementById('schedStartPh');
-    const ePh = document.getElementById('schedEndPh');
-    if(s && sPh) sPh.style.display = s.value ? 'none' : 'block';
-    if(e && ePh) ePh.style.display = e.value ? 'none' : 'block';
-  }
 
 
   const $ = (id)=>document.getElementById(id);
@@ -512,7 +299,7 @@
       keepalive: 30,
     });
 
-    client.on("connect", ()=>{ mqttOk = true;
+    client.on("connect", ()=>{ mqttOk = true; 
       setPill(stMqtt, true, "MQTT: OK");
       addLog("MQTT connected");
       client.subscribe(Object.values(TOPIC), { qos:0 }, (err)=>{
@@ -612,39 +399,21 @@
       if(topic === TOPIC.irStatus){
         addLog("IR: " + msg);
       }
-
-      if(topic === TOPIC.scheduleStatus){
-        try{
-          const j = JSON.parse(msg);
-          espSchedSave(j);
-
-          // also mirror into UI memory so even without esp snapshot next time shows
-          ["mibox","rf433","ir"].forEach(k=>{
-            const it = j[k];
-            if(it && it.enabled && it.start){
-              schedSet(k, it.start, (it.end || ""));
-            }else if(it && it.enabled===false){
-              // disabled -> clear UI memory for that target
-              schedDel(k);
-            }
-          });
-
-          // if modal is open for current target, refresh fields live
-          const b = $("schedBackdrop");
-          if(b && b.style.display === "flex" && schedTarget){
-            const cur = espSchedGet(schedTarget);
-            if(cur && cur.enabled){
-              $("schedStart").value = cur.start || "";
-              $("schedEnd").value = cur.end || "";
-            }else{
-              $("schedStart").value = "";
-              $("schedEnd").value = "";
-            }
-            phSync();
-          }
-        }catch(e){}
-      }
     });
+  }
+
+  function disconnect(){
+    if(client){
+      client.end(true);
+      client = null;
+      setPill(stMqtt, false, "MQTT: --");
+      gwLastTs = 0;
+      setPill(stGw, false, "Gateway: --");
+      stRssi.innerText = "RSSI: --";
+      bleLastTs = 0;
+      setPill(stBle, false, "BLE: --");
+      addLog("MQTT disconnected");
+    }
   }
 
   function pub(topic, msg){
@@ -670,12 +439,22 @@
     pub(TOPIC.miboxCmd, cmd);
     addLog("MiBox cmd: " + cmd);
   }
-
+  function sendMiRaw(){
+    const v = $("mbraw").value.trim();
+    if(!v) return;
+    pub(TOPIC.miboxCmd, v);
+    addLog("MiBox cmd: " + v);
+  }
   function sendIR(cmd){
     // ESP32는 JSON {token,cmd} 형태를 기대함
     const payload = JSON.stringify({ token: IR_TOKEN, cmd });
     pub(TOPIC.irCmd, payload);
     addLog("IR cmd: " + cmd);
+  }
+  function sendIRCustom(){
+    const cmd = $("ircustom").value.trim();
+    if(!cmd) return;
+    sendIR(cmd);
   }
 
   function send433(cmd){ pub(TOPIC.r433Cmd, cmd); addLog("433 cmd: " + cmd); }
@@ -730,88 +509,7 @@
     const fresh = bleLastTs && (Date.now() - bleLastTs) <= BLE_STALE_MS;
     return mqttOk && !!ble && fresh;
   }
-
-  // ===================== Schedule functions (B안) =====================
-  function openSchedule(target, title){
-    schedTarget = target;
-    $("schedTitle").innerText = `스케줄 설정 - ${title}`;
-
-    // Prefer ESP32 stored schedule (MQTT retained), fallback to local UI memory
-    const esp = espSchedGet(target);
-    const saved = schedGet(target);
-
-    const startVal = (esp && esp.enabled && esp.start) ? esp.start : (saved?.start || "");
-    const endVal   = (esp && esp.enabled && esp.end)   ? esp.end   : (saved?.end   || "");
-
-    $("schedStart").value = startVal || "";
-    $("schedEnd").value = endVal || "";
-
-    phSync();
-    $("schedBackdrop").style.display = "flex";
-  }
-
-  function closeSchedule(){
-    $("schedBackdrop").style.display = "none";
-  }
-
-  function saveSchedule(){
-    if(!schedTarget){
-      addLog("Schedule: target missing");
-      closeSchedule();
-      return;
-    }
-    const start = $("schedStart").value?.trim();
-    const end = $("schedEnd").value?.trim();
-
-    if(!start){
-      addLog("Schedule: start time required");
-      return;
-    }
-
-    // persist for UI display
-    schedSet(schedTarget, start, end || "");
-
-    const payloadObj = { target: schedTarget, start };
-    if(end) payloadObj.end = end;
-
-    const payload = JSON.stringify(payloadObj);
-    pub(TOPIC.scheduleSet, payload);
-    addLog(`Schedule set -> ${payload}`);
-
-    phSync();
-    closeSchedule();
-  }
-
-  function clearSchedule(){
-    if(!schedTarget){
-      addLog("Schedule clear: target missing");
-      closeSchedule();
-      return;
-    }
-
-    // clear UI memory
-    schedDel(schedTarget);
-
-    // reset inputs
-    $("schedStart").value = "";
-    $("schedEnd").value = "";
-    phSync();
-
-    const payload = JSON.stringify({ target: schedTarget, disable: true });
-    pub(TOPIC.scheduleSet, payload);
-    addLog(`Schedule cleared -> ${payload}`);
-    closeSchedule();
-  }
-
-  // ESC로 모달 닫기
-  window.addEventListener('keydown', (e)=>{
-    if(e.key === 'Escape'){
-      const b = $("schedBackdrop");
-      if(b && b.style.display === "flex") closeSchedule();
-    }
-  });
-
-  window.addEventListener('load', ()=>{ connect(); });
+window.addEventListener('load', ()=>{ connect(); });
 
   // Clock
   setInterval(()=>{$("clock").innerText=new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});}, 1000);
@@ -839,9 +537,5 @@
   window.addEventListener('DOMContentLoaded', addPressedFeedback);
 </script>
 
-<script>
-  // PWA Service Worker registration (DISABLED for debug)
-  // if you want it back, restore the original block.
-</script>
 </body>
 </html>
