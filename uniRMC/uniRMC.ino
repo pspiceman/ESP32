@@ -1,14 +1,14 @@
 /*
   TSWell Universal Remote Gateway (ESP32)
   - BLE Keyboard (MiBox3)
-  - IR Remote (learn/send + schedule)
+  - IR Remote (learn/send)   ✅ token 인증 제거 / ✅ schedule 제거
   - 433MHz (RCSwitch)
   - MQTT 통합 (broker.hivemq.com:1883)
 
   Topics
     - tswell/mibox3/cmd     (BLE key / MB: raw)
     - tswell/mibox3/status  (BLE status JSON, retain)
-    - tswell/ir/cmd         (JSON {token,cmd})
+    - tswell/ir/cmd         (JSON {cmd})
     - tswell/ir/status      (text status)
     - tswell/433home/cmd    (plain text cmd)
     - tswell/433home/status (JSON status)
@@ -36,7 +36,6 @@
 #include <IRrecv.h>
 #include <IRsend.h>
 #include <IRutils.h>
-#include <time.h>
 
 // ===== 433 =====
 #include <RCSwitch.h>
@@ -63,9 +62,6 @@ const char* TOPIC_433_CMD    = "tswell/433home/cmd";
 const char* TOPIC_433_STATUS = "tswell/433home/status";
 const char* TOPIC_433_LOG    = "tswell/433home/log";
 
-// ===== TOKEN (IR) =====
-const char* AUTH_TOKEN = "YOUR_TOKEN";   // HTML에서도 동일하게 사용
-
 // ===================== BLE Keyboard =====================
 BleKeyboard bleKeyboard("ESP32_MiBox3_Remote", "TSWell", 100);
 
@@ -91,18 +87,18 @@ uint16_t hexToU16(String h){
 
 // ===================== IR =====================
 // Pins
-const uint16_t IR_RECV_PIN = 27;
-const uint16_t IR_SEND_PIN = 14;
-const uint16_t NOTIFY_LED_PIN = 15; // notify LED (blink on successful command)
+const uint16_t IR_RECV_PIN     = 27;
+const uint16_t IR_SEND_PIN     = 14;
+const uint16_t NOTIFY_LED_PIN  = 15; // notify LED (blink on successful command)
 
 IRrecv irrecv(IR_RECV_PIN);
 decode_results results;
 IRsend irsend(IR_SEND_PIN);
 
-// Learning Mode
+// Learning Mode (Serial에서 L/S로 전환)
 bool learningMode = true;
 
-// Stored IR codes (replace with learned values)
+// Stored IR codes (POWER1/POWER2 그룹)
 struct IRCode {
   const char* name;
   decode_type_t protocol;
@@ -111,27 +107,17 @@ struct IRCode {
 };
 
 IRCode irCodes[] = {
-  {"TV_POWER", NEC, 0x20DF10EF, 32},
-  {"TV_VOLUP", NEC, 0x20DF40BF, 32},
-  {"TV_VOLDN", NEC, 0x20DFC03F, 32},
+  // POWER1 그룹 (NEC)
+  {"POWER1", NEC,      0x20DF10EF, 32},
+  {"VOL-1",  NEC,      0x20DFC03F, 32},
+  {"VOL+1",  NEC,      0x20DF40BF, 32},
+
+  // POWER2 그룹 (NEC_LIKE)
+  {"POWER2", NEC_LIKE, 0x55CCA2FF, 32},
+  {"VOL-2",  NEC_LIKE, 0x55CCA8FF, 32},
+  {"VOL+2",  NEC_LIKE, 0x55CC90FF, 32},
 };
 const int IR_COUNT = sizeof(irCodes) / sizeof(irCodes[0]);
-
-// Daily schedule (KST)
-const int ON_HOUR   = 7;
-const int ON_MINUTE = 0;
-const int OFF_HOUR   = 23;
-const int OFF_MINUTE = 30;
-
-const char* AUTO_ON_CMD  = "TV_POWER";
-const char* AUTO_OFF_CMD = "TV_POWER";
-
-int lastOnDay  = -1;
-int lastOffDay = -1;
-
-// NTP
-const char* NTP_SERVER1 = "pool.ntp.org";
-const char* NTP_SERVER2 = "time.nist.gov";
 
 // ===================== 433 =====================
 #define RX_PIN 13
@@ -146,8 +132,8 @@ struct RFCode {
 };
 
 RFCode rfCodes[] = {
-  {"DOOR",  12427912, 24, 1},
-  {"LIGHT",  8698436, 24, 1},
+  {"DOOR",   12427912, 24, 1},
+  {"LIGHT",   8698436, 24, 1},
   {"SPK1",  15256641, 24, 1},
   {"SPK2",  15256642, 24, 1},
 };
@@ -157,7 +143,7 @@ const int RF_COUNT = sizeof(rfCodes) / sizeof(rfCodes[0]);
 WiFiClient espClient;
 PubSubClient mqtt(espClient);
 
-// ===================== Timers (UPDATED: MiBox 참조 방식) =====================
+// ===================== Timers (MiBox 참조 방식) =====================
 unsigned long lastBleStatusMs = 0;
 unsigned long lastBleHeartbeatMs = 0;
 
@@ -165,7 +151,7 @@ unsigned long lastBleHeartbeatMs = 0;
 unsigned long bleLastOkMs = 0;
 
 // MiBox 연결되어 있으면 OK 유지(끊김 튐 방지)
-const unsigned long BLE_DISCONNECT_GRACE_MS = 12000; // 12초 (필요시 5000~20000 조절)
+const unsigned long BLE_DISCONNECT_GRACE_MS = 12000; // 12초
 
 bool bleStableState = false;
 unsigned long last433StatusMs = 0;
@@ -194,7 +180,7 @@ void blinkNotify(uint16_t ms=70){
   digitalWrite(NOTIFY_LED_PIN, LOW);
 }
 
-// ✅ BLE 상태 publish (UPDATED: MiBox 단독 코드 참조, 흔들림 최소화)
+// ✅ BLE 상태 publish (흔들림 최소화)
 void publishBleStatus(){
   // publish tick (1초)
   if(millis() - lastBleStatusMs < 1000) return;
@@ -209,17 +195,15 @@ void publishBleStatus(){
   // 유예 포함한 "효과적 연결 상태"
   bool eff = real;
   if(!eff && bleLastOkMs > 0 && (nowMs - bleLastOkMs) < BLE_DISCONNECT_GRACE_MS){
-    eff = true; // 끊김이 잠깐 튀어도 OK 유지
+    eff = true;
   }
 
   // 상태 변동 있을 때만 ble 토글 publish (retain)
   if(eff != bleStableState){
     bleStableState = eff;
 
-    uint32_t ts = 0;
-    time_t now = time(nullptr);
-    if(now > 1700000000) ts = (uint32_t)now;      // NTP 정상
-    else ts = (uint32_t)(millis()/1000);          // fallback
+    // 시간 안정성 위해 millis 기반 ts만 사용 (NTP 제거)
+    uint32_t ts = (uint32_t)(millis()/1000);
 
     String payload = String("{\"ble\":") + (bleStableState?"true":"false") + ",\"ts\":" + ts + "}";
     if(mqtt.connected()) mqtt.publish(TOPIC_MIBOX_STATUS, payload.c_str(), true);
@@ -232,12 +216,7 @@ void publishBleStatus(){
   // Heartbeat: 2초마다 ts 갱신(웹에서 오프라인 감지용). bleStableState는 그대로.
   if(millis() - lastBleHeartbeatMs >= 2000){
     lastBleHeartbeatMs = millis();
-
-    uint32_t ts = 0;
-    time_t now = time(nullptr);
-    if(now > 1700000000) ts = (uint32_t)now;
-    else ts = (uint32_t)(millis()/1000);
-
+    uint32_t ts = (uint32_t)(millis()/1000);
     String payload = String("{\"ble\":") + (bleStableState?"true":"false") + ",\"ts\":" + ts + "}";
     if(mqtt.connected()) mqtt.publish(TOPIC_MIBOX_STATUS, payload.c_str(), true);
   }
@@ -268,7 +247,7 @@ void connectMQTT(){
     if(t == TOPIC_MIBOX_CMD){
       Serial.printf("[MQTT][MiBox] %s\n", msg.c_str());
 
-      // ✅ 입력 처리 자체는 "실제 연결"일 때만 (유예 적용 X)
+      // ✅ 입력 처리 자체는 "실제 연결"일 때만
       if(!bleKeyboard.isConnected()){
         Serial.println("[BLE] NOT CONNECTED -> ignore");
         return;
@@ -302,7 +281,7 @@ void connectMQTT(){
       return;
     }
 
-    // ===== IR =====
+    // ===== IR (JSON {cmd}만 받음) =====
     if(t == TOPIC_IR_CMD){
       Serial.printf("[MQTT][IR] %s\n", msg.c_str());
 
@@ -311,16 +290,13 @@ void connectMQTT(){
         publishIrStatus("JSON parse failed");
         return;
       }
-      const char* token = doc["token"];
-      const char* cmd   = doc["cmd"];
-      if(!token || !cmd){
-        publishIrStatus("Invalid JSON: missing token/cmd");
+
+      const char* cmd = doc["cmd"];
+      if(!cmd){
+        publishIrStatus("Invalid JSON: missing cmd");
         return;
       }
-      if(strcmp(token, AUTH_TOKEN)!=0){
-        publishIrStatus("Auth failed: wrong token");
-        return;
-      }
+
       if(learningMode){
         publishIrStatus("Blocked: Learning Mode ON");
         return;
@@ -364,7 +340,7 @@ void connectMQTT(){
                         ", proto:" + String(rfCodes[i].protocol) + "]");
 
           ok=true;
-          blinkNotify();   // ✅ break 전에 실행되도록 위치 수정
+          blinkNotify();
           break;
         }
       }
@@ -377,7 +353,7 @@ void connectMQTT(){
     String cid = "ESP32-UNI-" + String((uint32_t)ESP.getEfuseMac(), HEX);
     Serial.print("[MQTT] connecting... ");
 
-    // LWT: ESP가 MQTT에서 떨어졌을 때만 ts=0 (웹에서는 "장비 오프라인"으로 쓰는게 좋음)
+    // LWT: ESP가 MQTT에서 떨어졌을 때만 ts=0
     if(mqtt.connect(cid.c_str(), TOPIC_MIBOX_STATUS, 0, true, "{\"ble\":false,\"ts\":0}")){
       Serial.println("OK");
       mqtt.subscribe(TOPIC_MIBOX_CMD);
@@ -395,71 +371,6 @@ void connectMQTT(){
   }
 }
 
-// ===================== NTP =====================
-bool isTimeValid(){
-  struct tm t;
-  if(!getLocalTime(&t)) return false;
-  return (t.tm_year+1900)>=2020;
-}
-
-void setupNTP(){
-  setenv("TZ", "KST-9", 1);
-  tzset();
-  configTime(0,0,NTP_SERVER1,NTP_SERVER2);
-
-  Serial.println("[NTP] Waiting for sync...");
-  for(int i=0;i<20;i++){
-    if(isTimeValid()){
-      Serial.println("[NTP] synced");
-      return;
-    }
-    delay(500); Serial.print(".");
-  }
-  Serial.println("\n[NTP] sync may have failed.");
-}
-
-void runDailySchedule(){
-  if(!isTimeValid()) return;
-
-  struct tm t;
-  if(!getLocalTime(&t)) return;
-
-  int hour=t.tm_hour, minute=t.tm_min, day=t.tm_mday;
-
-  if(hour==ON_HOUR && minute==ON_MINUTE && lastOnDay!=day){
-    if(!learningMode){
-      // 실제 송신
-      for(int i=0;i<IR_COUNT;i++){
-        if(strcmp(irCodes[i].name, AUTO_ON_CMD)==0){
-          irsend.send(irCodes[i].protocol, irCodes[i].value, irCodes[i].bits);
-          publishIrStatus(String("[SCHEDULE] AUTO ON sent ")+AUTO_ON_CMD);
-          blinkNotify();
-          break;
-        }
-      }
-    } else {
-      publishIrStatus("[SCHEDULE] AUTO ON blocked: Learning Mode");
-    }
-    lastOnDay=day;
-  }
-
-  if(hour==OFF_HOUR && minute==OFF_MINUTE && lastOffDay!=day){
-    if(!learningMode){
-      for(int i=0;i<IR_COUNT;i++){
-        if(strcmp(irCodes[i].name, AUTO_OFF_CMD)==0){
-          irsend.send(irCodes[i].protocol, irCodes[i].value, irCodes[i].bits);
-          publishIrStatus(String("[SCHEDULE] AUTO OFF sent ")+AUTO_OFF_CMD);
-          blinkNotify();
-          break;
-        }
-      }
-    } else {
-      publishIrStatus("[SCHEDULE] AUTO OFF blocked: Learning Mode");
-    }
-    lastOffDay=day;
-  }
-}
-
 // ===================== Setup/Loop =====================
 void setup(){
   Serial.begin(115200);
@@ -470,8 +381,7 @@ void setup(){
   pinMode(NOTIFY_LED_PIN, OUTPUT);
   digitalWrite(NOTIFY_LED_PIN, LOW);
 
-  // BLE (페어링/광고 로직은 유지)
-  // 필요 시 이 2줄이 특정 환경에서 페어링을 방해하면 주석 처리해서 비교 테스트 가능
+  // BLE
   esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
   esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, ESP_PWR_LVL_P9);
 
@@ -489,12 +399,11 @@ void setup(){
   rf.enableReceive(RX_PIN);
   rf.enableTransmit(TX_PIN);
 
-  // WiFi/MQTT/NTP
+  // WiFi/MQTT
   connectWiFi();
-  setupNTP();
   connectMQTT();
 
-  publish433Log("Universal Remote Ready");
+  publish433Log("Universal Remote Ready (IR POWER1/2, no token, no schedule)");
 }
 
 void loop(){
@@ -517,9 +426,6 @@ void loop(){
     last433StatusMs=millis();
     publish433Status();
   }
-
-  // IR schedule
-  runDailySchedule();
 
   // IR learning print (serial only)
   if(learningMode){
