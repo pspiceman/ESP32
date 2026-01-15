@@ -324,28 +324,16 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
     }
 
 
-    /* === UI tweak v9: tighter vertical layout for 800px mobile portrait === */
-    main{ gap:10px; }
-    section{ padding:10px; }
-    h2{ margin:0 0 8px; }
-    .grid{ gap:8px; }
-    .grid2{ gap:8px; }
-    button{ padding:12px 9px; }
-    /* Tighten last (log/reset) header row */
-    main > section:last-of-type > h2{ margin:0 0 6px !important; }
-    .logbtn-left{ width:44px !important; padding:6px 0 !important; font-size:14px !important; line-height:1 !important; }
-    .logbtn-right{ width:92px !important; padding:6px 0 !important; font-size:12px !important; letter-spacing:.2px !important; }
-    /* Make emoji + RESET a bit shorter visually */
-    .logbtn{ border-radius:14px !important; }
-    @media (max-width: 480px){
-      :root{ --pad: 10px; }
-      main{ padding-top:8px; padding-bottom:10px; gap:8px; }
-      section{ padding:9px; }
-      .grid{ gap:7px; }
-      .grid2{ gap:7px; }
-      button{ padding:11px 8px; font-size:13px; }
-      h2{ margin:0 0 7px; }
-    }
+    /* === UI tweak v10: keep button sizes, adjust only spacing BETWEEN remotes for 800px portrait === */
+main{ gap:10px; } /* was 12px */
+@media (max-width: 480px){
+  :root{ --pad: 10px; }
+  main{ padding-top:8px; padding-bottom:10px; gap:8px; } /* tighter between remotes only */
+}
+/* restore Log/Reset button sizing (keep original feel) */
+.logbtn-left{ width:54px !important; padding:10px 0 !important; font-size:14px !important; line-height:1 !important; }
+.logbtn-right{ width:110px !important; padding:10px 0 !important; font-size:13px !important; letter-spacing:.3px !important; }
+
 
 </style>
 </head>
