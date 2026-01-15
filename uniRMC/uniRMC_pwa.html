@@ -239,9 +239,7 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
 
 <script>
   // Topics (ESP32 firmware와 동일)
-  // IR auth token (ESP32 AUTH_TOKEN과 동일)
-  const IR_TOKEN = "YOUR_TOKEN";
-
+  // IR: ESP32는 JSON {cmd}만 받음 (token 없음)
   const TOPIC = {
     miboxCmd: "tswell/mibox3/cmd",
     miboxStatus: "tswell/mibox3/status",
@@ -446,8 +444,8 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
     addLog("MiBox cmd: " + v);
   }
   function sendIR(cmd){
-    // ESP32는 JSON {token,cmd} 형태를 기대함
-    const payload = JSON.stringify({ token: IR_TOKEN, cmd });
+    // ESP32는 JSON {cmd} 형태를 기대함
+    const payload = JSON.stringify({ cmd });
     pub(TOPIC.irCmd, payload);
     addLog("IR cmd: " + cmd);
   }
