@@ -309,6 +309,20 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
         0 12px 26px rgba(0,0,0,.70) !important;
     }
 
+
+
+    /* Log/Reset wrapper: remove outer outline so it fits mobile portrait */
+    main > section:last-of-type{
+      background: transparent !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+    }
+    main > section:last-of-type > h2{
+      margin: 0 0 10px !important;
+      padding: 0 !important;
+    }
+
 </style>
 </head>
 <body>
@@ -355,17 +369,10 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
 <section>
 <h2>IR RMC</h2>
 <div class="grid">
-<button class="wide" onclick="sendIR('POWER1')">POWER1</button>
-</div>
-<div class="grid2" style="margin-top:10px">
+<button onclick="sendIR('POWER1')">POWER1</button>
 <button onclick="sendIR('VOL-1')">VOL-</button>
 <button onclick="sendIR('VOL+1')">VOL+</button>
-</div>
-<div style="height:10px"></div>
-<div class="grid">
-<button class="wide" onclick="sendIR('POWER2')">POWER2</button>
-</div>
-<div class="grid2" style="margin-top:10px">
+<button onclick="sendIR('POWER2')">POWER2</button>
 <button onclick="sendIR('VOL-2')">VOL-</button>
 <button onclick="sendIR('VOL+2')">VOL+</button>
 </div>
