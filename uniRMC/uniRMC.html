@@ -1,11 +1,12 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Universal RMC</title>
-  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
+<title>Universal RMC</title>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<style>
     :root { --pad: 12px; }
     body{ margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif; background:#0b0f14; color:#e6eef8;}
     header{ position:sticky; top:0; z-index:10; background:rgba(11,15,20,.92); backdrop-filter: blur(8px); padding: var(--pad); border-bottom:1px solid rgba(255,255,255,.08);}
@@ -115,18 +116,32 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
     }
 
 
-    /* Status row compact (prevent RSSI wrap) */
+    /* Status row: keep EVERYTHING on ONE line in mobile portrait */
     .status-row{
       display:flex;
       flex-wrap:nowrap;
       gap:8px;
-      overflow:hidden;
+      align-items:center;
     }
     .status-row .pill{
       padding:6px 10px;
       font-size:13px;
       white-space:nowrap;
+      text-align:center;
       flex:0 0 auto;
+    }
+
+    /* Mobile portrait: tighten pills so MQTT/Gateway/BLE/RSSI fit on a single row */
+    @media (max-width: 480px){
+      .status-row{
+        gap:6px;
+      }
+      .status-row .pill{
+        padding:5px 7px;
+        font-size:12px;
+        flex:1 1 0;      /* equal-width chips */
+        min-width:0;     /* allow flexbox shrink without clipping layout */
+      }
     }
     #st-rssi{
       border:1px solid rgba(59,130,246,.85);
@@ -152,91 +167,217 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
       background: rgba(255,255,255,.07);
     }
 
+
+
+    /* === UI Tuning (2026-01): clearer remote vs button separation + stronger 3D buttons === */
+    /* Card (remote) depth + clearer border */
+    main > section{
+      position: relative;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: radial-gradient(1200px 420px at 18% 0%,
+                  rgba(255,255,255,.10),
+                  rgba(255,255,255,.05) 38%,
+                  rgba(0,0,0,.08) 100%);
+      box-shadow:
+        0 26px 60px rgba(0,0,0,.78),
+        inset 0 1px 0 rgba(255,255,255,.10),
+        inset 0 -14px 28px rgba(0,0,0,.22);
+    }
+    /* Accent rail per remote */
+    main > section::before{ display:none; }
+                    /* Buttons: higher contrast + stronger 3D */
+    button{
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.20);
+      background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
+      color: #f6fbff;
+      text-shadow: 0 1px 0 rgba(0,0,0,.55);
+      box-shadow:
+        0 16px 34px rgba(0,0,0,.62),
+        0 6px 14px rgba(0,0,0,.38),
+        inset 0 1px 0 rgba(255,255,255,.28),
+        inset 0 -12px 20px rgba(0,0,0,.35);
+      transition: transform .08s ease, filter .08s ease, box-shadow .12s ease, border-color .12s ease;
+    }
+    button:focus-visible{
+      outline:none;
+      border-color: rgba(255,255,255,.42);
+      box-shadow:
+        0 18px 40px rgba(0,0,0,.66),
+        0 0 0 2px rgba(255,255,255,.14),
+        inset 0 1px 0 rgba(255,255,255,.30),
+        inset 0 -12px 20px rgba(0,0,0,.38);
+    }
+
+    /* Per-remote button tint (keeps sections distinct even with same base) */
+    main > section:nth-of-type(1) button:not(.logbtn){
+      background: linear-gradient(180deg, rgba(59,130,246,.28), rgba(59,130,246,.12));
+      border-color: rgba(59,130,246,.34);
+      box-shadow:
+        0 18px 38px rgba(0,0,0,.64),
+        0 10px 22px rgba(59,130,246,.10),
+        inset 0 1px 0 rgba(255,255,255,.26),
+        inset 0 -12px 22px rgba(0,0,0,.36);
+    }
+    main > section:nth-of-type(2) button:not(.logbtn){
+      background: linear-gradient(180deg, rgba(34,197,94,.26), rgba(34,197,94,.10));
+      border-color: rgba(34,197,94,.32);
+      box-shadow:
+        0 18px 38px rgba(0,0,0,.64),
+        0 10px 22px rgba(34,197,94,.10),
+        inset 0 1px 0 rgba(255,255,255,.26),
+        inset 0 -12px 22px rgba(0,0,0,.36);
+    }
+    main > section:nth-of-type(3) button:not(.logbtn){
+      background: linear-gradient(180deg, rgba(168,85,247,.26), rgba(168,85,247,.10));
+      border-color: rgba(168,85,247,.32);
+      box-shadow:
+        0 18px 38px rgba(0,0,0,.64),
+        0 10px 22px rgba(168,85,247,.10),
+        inset 0 1px 0 rgba(255,255,255,.26),
+        inset 0 -12px 22px rgba(0,0,0,.36);
+    }
+
+    /* Pressed: looks "pushed in" */
+    button:active, .btn:active, .logbtn:active{
+      transform: translateY(3px) scale(0.985);
+      filter: brightness(0.92) saturate(1.05);
+      box-shadow:
+        0 10px 22px rgba(0,0,0,.55),
+        inset 0 8px 18px rgba(0,0,0,.58),
+        inset 0 1px 0 rgba(255,255,255,.12) !important;
+    }
+    .pressed{
+      transform: translateY(3px) scale(0.985);
+      filter: brightness(0.92) saturate(1.05);
+      box-shadow:
+        0 10px 22px rgba(0,0,0,.55),
+        inset 0 8px 18px rgba(0,0,0,.58),
+        inset 0 1px 0 rgba(255,255,255,.12) !important;
+    }
+
+    /* Log buttons: keep distinct (neutral metal) */
+    .logbtn{
+      border-color: rgba(255,255,255,.22);
+      background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+      box-shadow:
+        0 18px 36px rgba(0,0,0,.72),
+        inset 0 1px 0 rgba(255,255,255,.18),
+        inset 0 -10px 18px rgba(0,0,0,.42);
+    }
+
+
+
+/* === UI tweak: hide collector(gateway) pill (visual only) === */
+/* === Title styling === */
+.brand-title{
+  background: linear-gradient(90deg, #7dd3fc 0%, #a78bfa 45%, #34d399 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 1px 0 rgba(0,0,0,.35);
+}
+
+/* If there are any collector labels/rows in future markup, hide them safely */
+.collector, .collector-row, .collector-label, [data-role="collector"]{
+  display:none !important;
+}
+
+    /* UI tweak v3: remove left vertical bar + title emboss */
+    main > section::before{ display:none; }
+    main > section:nth-of-type(1)::before,
+    main > section:nth-of-type(2)::before,
+        /* Section titles */
+    main > section h2{
+      color: rgba(220,220,220,.96) !important;
+      opacity: 1 !important;
+      text-shadow:
+        0 1px 0 rgba(255,255,255,.14),
+        0 10px 22px rgba(0,0,0,.65);
+      letter-spacing: .2px;
+    }
+
+    /* Top brand title: bright gray with depth (no gradient) */
+    .brand-title{
+      background: none !important;
+      -webkit-background-clip: border-box !important;
+      background-clip: border-box !important;
+      color: rgba(225,225,225,.96) !important;
+      text-shadow:
+        0 1px 0 rgba(255,255,255,.16),
+        0 12px 26px rgba(0,0,0,.70) !important;
+    }
+
 </style>
 </head>
 <body>
 <header>
-  <div class="row" style="justify-content:space-between">
-    <div style="font-weight:800; letter-spacing:.2px; font-size:22px;">Universal RMC</div>
-    <div class="pill" id="clock">--:--</div>
-  </div>
-  <div class="row status-row" style="margin-top:10px">
-    <div class="pill bad" id="st-mqtt">MQTT: --</div>
-    <div class="pill bad" id="st-gw">Gateway: --</div>
-    <div class="pill bad" id="st-ble">BLE: --</div>
-    <div class="pill" id="st-rssi">RSSI: --</div>
-  </div>
+<div class="row" style="justify-content:space-between">
+<div class="brand-title" style="font-weight:800; letter-spacing:.2px; font-size:22px;">Universal RMC</div>
+<div class="pill" id="clock">--:--</div>
+</div>
+<div class="row status-row" style="margin-top:10px">
+<div class="pill bad" id="st-mqtt">MQTT: --</div>
+<div class="pill bad" id="st-gw">Gateway: --</div>
+<div class="pill bad" id="st-ble">BLE: --</div>
+<div class="pill" id="st-rssi">RSSI: --</div>
+</div>
 </header>
-
 <main>
 <section>
-    <h2>MiBox RMC</h2>
-
-
-    <div class="grid">
-      <button onclick="sendMi('up')" class="wide">▲</button>
-      <button onclick="sendMi('left')">◀</button>
-      <button onclick="sendMi('ok1')">OK</button>
-      <button onclick="sendMi('right')">▶</button>
-      <button onclick="sendMi('down')" class="wide">▼</button>
-
-      <button onclick="sendMi('voldown')">VOL-</button>
-      <button onclick="sendMi('mute')">MUTE</button>
-      <button onclick="sendMi('volup')">VOL+</button>
-    </div>
-
-    <div style="height:10px"></div>
-    <div class="grid2">
-      <button onclick="sendMi('MB:2000')">⟵ BACK</button>
-      <button onclick="sendMi('MB:0080')">HOME</button>
-    </div>
-
+<h2>MiBox RMC</h2>
+<div class="grid">
+<button class="wide" onclick="sendMi('up')">▲</button>
+<button onclick="sendMi('left')">◀</button>
+<button onclick="sendMi('ok1')">OK</button>
+<button onclick="sendMi('right')">▶</button>
+<button class="wide" onclick="sendMi('down')">▼</button>
+<button onclick="sendMi('voldown')">VOL-</button>
+<button onclick="sendMi('mute')">MUTE</button>
+<button onclick="sendMi('volup')">VOL+</button>
+</div>
+<div style="height:10px"></div>
+<div class="grid2">
+<button onclick="sendMi('MB:2000')">⟵ BACK</button>
+<button onclick="sendMi('MB:0080')">HOME</button>
+</div>
 </section>
 <section>
-    <h2>433 RMC</h2>
-
-
-    <div class="grid2">
-      <button onclick="send433('LIGHT')">LIGHT</button>
-      <button onclick="send433('DOOR')">DOOR</button>
-      <button onclick="send433('SPK1')">SPK1</button>
-      <button onclick="send433('SPK2')">SPK2</button>
-    </div>
-
-
+<h2>433 RMC</h2>
+<div class="grid2">
+<button onclick="send433('LIGHT')">LIGHT</button>
+<button onclick="send433('DOOR')">DOOR</button>
+<button onclick="send433('SPK1')">SPK1</button>
+<button onclick="send433('SPK2')">SPK2</button>
+</div>
 </section>
 <section>
-    <h2>IR RMC</h2>
-
-
-    <div class="grid">
-      <button onclick="sendIR('POWER1')" class="wide">POWER1</button>
-    </div>
-    <div class="grid2" style="margin-top:10px">
-      <button onclick="sendIR('VOL-1')">VOL-</button>
-      <button onclick="sendIR('VOL+1')">VOL+</button>
-    </div>
-
-    <div style="height:10px"></div>
-
-    <div class="grid">
-      <button onclick="sendIR('POWER2')" class="wide">POWER2</button>
-    </div>
-    <div class="grid2" style="margin-top:10px">
-      <button onclick="sendIR('VOL-2')">VOL-</button>
-      <button onclick="sendIR('VOL+2')">VOL+</button>
-    </div>
-
+<h2>IR RMC</h2>
+<div class="grid">
+<button class="wide" onclick="sendIR('POWER1')">POWER1</button>
+</div>
+<div class="grid2" style="margin-top:10px">
+<button onclick="sendIR('VOL-1')">VOL-</button>
+<button onclick="sendIR('VOL+1')">VOL+</button>
+</div>
+<div style="height:10px"></div>
+<div class="grid">
+<button class="wide" onclick="sendIR('POWER2')">POWER2</button>
+</div>
+<div class="grid2" style="margin-top:10px">
+<button onclick="sendIR('VOL-2')">VOL-</button>
+<button onclick="sendIR('VOL+2')">VOL+</button>
+</div>
 </section>
 <section>
-    <h2 style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-      <button id="toggleLog" class="logbtn logbtn-left" onclick="toggleLog()">🪲</button>
-      <button class="logbtn logbtn-right" onclick="sendReset()">RESET</button>
-    </h2>
-    <div class="log" id="log" style="display:none"></div>
-  </section>
+<h2 style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+<button class="logbtn logbtn-left" id="toggleLog" onclick="toggleLog()">🪲</button>
+<button class="logbtn logbtn-right" onclick="sendReset()">RESET</button>
+</h2>
+<div class="log" id="log" style="display:none"></div>
+</section>
 </main>
-
 <script>
   // Topics (ESP32 firmware와 동일)
   // IR: ESP32는 JSON {cmd}만 받음 (token 없음)
@@ -512,7 +653,6 @@ window.addEventListener('load', ()=>{ connect(); });
   // Clock
   setInterval(()=>{$("clock").innerText=new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});}, 1000);
 </script>
-
 <script>
   // Visual pressed feedback for touch/click
   function addPressedFeedback(){
@@ -534,6 +674,5 @@ window.addEventListener('load', ()=>{ connect(); });
   }
   window.addEventListener('DOMContentLoaded', addPressedFeedback);
 </script>
-
 </body>
 </html>
