@@ -215,19 +215,12 @@ void handleCommand(const String& cmd) {
 
   if (cmd == "LED_PULSE") {
     digitalWrite(LED_PIN, HIGH);
-    delay(1000);
+    delay(2000);
     digitalWrite(LED_PIN, LOW);
   }
   else if (cmd == "RESET_NODE") {
+    // ✅ LED 깜빡임 없이 바로 소프트 리셋
     Serial.println("[RESET] Node 소프트 리셋");
-    digitalWrite(LED_PIN, HIGH);
-    delay(300);
-    digitalWrite(LED_PIN, LOW);
-    delay(300);
-    digitalWrite(LED_PIN, HIGH);
-    delay(300);
-    digitalWrite(LED_PIN, LOW);
-    delay(200);
     ESP.restart();
   }
 }
