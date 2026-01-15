@@ -11,3 +11,14 @@ sw.js
 const char*    MQTT_BROKER = "broker.hivemq.com";  
 const uint16_t MQTT_PORT   = 1883;
 
+///////////////////////////////////////////////////////  
+// POWER1 그룹 (NEC) 
+{"POWER1", NEC, 0x20DF10EF, 32} 
+{"VOL-1", NEC, 0x20DFC03F, 32}
+{"VOL+1", NEC, 0x20DF40BF, 32}
+
+// POWER2 그룹 (NEC_LIKE) 
+{"POWER2", NEC_LIKE, 0x55CCA2FF, 32}
+{"VOL-2", NEC_LIKE, 0x55CCA8FF, 32}
+{"VOL+2", NEC_LIKE, 0x55CC90FF, 32}
+
