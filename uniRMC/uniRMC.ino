@@ -1,9 +1,14 @@
 /*
-  TSWell Universal Remote Gateway (ESP32)
+  TSWell Universal Remote Gateway (ESP32)  [Arduino-ESP32 core 2.0.17 안정화]
   - BLE Keyboard (MiBox3)
-  - IR Remote (learn/send)   ✅ token 인증 제거 / ✅ schedule 제거
+  - IR Remote (learn/send)
   - 433MHz (RCSwitch)
-  - MQTT 통합 (broker.hivemq.com:1883)
+  - MQTT (broker.hivemq.com:1883)
+
+  핵심 수정 (2.0.17에서 abort 방지)
+    - WiFi+BLE 동시 사용 시 WiFi Modem Sleep(PS)을 반드시 켜야 함
+    - WiFi.setSleep(false) 금지
+    - esp_wifi_set_ps(WIFI_PS_MIN_MODEM) 사용
 
   Topics
     - tswell/mibox3/cmd     (BLE key / MB: raw)
@@ -22,8 +27,7 @@
 
 #include <WiFi.h>
 #include <PubSubClient.h>
-
-// BLE pairing stability helpers
+#include "esp_wifi.h"          // ✅ core 2.0.17: esp_wifi_set_ps
 #include <esp_bt.h>
 #include <esp_gap_ble_api.h>
 
@@ -65,7 +69,7 @@ const char* TOPIC_433_LOG    = "tswell/433home/log";
 // ===================== BLE Keyboard =====================
 BleKeyboard bleKeyboard("ESP32_MiBox3_Remote", "TSWell", 100);
 
-// BLE helpers
+// BLE helpers (loop에서만 호출)
 static inline void tapKey(uint8_t key, uint16_t ms=45){
   bleKeyboard.press(key);
   delay(ms);
@@ -89,7 +93,7 @@ uint16_t hexToU16(String h){
 // Pins
 const uint16_t IR_RECV_PIN     = 27;
 const uint16_t IR_SEND_PIN     = 14;
-const uint16_t NOTIFY_LED_PIN  = 15; // notify LED (blink on successful command)
+const uint16_t NOTIFY_LED_PIN  = 15; // notify LED
 
 IRrecv irrecv(IR_RECV_PIN);
 decode_results results;
@@ -98,7 +102,7 @@ IRsend irsend(IR_SEND_PIN);
 // Learning Mode (Serial에서 L/S로 전환)
 bool learningMode = true;
 
-// Stored IR codes (POWER1/POWER2 그룹)
+// Stored IR codes
 struct IRCode {
   const char* name;
   decode_type_t protocol;
@@ -107,12 +111,10 @@ struct IRCode {
 };
 
 IRCode irCodes[] = {
-  // POWER1 그룹 (NEC)
   {"POWER1", NEC,      0x20DF10EF, 32},
   {"VOL-1",  NEC,      0x20DFC03F, 32},
   {"VOL+1",  NEC,      0x20DF40BF, 32},
 
-  // POWER2 그룹 (NEC_LIKE)
   {"POWER2", NEC_LIKE, 0x55CCA2FF, 32},
   {"VOL-2",  NEC_LIKE, 0x55CCA8FF, 32},
   {"VOL+2",  NEC_LIKE, 0x55CC90FF, 32},
@@ -143,18 +145,34 @@ const int RF_COUNT = sizeof(rfCodes) / sizeof(rfCodes[0]);
 WiFiClient espClient;
 PubSubClient mqtt(espClient);
 
-// ===================== Timers (MiBox 참조 방식) =====================
+// ===================== Timers =====================
 unsigned long lastBleStatusMs = 0;
 unsigned long lastBleHeartbeatMs = 0;
-
-// 마지막으로 BLE가 "진짜 connected"였던 시각
 unsigned long bleLastOkMs = 0;
-
-// MiBox 연결되어 있으면 OK 유지(끊김 튐 방지)
-const unsigned long BLE_DISCONNECT_GRACE_MS = 12000; // 12초
-
+const unsigned long BLE_DISCONNECT_GRACE_MS = 12000;
 bool bleStableState = false;
+
 unsigned long last433StatusMs = 0;
+
+// ===================== Non-blocking reconnect =====================
+unsigned long nextWiFiTryMs = 0;
+unsigned long nextMQTTTryMs = 0;
+const unsigned long WIFI_RETRY_INTERVAL_MS = 3000;
+const unsigned long MQTT_RETRY_INTERVAL_MS = 3000;
+
+// ===================== BLE Health (optional hard recover) =====================
+const unsigned long BLE_HARD_RECOVER_MS = 5UL * 60UL * 1000UL;
+unsigned long bleLastRealConnMs = 0;
+
+// ===================== Pending command queues (1-deep) =====================
+volatile bool pendingBleCmd = false;
+String pendingBleMsg;
+
+volatile bool pendingIrCmd = false;
+String pendingIrMsgJson;
+
+volatile bool pendingRfCmd = false;
+String pendingRfMsg;
 
 // ===================== Utils =====================
 void publish433Log(const String& msg){
@@ -165,7 +183,7 @@ void publish433Log(const String& msg){
 void publish433Status(){
   int wifiOk = (WiFi.status()==WL_CONNECTED)?1:0;
   int mqttOk = (mqtt.connected())?1:0;
-  int rssi = WiFi.RSSI();
+  int rssi = (WiFi.status()==WL_CONNECTED)?WiFi.RSSI():-999;
   String json = String("{\"wifi\":") + wifiOk + ",\"mqtt\":" + mqttOk + ",\"rssi\":" + rssi + "}";
   if(mqtt.connected()) mqtt.publish(TOPIC_433_STATUS, json.c_str(), false);
 }
@@ -182,29 +200,21 @@ void blinkNotify(uint16_t ms=70){
 
 // ✅ BLE 상태 publish (흔들림 최소화)
 void publishBleStatus(){
-  // publish tick (1초)
   if(millis() - lastBleStatusMs < 1000) return;
   lastBleStatusMs = millis();
 
   const unsigned long nowMs = millis();
   bool real = bleKeyboard.isConnected();
-
-  // 진짜 연결이면 last ok 갱신
   if(real) bleLastOkMs = nowMs;
 
-  // 유예 포함한 "효과적 연결 상태"
   bool eff = real;
   if(!eff && bleLastOkMs > 0 && (nowMs - bleLastOkMs) < BLE_DISCONNECT_GRACE_MS){
     eff = true;
   }
 
-  // 상태 변동 있을 때만 ble 토글 publish (retain)
   if(eff != bleStableState){
     bleStableState = eff;
-
-    // 시간 안정성 위해 millis 기반 ts만 사용 (NTP 제거)
     uint32_t ts = (uint32_t)(millis()/1000);
-
     String payload = String("{\"ble\":") + (bleStableState?"true":"false") + ",\"ts\":" + ts + "}";
     if(mqtt.connected()) mqtt.publish(TOPIC_MIBOX_STATUS, payload.c_str(), true);
 
@@ -213,7 +223,6 @@ void publishBleStatus(){
                   (bleLastOkMs==0)?0UL:(unsigned long)(nowMs - bleLastOkMs));
   }
 
-  // Heartbeat: 2초마다 ts 갱신(웹에서 오프라인 감지용). bleStableState는 그대로.
   if(millis() - lastBleHeartbeatMs >= 2000){
     lastBleHeartbeatMs = millis();
     uint32_t ts = (uint32_t)(millis()/1000);
@@ -222,152 +231,198 @@ void publishBleStatus(){
   }
 }
 
-// ===================== WiFi/MQTT Connect =====================
-void connectWiFi(){
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.print("[WiFi] connecting");
-  while(WiFi.status()!=WL_CONNECTED){
-    delay(400); Serial.print(".");
+void bleHealthCheck(){
+  if(bleKeyboard.isConnected()){
+    bleLastRealConnMs = millis();
   }
-  Serial.println();
-  Serial.print("[WiFi] IP="); Serial.println(WiFi.localIP());
+  if(bleLastRealConnMs > 0 && (millis() - bleLastRealConnMs) > BLE_HARD_RECOVER_MS){
+    Serial.println("[BLE] long disconnect -> restart ESP");
+    ESP.restart();
+  }
 }
 
-void connectMQTT(){
+// ===================== WiFi/MQTT tick connect (NON-BLOCKING) =====================
+void startWiFiIfNeeded(){
+  if(WiFi.status() == WL_CONNECTED) return;
+  if(millis() < nextWiFiTryMs) return;
+
+  nextWiFiTryMs = millis() + WIFI_RETRY_INTERVAL_MS;
+
+  WiFi.mode(WIFI_STA);
+
+  // ✅ core 2.0.17: WiFi+BT 동시 사용 안정/abort 방지
+  esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.println("[WiFi] begin() retry (PS_MIN_MODEM)");
+}
+
+void startMQTTIfNeeded(){
+  if(WiFi.status() != WL_CONNECTED) return;
+  if(mqtt.connected()) return;
+  if(millis() < nextMQTTTryMs) return;
+
+  nextMQTTTryMs = millis() + MQTT_RETRY_INTERVAL_MS;
+
   mqtt.setServer(MQTT_BROKER, MQTT_PORT);
 
-  mqtt.setCallback([](char* topic, byte* payload, unsigned int length){
-    String msg; msg.reserve(length);
-    for(unsigned int i=0;i<length;i++) msg += (char)payload[i];
-    msg.trim();
-    String t(topic);
+  String cid = "ESP32-UNI-" + String((uint32_t)ESP.getEfuseMac(), HEX);
+  Serial.print("[MQTT] connect retry... ");
 
-    // ===== MiBox BLE =====
-    if(t == TOPIC_MIBOX_CMD){
-      Serial.printf("[MQTT][MiBox] %s\n", msg.c_str());
+  if(mqtt.connect(cid.c_str(), TOPIC_MIBOX_STATUS, 0, true, "{\"ble\":false,\"ts\":0}")){
+    Serial.println("OK");
+    mqtt.subscribe(TOPIC_MIBOX_CMD);
+    mqtt.subscribe(TOPIC_IR_CMD);
+    mqtt.subscribe(TOPIC_433_CMD);
+    Serial.println("[MQTT] subscribed 3 topics");
+    publish433Status();
+    publishIrStatus("MQTT connected");
+  } else {
+    Serial.print("FAIL rc="); Serial.println(mqtt.state());
+  }
+}
 
-      // ✅ 입력 처리 자체는 "실제 연결"일 때만
-      if(!bleKeyboard.isConnected()){
-        Serial.println("[BLE] NOT CONNECTED -> ignore");
-        return;
-      }
+// ===================== Command processors (RUN IN LOOP) =====================
+void processBleCmdIfAny(){
+  if(!pendingBleCmd) return;
+  pendingBleCmd = false;
 
-      if      (msg=="up")    tapKey(KEY_UP_ARROW);
-      else if (msg=="down")  tapKey(KEY_DOWN_ARROW);
-      else if (msg=="left")  tapKey(KEY_LEFT_ARROW);
-      else if (msg=="right") tapKey(KEY_RIGHT_ARROW);
+  String msg = pendingBleMsg;
+  msg.trim();
 
-      else if (msg=="volup")   bleKeyboard.write(KEY_MEDIA_VOLUME_UP);
-      else if (msg=="voldown") bleKeyboard.write(KEY_MEDIA_VOLUME_DOWN);
-      else if (msg=="mute")    bleKeyboard.write(KEY_MEDIA_MUTE);
+  Serial.printf("[MiBox][RUN] %s\n", msg.c_str());
 
-      else if (msg=="ok1")     tapKey(KEY_RETURN);
+  if(!bleKeyboard.isConnected()){
+    Serial.println("[BLE] NOT CONNECTED -> ignore");
+    return;
+  }
 
-      else if (msg=="reset")   ESP.restart();
+  if      (msg=="up")    tapKey(KEY_UP_ARROW);
+  else if (msg=="down")  tapKey(KEY_DOWN_ARROW);
+  else if (msg=="left")  tapKey(KEY_LEFT_ARROW);
+  else if (msg=="right") tapKey(KEY_RIGHT_ARROW);
 
-      else if (msg.startsWith("MB:")){
-        uint16_t v = hexToU16(msg.substring(3));
-        uint8_t msb = (v>>8)&0xFF;
-        uint8_t lsb = v & 0xFF;
-        // MiBox reverse fix
-        tapMediaRaw(lsb, msb);
-      } else {
-        Serial.println("[MiBox] Unknown cmd");
-        return;
-      }
+  else if (msg=="volup")   bleKeyboard.write(KEY_MEDIA_VOLUME_UP);
+  else if (msg=="voldown") bleKeyboard.write(KEY_MEDIA_VOLUME_DOWN);
+  else if (msg=="mute")    bleKeyboard.write(KEY_MEDIA_MUTE);
 
+  else if (msg=="ok1")     tapKey(KEY_RETURN);
+
+  else if (msg=="reset")   ESP.restart();
+
+  else if (msg.startsWith("MB:")){
+    uint16_t v = hexToU16(msg.substring(3));
+    uint8_t msb = (v>>8)&0xFF;
+    uint8_t lsb = v & 0xFF;
+    tapMediaRaw(lsb, msb);
+  } else {
+    Serial.println("[MiBox] Unknown cmd");
+    return;
+  }
+
+  blinkNotify();
+}
+
+void processIrCmdIfAny(){
+  if(!pendingIrCmd) return;
+  pendingIrCmd = false;
+
+  String msg = pendingIrMsgJson;
+  msg.trim();
+
+  Serial.printf("[IR][RUN] %s\n", msg.c_str());
+
+  StaticJsonDocument<256> doc;
+  if(deserializeJson(doc, msg)){
+    publishIrStatus("JSON parse failed");
+    return;
+  }
+
+  const char* cmd = doc["cmd"];
+  if(!cmd){
+    publishIrStatus("Invalid JSON: missing cmd");
+    return;
+  }
+
+  if(learningMode){
+    publishIrStatus("Blocked: Learning Mode ON");
+    return;
+  }
+
+  bool ok=false;
+  for(int i=0;i<IR_COUNT;i++){
+    if(strcmp(irCodes[i].name, cmd)==0){
+      irsend.send(irCodes[i].protocol, irCodes[i].value, irCodes[i].bits);
+      ok=true;
+      break;
+    }
+  }
+
+  if(ok) blinkNotify();
+  publishIrStatus(ok ? String("IR sent: ")+cmd : String("Unknown cmd: ")+cmd);
+}
+
+void processRfCmdIfAny(){
+  if(!pendingRfCmd) return;
+  pendingRfCmd = false;
+
+  String msg = pendingRfMsg;
+  msg.trim();
+
+  publish433Log("CMD RX: " + msg);
+
+  if(msg.equalsIgnoreCase("reset")){
+    publish433Log("RESET by MQTT");
+    delay(250);
+    ESP.restart();
+    return;
+  }
+
+  bool ok=false;
+  for(int i=0;i<RF_COUNT;i++){
+    if(msg.equalsIgnoreCase(rfCodes[i].name)){
+      rf.setProtocol(rfCodes[i].protocol);
+      rf.setRepeatTransmit(12);
+      rf.send(rfCodes[i].value, rfCodes[i].bits);
+
+      publish433Log("RF TX " + msg +
+                    " [value:" + String(rfCodes[i].value) +
+                    ", bits:" + String(rfCodes[i].bits) +
+                    ", proto:" + String(rfCodes[i].protocol) + "]");
+
+      ok=true;
       blinkNotify();
-      return;
+      break;
     }
+  }
+  if(!ok) publish433Log("Unknown CMD: " + msg);
+}
 
-    // ===== IR (JSON {cmd}만 받음) =====
-    if(t == TOPIC_IR_CMD){
-      Serial.printf("[MQTT][IR] %s\n", msg.c_str());
+// ===================== MQTT Callback (STORE ONLY) =====================
+void mqttCallback(char* topic, byte* payload, unsigned int length){
+  String msg; msg.reserve(length);
+  for(unsigned int i=0;i<length;i++) msg += (char)payload[i];
+  msg.trim();
+  String t(topic);
 
-      StaticJsonDocument<256> doc;
-      if(deserializeJson(doc, msg)){
-        publishIrStatus("JSON parse failed");
-        return;
-      }
+  if(t == TOPIC_MIBOX_CMD){
+    Serial.printf("[MQTT][MiBox] %s\n", msg.c_str());
+    pendingBleMsg = msg;
+    pendingBleCmd = true;
+    return;
+  }
 
-      const char* cmd = doc["cmd"];
-      if(!cmd){
-        publishIrStatus("Invalid JSON: missing cmd");
-        return;
-      }
+  if(t == TOPIC_IR_CMD){
+    Serial.printf("[MQTT][IR] %s\n", msg.c_str());
+    pendingIrMsgJson = msg;
+    pendingIrCmd = true;
+    return;
+  }
 
-      if(learningMode){
-        publishIrStatus("Blocked: Learning Mode ON");
-        return;
-      }
-
-      bool ok=false;
-      for(int i=0;i<IR_COUNT;i++){
-        if(strcmp(irCodes[i].name, cmd)==0){
-          irsend.send(irCodes[i].protocol, irCodes[i].value, irCodes[i].bits);
-          ok=true;
-          break;
-        }
-      }
-
-      if(ok) blinkNotify();
-      publishIrStatus(ok ? String("IR sent: ")+cmd : String("Unknown cmd: ")+cmd);
-      return;
-    }
-
-    // ===== 433 =====
-    if(t == TOPIC_433_CMD){
-      publish433Log("CMD RX: " + msg);
-
-      if(msg.equalsIgnoreCase("reset")){
-        publish433Log("RESET by MQTT");
-        delay(250);
-        ESP.restart();
-        return;
-      }
-
-      bool ok=false;
-      for(int i=0;i<RF_COUNT;i++){
-        if(msg.equalsIgnoreCase(rfCodes[i].name)){
-          rf.setProtocol(rfCodes[i].protocol);
-          rf.setRepeatTransmit(12);
-          rf.send(rfCodes[i].value, rfCodes[i].bits);
-
-          publish433Log("RF TX " + msg +
-                        " [value:" + String(rfCodes[i].value) +
-                        ", bits:" + String(rfCodes[i].bits) +
-                        ", proto:" + String(rfCodes[i].protocol) + "]");
-
-          ok=true;
-          blinkNotify();
-          break;
-        }
-      }
-      if(!ok) publish433Log("Unknown CMD: " + msg);
-      return;
-    }
-  });
-
-  while(!mqtt.connected()){
-    String cid = "ESP32-UNI-" + String((uint32_t)ESP.getEfuseMac(), HEX);
-    Serial.print("[MQTT] connecting... ");
-
-    // LWT: ESP가 MQTT에서 떨어졌을 때만 ts=0
-    if(mqtt.connect(cid.c_str(), TOPIC_MIBOX_STATUS, 0, true, "{\"ble\":false,\"ts\":0}")){
-      Serial.println("OK");
-      mqtt.subscribe(TOPIC_MIBOX_CMD);
-      mqtt.subscribe(TOPIC_IR_CMD);
-      mqtt.subscribe(TOPIC_433_CMD);
-      Serial.println("[MQTT] subscribed 3 topics");
-
-      publish433Status();
-      publishIrStatus("MQTT connected");
-    } else {
-      Serial.print("FAIL rc="); Serial.print(mqtt.state());
-      Serial.println(" retry 2s");
-      delay(2000);
-    }
+  if(t == TOPIC_433_CMD){
+    pendingRfMsg = msg;
+    pendingRfCmd = true;
+    return;
   }
 }
 
@@ -377,7 +432,6 @@ void setup(){
   delay(200);
   Serial.println("\n=== TSWell Universal Remote Gateway ===");
 
-  // Notify LED
   pinMode(NOTIFY_LED_PIN, OUTPUT);
   digitalWrite(NOTIFY_LED_PIN, LOW);
 
@@ -399,35 +453,48 @@ void setup(){
   rf.enableReceive(RX_PIN);
   rf.enableTransmit(TX_PIN);
 
-  // WiFi/MQTT
-  connectWiFi();
-  connectMQTT();
+  // WiFi (non-blocking start)
+  WiFi.mode(WIFI_STA);
+  esp_wifi_set_ps(WIFI_PS_MIN_MODEM);  // ✅ 중요: abort 방지
+  // (선택) 간섭 줄이고 싶으면 TX power 약간 낮추기
+  // WiFi.setTxPower(WIFI_POWER_11dBm);
 
-  publish433Log("Universal Remote Ready (IR POWER1/2, no token, no schedule)");
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.println("[WiFi] begin() (PS_MIN_MODEM)");
+
+  // MQTT
+  mqtt.setServer(MQTT_BROKER, MQTT_PORT);
+  mqtt.setCallback(mqttCallback);
+
+  publish433Log("Universal Remote Booting (2.0.17 safe, PS_MIN_MODEM, queued commands)");
 }
 
 void loop(){
-  if(WiFi.status()!=WL_CONNECTED){
-    Serial.println("[WiFi] lost -> reconnect");
-    connectWiFi();
-  }
-  if(!mqtt.connected()){
-    Serial.println("[MQTT] lost -> reconnect");
-    connectMQTT();
+  // 1) Non-blocking reconnect ticks
+  startWiFiIfNeeded();
+  startMQTTIfNeeded();
+
+  // 2) MQTT loop
+  if(mqtt.connected()){
+    mqtt.loop();
   }
 
-  mqtt.loop();
-
-  // ✅ BLE 상태 안정화 publish
+  // 3) BLE status publish + health check
   publishBleStatus();
+  bleHealthCheck();
 
-  // 433 status
+  // 4) Process queued commands
+  processBleCmdIfAny();
+  processIrCmdIfAny();
+  processRfCmdIfAny();
+
+  // 5) 433 status
   if(millis()-last433StatusMs>1500){
     last433StatusMs=millis();
     publish433Status();
   }
 
-  // IR learning print (serial only)
+  // 6) IR learning print (serial only)
   if(learningMode){
     if(irrecv.decode(&results)){
       Serial.println("---- IR RECEIVED (LEARNING MODE) ----");
@@ -439,10 +506,12 @@ void loop(){
     }
   }
 
-  // Serial mode switch
+  // 7) Serial mode switch
   if(Serial.available()){
     char c=Serial.read();
     if(c=='L'||c=='l'){ learningMode=true;  publishIrStatus("Mode: Learning"); }
     if(c=='S'||c=='s'){ learningMode=false; publishIrStatus("Mode: Send"); }
   }
+
+  delay(1);
 }
