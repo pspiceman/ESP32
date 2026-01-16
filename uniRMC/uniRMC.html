@@ -134,6 +134,9 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
     }
 
     /* Mobile portrait: tighten pills so MQTT/Gateway/BLE/RSSI fit on a single row */
+
+    /* Clock pill height match RESET */
+    #clock{ line-height:1; padding:6px 10px; }
     @media (max-width: 480px){
       .status-row{
         gap:6px;
@@ -144,6 +147,8 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
         flex:1 1 0;      /* equal-width chips */
         min-width:0;     /* allow flexbox shrink without clipping layout */
       }
+
+      #clock{ padding:6px 7px; line-height:1; }
     }
     #st-rssi{
       border:1px solid rgba(59,130,246,.85);
