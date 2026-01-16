@@ -8,7 +8,7 @@
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <style>
     :root { --pad: 12px; }
-    body{ margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif; background:#0b0f14; color:#e6eef8;}
+    body{ margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif; background:#0b0f14; color:#e6eef8; padding-top: calc(env(safe-area-inset-top) + 12px);}
     header{ position:sticky; top:0; z-index:10; background:rgba(11,15,20,.92); backdrop-filter: blur(8px); padding: var(--pad); border-bottom:1px solid rgba(255,255,255,.08);}
     .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
     .pill{ padding:6px 10px; border-radius:999px; font-size:12px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.10);}
