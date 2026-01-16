@@ -8,7 +8,7 @@
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <style>
     :root { --pad: 12px; }
-    body{ margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif; background:#0b0f14; color:#e6eef8;}
+    body{ margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif; background:#0b0f14; color:#e6eef8; padding-top: calc(env(safe-area-inset-top) + 12px);}
     header{ position:sticky; top:0; z-index:10; background:rgba(11,15,20,.92); backdrop-filter: blur(8px); padding: var(--pad); border-bottom:1px solid rgba(255,255,255,.08);}
     .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
     .pill{ padding:6px 10px; border-radius:999px; font-size:12px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.10);}
@@ -332,10 +332,10 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
 
 
     /* === UI tweak v10: keep button sizes, adjust only spacing BETWEEN remotes for 800px portrait === */
-main{ gap:10px; } /* was 12px */
+main{ gap:4px; } /* was 12px */
 @media (max-width: 480px){
   :root{ --pad: 10px; }
-  main{ padding-top:8px; padding-bottom:10px; gap:8px; } /* tighter between remotes only */
+  main{ padding-top:6px; padding-bottom:8px; gap:3px; } /* tighter between remotes only */
 }
 /* restore Log/Reset button sizing (keep original feel) */
 .logbtn-left{
@@ -353,7 +353,7 @@ main{ gap:10px; } /* was 12px */
 <body>
 <header>
 <div class="row" style="justify-content:space-between">
-<div class="brand-title" style="font-weight:800; letter-spacing:.2px; font-size:22px;">Universal RMC</div>
+<div class="brand-title" style="font-weight:800; letter-spacing:.2px; font-size:24px;">Universal RMC</div>
 <div class="pill" id="clock">--:--</div>
 </div>
 <div class="row status-row" style="margin-top:6px">
