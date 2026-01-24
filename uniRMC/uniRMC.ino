@@ -1,7 +1,7 @@
 /*
   TSWell Universal Remote Gateway (ESP32)  [Arduino-ESP32 core 2.0.17 안정화]
   - BLE Keyboard (MiBox3)
-  - IR Remote (learn/send)
+  - IR Remote (send only)
   - 433MHz (RCSwitch)
   - MQTT (broker.hivemq.com:1883)
 
@@ -91,7 +91,7 @@ uint16_t hexToU16(String h){
 
 // ===================== IR =====================
 // Pins
-const uint16_t IR_RECV_PIN     = 27;
+const uint16_t IR_RECV_PIN     = 27;  // receiver not used now (send-only)
 const uint16_t IR_SEND_PIN     = 14;
 const uint16_t NOTIFY_LED_PIN  = 15; // notify LED
 
@@ -99,8 +99,30 @@ IRrecv irrecv(IR_RECV_PIN);
 decode_results results;
 IRsend irsend(IR_SEND_PIN);
 
-// Learning Mode (Serial에서 L/S로 전환)
-bool learningMode = true;
+// ---- NEC_LIKE RAW (POWER2 / VOL-2 / VOL+2) ----
+static const uint16_t RAW_POWER2[67] = {
+  9068, 4468,  608, 530,  604, 1670,  604, 532,  604, 1670,  576, 554,  608, 1666,  606, 532,
+  606, 1670,  602, 1662,  610, 1664,  610, 530,  604, 530,  606, 1644,  628, 1666,  608, 532,
+  604, 528,  606, 1664,  610, 528,  608, 1664,  608, 532,  604, 526,  608, 526,  610, 1664,
+  606, 526,  610, 1666,  604, 1662,  610, 1662,  608, 1662,  610, 1662,  612, 1664,  606, 1662,
+  608, 1670,  584
+};
+
+static const uint16_t RAW_VOLM2[67] = {
+  9068, 4466,  612, 526,  610, 1666,  608, 528,  608, 1664,  608, 528,  610, 1666,  608, 530,
+  602, 1666,  608, 1662,  612, 1664,  608, 536,  600, 540,  596, 1666,  608, 1666,  608, 526,
+  610, 526,  610, 1662,  610, 526,  612, 1662,  610, 532,  604, 1662,  612, 528,  606, 528,
+  608, 528,  608, 1662,  610, 1664,  608, 1666,  608, 1666,  608, 1644,  630, 1664,  608, 1648,
+  626, 1664,  610
+};
+
+static const uint16_t RAW_VOLP2[67] = {
+  9066, 4448,  628, 528,  608, 1662,  612, 528,  606, 1666,  608, 528,  608, 1662,  610, 532,
+  604, 1664,  608, 1666,  612, 1662,  608, 526,  608, 510,  626, 1662,  612, 1664,  608, 528,
+  606, 528,  610, 1662,  610, 528,  606, 528,  610, 1668,  602, 528,  608, 528,  608, 532,
+  604, 536,  598, 1670,  606, 1662,  612, 1666,  606, 1664,  610, 1644,  630, 1666,  606, 1666,
+  608, 1664,  610
+};
 
 // Stored IR codes
 struct IRCode {
@@ -108,16 +130,22 @@ struct IRCode {
   decode_type_t protocol;
   uint64_t value;
   uint16_t bits;
+
+  // RAW send support (optional)
+  const uint16_t* raw;
+  uint16_t raw_len;
+  uint16_t khz;
 };
 
 IRCode irCodes[] = {
-  {"POWER1", NEC,      0x20DF10EF, 32},
-  {"VOL-1",  NEC,      0x20DFC03F, 32},
-  {"VOL+1",  NEC,      0x20DF40BF, 32},
+  {"POWER1", NEC,      0x20DF10EF, 32, nullptr,    0,  0},
+  {"VOL-1",  NEC,      0x20DFC03F, 32, nullptr,    0,  0},
+  {"VOL+1",  NEC,      0x20DF40BF, 32, nullptr,    0,  0},
 
-  {"POWER2", NEC_LIKE, 0x55CCA2FF, 32},
-  {"VOL-2",  NEC_LIKE, 0x55CCA8FF, 32},
-  {"VOL+2",  NEC_LIKE, 0x55CC90FF, 32},
+  // NEC_LIKE: send RAW once (67)
+  {"POWER2", NEC_LIKE, 0x55CCA2FF, 32, RAW_POWER2, 67, 38},
+  {"VOL-2",  NEC_LIKE, 0x55CCA8FF, 32, RAW_VOLM2,  67, 38},
+  {"VOL+2",  NEC_LIKE, 0x55CC90FF, 32, RAW_VOLP2,  67, 38},
 };
 const int IR_COUNT = sizeof(irCodes) / sizeof(irCodes[0]);
 
@@ -198,7 +226,7 @@ void blinkNotify(uint16_t ms=70){
   digitalWrite(NOTIFY_LED_PIN, LOW);
 }
 
-// ✅ BLE 상태 publish (흔들림 최소화)
+// BLE status publish (흔들림 최소화)
 void publishBleStatus(){
   if(millis() - lastBleStatusMs < 1000) return;
   lastBleStatusMs = millis();
@@ -250,7 +278,7 @@ void startWiFiIfNeeded(){
 
   WiFi.mode(WIFI_STA);
 
-  // ✅ core 2.0.17: WiFi+BT 동시 사용 안정/abort 방지
+  // core 2.0.17: WiFi+BT 동시 사용 안정/abort 방지
   esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -344,15 +372,15 @@ void processIrCmdIfAny(){
     return;
   }
 
-  if(learningMode){
-    publishIrStatus("Blocked: Learning Mode ON");
-    return;
-  }
-
   bool ok=false;
   for(int i=0;i<IR_COUNT;i++){
     if(strcmp(irCodes[i].name, cmd)==0){
-      irsend.send(irCodes[i].protocol, irCodes[i].value, irCodes[i].bits);
+      // RAW 우선 송신(있으면 sendRaw), 없으면 기존 send 유지
+      if(irCodes[i].raw && irCodes[i].raw_len > 0){
+        irsend.sendRaw(irCodes[i].raw, irCodes[i].raw_len, irCodes[i].khz);
+      } else {
+        irsend.send(irCodes[i].protocol, irCodes[i].value, irCodes[i].bits);
+      }
       ok=true;
       break;
     }
@@ -445,7 +473,7 @@ void setup(){
   bleKeyboard.setBatteryLevel(100);
   Serial.println("[BLE] begin() + btmem_release + tx_power");
 
-  // IR
+  // IR (send-only, receiver init is harmless but not used)
   irsend.begin();
   irrecv.enableIRIn();
 
@@ -455,10 +483,7 @@ void setup(){
 
   // WiFi (non-blocking start)
   WiFi.mode(WIFI_STA);
-  esp_wifi_set_ps(WIFI_PS_MIN_MODEM);  // ✅ 중요: abort 방지
-  // (선택) 간섭 줄이고 싶으면 TX power 약간 낮추기
-  // WiFi.setTxPower(WIFI_POWER_11dBm);
-
+  esp_wifi_set_ps(WIFI_PS_MIN_MODEM);  // 중요: abort 방지
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.println("[WiFi] begin() (PS_MIN_MODEM)");
 
@@ -492,25 +517,6 @@ void loop(){
   if(millis()-last433StatusMs>1500){
     last433StatusMs=millis();
     publish433Status();
-  }
-
-  // 6) IR learning print (serial only)
-  if(learningMode){
-    if(irrecv.decode(&results)){
-      Serial.println("---- IR RECEIVED (LEARNING MODE) ----");
-      Serial.printf("Protocol : %s\n", typeToString(results.decode_type).c_str());
-      Serial.printf("Bits     : %d\n", results.bits);
-      Serial.printf("Value    : 0x%llX\n", (unsigned long long)results.value);
-      Serial.println("-------------------------------------\n");
-      irrecv.resume();
-    }
-  }
-
-  // 7) Serial mode switch
-  if(Serial.available()){
-    char c=Serial.read();
-    if(c=='L'||c=='l'){ learningMode=true;  publishIrStatus("Mode: Learning"); }
-    if(c=='S'||c=='s'){ learningMode=false; publishIrStatus("Mode: Send"); }
   }
 
   delay(1);
