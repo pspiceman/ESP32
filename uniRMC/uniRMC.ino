@@ -44,6 +44,16 @@
 // ===== 433 =====
 #include <RCSwitch.h>
 
+// ---- Forward declarations (avoid Arduino auto-prototype quirks) ----
+void publish433Status();
+void publishBleStatus();
+void publishIrStatus(const String& msg);
+void blinkNotify(uint16_t ms=70);
+void serviceNotify();
+void serviceBleActions();
+void bleHealthCheck();
+
+
 // ===================== WiFi =====================
 #define WIFI_SSID     "Backhome"
 #define WIFI_PASSWORD "1700note"
@@ -69,25 +79,104 @@ const char* TOPIC_433_LOG    = "tswell/433home/log";
 // ===================== BLE Keyboard =====================
 BleKeyboard bleKeyboard("ESP32_MiBox3_Remote", "TSWell", 100);
 
-// BLE helpers (loop에서만 호출)
-static inline void tapKey(uint8_t key, uint16_t ms=45){
-  bleKeyboard.press(key);
-  delay(ms);
-  bleKeyboard.release(key);
-  delay(25);
+// BLE helpers (loop에서만 호출)  [NON-BLOCKING]
+enum BleActKind : uint8_t { BLE_ACT_KEY=1, BLE_ACT_MEDIA=2 };
+struct BleAct {
+  uint8_t kind;
+  uint8_t key;
+  uint8_t b0;
+  uint8_t b1;
+  uint16_t holdMs;
+};
+
+static const uint8_t BLE_ACT_Q_LEN = 8;
+BleAct bleActQ[BLE_ACT_Q_LEN];
+uint8_t bleQHead=0, bleQTail=0;
+bool bleQFull=false;
+
+static inline bool bleQEmpty(){ return (bleQHead==bleQTail) && !bleQFull; }
+
+static bool bleEnqueue(const BleAct& a){
+  if(bleQFull) return false;
+  bleActQ[bleQTail] = a;
+  bleQTail = (uint8_t)((bleQTail + 1) % BLE_ACT_Q_LEN);
+  if(bleQTail == bleQHead) bleQFull = true;
+  return true;
 }
-static inline void tapMediaRaw(uint8_t b0, uint8_t b1, uint16_t ms=80){
-  MediaKeyReport r = { b0, b1 };
-  bleKeyboard.press(r);
-  delay(ms);
-  bleKeyboard.release(r);
-  delay(40);
+
+static bool bleDequeue(BleAct& out){
+  if(bleQEmpty()) return false;
+  out = bleActQ[bleQHead];
+  bleQHead = (uint8_t)((bleQHead + 1) % BLE_ACT_Q_LEN);
+  bleQFull = false;
+  return true;
 }
+
+// Queue tap (returns immediately)
+static inline void tapKey(uint8_t key, uint16_t holdMs=45){
+  // 연결 안 된 상태면 큐 적체/유실이 혼재될 수 있어 드롭(로그는 필요 시 추가)
+  if(!bleKeyboard.isConnected()) return;
+  BleAct a{BLE_ACT_KEY, key, 0,0, holdMs};
+  bleEnqueue(a);
+}
+
+static inline void tapMediaRaw(uint8_t b0, uint8_t b1, uint16_t holdMs=80){
+  if(!bleKeyboard.isConnected()) return;
+  BleAct a{BLE_ACT_MEDIA, 0, b0, b1, holdMs};
+  bleEnqueue(a);
+}
+
+// Drives BLE actions without delay()
+void serviceBleActions(){
+  static bool active=false;
+  static BleAct cur{};
+  static uint8_t stage=0; // 0=press,1=hold,2=gap
+  static uint32_t t0=0;
+
+  uint32_t now = millis();
+
+  if(!active){
+    if(!bleDequeue(cur)) return;
+    active=true; stage=0; t0=now;
+  }
+
+  if(stage==0){
+    if(cur.kind==BLE_ACT_KEY){
+      bleKeyboard.press(cur.key);
+    }else{
+      MediaKeyReport r = { cur.b0, cur.b1 };
+      bleKeyboard.press(r);
+    }
+    t0 = now;
+    stage = 1;
+    return;
+  }
+
+  if(stage==1){
+    if((uint32_t)(now - t0) < (uint32_t)cur.holdMs) return;
+    if(cur.kind==BLE_ACT_KEY){
+      bleKeyboard.release(cur.key);
+    }else{
+      MediaKeyReport r = { cur.b0, cur.b1 };
+      bleKeyboard.release(r);
+    }
+    t0 = now;
+    stage = 2;
+    return;
+  }
+
+  // stage==2 : inter-action gap
+  uint16_t gap = (cur.kind==BLE_ACT_KEY) ? 25 : 40;
+  if((uint32_t)(now - t0) < (uint32_t)gap) return;
+  active=false;
+}
+
 uint16_t hexToU16(String h){
   h.replace("0x",""); h.replace("0X","");
   h.trim();
   return (uint16_t) strtoul(h.c_str(), nullptr, 16);
 }
+
 
 // ===================== IR =====================
 // Pins
@@ -95,6 +184,10 @@ const uint16_t IR_RECV_PIN     = 27;  // receiver not used now (send-only)
 const uint16_t IR_SEND_PIN     = 14;
 const uint16_t NOTIFY_LED_PIN  = 15; // notify LED
 
+
+// Non-blocking notify LED
+bool notifyActive=false;
+uint32_t notifyOffAt=0;
 IRrecv irrecv(IR_RECV_PIN);
 decode_results results;
 IRsend irsend(IR_SEND_PIN);
@@ -220,10 +313,18 @@ void publishIrStatus(const String& msg){
   if(mqtt.connected()) mqtt.publish(TOPIC_IR_STATUS, msg.c_str(), false);
 }
 
-void blinkNotify(uint16_t ms=70){
+void blinkNotify(uint16_t ms){
   digitalWrite(NOTIFY_LED_PIN, HIGH);
-  delay(ms);
-  digitalWrite(NOTIFY_LED_PIN, LOW);
+  notifyOffAt = millis() + ms;
+  notifyActive = true;
+}
+
+void serviceNotify(){
+  if(!notifyActive) return;
+  if((int32_t)(millis() - notifyOffAt) >= 0){
+    digitalWrite(NOTIFY_LED_PIN, LOW);
+    notifyActive = false;
+  }
 }
 
 // BLE status publish (흔들림 최소화)
@@ -260,14 +361,38 @@ void publishBleStatus(){
 }
 
 void bleHealthCheck(){
+  // Connected -> reset counters
+  static uint32_t lastRecoverAttemptMs = 0;
+  static uint8_t recoverCount = 0;
+
   if(bleKeyboard.isConnected()){
     bleLastRealConnMs = millis();
+    recoverCount = 0;
+    return;
   }
-  if(bleLastRealConnMs > 0 && (millis() - bleLastRealConnMs) > BLE_HARD_RECOVER_MS){
-    Serial.println("[BLE] long disconnect -> restart ESP");
-    ESP.restart();
-  }
+
+  // never connected yet -> don't do anything
+  if(bleLastRealConnMs == 0) return;
+
+  const uint32_t now = millis();
+  if((now - bleLastRealConnMs) < BLE_HARD_RECOVER_MS) return;
+
+  // Backoff: 1min,2,4,8,16... (cap at 16min)
+  uint32_t backoffMs = 60000UL << (recoverCount < 4 ? recoverCount : 4);
+  if(now - lastRecoverAttemptMs < backoffMs) return;
+
+  Serial.printf("[BLE] long disconnect (%lus) -> soft recover (end/begin), backoff=%lus\n",
+                (unsigned long)((now - bleLastRealConnMs)/1000UL),
+                (unsigned long)(backoffMs/1000UL));
+
+  // Soft reset BLE stack (preferred over ESP.restart)
+  bleKeyboard.end();
+  bleKeyboard.begin();
+
+  lastRecoverAttemptMs = now;
+  if(recoverCount < 10) recoverCount++;
 }
+
 
 // ===================== WiFi/MQTT tick connect (NON-BLOCKING) =====================
 void startWiFiIfNeeded(){
@@ -475,7 +600,8 @@ void setup(){
 
   // IR (send-only, receiver init is harmless but not used)
   irsend.begin();
-  irrecv.enableIRIn();
+  // IR receive disabled (send-only)
+  // irrecv.enableIRIn();
 
   // 433
   rf.enableReceive(RX_PIN);
@@ -495,6 +621,9 @@ void setup(){
 }
 
 void loop(){
+  // Non-blocking service tasks
+  serviceNotify();
+  serviceBleActions();
   // 1) Non-blocking reconnect ticks
   startWiFiIfNeeded();
   startMQTTIfNeeded();
