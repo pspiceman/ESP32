@@ -11,7 +11,7 @@
 // =====================================================
 // ✅ Node: 2~49(권장)
 // ✅ Router: 50~54
-#define MY_ADDRESS   50      // <<< 여기만 바꿔서 노드/라우터 설정
+#define MY_ADDRESS   2      // <<< 여기만 바꿔서 노드/라우터 설정
 #define GW_ADDRESS   1
 
 static const bool IS_ROUTER = (MY_ADDRESS >= 50);
