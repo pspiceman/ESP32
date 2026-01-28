@@ -2,6 +2,7 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <SPI.h>
+#include <string.h>
 #include <RH_RF95.h>
 #include <RHMesh.h>
 
@@ -59,15 +60,30 @@ static const uint8_t NCOUNT  = sizeof(NODES)/sizeof(NODES[0]);
 #define RX_WAIT_LED_MS  3500
 #define POLL_BACKOFF_MS 160
 
+// ===== Adaptive Poll (GW-side only; Node power unchanged) =====
+// - failCount가 쌓이는(수신이 자주 끊기는) 노드만 burst / RX_WAIT를 강화
+// - 정상 노드는 기존 설정 유지 → 전체 트래픽/혼잡 최소화
+#define RX_WAIT_FAIL1_MS   3000   // failCount>=1
+#define RX_WAIT_FAIL3_MS   3800   // failCount>=3 (RESCUE보단 짧게)
+
+#define BURST_BASE         5      // 기본 burst
+#define BURST_FAIL1        7      // failCount>=1
+#define BURST_FAIL3        9      // failCount>=3
+
+// burst를 시간적으로 더 넓게 퍼뜨려(중간에 한 번 더 긴 갭) 노드 RX윈도우(1초 주기)에 걸릴 확률 증가
+#define MIDGAP_ENABLE      1
+#define MIDGAP_MIN_MS      140
+#define MIDGAP_MAX_MS      260
+
 // ===== Beacon =====
 #define BEACON_REPEAT   3
 #define BEACON_GAP_MS   160
 
 // ===== RESCUE 설정 =====
-static const uint32_t RESCUE_AGE_MS     = 60000UL;  // 60초 이상 미응답이면 rescue
-static const uint8_t  RESCUE_FAIL_TH   = 3;         // 연속 3회 실패 시 rescue
+static const uint32_t RESCUE_AGE_MS     = 90000UL;  // 90초 이상 미응답이면 rescue (충돌/잡음 오탐 감소)  // 60초 이상 미응답이면 rescue
+static const uint8_t  RESCUE_FAIL_TH   = 4;         // 연속 4회 실패 시 rescue (채널부하 감소)         // 연속 3회 실패 시 rescue
 static const uint8_t  RESCUE_TRY_COUNT = 3;         // rescue 3회 시도
-static const uint32_t RESCUE_RXWAIT_MS = 4800;      // rescue는 RX 더 길게
+static const uint32_t RESCUE_RXWAIT_MS = 5500;      // rescue는 RX 더 길게      // rescue는 RX 더 길게
 static const uint32_t RESCUE_GAP_MS    = 220;       // rescue 재시도 간격
 
 // ===== Router Alive Timeout (표시용) =====
@@ -97,7 +113,7 @@ static bool fastUsedOnce=false;
 #define LORA_DIO0 PIN_LORA_DIO0
 #define LED_COMM  LED_PIN
 
-#define LORA_FREQ 920.0
+#define LORA_FREQ 922.0
 #define USE_SET_TXPOWER  1
 #define LORA_TX_POWER    13
 
@@ -147,6 +163,20 @@ PubSubClient mqtt(espClient);
 
 static inline void wdtYield(){ delay(1); }
 
+static inline void trimInPlace(char* buf){
+  if(!buf) return;
+  char* s = buf;
+  while(*s==' '||*s=='\t'||*s=='\r'||*s=='\n') s++;
+  if(s!=buf){
+    memmove(buf, s, strlen(s)+1);
+  }
+  size_t len = strlen(buf);
+  while(len>0 && (buf[len-1]==' '||buf[len-1]=='\t'||buf[len-1]=='\r'||buf[len-1]=='\n')){
+    buf[len-1]=0;
+    len--;
+  }
+}
+
 static void blinkComm(uint8_t n=1){
   for(uint8_t i=0;i<n;i++){
     digitalWrite(LED_COMM,HIGH); delay(20);
@@ -159,6 +189,30 @@ static int idxOf(uint8_t id){
   return -1;
 }
 static inline bool isRouterId(uint8_t id){ return id==ROUTER_ID; }
+
+// failCount 기반으로 GW 폴링 강도를 조절 (Node 전력 변화 없음)
+static inline void calcPollParams(uint8_t nodeId, bool isLedMode,
+                                  uint8_t* burstCount, uint32_t* rxWaitMs){
+  if(isLedMode){
+    *burstCount = 9;
+    *rxWaitMs   = RX_WAIT_LED_MS;
+    return;
+  }
+
+  int i = idxOf(nodeId);
+  uint8_t fc = (i>=0) ? stNode[i].failCount : 0;
+
+  if(fc >= 3){
+    *burstCount = BURST_FAIL3;
+    *rxWaitMs   = RX_WAIT_FAIL3_MS;
+  }else if(fc >= 1){
+    *burstCount = BURST_FAIL1;
+    *rxWaitMs   = RX_WAIT_FAIL1_MS;
+  }else{
+    *burstCount = BURST_BASE;
+    *rxWaitMs   = RX_WAIT_MS;
+  }
+}
 
 // =====================================================
 // WiFi / MQTT
@@ -180,23 +234,33 @@ static void ensureWifi(){
 }
 
 static void mqttCb(char* topic, byte* payload, unsigned int length){
-  String tpc(topic), msg;
-  for(unsigned int i=0;i<length;i++) msg += (char)payload[i];
-  msg.trim();
+  // payload -> fixed buffer (avoid String heap fragmentation)
+  char msgBuf[64];
+  unsigned int n = (length < (sizeof(msgBuf)-1)) ? length : (sizeof(msgBuf)-1);
+  for(unsigned int i=0;i<n;i++) msgBuf[i] = (char)payload[i];
+  msgBuf[n] = 0;
+  trimInPlace(msgBuf);
 
-  if(tpc == TOPIC_GW_CMD){
-    if(msg=="reset"){ delay(50); ESP.restart(); }
+  // GW command topic
+  if(strcmp(topic, TOPIC_GW_CMD)==0){
+    if(strcmp(msgBuf, "reset")==0){ delay(50); ESP.restart(); }
     return;
   }
 
   // topic: tswell/lora/node/<id>/led
-  int p1=tpc.indexOf("/node/"), p2=tpc.indexOf("/led");
-  if(p1<0||p2<0) return;
+  const char* p = strstr(topic, "/node/");
+  const char* q = strstr(topic, "/led");
+  if(!p || !q || q<=p) return;
+  p += 6; // after "/node/"
+  char idBuf[8]={0};
+  size_t idLen = (size_t)(q - p);
+  if(idLen==0 || idLen >= sizeof(idBuf)) return;
+  memcpy(idBuf, p, idLen); idBuf[idLen]=0;
 
-  uint8_t nodeId=(uint8_t)tpc.substring(p1+6,p2).toInt();
+  uint8_t nodeId = (uint8_t)atoi(idBuf);
   if(idxOf(nodeId)<0) return;
 
-  uint8_t stt = (msg.toInt()!=0)?1:0;
+  uint8_t stt = (atoi(msgBuf)!=0)?1:0;
 
   ledPend[nodeId].active=true;
   ledPend[nodeId].target=stt;
@@ -344,6 +408,63 @@ static bool recvTele(uint32_t waitMs){
 }
 
 // =====================================================
+// ✅ recvTeleExpected(waitMs, expected)
+//  - 수신 처리(상태 업데이트)는 수행하되,
+//  - 'expected 노드'에서 온 TELEM을 받았을 때만 true 반환
+//  - 다른 노드 TELEM은 처리만 하고, 슬롯 성공으로 치지 않음
+// =====================================================
+bool recvTeleExpected(uint32_t waitMs, uint8_t expected){
+  uint32_t t0=millis();
+  bool gotExpected=false;
+
+  while(millis()-t0<waitMs){
+    uint8_t buf[RH_MESH_MAX_MESSAGE_LEN];
+    uint8_t len=sizeof(buf);
+    uint8_t from;
+
+    if(manager.recvfromAck(buf,&len,&from)){
+      blinkComm(1);
+      int16_t rssi=rf95.lastRssi();
+
+      if(len==1+sizeof(TelemetryPayload) && buf[0]==PKT_TELEM){
+        TelemetryPayload p;
+        memcpy(&p, buf+1, sizeof(p));
+
+        int i=idxOf(from);
+        if(i>=0){
+          stNode[i].ok=true;
+          stNode[i].lastOkMs=millis();
+          stNode[i].rssi=rssi;
+          stNode[i].vbat=p.vbat_mV/1000.0f;
+          stNode[i].t=p.t;
+          stNode[i].h=p.h;
+          stNode[i].vib=p.vib;
+          stNode[i].led=p.led_state;
+
+          stNode[i].failCount = 0;
+          publishTele(from, stNode[i]);
+
+          if(ledPend[from].active && ledPend[from].target == p.led_state){
+            Serial.printf("[LED DONE][TELEM] node %u applied=%u\n", from, p.led_state);
+            ledPend[from].active=false;
+            publishLedState(from, p.led_state);
+            pollAbortReq = false;
+          }
+        }
+
+        if(from==expected) gotExpected=true;
+      }
+    }
+
+    mqtt.loop();
+    wdtYield();
+    delay(2);
+  }
+  return gotExpected;
+}
+
+
+// =====================================================
 // Beacon
 // =====================================================
 static void sendBeacon(uint16_t cycleId, uint8_t startIdx){
@@ -364,16 +485,27 @@ static void sendBeacon(uint16_t cycleId, uint8_t startIdx){
 // =====================================================
 // SEND POLL (Burst + Jitter)
 // =====================================================
-static uint8_t sendPollSafeBurst(uint8_t nodeId, uint8_t* req, uint8_t len, bool isLedMode){
-  uint8_t burstCount = isLedMode ? 9 : 5;
+static uint8_t sendPollSafeBurst(uint8_t nodeId, uint8_t* req, uint8_t len,
+                                 uint8_t burstCount, bool isLedMode){
   uint8_t err = RH_ROUTER_ERROR_NONE;
 
   rf95.waitCAD(); wdtYield();
   err = manager.sendtoWait(req, len, nodeId);
   wdtYield(); mqtt.loop();
 
+  // burst를 "짧게 몰아치기"만 하지 말고, 중간에 한 번 더 긴 갭을 삽입해서
+  // 노드의 1초 주기 RX 윈도우와 겹칠 확률을 올린다.
+  uint8_t mid = (burstCount >= 6) ? (burstCount / 2) : 255;
+
   for(uint8_t i=1;i<burstCount;i++){
-    delay(isLedMode ? random(55, 85) : random(60, 95));
+    // 기본 짧은 지터
+    delay(isLedMode ? random(55, 85) : random(65, 115)); // (충돌 완화) 기본 지터를 조금 넓힘
+
+#if MIDGAP_ENABLE
+    if(i == mid){
+      delay(random(MIDGAP_MIN_MS, MIDGAP_MAX_MS));
+    }
+#endif
     rf95.waitCAD(); wdtYield();
     manager.sendto(req, len, nodeId);
     wdtYield(); mqtt.loop();
@@ -396,7 +528,7 @@ static void rescuePoll(uint8_t nodeId){
   uint8_t req[2] = {PKT_POLL, 0xFF};
 
   for(uint8_t r=0; r<RESCUE_TRY_COUNT; r++){
-    sendPollSafeBurst(nodeId, req, sizeof(req), true);
+    sendPollSafeBurst(nodeId, req, sizeof(req),  6, true);
     recvTele(RESCUE_RXWAIT_MS);
 
     if(stNode[i].ok && (millis() - stNode[i].lastOkMs < 2000UL)){
@@ -436,16 +568,22 @@ static bool pollInSlot(uint8_t nodeId, uint32_t slotDeadline){
       Serial.printf("[LED CMD in POLL] node %u target=%u\n", nodeId, req[1]);
     }
 
-    uint8_t err = sendPollSafeBurst(nodeId, req, sizeof(req), isLedMode);
-    uint32_t rxWait = isLedMode ? RX_WAIT_LED_MS : RX_WAIT_MS;
+    uint8_t burstCount = BURST_BASE;
+    uint32_t rxWait = RX_WAIT_MS;
+    calcPollParams(nodeId, isLedMode, &burstCount, &rxWait);
 
-    if(err==RH_ROUTER_ERROR_NONE){
-      if(recvTele(rxWait)){
-        got=true;
-        if(!ledPend[nodeId].active) break;
-      }
+    uint8_t err = sendPollSafeBurst(nodeId, req, sizeof(req), burstCount, isLedMode);
+    // sendtoWait() 실패여도 뒤쪽 burst(sendto)가 도달할 수 있음 → 짧게라도 수신 대기
+    uint32_t waitNow = (err==RH_ROUTER_ERROR_NONE) ? rxWait : min(rxWait, (uint32_t)1000);
+    if(recvTeleExpected(waitNow, nodeId)){
+      got=true;
+
+      // (충돌 완화) 잔여/지연 패킷이 다음 슬롯과 겹치지 않게 짧게 비워줌
+      recvTele(80);
+      delay(12);
+
+      if(!ledPend[nodeId].active) break;
     }
-
     uint32_t backoff = isLedMode ? 90 : POLL_BACKOFF_MS;
 
     uint32_t t1=millis();

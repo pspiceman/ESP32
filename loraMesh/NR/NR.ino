@@ -9,9 +9,9 @@
 // =====================================================
 // Address
 // =====================================================
-// ✅ Node: 2~49(권장) 또는 2~51
+// ✅ Node: 2~49(권장)
 // ✅ Router: 50~54
-#define MY_ADDRESS   4      // <<< 여기만 바꿔서 노드/라우터 설정
+#define MY_ADDRESS   50      // <<< 여기만 바꿔서 노드/라우터 설정
 #define GW_ADDRESS   1
 
 static const bool IS_ROUTER = (MY_ADDRESS >= 50);
@@ -19,7 +19,7 @@ static const bool IS_ROUTER = (MY_ADDRESS >= 50);
 // =====================================================
 // Router 응답 제한 (요구사항: 60초에 1회)
 // =====================================================
-static const uint32_t ROUTER_REPORT_INTERVAL_MS = 60000UL; // ✅ 60초(1분)
+static const uint32_t ROUTER_REPORT_INTERVAL_MS = 60000UL;
 static uint32_t lastRouterReportMs = 0;
 
 // =====================================================
@@ -38,7 +38,7 @@ static uint32_t lastRouterReportMs = 0;
 // =====================================================
 // RF Settings
 // =====================================================
-#define LORA_FREQ     920.0
+#define LORA_FREQ     922.0
 #define LORA_TX_POWER 13
 
 // =====================================================
@@ -208,9 +208,9 @@ static void sendTelemetry(uint8_t dest){
   memcpy(out+1, &p, sizeof(p));
 
   rf95.setModeIdle();
+  rf95.waitCAD(); // (충돌 완화) 송신 전 채널 유휴 대기
   manager.sendtoWait(out, sizeof(out), dest);
 
-  // ✅ Node는 TX 후 Sleep 복귀 (Router는 RX 계속)
   if(!IS_ROUTER) loraSleep();
 }
 
@@ -232,33 +232,23 @@ static bool processRxOnce(){
   if(manager.recvfromAck(buf, &len, &from)){
     if(len >= 1 && buf[0] == PKT_POLL){
 
-      // =================================================
-      // ✅ Router: 60초에 1번만 텔레메트리 응답
-      // =================================================
+      // Router: 60초에 1번만 응답
       if(IS_ROUTER){
         uint32_t now = millis();
-
-        // 60초 경과 시에만 1회 응답
         if(now - lastRouterReportMs >= ROUTER_REPORT_INTERVAL_MS){
           lastRouterReportMs = now;
-          sendTelemetry(from);      // ✅ 1분에 1번만 응답
+          sendTelemetry(from);
         }
-
-        blinkOnPoll();              // (선택) 수신 표시
-        return true;                // ✅ 나머지 처리는 하지 않음
+        blinkOnPoll();
+        return true;
       }
 
-      // =================================================
-      // ✅ Node: 기존 방식으로 항상 응답
-      // =================================================
+      // Node: LED cmd 있으면 우선 적용 + 텔레메트리 2회
       bool hasLedCmd = (len >= 2 && buf[1] != 0xFF);
 
       if(hasLedCmd){
-        // LED 명령 최우선 적용
         digitalWrite(LED_CTRL, buf[1] ? HIGH : LOW);
         delay(3);
-
-        // 확정 Telemetry 2회 전송(수신율↑)
         sendTelemetryConfirm(from, 2);
       }else{
         sendTelemetry(from);
@@ -272,27 +262,147 @@ static bool processRxOnce(){
 }
 
 // =====================================================
-// RX window (Node 전용)
+// 개선된 Node Scheduler 파라미터
 // =====================================================
-static void rxWindow(uint16_t ms){
-  wakeToRxStable();
+static uint16_t ticksToNextRx = 0;      // 125ms tick
+static uint8_t  missStreak = 0;
+static uint8_t  okStreak   = 0;
 
-  unsigned long t0 = millis();
-  while(millis() - t0 < ms){
-    if(processRxOnce()) return;
-    delay(1);
+// “계속 엇갈려 놓치는” 경우를 깨기 위한 phase shift (다음 주기 tick 보정)
+static int8_t phaseAdjustTicks = 0;    // -2..+2 정도로 사용
+
+// RX window 정책(요구사항 + 안정화):
+// - 기본: 300ms
+// - 성공: 250ms (단, "복귀 직후 1회"는 300ms 유지해서 재발 방지)
+// - 실패: 450ms
+static uint16_t rxWindowMs = 300;
+static const uint16_t RX_WIN_BASE_MS = 300;
+static const uint16_t RX_WIN_OK_MS   = 250;
+static const uint16_t RX_WIN_FAIL_MS = 450;
+
+// 복귀 직후 1회는 300ms로 유지(연속 RESCUE FAIL 같은 덩어리 미스 재발 방지)
+static bool holdBaseOnceAfterRecover = false;
+
+// 연속 미스 시 라디오 소프트리셋(모드 꼬임/슬립 타이밍 이슈 대응)
+static const uint8_t SOFTRESET_MISS_THRESHOLD = 5;
+
+// =====================================================
+// LoRa 소프트 리셋 (Node 전용)
+// =====================================================
+static void loraSoftReset(){
+  // SPI/핀은 이미 유지된다고 가정
+  rf95.sleep();
+  delay(5);
+
+  // ✅ 하드 리셋 펄스(모듈 상태 꼬임 복구에 효과적)
+  pinMode(RFM95_RST, OUTPUT);
+  digitalWrite(RFM95_RST, LOW);
+  delay(15);
+  digitalWrite(RFM95_RST, HIGH);
+  delay(20);
+
+  // 재초기화
+  if(manager.init()){
+    rf95.setFrequency(LORA_FREQ);
+    rf95.setTxPower(LORA_TX_POWER,false);
   }
 
+  // 안전하게 슬립 복귀
   loraSleep();
 }
 
 // =====================================================
-// Scheduler (Node 전용)
+// RX window (Node 전용) - 성공 여부 반환
 // =====================================================
-static uint16_t ticksToNextRx = 0;
+static bool rxWindowOnce(uint16_t ms){
+  wakeToRxStable();
 
+  unsigned long t0 = millis();
+  while(millis() - t0 < ms){
+    if(processRxOnce()){
+      // 수신 성공 시 빠르게 슬립 복귀
+      loraSleep();
+      return true;
+    }
+    delay(1);
+  }
+
+  loraSleep();
+  return false;
+}
+
+// =====================================================
+// 다음 RX 스케줄: "고정 주기 + 작은 지터" + phaseAdjustTicks 반영
+// =====================================================
 static void scheduleNextRx(){
-  ticksToNextRx = (uint8_t)random(7, 10); // 0.875~1.125s
+  // 기본 1초(=8 ticks) 고정.
+  int16_t base = 8;
+
+  // phase shift 반영(-2..+2)
+  int16_t next = base + phaseAdjustTicks;
+  if(next < 5) next = 5;
+  if(next > 12) next = 12;
+
+  ticksToNextRx = (uint16_t)next;
+  phaseAdjustTicks = 0;
+}
+
+// =====================================================
+// 수신 후 튜닝 로직 (요구사항 반영 + 복귀 안정화 + 소프트리셋)
+// =====================================================
+static void updateTuningAfterRx(bool ok){
+  if(ok){
+    // 성공이면 missStreak 리셋
+    bool wasMissing = (missStreak >= 1);
+    missStreak = 0;
+
+    if(okStreak < 200) okStreak++;
+
+    // 복귀 직후 1회는 300ms 유지(재발 방지), 그 다음부터 250ms
+    if(wasMissing){
+      rxWindowMs = RX_WIN_BASE_MS;           // ✅ 복귀 직후 1회는 300ms
+      holdBaseOnceAfterRecover = true;
+    }else{
+      if(holdBaseOnceAfterRecover){
+        // 직전 성공에서 300을 1회 썼다면, 이번부터 250으로 내림
+        rxWindowMs = RX_WIN_OK_MS;           // ✅ 정상 안정 상태: 250ms
+        holdBaseOnceAfterRecover = false;
+      }else{
+        rxWindowMs = RX_WIN_OK_MS;           // ✅ 계속 성공: 250ms
+      }
+    }
+
+    // 성공했으면 위상보정은 리셋
+    phaseAdjustTicks = 0;
+  }else{
+    // 실패면 450ms로 스냅
+    rxWindowMs = RX_WIN_FAIL_MS;
+
+    okStreak = 0;
+    if(missStreak < 250) missStreak++;
+
+    // 실패 연속 시 위상 탐색
+    if(missStreak == 1){
+      phaseAdjustTicks = +1;
+    }else if(missStreak == 2){
+      phaseAdjustTicks = -1;
+    }else if(missStreak == 3){
+      phaseAdjustTicks = +2;
+    }else if(missStreak == 4){
+      phaseAdjustTicks = -2;
+    }else{
+      phaseAdjustTicks = (int8_t)random(-2, 3);
+    }
+
+    // 연속 미스가 너무 길면(RESCUE도 실패하는 타입) 라디오 소프트리셋
+    if(missStreak >= SOFTRESET_MISS_THRESHOLD){
+      loraSoftReset();
+      // 리셋 직후에는 복귀 안정화를 위해 한 번 300ms 유지하도록 설정
+      holdBaseOnceAfterRecover = true;
+      rxWindowMs = RX_WIN_BASE_MS;
+      missStreak = 0;
+    }
+  }
 }
 
 // =====================================================
@@ -335,10 +445,12 @@ void setup(){
   rf95.setTxPower(LORA_TX_POWER,false);
 
   if(IS_ROUTER){
-    rf95.setModeRx();     // ✅ Router는 상시 RX(중계)
-    lastRouterReportMs = millis(); // 시작 후 60초 뒤 첫 응답
+    rf95.setModeRx();
+    lastRouterReportMs = millis();
   } else {
-    loraSleep();          // ✅ Node는 sleep 시작
+    rxWindowMs = RX_WIN_BASE_MS;
+    holdBaseOnceAfterRecover = false;
+    loraSleep();
     scheduleNextRx();
   }
 }
@@ -346,16 +458,16 @@ void setup(){
 void loop(){
 
   // =====================================================
-  // ✅ Router Mode (No Sleep)
+  // Router Mode (No Sleep)
   // =====================================================
   if(IS_ROUTER){
-    processRxOnce();  // 상시 처리 + Mesh 중계
+    processRxOnce();
     delay(2);
     return;
   }
 
   // =====================================================
-  // ✅ Node Mode (Low Power)
+  // Node Mode (Low Power)
   // =====================================================
   if(pitFlag){
     pitFlag = false;
@@ -363,7 +475,13 @@ void loop(){
     if(ticksToNextRx > 0) ticksToNextRx--;
 
     if(ticksToNextRx == 0){
-      rxWindow(350);
+      // 지터: 평소엔 작게, 연속 실패 시 크게 (안정성↑)
+      if(missStreak >= 2) delay((uint8_t)random(0, 36));
+      else                delay((uint8_t)random(0, 6));
+
+      bool ok = rxWindowOnce(rxWindowMs);
+      updateTuningAfterRx(ok);
+
       scheduleNextRx();
     }
   }
