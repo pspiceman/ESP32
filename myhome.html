@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta name="theme-color" content="#1f7cc6"/>
+  <title>My Smart Home</title>
+  <style>
+    :root{
+      --blue1:#1f7cc6; --blue2:#2a8bd6;
+      --bg:#eef3f7; --card:#ffffff; --line:#d9e3ee;
+      --text:#102a43; --muted:#5b7083;
+      --good:#52b66b; --warn:#f0b429; --bad:#e12d39;
+      --shadow:0 10px 22px rgba(16,42,67,.10);
+      --r:12px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;}
+    .wrap{max-width:420px;margin:0 auto;padding-bottom:18px}
+    .top{background:linear-gradient(180deg,var(--blue2),var(--blue1));padding:18px 14px 10px;padding-top:calc(18px + env(safe-area-inset-top));color:#fff;position:sticky;top:0;z-index:10;box-shadow:0 6px 18px rgba(0,0,0,.12);}
+    .topRow{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+    .title{font-size:22px;font-weight:800;letter-spacing:.2px;}
+    .refreshBtn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.10);cursor:pointer;user-select:none;touch-action:manipulation;}
+    .refreshBtn:active{transform:scale(.99);opacity:.92}
+    .sub{margin-top:8px;font-size:12px;opacity:.92;}
+    .sub b{font-weight:800}
+    .content{padding:12px 12px 0}
+    .statusBar{background:var(--good);color:#fff;border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);margin-bottom:10px;}
+    .statusDot{width:10px;height:10px;border-radius:999px;background:#eaffef;box-shadow:0 0 0 4px rgba(255,255,255,.18);}
+    .statusText{font-weight:800;font-size:13px}
+    .statusSub{margin-left:auto;font-size:12px;opacity:.95}
+    .list{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);}
+    .item{display:flex;align-items:center;gap:10px;padding:12px 12px;border-top:1px solid var(--line);}
+    .item:first-child{border-top:none}
+    .icon{width:34px;height:34px;border-radius:8px;background:#f2f7ff;border:1px solid #e1ecfb;display:grid;place-items:center;flex:0 0 auto;}
+    .name{font-weight:800}
+    .key{font-size:12px;color:var(--muted)}
+    .grow{flex:1;min-width:0}
+    .grow .name,.grow .key{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .toggle{display:flex;align-items:center;gap:8px;flex:0 0 auto;user-select:none;touch-action:manipulation;}
+    .pill{width:82px;height:30px;border-radius:999px;background:#e6edf5;border:1px solid #d3dfea;position:relative;display:flex;align-items:center;padding:0 10px;font-weight:900;font-size:12px;color:#6b7f91;cursor:pointer;}
+    .pill.on{background:#2c79d8;border-color:#2c79d8;color:#fff;}
+    .knob{width:24px;height:24px;border-radius:999px;background:#fff;position:absolute;top:2px;left:3px;box-shadow:0 6px 14px rgba(0,0,0,.18);transition:.18s ease;pointer-events:none;}
+    .pill.on .knob{transform:translateX(52px);}
+    .pillText{z-index:1}
+    .pill.on .pillText{margin-left:6px}
+    .pill:not(.on) .pillText{margin-left:auto;margin-right:6px}
+    .pill.disabled{opacity:.55;pointer-events:none;cursor:default;}
+    .bottom{display:flex;gap:10px;padding:12px 12px 0;}
+    .btn{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;height:44px;border-radius:10px;border:1px solid var(--line);background:#fff;box-shadow:var(--shadow);font-weight:900;cursor:pointer;user-select:none;touch-action:manipulation;}
+    .btn:active{transform:scale(.99);opacity:.92}
+    .mini{padding:10px 12px 0;color:var(--muted);font-size:11px;line-height:1.35}
+
+    /* 🐞 floating */
+    .bug{
+      position:fixed; right:14px;
+      bottom:calc(14px + env(safe-area-inset-bottom));
+      width:54px;height:54px;border-radius:18px;
+      display:grid;place-items:center;
+      border:1px solid rgba(16,42,67,.14);
+      background:#ffffff;
+      box-shadow:0 12px 26px rgba(16,42,67,.18);
+      cursor:pointer; user-select:none; touch-action:manipulation;
+      z-index:99;
+    }
+    .bug:active{transform:scale(.99);opacity:.92}
+
+    /* log sheet */
+    .backdrop{
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.45);
+      display:none;
+      padding:14px;
+      padding-top:max(14px, env(safe-area-inset-top));
+      padding-bottom:max(14px, env(safe-area-inset-bottom));
+      z-index:100;
+    }
+    .sheet{
+      max-width:520px;margin:0 auto;
+      background:#0f172a;
+      color:#e5e7eb;
+      border-radius:16px;
+      overflow:hidden;
+      box-shadow:0 20px 50px rgba(0,0,0,.45);
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .sheetHead{
+      padding:12px 12px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    .sheetHead .t{font-weight:900}
+    .sheetBtn{
+      border:none; cursor:pointer;
+      padding:9px 10px; border-radius:12px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.10);
+      color:#e5e7eb;
+      font-weight:800;
+      touch-action:manipulation;
+    }
+    pre{
+      margin:0;
+      padding:12px 12px;
+      max-height:60vh;
+      overflow:auto;
+      font-size:12px;
+      line-height:1.45;
+      white-space:pre-wrap;
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="topRow">
+      <div class="title">My Smart Home</div>
+      <div class="refreshBtn" id="btnRefresh" title="Refresh">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M20 12a8 8 0 1 1-2.34-5.66" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <path d="M20 4v6h-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+    <div class="sub">Connected to: <b id="connText">찾는 중…</b></div>
+  </div>
+
+  <div class="content">
+    <div class="statusBar" id="statusBar">
+      <div class="statusDot"></div>
+      <div class="statusText" id="statusText">Discovering…</div>
+      <div class="statusSub" id="statusSub">—</div>
+    </div>
+
+    <div class="list" id="list"></div>
+
+    <div class="bottom">
+      <div class="btn" id="btnRefresh2"><span>⟳</span><span>Refresh</span></div>
+      <div class="btn" id="btnLogout"><span>⏻</span><span>Logout</span></div>
+    </div>
+
+    <div class="mini" id="mini"></div>
+  </div>
+</div>
+
+<div class="bug" id="bugBtn" title="Debug log">🐞</div>
+
+<div class="backdrop" id="backdrop">
+  <div class="sheet">
+    <div class="sheetHead">
+      <div class="t">Debug log</div>
+      <div style="display:flex;gap:8px">
+        <button class="sheetBtn" id="btnCopy">Copy</button>
+        <button class="sheetBtn" id="btnClear">Clear</button>
+        <button class="sheetBtn" id="btnClose">Close</button>
+      </div>
+    </div>
+    <pre id="logView">ready.</pre>
+  </div>
+</div>
+
+<script>
+(() => {
+  const STORAGE_KEY = "myhome_base";
+  const POLL_MS = 2500;
+
+  const SCAN_PREFIX = "http://192.168.31.";
+  const SCAN_START = 1;
+  const SCAN_END   = 254;
+  const CONCURRENCY = 18;
+  const PROBE_TIMEOUT_MS = 650;
+
+  const MDNS_CANDIDATES = ["http://myhome.local","http://myhome.local:80"];
+
+  const WINDOW = 6;
+  const FAIL_TO_RED = 3;
+
+  const connText = document.getElementById("connText");
+  const statusText = document.getElementById("statusText");
+  const statusSub  = document.getElementById("statusSub");
+  const statusBar  = document.getElementById("statusBar");
+  const list = document.getElementById("list");
+  const mini = document.getElementById("mini");
+  const btnRefresh = document.getElementById("btnRefresh");
+  const btnRefresh2 = document.getElementById("btnRefresh2");
+  const btnLogout = document.getElementById("btnLogout");
+
+  const bugBtn = document.getElementById("bugBtn");
+  const backdrop = document.getElementById("backdrop");
+  const logView = document.getElementById("logView");
+  const btnClose = document.getElementById("btnClose");
+  const btnCopy = document.getElementById("btnCopy");
+  const btnClear = document.getElementById("btnClear");
+
+  let BASE = null;
+  let devices = [];
+  let pollTimer = null;
+  let busy = new Set();
+  let loggedOut = false;
+
+  let healthWindow = [];
+  let logs = [];
+  const MAX_LOG = 260;
+
+  // ✅ 중요: 사용자가 누른 상태를 “잠깐 유지” (OFF가 Tuya에서 늦게 반영되는 문제 해결)
+  const pendingDesired = new Map(); // key -> {desired:boolean, until:number}
+
+  function log(line, obj){
+    const ts = new Date().toLocaleTimeString();
+    let s = `[${ts}] ${line}`;
+    if (obj !== undefined){
+      try { s += "\n" + JSON.stringify(obj, null, 2); }
+      catch { s += "\n" + String(obj); }
+    }
+    logs.unshift(s);
+    logs = logs.slice(0, MAX_LOG);
+    logView.textContent = logs.join("\n\n");
+  }
+
+  function setBarColor(kind){
+    statusBar.style.background =
+      kind === "good" ? "var(--good)" :
+      kind === "warn" ? "var(--warn)" :
+      "var(--bad)";
+  }
+  function setStatus(main, sub, kind="good"){
+    statusText.textContent = main;
+    statusSub.textContent  = sub || "—";
+    setBarColor(kind);
+  }
+
+  const baseUrl = () => (BASE || "").replace(/\/+$/, "");
+  const apiUrl  = (p) => baseUrl() + p;
+
+  function iconFor(key){
+    if (key === "myDesk") return "🛠️";
+    if (key === "floor")  return "🔥";
+    if (key === "tablet") return "📱";
+    if (key === "server") return "🖥️";
+    if (key === "water")  return "🚰";
+    return "🔌";
+  }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[m]));
+  }
+
+  async function fetchJson(url, timeoutMs){
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+    try{
+      const res = await fetch(url, { signal: ctrl.signal, cache:"no-store" });
+      const txt = await res.text();
+      let body; try { body = JSON.parse(txt); } catch { body = { raw: txt }; }
+      return { ok: res.ok, status: res.status, body };
+    } finally { clearTimeout(t); }
+  }
+
+  async function probeBase(base){
+    const url = base.replace(/\/+$/, "") + "/api/health";
+    try{
+      const r = await fetchJson(url, PROBE_TIMEOUT_MS);
+      const ok = r.ok && r.body && r.body.ok === true;
+      if (ok) log("probe OK", { base, ip: r.body.ip, mdns: r.body.mdns });
+      return ok;
+    } catch { return false; }
+  }
+
+  function recordHealth(ok){
+    healthWindow.push(ok);
+    if (healthWindow.length > WINDOW) healthWindow.shift();
+
+    let streak = 0;
+    for (let i=healthWindow.length-1;i>=0;i--){
+      if (healthWindow[i] === false) streak++;
+      else break;
+    }
+    const hasRecentOk = healthWindow.includes(true);
+    if (hasRecentOk && streak < FAIL_TO_RED) return { kind:"good", streak };
+    if (streak >= FAIL_TO_RED) return { kind:"bad", streak };
+    return { kind:"warn", streak };
+  }
+
+  function useBase(base){
+    BASE = base.replace(/\/+$/, "");
+    localStorage.setItem(STORAGE_KEY, BASE);
+    connText.textContent = BASE.replace(/^https?:\/\//, "");
+    log("useBase", { BASE });
+  }
+
+  async function scanSubnet(){
+    let next = SCAN_START;
+    let found = null;
+    let stopped = false;
+    async function worker(){
+      while(!stopped){
+        const i = next++;
+        if (i > SCAN_END) return;
+        const base = SCAN_PREFIX + i;
+        if (await probeBase(base)) { found = base; stopped = true; return; }
+      }
+    }
+    const workers = [];
+    for (let k=0;k<CONCURRENCY;k++) workers.push(worker());
+    await Promise.all(workers);
+    return found;
+  }
+
+  async function discover(){
+    stopPoll();
+    devices = [];
+    render();
+
+    setStatus("Discovering…", "saved → mDNS → scan", "warn");
+    connText.textContent = "찾는 중…";
+    log("discover start");
+
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved && await probeBase(saved)) {
+      useBase(saved);
+      await loadDevices(true);
+      startPoll();
+      return true;
+    }
+
+    for (const m of MDNS_CANDIDATES){
+      if (await probeBase(m)){
+        useBase(m);
+        await loadDevices(true);
+        startPoll();
+        return true;
+      }
+    }
+
+    setStatus("Discovering…", "scanning 192.168.31.x", "warn");
+    const found = await scanSubnet();
+    if (found){
+      useBase(found);
+      await loadDevices(true);
+      startPoll();
+      return true;
+    }
+
+    setStatus("Connect Failed", "ESP32 not found", "bad");
+    connText.textContent = "not found";
+    log("discover failed");
+    return false;
+  }
+
+  // ✅ OFF는 Tuya가 늦게 반영되므로 “원하는 상태를 잠깐 유지 + 늦게 검증”
+  function scheduleVerify(key, desired){
+    const holdMs = desired ? 2500 : 7000; // OFF는 길게
+    pendingDesired.set(key, { desired, until: Date.now() + holdMs });
+
+    const plan = desired ? [800, 1700] : [2200, 4200, 6200];
+
+    log("verify plan", { key, desired, plan, holdMs });
+
+    plan.forEach((delay, idx) => {
+      setTimeout(async () => {
+        if (!BASE || loggedOut) return;
+
+        // busy 중이면 뒤로 미룸
+        if (busy.size) return;
+
+        await loadDevices(true);
+
+        const d = devices.find(x => x.key === key);
+        if (d && d.state === desired){
+          pendingDesired.delete(key);
+          log("verify matched", { key, desired });
+        } else {
+          if (idx === plan.length - 1){
+            log("verify not matched (will rely on poll)", { key, desired, got: d ? d.state : null });
+          }
+        }
+        render();
+      }, delay);
+    });
+  }
+
+  function render(){
+    list.innerHTML = "";
+    if (!devices.length){
+      const row = document.createElement("div");
+      row.className = "item";
+      row.innerHTML = `
+        <div class="icon">ℹ️</div>
+        <div class="grow">
+          <div class="name">No devices</div>
+          <div class="key">연결되면 목록이 표시됩니다</div>
+        </div>
+        <div class="toggle"><div class="pill disabled"><span class="pillText">—</span><span class="knob"></span></div></div>
+      `;
+      list.appendChild(row);
+      return;
+    }
+
+    devices.forEach(d => {
+      // ✅ 보여줄 상태는 pendingDesired가 있으면 우선
+      let shownState = !!d.state;
+      const pend = pendingDesired.get(d.key);
+      if (pend && Date.now() < pend.until) shownState = !!pend.desired;
+
+      const on = shownState;
+      const online = (d.online !== false);
+      const disabled = loggedOut || busy.has(d.key) || !online || !BASE;
+
+      const row = document.createElement("div");
+      row.className = "item";
+      row.innerHTML = `
+        <div class="icon">${iconFor(d.key)}</div>
+        <div class="grow">
+          <div class="name">${escapeHtml(d.name)}</div>
+          <div class="key">${escapeHtml(d.key)}${d.err ? (" · " + escapeHtml(d.err)) : ""}</div>
+        </div>
+      `;
+
+      const pill = document.createElement("div");
+      pill.className = "pill" + (on ? " on":"") + (disabled ? " disabled":"");
+      pill.innerHTML = `<span class="pillText">${on ? "ON":"OFF"}</span><span class="knob"></span>`;
+
+      const toggle = document.createElement("div");
+      toggle.className = "toggle";
+      toggle.appendChild(pill);
+      row.appendChild(toggle);
+
+      pill.addEventListener("click", async () => {
+        if (disabled) return;
+
+        const next = !shownState;
+
+        // ✅ 즉시 UI 반영 + pending 유지
+        pendingDesired.set(d.key, { desired: next, until: Date.now() + (next ? 2500 : 7000) });
+
+        // 내부 데이터도 즉시 바꿈(화면 즉시)
+        d.state = next;
+        busy.add(d.key);
+        render();
+        setStatus("Sending…", `${d.name} → ${next ? "ON":"OFF"}`, "warn");
+        log("toggle", { key: d.key, next, base: BASE });
+
+        try{
+          const u = apiUrl(`/api/set?key=${encodeURIComponent(d.key)}&on=${next ? "1":"0"}`);
+          const r = await fetchJson(u, 12000);
+          const health = recordHealth(r.ok);
+
+          if (r.ok && r.body && r.body.ok === true){
+            log("set OK", r.body);
+            scheduleVerify(d.key, next);
+            setStatus("All Systems Operational", new Date().toLocaleTimeString(), health.kind);
+          } else {
+            // 실패면 원복
+            pendingDesired.delete(d.key);
+            d.state = !next;
+            log("set ERR", { status: r.status, body: r.body });
+            setStatus("Command Failed", "API error", "bad");
+          }
+        } catch(e){
+          pendingDesired.delete(d.key);
+          d.state = !next;
+          log("set ERR (fetch)", String(e));
+          setStatus("Connect Failed", "timeout / blocked", "bad");
+        } finally {
+          busy.delete(d.key);
+          render();
+        }
+      });
+
+      list.appendChild(row);
+    });
+  }
+
+  async function loadDevices(forceFresh=false){
+    if (!BASE || loggedOut) return false;
+    const u = apiUrl(`/api/devices${forceFresh ? "?fresh=1" : ""}`);
+
+    try{
+      const r = await fetchJson(u, forceFresh ? 20000 : 10000);
+      const health = recordHealth(r.ok);
+
+      if (r.ok && r.body && Array.isArray(r.body.devices)){
+        devices = r.body.devices;
+
+        // pending hold 만료된 건 정리
+        const now = Date.now();
+        for (const [k,v] of pendingDesired.entries()){
+          if (now > v.until) pendingDesired.delete(k);
+        }
+
+        render();
+
+        const anyOffline = devices.some(x => x.online === false);
+        const anyErr = devices.some(x => x.err);
+
+        if (!anyOffline && !anyErr) setStatus("All Systems Operational", new Date().toLocaleTimeString(), health.kind);
+        else if (anyOffline) setStatus("Some Devices Offline", new Date().toLocaleTimeString(), "warn");
+        else setStatus("Some Devices Error", new Date().toLocaleTimeString(), "warn");
+
+        mini.textContent = `Auto refresh: ${POLL_MS}ms · base=${BASE.replace(/^https?:\/\//,"")} · window=${healthWindow.map(x=>x?"✓":"×").join("")}`;
+        return true;
+      }
+
+      log("devices ERR", { status:r.status, body:r.body, url:u });
+      if (health.kind === "bad") setStatus("Connect Failed", "timeout / blocked", "bad");
+      else setStatus("Connecting…", "unstable network", "warn");
+      return false;
+
+    } catch(e){
+      const health = recordHealth(false);
+      log("devices ERR (fetch)", { url:u, err:String(e) });
+      if (health.kind === "bad") setStatus("Connect Failed", "timeout / blocked", "bad");
+      else setStatus("Connecting…", "unstable network", "warn");
+      return false;
+    }
+  }
+
+  function startPoll(){
+    stopPoll();
+    pollTimer = setInterval(() => {
+      if (!BASE || loggedOut) return;
+      if (busy.size) return;
+      loadDevices(false); // 빠른 캐시 폴링
+    }, POLL_MS);
+  }
+  function stopPoll(){ if (pollTimer) clearInterval(pollTimer); pollTimer=null; }
+
+  async function doRefresh(){
+    loggedOut = false;
+    setStatus("Refreshing…", "rediscover + fresh", "warn");
+    log("refresh pressed");
+    await discover();
+    if (BASE) await loadDevices(true);
+  }
+
+  bugBtn.addEventListener("click", () => backdrop.style.display = "block");
+  btnClose.addEventListener("click", () => backdrop.style.display = "none");
+  backdrop.addEventListener("click", (e)=>{ if(e.target===backdrop) backdrop.style.display="none"; });
+  btnClear.addEventListener("click", ()=>{ logs=[]; logView.textContent="cleared."; });
+  btnCopy.addEventListener("click", async ()=>{
+    try{ await navigator.clipboard.writeText(logView.textContent||""); log("copied"); }
+    catch(e){ log("copy failed", String(e)); }
+  });
+
+  btnRefresh.addEventListener("click", doRefresh);
+  btnRefresh2.addEventListener("click", doRefresh);
+
+  btnLogout.addEventListener("click", ()=>{
+    loggedOut = true;
+    stopPoll();
+    localStorage.removeItem(STORAGE_KEY);
+    BASE=null; devices=[];
+    pendingDesired.clear();
+    render();
+    connText.textContent = "logged out";
+    setStatus("Logged out", "Tap Refresh to rediscover", "warn");
+    log("logout");
+  });
+
+  log("boot", { github:true, pollMs:POLL_MS });
+  setStatus("Discovering…", "Please wait", "warn");
+  discover();
+})();
+</script>
+</body>
+</html>
