@@ -3,349 +3,522 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-  <meta name="theme-color" content="#1f7cc6"/>
   <title>My Smart Home</title>
 
-  <!-- PWA -->
-  <link rel="manifest" href="./icons/manifest.json">
-  <link rel="icon" href="./icons/favicon.ico">
-  <link rel="apple-touch-icon" href="./icons/icon-180x180.png">
+  <link rel="icon" href="icons/favicon.ico">
+  <link rel="apple-touch-icon" href="icons/icon-180x180.png">
+  <link rel="manifest" href="icons/manifest.json">
+  <meta name="theme-color" content="#1f7cc6">
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="MyHome">
 
   <style>
-    :root{ --blue1:#1f7cc6; --blue2:#2a8bd6; --bg:#eef3f7; --card:#fff; --shadow: 0 10px 30px rgba(0,0,0,.08); }
-    *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,sans-serif;}
-    body{margin:0;background:var(--bg);color:#123;}
-    header{background:linear-gradient(180deg,var(--blue2),var(--blue1));color:#fff;padding:18px 16px 14px;}
-    .toprow{display:flex;align-items:center;justify-content:space-between;gap:10px}
-    h1{margin:0;font-size:22px;font-weight:800;letter-spacing:.2px}
-    .subtitle{margin-top:6px;font-size:13px;opacity:.9}
-    .iconbtn{width:38px;height:38px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:#fff}
-    .iconbtn:active{transform:scale(.98)}
-    .wrap{max-width:520px;margin:0 auto;padding:14px 14px 26px}
-    .status{margin-top:10px;background:#3aa557;border-radius:10px;padding:10px 12px;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:10px;box-shadow:var(--shadow)}
-    .status.bad{background:#d9343f}
-    .dot{width:10px;height:10px;border-radius:999px;background:rgba(255,255,255,.95);display:inline-block;margin-right:8px}
-    .card{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:10px;margin-top:12px}
-    .device{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:12px}
-    .device + .device{border-top:1px solid #e7eef6;border-radius:0}
-    .left{display:flex;align-items:center;gap:10px;min-width:0}
-    .ico{width:34px;height:34px;border-radius:10px;background:#eaf3ff;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
-    .name{font-weight:800;font-size:16px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .key{font-size:12px;color:#678;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .meta{display:flex;flex-direction:column;min-width:0}
-    .right{display:flex;align-items:center;gap:10px}
-    .pill{font-size:11px;padding:4px 8px;border-radius:999px;background:#f1f5fb;color:#345;border:1px solid #e0e8f3}
-    .pill.pending{background:#fff4d6;border-color:#ffe7a3;color:#6a4b00}
-    /* toggle */
-    .sw{position:relative;display:inline-block;width:54px;height:28px}
-    .sw input{opacity:0;width:0;height:0}
-    .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#cfd9e6;transition:.15s;border-radius:999px}
-    .slider:before{position:absolute;content:"";height:22px;width:22px;left:3px;top:3px;background:white;transition:.15s;border-radius:999px;box-shadow:0 2px 7px rgba(0,0,0,.2)}
-    input:checked + .slider{background:#1f7cc6}
-    input:checked + .slider:before{transform:translateX(26px)}
-    input:disabled + .slider{opacity:.55;cursor:not-allowed}
-    .actions{display:flex;gap:10px;margin-top:12px}
-    .btn{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;height:44px;border-radius:12px;border:1px solid #d9e6f6;background:#fff;box-shadow:var(--shadow);font-weight:800}
-    .btn:active{transform:scale(.99)}
-    .small{margin-top:10px;color:#567;font-size:12px}
-    /* log drawer */
-    .bugbtn{position:fixed;right:14px;bottom:14px;width:52px;height:52px;border-radius:18px;border:none;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center}
-    .drawer{position:fixed;left:0;right:0;bottom:-70vh;height:70vh;background:#0e1624;color:#d5e3ff;border-top-left-radius:18px;border-top-right-radius:18px;box-shadow:0 -12px 40px rgba(0,0,0,.35);transition:.25s;padding:12px 12px 10px}
-    .drawer.open{bottom:0}
-    .drawerhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-    .drawerhead .title{font-weight:900}
-    .drawerhead button{border:none;background:rgba(255,255,255,.12);color:#fff;border-radius:10px;padding:8px 10px}
-    pre{margin:0;white-space:pre-wrap;word-break:break-word;font-size:12px;line-height:1.4;max-height:calc(70vh - 60px);overflow:auto}
+    :root{
+      --blue1:#1f7cc6; --blue2:#2a8bd6;
+      --bg:#eef3f7; --card:#ffffff; --line:#d9e3ee;
+      --text:#102a43; --muted:#5b7083;
+      --good:#52b66b; --warn:#f0b429; --bad:#e12d39;
+      --shadow:0 10px 22px rgba(16,42,67,.10);
+      --r:12px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;}
+    .wrap{max-width:420px;margin:0 auto;padding-bottom:18px}
+    .top{background:linear-gradient(180deg,var(--blue2),var(--blue1));padding:18px 14px 10px;padding-top:calc(18px + env(safe-area-inset-top));color:#fff;position:sticky;top:0;z-index:10;box-shadow:0 6px 18px rgba(0,0,0,.12);}
+    .topRow{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+    .title{font-size:22px;font-weight:800;letter-spacing:.2px;}
+    .actions{display:flex;gap:10px;align-items:center;}
+    .iconBtn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.10);cursor:pointer;user-select:none;touch-action:manipulation;}
+    .iconBtn:active{transform:scale(.99);opacity:.92}
+    .sub{margin-top:8px;font-size:12px;opacity:.92;}
+    .sub b{font-weight:800}
+
+    .content{padding:12px 12px 0}
+    .statusBar{background:var(--good);color:#fff;border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);margin-bottom:10px;}
+    .statusDot{width:10px;height:10px;border-radius:999px;background:#eaffef;box-shadow:0 0 0 4px rgba(255,255,255,.18);}
+    .statusText{font-weight:800;font-size:13px}
+    .statusSub{margin-left:auto;font-size:12px;opacity:.95}
+
+    .list{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);}
+    .item{display:flex;align-items:center;gap:10px;padding:12px 12px;border-top:1px solid var(--line);}
+    .item:first-child{border-top:none}
+    .icon{width:34px;height:34px;border-radius:8px;background:#f2f7ff;border:1px solid #e1ecfb;display:grid;place-items:center;flex:0 0 auto;}
+    .name{font-weight:800}
+    .key{font-size:12px;color:var(--muted)}
+    .grow{flex:1;min-width:0}
+    .grow .name,.grow .key{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+    .toggle{display:flex;align-items:center;gap:8px;flex:0 0 auto;user-select:none;touch-action:manipulation;}
+    .pill{width:82px;height:30px;border-radius:999px;background:#e6edf5;border:1px solid #d3dfea;position:relative;display:flex;align-items:center;padding:0 10px;font-weight:900;font-size:12px;color:#6b7f91;cursor:pointer;}
+    .pill.on{background:#2c79d8;border-color:#2c79d8;color:#fff;}
+    .knob{width:24px;height:24px;border-radius:999px;background:#fff;position:absolute;top:2px;left:3px;box-shadow:0 6px 14px rgba(0,0,0,.18);transition:.18s ease;pointer-events:none;}
+    .pill.on .knob{transform:translateX(52px);}
+    .pillText{z-index:1}
+    .pill.on .pillText{margin-left:6px}
+    .pill:not(.on) .pillText{margin-left:auto;margin-right:6px}
+    .pill.disabled{opacity:.55;pointer-events:none;cursor:default;}
+
+    .bottom{display:flex;gap:10px;padding:12px 12px 0;}
+    .btn{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;height:44px;border-radius:10px;border:1px solid var(--line);background:#fff;box-shadow:var(--shadow);font-weight:900;cursor:pointer;user-select:none;touch-action:manipulation;}
+    .btn:active{transform:scale(.99);opacity:.92}
+    .btn svg{display:block}
+    .mini{padding:10px 12px 0;color:var(--muted);font-size:11px;line-height:1.35}
+
+    .backdrop{
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.45);
+      display:none;
+      padding:14px;
+      padding-top:max(14px, env(safe-area-inset-top));
+      padding-bottom:max(14px, env(safe-area-inset-bottom));
+      z-index:100;
+    }
+    .sheet{
+      max-width:520px;margin:0 auto;
+      background:#0f172a;
+      color:#e5e7eb;
+      border-radius:16px;
+      overflow:hidden;
+      box-shadow:0 20px 50px rgba(0,0,0,.45);
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .sheetHead{
+      padding:12px 12px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    .sheetHead .t{font-weight:900}
+    .sheetBtn{
+      border:none; cursor:pointer;
+      padding:9px 10px; border-radius:12px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.10);
+      color:#e5e7eb;
+      font-weight:800;
+      touch-action:manipulation;
+    }
+    pre{margin:0;padding:12px 12px;max-height:60vh;overflow:auto;font-size:12px;line-height:1.45;white-space:pre-wrap;}
   </style>
-
-  <!-- mqtt.js (works on GitHub Pages) -->
-  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 </head>
-
 <body>
-<header>
-  <div class="toprow">
-    <div>
-      <h1>My Smart Home</h1>
-      <div class="subtitle">Connected Devices</div>
-    </div>
-    <div style="display:flex;gap:10px">
-      <button id="btnBugTop" class="iconbtn" title="Logs" aria-label="Logs">
-        <!-- bug icon -->
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path d="M9 9h6v10a3 3 0 0 1-6 0V9Z" stroke="white" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M10 7a2 2 0 0 1 4 0v2h-4V7Z" stroke="white" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M6 13H4m16 0h-2M7 8 5 6m12 2 2-2M7 18l-2 2m12-2 2 2" stroke="white" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </button>
-      <button id="btnRefresh" class="iconbtn" title="Refresh" aria-label="Refresh">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path d="M20 12a8 8 0 1 1-2.34-5.66" stroke="white" stroke-width="2" stroke-linecap="round"/>
-          <path d="M20 4v6h-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-    </div>
-  </div>
-</header>
-
 <div class="wrap">
-  <div id="status" class="status">
-    <div><span class="dot"></span><span id="statusText">Connecting...</span></div>
-    <div id="statusRight" style="font-size:12px;opacity:.95">—</div>
-  </div>
-
-  <div id="devicesCard" class="card" style="padding:10px">
-    <div class="device" style="border-top:none">
-      <div class="left">
-        <div class="ico">ℹ️</div>
-        <div class="meta">
-          <div class="name">Waiting ESP32...</div>
-          <div class="key">ESP32 announce 수신 후 자동 연결</div>
+  <div class="top">
+    <div class="topRow">
+      <div class="title">My Smart Home</div>
+      <div class="actions">
+        <div class="iconBtn" id="btnBug" title="Debug log">🐞</div>
+        <div class="iconBtn" id="btnRefresh" title="Refresh">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M20 12a8 8 0 1 1-2.34-5.66" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <path d="M20 4v6h-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </div>
       </div>
-      <div class="right">
-        <label class="sw">
-          <input type="checkbox" disabled>
-          <span class="slider"></span>
-        </label>
-      </div>
     </div>
+    <div class="sub"><b id="connText">Connected Devices</b></div>
   </div>
 
-  <div class="actions">
-    <button class="btn" id="btnLogout">
-      <span style="font-size:18px">⏻</span> Logout
-    </button>
+  <div class="content">
+    <div class="statusBar" id="statusBar">
+      <div class="statusDot"></div>
+      <div class="statusText" id="statusText">Connecting…</div>
+      <div class="statusSub" id="statusSub">—</div>
+    </div>
+
+    <div class="list" id="list"></div>
+
+    <div class="bottom">
+      <div class="btn" id="btnRefresh2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <path d="M20 12a8 8 0 1 1-2.34-5.66" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <path d="M20 4v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg><span>Refresh</span></div>
+      <div class="btn" id="btnLogout"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <path d="M12 2v10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <path d="M7.5 4.8a8 8 0 1 0 9 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+</svg><span>Logout</span></div>
+    </div>
+
+    <div class="mini" id="mini">Auto refresh: 1800ms</div>
   </div>
-  <div class="small" id="smallInfo">Auto refresh: <span id="pollMs">1500</span>ms</div>
 </div>
 
-<button class="bugbtn" id="btnBug" title="Logs" aria-label="Logs">
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-    <path d="M9 9h6v10a3 3 0 0 1-6 0V9Z" stroke="#1f7cc6" stroke-width="2" stroke-linejoin="round"/>
-    <path d="M10 7a2 2 0 0 1 4 0v2h-4V7Z" stroke="#1f7cc6" stroke-width="2" stroke-linejoin="round"/>
-    <path d="M6 13H4m16 0h-2M7 8 5 6m12 2 2-2M7 18l-2 2m12-2 2 2" stroke="#1f7cc6" stroke-width="2" stroke-linecap="round"/>
-  </svg>
-</button>
-
-<div class="drawer" id="drawer">
-  <div class="drawerhead">
-    <div class="title">Logs</div>
-    <div style="display:flex;gap:8px">
-      <button id="btnCopy">Copy</button>
-      <button id="btnClose">Close</button>
+<div class="backdrop" id="backdrop">
+  <div class="sheet">
+    <div class="sheetHead">
+      <div class="t">Debug log</div>
+      <div style="display:flex;gap:8px">
+        <button class="sheetBtn" id="btnCopy">Copy</button>
+        <button class="sheetBtn" id="btnClear">Clear</button>
+        <button class="sheetBtn" id="btnClose">Close</button>
+      </div>
     </div>
+    <pre id="logView">ready.</pre>
   </div>
-  <pre id="log"></pre>
 </div>
 
 <script>
 (() => {
-  // ====== CONFIG (public broker) ======
-  const TOPIC_ROOT = "pspiceman/myhome";
-  const WSS_URL = "wss://broker.hivemq.com:8884/mqtt"; // GitHub Pages -> WSS only
+  // ---- UI refs ----
+  const $ = (id) => document.getElementById(id);
+  const connText = $("connText");
+  const statusText = $("statusText");
+  const statusSub  = $("statusSub");
+  const statusBar  = $("statusBar");
+  const list = $("list");
+  const mini = $("mini");
 
-  // ====== UI helpers ======
-  const $ = (id)=>document.getElementById(id);
-  const logEl = $("log");
-  const drawer = $("drawer");
-  function log(tag, obj){
+  const btnBug = $("btnBug");
+  const btnRefresh = $("btnRefresh");
+  const btnRefresh2 = $("btnRefresh2");
+  const btnLogout = $("btnLogout");
+
+  const backdrop = $("backdrop");
+  const logView = $("logView");
+  const btnClose = $("btnClose");
+  const btnCopy = $("btnCopy");
+  const btnClear = $("btnClear");
+
+  // ---- Config ----
+  const STORAGE_KEY = "myhome_base";
+  const POLL_MS = 1800;
+
+  // NOTE: mobile에서는 너무 빠른 abort가 "AbortError"를 만들기 쉬워서 여유있게 잡음
+  const PROBE_TIMEOUT_MS = 1800;
+  const FETCH_TIMEOUT_MS = 15000;
+  const CONCURRENCY = 10;
+
+  const SUBNETS = [
+    { prefix: "http://192.168.31.", start: 1, end: 254 },
+    { prefix: "http://192.168.0.",  start: 1, end: 254 },
+    { prefix: "http://192.168.1.",  start: 1, end: 254 },
+  ];
+  const MDNS_CANDIDATES = ["http://myhome.local", "http://myhome.local:80"];
+
+  // ---- State ----
+  let BASE = null;
+  let devices = [];
+  let pollTimer = null;
+  let busy = new Set();
+  let loggedOut = false;
+  let inFlight = false;
+
+  // ---- Logging ----
+  let logs = [];
+  const MAX_LOG = 260;
+
+  function log(line, obj){
     const ts = new Date().toLocaleTimeString();
-    let line = `[${ts}] ${tag}`;
-    if(obj !== undefined){
-      try{ line += "\n" + (typeof obj === "string" ? obj : JSON.stringify(obj, null, 2)); }
-      catch(e){ line += "\n" + String(obj); }
+    let s = `[${ts}] ${line}`;
+    if (obj !== undefined){
+      try { s += "\n" + JSON.stringify(obj, null, 2); }
+      catch { s += "\n" + String(obj); }
     }
-    logEl.textContent = (line + "\n\n") + logEl.textContent;
-  }
-  function setStatus(ok, text, right){
-    const st = $("status");
-    st.classList.toggle("bad", !ok);
-    $("statusText").textContent = text;
-    $("statusRight").textContent = right || "—";
+    logs.unshift(s);
+    logs = logs.slice(0, MAX_LOG);
+    if (logView) logView.textContent = logs.join("\n\n");
   }
 
-  // drawer
-  function toggleDrawer(on){ drawer.classList.toggle("open", !!on); }
-  $("btnBug").onclick = ()=>toggleDrawer(true);
-  $("btnBugTop").onclick = ()=>toggleDrawer(true);
-  $("btnClose").onclick = ()=>toggleDrawer(false);
-  $("btnCopy").onclick = async () => {
-    try{ await navigator.clipboard.writeText(logEl.textContent); log("copied"); }
-    catch(e){ log("copy failed", String(e)); }
-  };
+  window.addEventListener("error", (e) => {
+    log("JS ERROR", { message: e.message, source: e.filename, line: e.lineno, col: e.colno });
+  });
+  window.addEventListener("unhandledrejection", (e) => {
+    log("PROMISE REJECT", String(e.reason));
+  });
 
-  // ====== state ======
-  let client = null;
-  let nodeId = null;
-  let devices = []; // [{key,name,state,pending,online}]
+  function setBarColor(kind){
+    statusBar.style.background =
+      kind === "good" ? "var(--good)" :
+      kind === "warn" ? "var(--warn)" :
+      "var(--bad)";
+  }
+  function setStatus(main, sub, kind="good"){
+    statusText.textContent = main;
+    statusSub.textContent  = sub || "—";
+    setBarColor(kind);
+  }
+
+  const baseUrl = () => (BASE || "").replace(/\/+$/, "");
+  const apiUrl  = (p) => baseUrl() + p;
 
   function iconFor(key){
-    const map = { myDesk:"🪛", floor:"🔥", tablet:"📱", server:"🖥️", water:"🚰" };
-    return map[key] || "🔌";
+    if (key === "myDesk") return "🛠️";
+    if (key === "floor")  return "🔥";
+    if (key === "tablet") return "📱";
+    if (key === "server") return "🖥️";
+    if (key === "water")  return "🚰";
+    return "🔌";
+  }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[m]));
   }
 
-  function renderDevices(){
-    const card = $("devicesCard");
-    card.innerHTML = "";
-    if(!devices.length){
-      card.innerHTML = `
-        <div class="device" style="border-top:none">
-          <div class="left">
-            <div class="ico">ℹ️</div>
-            <div class="meta">
-              <div class="name">Waiting ESP32...</div>
-              <div class="key">ESP32 announce 수신 후 자동 연결</div>
-            </div>
-          </div>
-          <div class="right">
-            <label class="sw"><input type="checkbox" disabled><span class="slider"></span></label>
-          </div>
-        </div>`;
+  async function fetchJson(url, timeoutMs){
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+    try{
+      const res = await fetch(url, { signal: ctrl.signal, cache:"no-store" });
+      const txt = await res.text();
+      let body; try { body = JSON.parse(txt); } catch { body = { raw: txt }; }
+      return { ok: res.ok, status: res.status, body };
+    } finally { clearTimeout(t); }
+  }
+
+  async function probeBase(base){
+    const url = base.replace(/\/+$/, "") + "/api/health";
+    try{
+      const r = await fetchJson(url, PROBE_TIMEOUT_MS);
+      const ok = r.ok && r.body && r.body.ok === true;
+      if (ok) log("probe OK", { base, ip: r.body.ip, mdns: r.body.mdns });
+      return ok ? r.body : null;
+    } catch(e){
+      log("probe ERR", { base, err: String(e) });
+      return null;
+    }
+  }
+
+  function useBase(base, healthBody=null){
+    let fixed = base.replace(/\/+$/, "");
+    if (healthBody && healthBody.ip) fixed = "http://" + healthBody.ip;
+    BASE = fixed;
+    localStorage.setItem(STORAGE_KEY, BASE);
+    connText.textContent = "Connected Devices";
+    log("useBase", { BASE });
+  }
+
+  async function scanOneSubnet(sub){
+    let next = sub.start;
+    let found = null;
+    let foundHealth = null;
+    let stopped = false;
+
+    async function worker(){
+      while(!stopped){
+        const i = next++;
+        if (i > sub.end) return;
+        const base = sub.prefix + i;
+        const hb = await probeBase(base);
+        if (hb){ found = base; foundHealth = hb; stopped = true; return; }
+      }
+    }
+    const workers = [];
+    for (let k=0;k<CONCURRENCY;k++) workers.push(worker());
+    await Promise.all(workers);
+    return found ? { base: found, hb: foundHealth } : null;
+  }
+
+  async function discoverOnce(){
+    setStatus("Connecting…", "discovering", "warn");
+
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved){
+      const hb = await probeBase(saved);
+      if (hb){ useBase(saved, hb); return true; }
+    }
+
+    for (const m of MDNS_CANDIDATES){
+      const hb = await probeBase(m);
+      if (hb){ useBase(m, hb); return true; }
+    }
+
+    for (const s of SUBNETS){
+      const r = await scanOneSubnet(s);
+      if (r){ useBase(r.base, r.hb); return true; }
+    }
+
+    return false;
+  }
+
+  function render(){
+    list.innerHTML = "";
+
+    if (!devices.length){
+      const row = document.createElement("div");
+      row.className = "item";
+      row.innerHTML = `
+        <div class="icon">ℹ️</div>
+        <div class="grow">
+          <div class="name">No devices</div>
+          <div class="key">연결되면 목록이 표시됩니다</div>
+        </div>
+        <div class="toggle">
+          <div class="pill disabled"><span class="pillText">—</span><span class="knob"></span></div>
+        </div>
+      `;
+      list.appendChild(row);
       return;
     }
 
-    devices.forEach(d=>{
+    devices.forEach(d => {
+      const on = !!d.state;
+      const online = (d.online !== false);
+      const pending = !!d.pending;
+      const disabled = loggedOut || busy.has(d.key) || !online || !BASE || pending;
+
       const row = document.createElement("div");
-      row.className = "device";
+      row.className = "item";
       row.innerHTML = `
-        <div class="left">
-          <div class="ico">${iconFor(d.key)}</div>
-          <div class="meta">
-            <div class="name">${d.name || d.key}</div>
-            <div class="key">${d.key}</div>
-          </div>
-        </div>
-        <div class="right">
-          ${d.pending ? `<span class="pill pending">pending</span>` : ``}
-          ${d.online === false ? `<span class="pill">offline</span>` : ``}
-          <label class="sw">
-            <input type="checkbox" ${d.state ? "checked":""} ${d.pending ? "disabled":""} data-key="${d.key}">
-            <span class="slider"></span>
-          </label>
+        <div class="icon">${iconFor(d.key)}</div>
+        <div class="grow">
+          <div class="name">${escapeHtml(d.name)}</div>
+          <div class="key">${escapeHtml(d.key)}${pending ? " · pending…" : ""}${d.err ? (" · " + escapeHtml(d.err)) : ""}</div>
         </div>
       `;
-      card.appendChild(row);
-    });
 
-    // attach handlers
-    card.querySelectorAll('input[type="checkbox"][data-key]').forEach(inp=>{
-      inp.onchange = (e)=>{
-        const key = inp.getAttribute("data-key");
-        const on = inp.checked;
-        log(`(ui) toggle ${key}`, {next:on});
-        // optimistic UI
-        const idx = devices.findIndex(x=>x.key===key);
-        if(idx>=0){ devices[idx].pending = true; renderDevices(); }
+      const pill = document.createElement("div");
+      pill.className = "pill" + (on ? " on":"") + (disabled ? " disabled":"");
+      pill.innerHTML = `<span class="pillText">${on ? "ON":"OFF"}</span><span class="knob"></span>`;
 
-        if(!client || !nodeId){
-          log("mqtt not ready");
-          return;
-        }
-        const payload = JSON.stringify({key, on, t: Date.now()});
-        client.publish(`${TOPIC_ROOT}/${nodeId}/cmd/set`, payload, {qos:1}, (err)=>{
-          if(err) log("publish err", String(err));
-        });
-      };
-    });
-  }
+      const toggle = document.createElement("div");
+      toggle.className = "toggle";
+      toggle.appendChild(pill);
+      row.appendChild(toggle);
 
-  function onDevicesMessage(payload){
-    try{
-      const obj = JSON.parse(payload);
-      if(Array.isArray(obj.devices)) devices = obj.devices;
-      else if(Array.isArray(obj)) devices = obj;
-      renderDevices();
-      setStatus(true, "Connected", nodeId ? `node=${nodeId}` : "—");
-      log("devices", {count: devices.length});
-    }catch(e){
-      log("devices parse err", String(e));
-    }
-  }
+      pill.addEventListener("click", async () => {
+        if (disabled) return;
 
-  function subscribeNode(n){
-    nodeId = n;
-    log("use node", {node: nodeId});
-    setStatus(true, "Connected", `node=${nodeId}`);
-    // subscribe retained snapshot + logs
-    client.subscribe(`${TOPIC_ROOT}/${nodeId}/devices`, {qos:0});
-    client.subscribe(`${TOPIC_ROOT}/${nodeId}/log`, {qos:0});
-    // ask snapshot (in case retained isn't delivered on some clients)
-    client.publish(`${TOPIC_ROOT}/${nodeId}/cmd/get`, JSON.stringify({t:Date.now()}), {qos:0});
-  }
+        const next = !on;
+        busy.add(d.key);
+        render();
 
-  // ====== MQTT connect ======
-  function connectMQTT(){
-    setStatus(false, "Connecting...", "—");
-    log("mqtt connect", {url: WSS_URL, root: TOPIC_ROOT});
+        setStatus("Sending…", `${d.name} → ${next ? "ON":"OFF"}`, "warn");
+        log("toggle", { key: d.key, next });
 
-    client = mqtt.connect(WSS_URL, {
-      keepalive: 20,
-      reconnectPeriod: 1200,
-      connectTimeout: 9000,
-      clean: true
-    });
-
-    client.on("connect", ()=>{
-      log("mqtt connected");
-      setStatus(true, "Connected", "waiting node");
-      devices = [];
-      renderDevices();
-      nodeId = null;
-
-      // subscribe announce channel
-      client.subscribe(`${TOPIC_ROOT}/announce`, {qos:0});
-    });
-
-    client.on("reconnect", ()=>log("mqtt reconnect"));
-    client.on("close", ()=>log("mqtt close"));
-    client.on("offline", ()=>{ log("mqtt offline"); setStatus(false, "Connect Failed", "offline"); });
-    client.on("error", (e)=>{ log("mqtt error", String(e)); setStatus(false, "Connect Failed", "error"); });
-
-    client.on("message", (topic, payloadBuf)=>{
-      const payload = payloadBuf.toString();
-      if(topic === `${TOPIC_ROOT}/announce`){
         try{
-          const a = JSON.parse(payload);
-          const n = a.node || a.id || a.client || a.mac;
-          if(!n) return;
-          log("subscribed node", {node:n});
-          subscribeNode(n);
-        }catch(e){ log("announce parse err", payload); }
-        return;
-      }
-      if(nodeId && topic === `${TOPIC_ROOT}/${nodeId}/devices`){
-        onDevicesMessage(payload);
-        return;
-      }
-      if(nodeId && topic === `${TOPIC_ROOT}/${nodeId}/log`){
-        try{ log("(esp)", JSON.parse(payload)); }catch(e){ log("(esp)", payload); }
-      }
+          const u = apiUrl(`/api/set?key=${encodeURIComponent(d.key)}&on=${next ? "1":"0"}`);
+          const r = await fetchJson(u, FETCH_TIMEOUT_MS);
+
+          if (r.ok && r.body && r.body.ok === true){
+            log("set OK", r.body);
+            setStatus("All Systems Operational", new Date().toLocaleTimeString(), "good");
+          } else {
+            log("set ERR", { status: r.status, body: r.body, url: u });
+            setStatus("Command Failed", "API error", "bad");
+          }
+        } catch(e){
+          log("set ERR (fetch)", String(e));
+          setStatus("Connecting…", "retrying…", "warn");
+          BASE = null;
+        } finally {
+          busy.delete(d.key);
+          render();
+        }
+      });
+
+      list.appendChild(row);
     });
   }
 
-  // actions
-  $("btnRefresh").onclick = ()=>{
-    if(client && nodeId){
-      client.publish(`${TOPIC_ROOT}/${nodeId}/cmd/get`, JSON.stringify({t:Date.now(), reason:"refresh"}));
-      log("refresh");
-    }else{
-      log("refresh (no node)");
-    }
-  };
-  $("btnLogout").onclick = ()=>{
-    if(client){ client.end(true); client = null; }
-    nodeId = null;
-    devices = [];
-    renderDevices();
-    setStatus(false, "Disconnected", "logout");
-    log("logout");
-    connectMQTT();
-  };
+  async function loadDevices(){
+    if (!BASE || loggedOut) return false;
+    if (inFlight) return true;
+    inFlight = true;
 
-  // boot
-  renderDevices();
-  connectMQTT();
+    const u = apiUrl(`/api/devices?fresh=1`);
+    try{
+      const r = await fetchJson(u, FETCH_TIMEOUT_MS);
+      if (r.ok && r.body && Array.isArray(r.body.devices)){
+        devices = r.body.devices;
+        render();
+
+        const anyOffline = devices.some(x => x.online === false);
+        const anyErr = devices.some(x => x.err);
+
+        if (!anyOffline && !anyErr) setStatus("All Systems Operational", new Date().toLocaleTimeString(), "good");
+        else if (anyOffline) setStatus("Some Devices Offline", new Date().toLocaleTimeString(), "warn");
+        else setStatus("Some Devices Error", new Date().toLocaleTimeString(), "warn");
+
+        return true;
+      }
+      log("devices ERR", { status:r.status, body:r.body, url:u });
+      setStatus("Connecting…", "retrying…", "warn");
+      BASE = null;
+      return false;
+    } catch(e){
+      log("devices ERR (fetch)", { url:u, err:String(e) });
+      setStatus("Connecting…", "retrying…", "warn");
+      BASE = null;
+      return false;
+    } finally {
+      inFlight = false;
+    }
+  }
+
+  async function ensureConnected(){
+    if (BASE) return true;
+    const ok = await discoverOnce();
+    if (!ok){
+      setStatus("Connect Failed", "ESP32 not found", "bad");
+      return false;
+    }
+    await loadDevices();
+    return true;
+  }
+
+  function startPoll(){
+    stopPoll();
+    pollTimer = setInterval(async () => {
+      if (loggedOut) return;
+
+      if (!BASE){
+        await ensureConnected();
+        return;
+      }
+      if (busy.size) return;
+      await loadDevices();
+    }, POLL_MS);
+  }
+  function stopPoll(){ if (pollTimer) clearInterval(pollTimer); pollTimer=null; }
+
+  async function doRefresh(){
+    loggedOut = false;
+    setStatus("Connecting…", "refresh", "warn");
+    log("refresh pressed");
+    BASE = null;
+    devices = [];
+    render();
+    await ensureConnected();
+  }
+
+  // Log panel
+  function openLog(){ backdrop.style.display = "block"; }
+  function closeLog(){ backdrop.style.display = "none"; }
+
+  btnBug.addEventListener("click", openLog);
+  btnClose.addEventListener("click", closeLog);
+  backdrop.addEventListener("click", (e)=>{ if(e.target===backdrop) closeLog(); });
+  btnClear.addEventListener("click", ()=>{ logs=[]; logView.textContent="cleared."; });
+  btnCopy.addEventListener("click", async ()=>{
+    try{ await navigator.clipboard.writeText(logView.textContent||""); log("copied"); }
+    catch(e){ log("copy failed", String(e)); }
+  });
+
+  btnRefresh.addEventListener("click", doRefresh);
+  btnRefresh2.addEventListener("click", doRefresh);
+
+  btnLogout.addEventListener("click", ()=>{
+    loggedOut = true;
+    stopPoll();
+    localStorage.removeItem(STORAGE_KEY);
+    BASE=null; devices=[];
+    render();
+    connText.textContent = "Connected Devices";
+    setStatus("Logged out", "Tap Refresh", "warn");
+    log("logout");
+  });
+
+  // Boot
+  log("boot", { github:true, pollMs:POLL_MS, note:"v2 timeouts+no-overlap" });
+  connText.textContent = "Connected Devices";
+  setStatus("Connecting…", "starting…", "warn");
+  render();
+  mini.textContent = `Auto refresh: ${POLL_MS}ms`;
+
+  startPoll();
+  ensureConnected();
 })();
 </script>
 </body>

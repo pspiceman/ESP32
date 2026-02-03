@@ -1,9 +1,17 @@
 /*
-https://platform.tuya.com/
-baekdc@naver.com -> 1700note//
+  MyHome - MQTT Relay (Public Broker)
+  GitHub Pages (WSS) <-> broker.hivemq.com <-> ESP32 (TCP) <-> Tuya Cloud
+
+  Topics:
+    ROOT/announce
+    ROOT/<node>/devices   (retained snapshot)
+    ROOT/<node>/log
+    ROOT/<node>/cmd/set   payload: {"key":"tablet","on":true}
+    ROOT/<node>/cmd/get   payload: {"t":...}  (optional)
 */
+
 #include <WiFi.h>
-#include <WebServer.h>
+#include <PubSubClient.h>
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <ESPmDNS.h>
@@ -15,14 +23,22 @@ baekdc@naver.com -> 1700note//
 #define WIFI_SSID     "Backhome"
 #define WIFI_PASSWORD "1700note"
 
+// ===================== MQTT (Public) =====================
+const char*    MQTT_BROKER = "broker.hivemq.com";
+const uint16_t MQTT_PORT   = 1883;
+
+// MUST match HTML
+const char* TOPIC_ROOT = "pspiceman/myhome";
+
 // ===================== Tuya Cloud (Western America) =====================
 String TUYA_ENDPOINT  = "https://openapi.tuyaus.com";
 String TUYA_CLIENT_ID = "4q9fg8hve79wxevhgtc4";
 String TUYA_SECRET    = "32a2fc7ed7924b3ea0a1baccbdabfc64";
 
-// ===================== mDNS =====================
-const char* MDNS_NAME = "myhome"; // http://myhome.local
+// ===================== mDNS (optional info) =====================
+const char* MDNS_NAME = "myhome"; // myhome.local
 
+// ===================== Devices =====================
 struct DeviceItem {
   const char* key;
   const char* name_kr;
@@ -31,23 +47,22 @@ struct DeviceItem {
   bool  state_cache;
   bool  online_cache;
   bool  pending;
-  uint32_t last_ms;
+  uint32_t last_cmd_ms;
   String last_err;
 };
 
 DeviceItem DEVICES[] = {
-  {"myDesk", "myDesk", "eb622bc2147e960df5e3ez", "switch_1", false, true, false, 0, ""},
-  {"floor",  "장판",   "eb778d36a45024d8d0ymiq", "switch_1", false, true, false, 0, ""},
-  {"tablet", "테블릿", "ebf7ba55e51699856boo3j", "switch_1", false, true, false, 0, ""},
-  {"server", "서버",   "eb07edb5fbddf33dc9xjhb", "switch_1", false, true, false, 0, ""},
-  {"water",  "정수기", "ebe0b0f4ff09a6297e5an3", "switch_1", false, true, false, 0, ""},
+  {"myDesk",   "myDesk",   "eb622bc2147e960df5e3ez", "switch_1", false, true, false, 0, ""},
+  {"floor",    "장판",     "eb778d36a45024d8d0ymiq", "switch_1", false, true, false, 0, ""},
+  {"tablet",   "테블릿",   "ebf7ba55e51699856boo3j", "switch_1", false, true, false, 0, ""},
+  {"server",   "서버",     "eb07edb5fbddf33dc9xjhb", "switch_1", false, true, false, 0, ""},
+  {"water",    "정수기",   "ebe0b0f4ff09a6297e5an3", "switch_1", false, true, false, 0, ""},
 };
 const int DEVICE_COUNT = sizeof(DEVICES) / sizeof(DEVICES[0]);
 
+// ===================== Tuya token =====================
 String tuya_access_token = "";
 unsigned long token_expire_epoch = 0;
-
-WebServer server(80);
 
 // debug
 int g_lastTuyaHttp = 0;
@@ -58,8 +73,30 @@ String g_lastTuyaErr  = "";
 unsigned long g_lastTokenCheckMs = 0;
 const unsigned long TOKEN_WARMUP_INTERVAL_MS = 30000;
 
-// ===================== Queue (command) =====================
-struct Cmd { int idx; bool on; uint32_t enq_ms; };
+// ===================== MQTT runtime =====================
+WiFiClient espClient;
+PubSubClient mqtt(espClient);
+
+String g_nodeId;   // "node-xxxx"
+String g_topicAnnounce;
+String g_topicDevices;
+String g_topicLog;
+String g_topicCmdSet;
+String g_topicCmdGet;
+String g_topicCmdAll;
+
+unsigned long g_lastAnnounceMs = 0;
+const unsigned long ANNOUNCE_INTERVAL_MS = 15000;
+
+unsigned long g_lastDevPublishMs = 0;
+const unsigned long DEV_PUBLISH_INTERVAL_MS = 7000; // retained snapshot
+
+// ===================== Queue (non-blocking command exec) =====================
+struct Cmd {
+  int idx;
+  bool on;
+  uint32_t enq_ms;
+};
 Cmd q[12];
 int qh=0, qt=0;
 bool qBusy = false;
@@ -79,7 +116,6 @@ void qPushOrReplace(int idx, bool on){
   q[qt] = { idx, on, (uint32_t)millis() };
   qt = (qt+1)%12;
 }
-
 bool qPop(Cmd &out){
   if(qEmpty()) return false;
   out = q[qh];
@@ -87,25 +123,23 @@ bool qPop(Cmd &out){
   return true;
 }
 
-// ===================== Status sync =====================
-unsigned long g_lastStatusPollMs = 0;
-const unsigned long STATUS_POLL_INTERVAL_MS = 1200;
-int g_statusIdx = 0;
-
-bool g_forceStatus[DEVICE_COUNT] = {false};
-unsigned long g_forceDueMs[DEVICE_COUNT] = {0};
-
-// ---- CORS / PNA ----
-void addCORS() {
-  server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  server.sendHeader("Access-Control-Allow-Headers", "*");
-  server.sendHeader("Access-Control-Max-Age", "86400");
-  server.sendHeader("Access-Control-Allow-Private-Network", "true");
+// ===================== Helpers =====================
+void publishLog(const String& msg){
+  if(!mqtt.connected()) return;
+  // JSON string or plain string both ok
+  mqtt.publish(g_topicLog.c_str(), msg.c_str(), false);
+  Serial.println(msg);
 }
-void handleOptions() { addCORS(); server.send(200); }
 
-// ---- crypto ----
+DeviceItem* findDeviceByKey(const String& key, int &idxOut) {
+  for (int i=0;i<DEVICE_COUNT;i++){
+    if (key == DEVICES[i].key) { idxOut=i; return &DEVICES[i]; }
+  }
+  idxOut=-1;
+  return nullptr;
+}
+
+// ===================== Crypto =====================
 String sha256_hex(const String& data) {
   unsigned char hash[32];
   mbedtls_sha256_context sha;
@@ -279,140 +313,122 @@ bool tuyaSetSwitch(const char* device_id, const char* codeStr, bool on, String& 
   return success;
 }
 
-bool tuyaGetSwitchStatus(const char* device_id, const char* codeStr, bool &outOn, bool &outOnline, String &outErr){
-  outErr = "";
-  if (!tuyaEnsureToken()) { outErr = String("token_failed: ") + g_lastTuyaErr; return false; }
-
-  String path = String("/v1.0/iot-03/devices/") + device_id + "/status";
-
-  int httpCode = 0;
-  String resp;
-  bool okReq = tuyaRequest(false, "GET", path, "", httpCode, resp);
-  if (!okReq) { outErr = g_lastTuyaErr; return false; }
-
-  DynamicJsonDocument doc(8192);
-  if (deserializeJson(doc, resp) != DeserializationError::Ok) { outErr = "status_json_parse_fail"; return false; }
-
-  bool success = doc["success"] | false;
-  if (!success) { outErr = (const char*)(doc["msg"] | "status_fail"); return false; }
-
-  outOnline = true;
-
-  JsonArray result = doc["result"].as<JsonArray>();
-  for (JsonObject it : result){
-    const char* code = it["code"];
-    if (code && String(code) == codeStr){
-      if (it["value"].is<bool>()) outOn = it["value"].as<bool>();
-      else outOn = (it["value"].as<int>() != 0);
-      return true;
-    }
-  }
-  outErr = "code_not_found";
-  return false;
+// ===================== MQTT publish helpers =====================
+String makeNodeId(){
+  uint8_t mac[6];
+  WiFi.macAddress(mac);
+  char buf[32];
+  snprintf(buf, sizeof(buf), "node-%02x%02x%02x%02x%02x%02x",
+           mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+  return String(buf);
 }
 
-DeviceItem* findDeviceByKey(const String& key, int &idxOut) {
-  for (int i=0;i<DEVICE_COUNT;i++){
-    if (key == DEVICES[i].key) { idxOut=i; return &DEVICES[i]; }
-  }
-  idxOut=-1;
-  return nullptr;
+void buildTopics(){
+  g_topicAnnounce = String(TOPIC_ROOT) + "/announce";
+  g_topicDevices  = String(TOPIC_ROOT) + "/" + g_nodeId + "/devices";
+  g_topicLog      = String(TOPIC_ROOT) + "/" + g_nodeId + "/log";
+  g_topicCmdSet   = String(TOPIC_ROOT) + "/" + g_nodeId + "/cmd/set";
+  g_topicCmdGet   = String(TOPIC_ROOT) + "/" + g_nodeId + "/cmd/get";
+  g_topicCmdAll   = String(TOPIC_ROOT) + "/" + g_nodeId + "/cmd/#";
 }
 
-// ---- handlers ----
-void handleHealth(){
-  addCORS();
-  DynamicJsonDocument doc(1024);
-  doc["ok"] = true;
-  doc["ip"] = WiFi.localIP().toString();
+void publishAnnounce(){
+  if(!mqtt.connected()) return;
+  DynamicJsonDocument doc(512);
+  doc["node"] = g_nodeId;
+  doc["ip"]   = WiFi.localIP().toString();
   doc["mdns"] = String(MDNS_NAME) + ".local";
   doc["rssi"] = WiFi.RSSI();
-  doc["q"] = (qt - qh + 12) % 12;
-  time_t now = time(nullptr);
-  doc["epoch"] = (unsigned long)now;
+  doc["t"]    = (unsigned long)time(nullptr);
+
   String out; serializeJson(doc, out);
-  server.send(200, "application/json", out);
+  mqtt.publish(g_topicAnnounce.c_str(), out.c_str(), false);
 }
 
-void handleDevices(){
-  addCORS();
-  DynamicJsonDocument doc(8192);
+void publishDevices(bool retained){
+  if(!mqtt.connected()) return;
+
+  // keep it compact but include needed fields
+  DynamicJsonDocument doc(2048);
   JsonArray arr = doc.createNestedArray("devices");
-  for (int i=0;i<DEVICE_COUNT;i++){
+  for(int i=0;i<DEVICE_COUNT;i++){
     JsonObject d = arr.createNestedObject();
     d["key"] = DEVICES[i].key;
     d["name"]= DEVICES[i].name_kr;
     d["state"]= DEVICES[i].state_cache;
     d["online"]= DEVICES[i].online_cache;
     d["pending"]= DEVICES[i].pending;
-    d["last_ms"]= DEVICES[i].last_ms;
-    if (DEVICES[i].last_err.length()) d["err"] = DEVICES[i].last_err;
   }
+
   String out; serializeJson(doc, out);
-  server.send(200, "application/json", out);
+  mqtt.publish(g_topicDevices.c_str(), out.c_str(), retained);
 }
 
-// /api/set: 큐에 넣고 즉시 응답
-void handleSet(){
-  addCORS();
-  if (!server.hasArg("key") || !server.hasArg("on")){
-    server.send(400, "application/json", "{\"ok\":false,\"msg\":\"missing key/on\"}");
+// ===================== MQTT callback =====================
+void mqttCallback(char* topic, byte* payload, unsigned int length){
+  String t = String(topic);
+  String p;
+  p.reserve(length+4);
+  for(unsigned int i=0;i<length;i++) p += (char)payload[i];
+
+  if(t.endsWith("/cmd/get")){
+    publishDevices(true);
     return;
   }
-  String key = server.arg("key");
-  bool on = (server.arg("on")=="1" || server.arg("on")=="true");
+
+  if(!t.endsWith("/cmd/set")){
+    return;
+  }
+
+  // payload JSON: {"key":"tablet","on":true}
+  String key="";
+  bool on=false;
+
+  DynamicJsonDocument doc(256);
+  DeserializationError err = deserializeJson(doc, p);
+  if(err == DeserializationError::Ok){
+    key = (const char*)(doc["key"] | "");
+    on  = doc["on"] | false;
+  } else {
+    // very small fallback: "tablet=1"
+    int eq = p.indexOf('=');
+    if(eq>0){
+      key = p.substring(0, eq);
+      String v = p.substring(eq+1);
+      on = (v=="1"||v=="true"||v=="on");
+    }
+  }
 
   int idx=-1;
-  DeviceItem* t = findDeviceByKey(key, idx);
-  if (!t){
-    server.send(404, "application/json", "{\"ok\":false,\"msg\":\"unknown device\"}");
-    return;
-  }
+  DeviceItem* d = findDeviceByKey(key, idx);
+  if(!d) return;
 
-  // UI 즉시 반영 (optimistic)
-  t->state_cache = on;
-  t->pending = true;
-  t->online_cache = true;
-  t->last_err = "";
+  // optimistic state/pending for UI
+  d->state_cache = on;
+  d->pending = true;
+  d->online_cache = true;
+  d->last_err = "";
 
   qPushOrReplace(idx, on);
-
-  DynamicJsonDocument doc(768);
-  doc["ok"] = true;
-  doc["queued"] = true;
-  doc["key"] = key;
-  doc["on"] = on;
-  doc["q"] = (qt - qh + 12) % 12;
-  String out; serializeJson(doc, out);
-  server.send(200, "application/json", out);
+  publishDevices(true);
 }
 
-void handleTuyaLast(){
-  addCORS();
-  DynamicJsonDocument doc(8192);
-  doc["last_http"] = g_lastTuyaHttp;
-  doc["last_err"] = g_lastTuyaErr;
-  doc["last_resp"] = g_lastTuyaResp;
-  String out; serializeJson(doc, out);
-  server.send(200, "application/json", out);
-}
-
-// ---- WiFi / time / mdns ----
+// ===================== WiFi / time / mdns =====================
 void connectWiFi(){
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("WiFi connecting");
-  while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print("."); }
+  while(WiFi.status()!=WL_CONNECTED){ delay(500); Serial.print("."); }
   Serial.println();
   Serial.print("IP: "); Serial.println(WiFi.localIP());
 }
 
 void setupTimeNTP(){
-  configTime(9*3600, 0, "pool.ntp.org", "time.nist.gov"); // KST
+  configTime(9*3600, 0, "pool.ntp.org", "time.nist.gov");
   Serial.print("NTP sync");
-  for (int i=0;i<30;i++){
+  for(int i=0;i<30;i++){
     time_t nowSec = time(nullptr);
-    if (nowSec > 1700000000) { Serial.println(". OK"); return; }
+    if(nowSec > 1700000000){ Serial.println(". OK"); return; }
     delay(300); Serial.print(".");
   }
   Serial.println(" (not synced, continue)");
@@ -420,31 +436,35 @@ void setupTimeNTP(){
 
 void setupMDNS(){
   if (!MDNS.begin(MDNS_NAME)) { Serial.println("mDNS start FAILED"); return; }
-  MDNS.addService("http","tcp",80);
   Serial.print("mDNS started: http://"); Serial.print(MDNS_NAME); Serial.println(".local");
 }
 
-void doStatusSyncOne(int idx){
-  DeviceItem &d = DEVICES[idx];
-  if (d.pending) return;
+// ===================== MQTT connect/reconnect =====================
+bool ensureMQTT(){
+  if(mqtt.connected()) return true;
 
-  bool on=false, online=true;
-  String err;
-  uint32_t t0 = millis();
-  bool ok = tuyaGetSwitchStatus(d.device_id, d.code, on, online, err);
-  uint32_t t1 = millis();
-  d.last_ms = (t1 - t0);
+  String cid = g_nodeId + String("-") + String((uint32_t)esp_random(), HEX);
+  Serial.print("[MQTT] connecting...");
+  if(mqtt.connect(cid.c_str())){
+    Serial.println("OK");
+    mqtt.subscribe(g_topicCmdAll.c_str(), 0);
 
-  if (ok){
-    d.state_cache = on;
-    d.online_cache = true;
-    d.last_err = "";
-  } else {
-    d.online_cache = false;
-    d.last_err = err;
+    // announce + retained devices snapshot
+    publishAnnounce();
+    publishDevices(true);
+    delay(200);
+    publishDevices(true);
+
+    publishLog(String("{\"esp\":\"MQTT connected & subscribed: ") + g_topicCmdAll + "\"}");
+    g_lastAnnounceMs = millis();
+    g_lastDevPublishMs = millis();
+    return true;
   }
+  Serial.println("FAIL");
+  return false;
 }
 
+// ===================== Arduino =====================
 void setup(){
   Serial.begin(115200);
   delay(200);
@@ -453,88 +473,71 @@ void setup(){
   setupTimeNTP();
   setupMDNS();
 
-  server.on("/api/health", HTTP_GET, handleHealth);
-  server.on("/api/health", HTTP_OPTIONS, handleOptions);
+  g_nodeId = makeNodeId();
+  buildTopics();
 
-  server.on("/api/devices", HTTP_GET, handleDevices);
-  server.on("/api/devices", HTTP_OPTIONS, handleOptions);
+  mqtt.setServer(MQTT_BROKER, MQTT_PORT);
+  mqtt.setCallback(mqttCallback);
+  mqtt.setBufferSize(4096); // IMPORTANT: allow large JSON payloads (devices list)
 
-  server.on("/api/set", HTTP_GET, handleSet);
-  server.on("/api/set", HTTP_OPTIONS, handleOptions);
-
-  server.on("/api/tuya_last", HTTP_GET, handleTuyaLast);
-  server.on("/api/tuya_last", HTTP_OPTIONS, handleOptions);
-
-  server.onNotFound([](){
-    if (server.method() == HTTP_OPTIONS) handleOptions();
-    else { addCORS(); server.send(404, "text/plain", "Not Found"); }
-  });
-
-  server.begin();
-  Serial.println("Web server started.");
+  ensureMQTT();
 }
 
 void loop(){
-  server.handleClient();
+  // keep MQTT alive
+  ensureMQTT();
+  mqtt.loop();
 
-  // 토큰 워밍업
-  unsigned long now = millis();
-  if (now - g_lastTokenCheckMs > TOKEN_WARMUP_INTERVAL_MS) {
-    g_lastTokenCheckMs = now;
+  // periodic announce
+  unsigned long nowMs = millis();
+  if(mqtt.connected() && (nowMs - g_lastAnnounceMs > ANNOUNCE_INTERVAL_MS)){
+    g_lastAnnounceMs = nowMs;
+    publishAnnounce();
+  }
+
+  // periodic retained devices snapshot
+  if(mqtt.connected() && (nowMs - g_lastDevPublishMs > DEV_PUBLISH_INTERVAL_MS)){
+    g_lastDevPublishMs = nowMs;
+    publishDevices(true);
+  }
+
+  // token warmup
+  if (nowMs - g_lastTokenCheckMs > TOKEN_WARMUP_INTERVAL_MS) {
+    g_lastTokenCheckMs = nowMs;
     unsigned long nowSec = (unsigned long)time(nullptr);
     if (tuya_access_token.length() == 0 || token_expire_epoch < nowSec + 180) {
       tuyaEnsureToken();
     }
   }
 
-  // 1) 명령 큐 처리 (한 번에 1개)
-  if (!qBusy && !qEmpty()){
+  // process 1 cmd at a time (avoid blocking mqtt callback)
+  if(!qBusy && !qEmpty()){
     qBusy = true;
     Cmd c; qPop(c);
 
-    if (c.idx >= 0 && c.idx < DEVICE_COUNT){
+    if(c.idx >= 0 && c.idx < DEVICE_COUNT){
       DeviceItem &d = DEVICES[c.idx];
       String tuyaResp;
 
       uint32_t t0 = millis();
       bool ok = tuyaSetSwitch(d.device_id, d.code, c.on, tuyaResp);
       uint32_t t1 = millis();
-      d.last_ms = (t1 - t0);
+      d.last_cmd_ms = (t1 - t0);
 
-      if (ok){
+      if(ok){
         d.state_cache = c.on;
         d.pending = false;
         d.online_cache = true;
         d.last_err = "";
-
-        // ✅ 명령 직후 빠른 동기화(200ms 뒤 한번)
-        g_forceStatus[c.idx] = true;
-        g_forceDueMs[c.idx] = millis() + 200;
-      } else {
+      }else{
         d.pending = false;
         d.online_cache = false;
         d.last_err = g_lastTuyaErr.length()? g_lastTuyaErr : "set_failed";
       }
+
+      // publish updated snapshot right away
+      publishDevices(true);
     }
     qBusy = false;
-  }
-
-  // 2) 명령 직후 강제 status sync
-  if (!qBusy && qEmpty()){
-    for(int i=0;i<DEVICE_COUNT;i++){
-      if (g_forceStatus[i] && (long)(millis() - g_forceDueMs[i]) >= 0){
-        g_forceStatus[i] = false;
-        doStatusSyncOne(i);
-        break;
-      }
-    }
-  }
-
-  // 3) 라운드로빈 status 폴링 (실시간 표시 안정화)
-  if (!qBusy && qEmpty() && (now - g_lastStatusPollMs > STATUS_POLL_INTERVAL_MS)) {
-    g_lastStatusPollMs = now;
-    int idx = g_statusIdx;
-    g_statusIdx = (g_statusIdx + 1) % DEVICE_COUNT;
-    doStatusSyncOne(idx);
   }
 }
