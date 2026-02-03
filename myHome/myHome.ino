@@ -4,6 +4,7 @@
 #include <HTTPClient.h>
 #include <ESPmDNS.h>
 #include <ArduinoJson.h>
+#include <PubSubClient.h>
 #include <mbedtls/md.h>
 #include <mbedtls/sha256.h>
 
@@ -16,28 +17,39 @@ String TUYA_ENDPOINT  = "https://openapi.tuyaus.com";
 String TUYA_CLIENT_ID = "4q9fg8hve79wxevhgtc4";
 String TUYA_SECRET    = "32a2fc7ed7924b3ea0a1baccbdabfc64";
 
-// ===================== mDNS =====================
+// ===================== mDNS (optional) =====================
 const char* MDNS_NAME = "myhome"; // http://myhome.local
 
+// ===================== MQTT (RELAY) =====================
+// ✅ 브라우저(깃허브)에서 WSS로 붙을 브로커와 "같은 브로커"를 쓰는 게 제일 안전합니다.
+// HiveMQ Cloud 기준: MQTT TLS 8883, WebSocket TLS 8884  :contentReference[oaicite:1]{index=1}
+#define MQTT_HOST       "YOUR_HIVEMQ_CLOUD_HOSTNAME"  // 예: xxxxx.s1.eu.hivemq.cloud
+#define MQTT_PORT_TLS   8883
+#define MQTT_USER       "YOUR_MQTT_USERNAME"
+#define MQTT_PASS       "YOUR_MQTT_PASSWORD"
+
+// 토픽 프리픽스(보안상 추측 어렵게 바꾸세요)
+String TOPIC_PREFIX = "pspiceman/myhome";  // 예: "pspiceman/myhome"
+
+// ===== devices =====
 struct DeviceItem {
   const char* key;
   const char* name_kr;
   const char* device_id;
-  const char* code;          // ex) "switch_1"
-  bool  state_cache;         // last known state (synced from Tuya status)
-  bool  online_cache;        // last known online (best-effort)
-  bool  pending;             // command queued / in-flight
-  uint32_t last_cmd_ms;      // last cmd duration (ms)
-  uint32_t last_sync_ms;     // last status sync time (millis)
+  const char* code;       // "switch_1"
+  bool  state_cache;
+  bool  online_cache;
+  bool  pending;
+  uint32_t last_cmd_ms;
   String last_err;
 };
 
 DeviceItem DEVICES[] = {
-  {"myDesk", "myDesk", "eb622bc2147e960df5e3ez", "switch_1", false, true, false, 0, 0, ""},
-  {"floor",  "장판",   "eb778d36a45024d8d0ymiq", "switch_1", false, true, false, 0, 0, ""},
-  {"tablet", "테블릿", "ebf7ba55e51699856boo3j", "switch_1", false, true, false, 0, 0, ""},
-  {"server", "서버",   "eb07edb5fbddf33dc9xjhb", "switch_1", false, true, false, 0, 0, ""},
-  {"water",  "정수기", "ebe0b0f4ff09a6297e5an3", "switch_1", false, true, false, 0, 0, ""},
+  {"myDesk",   "myDesk",   "eb622bc2147e960df5e3ez", "switch_1", false, true, false, 0, ""},
+  {"floor",    "장판",     "eb778d36a45024d8d0ymiq", "switch_1", false, true, false, 0, ""},
+  {"tablet",   "테블릿",   "ebf7ba55e51699856boo3j", "switch_1", false, true, false, 0, ""},
+  {"server",   "서버",     "eb07edb5fbddf33dc9xjhb", "switch_1", false, true, false, 0, ""},
+  {"water",    "정수기",   "ebe0b0f4ff09a6297e5an3", "switch_1", false, true, false, 0, ""},
 };
 const int DEVICE_COUNT = sizeof(DEVICES) / sizeof(DEVICES[0]);
 
@@ -46,16 +58,16 @@ unsigned long token_expire_epoch = 0;
 
 WebServer server(80);
 
-// debug last tuya
+// ===== debug last tuya =====
 int g_lastTuyaHttp = 0;
 String g_lastTuyaResp = "";
 String g_lastTuyaErr  = "";
 
-// token warmup
+// ===== token warmup =====
 unsigned long g_lastTokenCheckMs = 0;
-const unsigned long TOKEN_WARMUP_INTERVAL_MS = 30000; // 30s
+const unsigned long TOKEN_WARMUP_INTERVAL_MS = 30000;
 
-// ===================== Queue (command) =====================
+// ===================== Queue =====================
 struct Cmd { int idx; bool on; uint32_t enq_ms; };
 Cmd q[12];
 int qh=0, qt=0;
@@ -72,11 +84,12 @@ void qPushOrReplace(int idx, bool on){
       return;
     }
   }
-  if(qFull()) qh = (qh+1)%12;
+  if(qFull()){
+    qh = (qh+1)%12;
+  }
   q[qt] = { idx, on, (uint32_t)millis() };
   qt = (qt+1)%12;
 }
-
 bool qPop(Cmd &out){
   if(qEmpty()) return false;
   out = q[qh];
@@ -84,25 +97,12 @@ bool qPop(Cmd &out){
   return true;
 }
 
-// ===================== Status sync (real-time-ish) =====================
-// - We poll Tuya status in background (one device per tick) so /api/devices reflects real state.
-// - After /api/set, we force extra status polls for that device to quickly converge.
-
-unsigned long g_lastStatusPollMs = 0;
-const unsigned long STATUS_POLL_INTERVAL_MS = 900;  // one device per ~0.9s
-int g_statusIdx = 0;
-
-bool g_forceStatus[DEVICE_COUNT];
-unsigned long g_forceDueMs[DEVICE_COUNT];
-unsigned long g_lastCmdAtMs[DEVICE_COUNT];
-
 // ---- CORS / PNA ----
 void addCORS() {
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   server.sendHeader("Access-Control-Allow-Headers", "*");
   server.sendHeader("Access-Control-Max-Age", "86400");
-  // for Chrome Private Network Access (https page -> http://192.168.x.x)
   server.sendHeader("Access-Control-Allow-Private-Network", "true");
 }
 void handleOptions() { addCORS(); server.send(200); }
@@ -281,57 +281,6 @@ bool tuyaSetSwitch(const char* device_id, const char* codeStr, bool on, String& 
   return success;
 }
 
-bool tuyaGetSwitchStatus(const char* device_id, const char* codeStr, bool &onOut, bool &onlineOut, String &rawResp){
-  if (!tuyaEnsureToken()) { rawResp = String("token_failed: ") + g_lastTuyaErr; return false; }
-
-  String path = String("/v1.0/iot-03/devices/") + device_id + "/status";
-
-  int httpCode = 0;
-  String resp;
-  bool okReq = tuyaRequest(false, "GET", path, "", httpCode, resp);
-  rawResp = resp;
-  if (!okReq || !(httpCode >= 200 && httpCode < 300)) {
-    if(!okReq) return false;
-    g_lastTuyaErr = "status http " + String(httpCode);
-    return false;
-  }
-
-  DynamicJsonDocument doc(8192);
-  if (deserializeJson(doc, resp) != DeserializationError::Ok) { g_lastTuyaErr="status JSON parse failed"; return false; }
-  bool success = doc["success"] | false;
-  if (!success) { g_lastTuyaErr = String("status fail: ") + (const char*)(doc["msg"] | ""); return false; }
-
-  bool found = false;
-  bool onVal = false;
-  bool onlineVal = true;
-
-  JsonArray result = doc["result"].as<JsonArray>();
-  for (JsonObject it : result){
-    const char* c = it["code"] | "";
-    if (!c) continue;
-
-    if (String(c) == String(codeStr)) {
-      // switch value: bool
-      onVal = it["value"] | false;
-      found = true;
-    }
-    // sometimes online appears as code: "online"
-    if (String(c) == "online") {
-      onlineVal = it["value"] | true;
-    }
-  }
-
-  if(!found){
-    // fallback: keep previous
-    g_lastTuyaErr = "status missing code";
-    return false;
-  }
-
-  onOut = onVal;
-  onlineOut = onlineVal;
-  return true;
-}
-
 DeviceItem* findDeviceByKey(const String& key, int &idxOut) {
   for (int i=0;i<DEVICE_COUNT;i++){
     if (key == DEVICES[i].key) { idxOut=i; return &DEVICES[i]; }
@@ -340,36 +289,123 @@ DeviceItem* findDeviceByKey(const String& key, int &idxOut) {
   return nullptr;
 }
 
-// ---- handlers ----
+// ===================== MQTT client (TLS) =====================
+WiFiClientSecure mqttTls;
+PubSubClient mqtt(mqttTls);
+unsigned long lastMqttTryMs = 0;
+
+String tCmdTopic(const String& key){ return TOPIC_PREFIX + "/cmd/" + key; }
+String tStateTopic(const String& key){ return TOPIC_PREFIX + "/state/" + key; }
+String tDevicesTopic(){ return TOPIC_PREFIX + "/devices"; }
+String tOnlineTopic(){ return TOPIC_PREFIX + "/online"; }
+
+void mqttPublishDevices(bool retained=true){
+  DynamicJsonDocument doc(2048);
+  JsonArray arr = doc.createNestedArray("devices");
+  for(int i=0;i<DEVICE_COUNT;i++){
+    JsonObject d = arr.createNestedObject();
+    d["key"] = DEVICES[i].key;
+    d["name"]= DEVICES[i].name_kr;
+    d["state"]= DEVICES[i].state_cache;
+    d["online"]= DEVICES[i].online_cache;
+    d["pending"]= DEVICES[i].pending;
+    if (DEVICES[i].last_err.length()) d["err"]=DEVICES[i].last_err;
+  }
+  String out; serializeJson(doc, out);
+  mqtt.publish(tDevicesTopic().c_str(), out.c_str(), retained);
+}
+
+void mqttPublishState(int idx, bool retained=true){
+  DeviceItem &d = DEVICES[idx];
+  DynamicJsonDocument doc(256);
+  doc["key"] = d.key;
+  doc["state"] = d.state_cache;
+  doc["online"] = d.online_cache;
+  doc["pending"] = d.pending;
+  if (d.last_err.length()) doc["err"] = d.last_err;
+  String out; serializeJson(doc, out);
+  mqtt.publish(tStateTopic(d.key).c_str(), out.c_str(), retained);
+}
+
+void mqttCallback(char* topic, byte* payload, unsigned int len){
+  String t(topic);
+  String p; p.reserve(len+1);
+  for(unsigned int i=0;i<len;i++) p += (char)payload[i];
+
+  // cmd topic: <prefix>/cmd/<key>
+  if (!t.startsWith(TOPIC_PREFIX + "/cmd/")) return;
+  String key = t.substring((TOPIC_PREFIX + "/cmd/").length());
+
+  bool on = false;
+  bool parsed = false;
+
+  // payload can be "1"/"0" or JSON {"on":true}
+  if (p == "1" || p == "0") { on = (p=="1"); parsed=true; }
+  else {
+    DynamicJsonDocument doc(256);
+    if (deserializeJson(doc, p) == DeserializationError::Ok){
+      if (doc.containsKey("on")) { on = doc["on"]; parsed=true; }
+      else if (doc.containsKey("state")) { on = doc["state"]; parsed=true; }
+    }
+  }
+  if(!parsed) return;
+
+  int idx=-1;
+  DeviceItem* d = findDeviceByKey(key, idx);
+  if(!d) return;
+
+  // 큐에 넣기
+  d->pending = true;
+  d->last_err = "";
+  qPushOrReplace(idx, on);
+
+  // “명령 수신 즉시” 상태도 publish (UI가 바로 바뀌게)
+  d->state_cache = on;
+  mqttPublishState(idx, true);
+  mqttPublishDevices(true);
+}
+
+void mqttEnsureConnected(){
+  if (mqtt.connected()) return;
+
+  unsigned long now = millis();
+  if (now - lastMqttTryMs < 3000) return;
+  lastMqttTryMs = now;
+
+  mqtt.setServer(MQTT_HOST, MQTT_PORT_TLS);
+  mqtt.setCallback(mqttCallback);
+
+  mqttTls.setInsecure(); // 간단화(원하면 CA 인증서로 바꿔도 됨)
+
+  String clientId = "esp32-myhome-" + String((uint32_t)ESP.getEfuseMac(), HEX);
+  bool ok = mqtt.connect(clientId.c_str(), MQTT_USER, MQTT_PASS,
+                         tOnlineTopic().c_str(), 1, true, "offline");
+
+  if (ok){
+    mqtt.publish(tOnlineTopic().c_str(), "online", true);
+    // 각 기기 cmd 구독
+    for(int i=0;i<DEVICE_COUNT;i++){
+      mqtt.subscribe(tCmdTopic(DEVICES[i].key).c_str(), 1);
+    }
+    mqttPublishDevices(true);
+  }
+}
+
+// ---- handlers (local UI용도 유지 가능) ----
 void handleHealth(){
   addCORS();
-  DynamicJsonDocument doc(768);
+  DynamicJsonDocument doc(512);
   doc["ok"] = true;
   doc["ip"] = WiFi.localIP().toString();
   doc["mdns"] = String(MDNS_NAME) + ".local";
   doc["rssi"] = WiFi.RSSI();
-  doc["q"] = (qt - qh + 12) % 12;
-  doc["heap"] = ESP.getFreeHeap();
+  doc["mqtt"] = mqtt.connected();
   String out; serializeJson(doc, out);
   server.send(200, "application/json", out);
 }
-
 void handleDevices(){
   addCORS();
-
-  // If caller requests fresh=1, schedule forced status sync soon (non-blocking)
-  if (server.hasArg("fresh")) {
-    unsigned long now = millis();
-    for(int i=0;i<DEVICE_COUNT;i++){
-      g_forceStatus[i] = true;
-      g_forceDueMs[i] = now; // ASAP
-    }
-  }
-
-  DynamicJsonDocument doc(6144);
-  doc["ok"] = true;
-  doc["ts_ms"] = (uint32_t)millis();
-
+  DynamicJsonDocument doc(2048);
   JsonArray arr = doc.createNestedArray("devices");
   for (int i=0;i<DEVICE_COUNT;i++){
     JsonObject d = arr.createNestedObject();
@@ -378,64 +414,41 @@ void handleDevices(){
     d["state"]= DEVICES[i].state_cache;
     d["online"]= DEVICES[i].online_cache;
     d["pending"]= DEVICES[i].pending;
-    d["last_cmd_ms"]= DEVICES[i].last_cmd_ms;
-    d["last_sync_ms"]= DEVICES[i].last_sync_ms;
-    if (DEVICES[i].last_err.length()) d["err"] = DEVICES[i].last_err;
+    if (DEVICES[i].last_err.length()) d["err"]=DEVICES[i].last_err;
   }
   String out; serializeJson(doc, out);
   server.send(200, "application/json", out);
 }
-
-// /api/set : queue only (fast response)
 void handleSet(){
   addCORS();
   if (!server.hasArg("key") || !server.hasArg("on")){
     server.send(400, "application/json", "{\"ok\":false,\"msg\":\"missing key/on\"}");
     return;
   }
-
   String key = server.arg("key");
   bool on = (server.arg("on")=="1" || server.arg("on")=="true");
 
   int idx=-1;
-  DeviceItem* t = findDeviceByKey(key, idx);
-  if (!t){
+  DeviceItem* d = findDeviceByKey(key, idx);
+  if (!d){
     server.send(404, "application/json", "{\"ok\":false,\"msg\":\"unknown device\"}");
     return;
   }
-
-  // optimistic UI: update cache immediately, mark pending
-  t->state_cache = on;
-  t->pending = true;
-  t->online_cache = true;
-  t->last_err = "";
-
+  d->pending = true;
+  d->state_cache = on;
+  d->last_err = "";
   qPushOrReplace(idx, on);
 
-  // after command, we will force status sync (done in loop after cmd)
-  g_lastCmdAtMs[idx] = millis();
+  // mqtt로도 즉시 반영
+  mqttPublishState(idx, true);
+  mqttPublishDevices(true);
 
-  DynamicJsonDocument doc(768);
-  doc["ok"] = true;
-  doc["queued"] = true;
-  doc["key"] = key;
-  doc["on"] = on;
-  doc["q"] = (qt - qh + 12) % 12;
+  DynamicJsonDocument doc(256);
+  doc["ok"]=true; doc["queued"]=true; doc["key"]=key; doc["on"]=on;
   String out; serializeJson(doc, out);
   server.send(200, "application/json", out);
 }
 
-void handleTuyaLast(){
-  addCORS();
-  DynamicJsonDocument doc(8192);
-  doc["last_http"] = g_lastTuyaHttp;
-  doc["last_err"] = g_lastTuyaErr;
-  doc["last_resp"] = g_lastTuyaResp;
-  String out; serializeJson(doc, out);
-  server.send(200, "application/json", out);
-}
-
-// ---- WiFi / time / mdns ----
 void connectWiFi(){
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -466,72 +479,32 @@ void setup(){
   Serial.begin(115200);
   delay(200);
 
-  for(int i=0;i<DEVICE_COUNT;i++){
-    g_forceStatus[i] = true;
-    g_forceDueMs[i] = 0;
-    g_lastCmdAtMs[i] = 0;
-  }
-
   connectWiFi();
   setupTimeNTP();
   setupMDNS();
 
+  // local API(있어도 되고 없어도 됨)
   server.on("/api/health", HTTP_GET, handleHealth);
   server.on("/api/health", HTTP_OPTIONS, handleOptions);
-
   server.on("/api/devices", HTTP_GET, handleDevices);
   server.on("/api/devices", HTTP_OPTIONS, handleOptions);
-
   server.on("/api/set", HTTP_GET, handleSet);
   server.on("/api/set", HTTP_OPTIONS, handleOptions);
-
-  server.on("/api/tuya_last", HTTP_GET, handleTuyaLast);
-  server.on("/api/tuya_last", HTTP_OPTIONS, handleOptions);
-
-  server.onNotFound([](){
-    if (server.method() == HTTP_OPTIONS) handleOptions();
-    else { addCORS(); server.send(404, "text/plain", "Not Found"); }
-  });
-
+  server.onNotFound([](){ if (server.method()==HTTP_OPTIONS) handleOptions();
+    else { addCORS(); server.send(404,"text/plain","Not Found"); }});
   server.begin();
   Serial.println("Web server started.");
-}
 
-// one device status poll (blocking HTTPS, so keep it small & infrequent)
-void pollOneStatus(int idx){
-  if (idx < 0 || idx >= DEVICE_COUNT) return;
-  DeviceItem &d = DEVICES[idx];
-
-  // if just commanded very recently, wait a bit (avoid reading old state immediately)
-  unsigned long now = millis();
-  if (now - g_lastCmdAtMs[idx] < 650) return;
-
-  bool onVal=false, onlineVal=true;
-  String raw;
-  uint32_t t0 = millis();
-  bool ok = tuyaGetSwitchStatus(d.device_id, d.code, onVal, onlineVal, raw);
-  uint32_t t1 = millis();
-
-  if (ok){
-    d.state_cache = onVal;
-    d.online_cache = onlineVal;
-    d.last_err = "";
-    d.last_sync_ms = (uint32_t)millis();
-  } else {
-    // don't flip state_cache here (keep last known), but mark offline/error
-    d.online_cache = false;
-    d.last_err = g_lastTuyaErr.length() ? g_lastTuyaErr : "status_failed";
-    d.last_sync_ms = (uint32_t)millis();
-  }
-
-  // store for debugging
-  g_lastTuyaResp = raw;
-  g_lastTuyaHttp = 200;
-  (void)t0; (void)t1;
+  // MQTT
+  mqttEnsureConnected();
 }
 
 void loop(){
   server.handleClient();
+
+  // mqtt 유지
+  mqttEnsureConnected();
+  mqtt.loop();
 
   // token warmup
   unsigned long now = millis();
@@ -543,11 +516,10 @@ void loop(){
     }
   }
 
-  // 1) process command queue first
+  // 큐 처리: 1개씩 Tuya 명령 수행 → mqtt 상태 publish
   if (!qBusy && !qEmpty()){
     qBusy = true;
     Cmd c; qPop(c);
-
     if (c.idx >= 0 && c.idx < DEVICE_COUNT){
       DeviceItem &d = DEVICES[c.idx];
       String tuyaResp;
@@ -555,50 +527,22 @@ void loop(){
       uint32_t t0 = millis();
       bool ok = tuyaSetSwitch(d.device_id, d.code, c.on, tuyaResp);
       uint32_t t1 = millis();
-
       d.last_cmd_ms = (t1 - t0);
-      d.pending = false;
 
+      d.pending = false;
       if (ok){
+        d.state_cache = c.on;
         d.online_cache = true;
         d.last_err = "";
-        // schedule forced status sync soon (on/off 모두 빠르게 UI/실상태 동기)
-        g_forceStatus[c.idx] = true;
-        g_forceDueMs[c.idx]  = millis() + (c.on ? 650 : 1200); // OFF가 가끔 늦게 반영되는 케이스 보정
       } else {
         d.online_cache = false;
         d.last_err = g_lastTuyaErr.length()? g_lastTuyaErr : "set_failed";
-        // still try a status sync later
-        g_forceStatus[c.idx] = true;
-        g_forceDueMs[c.idx]  = millis() + 2000;
       }
-    }
 
+      // ✅ “결과 확정” publish (UI 실시간 동기화)
+      mqttPublishState(c.idx, true);
+      mqttPublishDevices(true);
+    }
     qBusy = false;
-  }
-
-  // 2) background status sync (non-blocking schedule; actual call is blocking but small)
-  if (!qBusy && qEmpty()){
-    // forced status first
-    unsigned long now2 = millis();
-    for(int k=0;k<DEVICE_COUNT;k++){
-      if (g_forceStatus[k] && now2 >= g_forceDueMs[k]){
-        g_forceStatus[k] = false;
-        pollOneStatus(k);
-        server.handleClient();
-        return;
-      }
-    }
-
-    if (now - g_lastStatusPollMs >= STATUS_POLL_INTERVAL_MS){
-      g_lastStatusPollMs = now;
-      int idx = g_statusIdx++ % DEVICE_COUNT;
-
-      // avoid polling while user is commanding that device (queued)
-      if (!DEVICES[idx].pending){
-        pollOneStatus(idx);
-      }
-      server.handleClient();
-    }
   }
 }
