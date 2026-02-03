@@ -1,8 +1,8 @@
 {
   "name": "My Smart Home",
   "short_name": "MyHome",
-  "start_url": "./myhome.html",
-  "scope": "./",
+  "start_url": "/ESP32/myHome/myhome.html",
+  "scope": "/ESP32/myHome/",
   "display": "standalone",
   "background_color": "#1f7cc6",
   "theme_color": "#1f7cc6",
@@ -17,5 +17,6 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
+  ],
+  "id": "/ESP32/myHome/myhome.html"
 }
