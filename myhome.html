@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <title>My Smart Home</title>
+
+  <!-- PWA / Icons (기존 폴더 그대로 사용) -->
+  <link rel="icon" href="./icons/favicon.ico">
+  <link rel="apple-touch-icon" href="./icons/icon-180x180.png">
+  <link rel="manifest" href="./icons/manifest.json">
+  <meta name="theme-color" content="#1f7cc6">
+
+  <style>
+    :root{
+      --blue1:#1f7cc6; --blue2:#2a8bd6;
+      --bg:#eef3f7; --card:#ffffff; --line:#d9e3ee;
+      --text:#102a43; --muted:#5b7083;
+      --good:#52b66b; --warn:#f0b429; --bad:#e12d39;
+      --shadow:0 10px 22px rgba(16,42,67,.10);
+      --r:12px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;}
+    .wrap{max-width:420px;margin:0 auto;padding-bottom:18px}
+    .top{background:linear-gradient(180deg,var(--blue2),var(--blue1));padding:18px 14px 10px;padding-top:calc(18px + env(safe-area-inset-top));color:#fff;position:sticky;top:0;z-index:10;box-shadow:0 6px 18px rgba(0,0,0,.12);}
+    .topRow{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+    .title{font-size:22px;font-weight:800;letter-spacing:.2px;}
+    .actions{display:flex;gap:10px;align-items:center;}
+    .iconBtn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.10);cursor:pointer;user-select:none;touch-action:manipulation;}
+    .iconBtn:active{transform:scale(.99);opacity:.92}
+    .sub{margin-top:8px;font-size:12px;opacity:.92;}
+    .sub b{font-weight:800}
+
+    .content{padding:12px 12px 0}
+    .statusBar{background:var(--warn);color:#fff;border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);margin-bottom:10px;}
+    .statusDot{width:10px;height:10px;border-radius:999px;background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.18);}
+    .statusText{font-weight:800;font-size:13px}
+    .statusSub{margin-left:auto;font-size:12px;opacity:.95}
+
+    .list{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);}
+    .item{display:flex;align-items:center;gap:10px;padding:12px 12px;border-top:1px solid var(--line);}
+    .item:first-child{border-top:none}
+    .icon{width:34px;height:34px;border-radius:8px;background:#f2f7ff;border:1px solid #e1ecfb;display:grid;place-items:center;flex:0 0 auto;}
+    .name{font-weight:800}
+    .key{font-size:12px;color:var(--muted)}
+    .grow{flex:1;min-width:0}
+    .grow .name,.grow .key{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+    .toggle{display:flex;align-items:center;gap:8px;flex:0 0 auto;user-select:none;touch-action:manipulation;}
+    .pill{width:82px;height:30px;border-radius:999px;background:#e6edf5;border:1px solid #d3dfea;position:relative;display:flex;align-items:center;padding:0 10px;font-weight:900;font-size:12px;color:#6b7f91;cursor:pointer;}
+    .pill.on{background:#2c79d8;border-color:#2c79d8;color:#fff;}
+    .knob{width:24px;height:24px;border-radius:999px;background:#fff;position:absolute;top:2px;left:3px;box-shadow:0 6px 14px rgba(0,0,0,.18);transition:.18s ease;pointer-events:none;}
+    .pill.on .knob{transform:translateX(52px);}
+    .pillText{z-index:1}
+    .pill.on .pillText{margin-left:6px}
+    .pill:not(.on) .pillText{margin-left:auto;margin-right:6px}
+    .pill.disabled{opacity:.55;pointer-events:none;cursor:default;}
+
+    .bottom{display:flex;gap:10px;padding:12px 12px 0;}
+    .btn{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;height:44px;border-radius:10px;border:1px solid var(--line);background:#fff;box-shadow:var(--shadow);font-weight:900;cursor:pointer;user-select:none;touch-action:manipulation;}
+    .btn:active{transform:scale(.99);opacity:.92}
+
+    /* Debug sheet */
+    .backdrop{position:fixed; inset:0;background:rgba(0,0,0,.45);display:none;padding:14px;padding-top:max(14px, env(safe-area-inset-top));padding-bottom:max(14px, env(safe-area-inset-bottom));z-index:100;}
+    .sheet{max-width:520px;margin:0 auto;background:#0f172a;color:#e5e7eb;border-radius:16px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.08);}
+    .sheetHead{padding:12px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid rgba(255,255,255,.08);}
+    .sheetHead .t{font-weight:900}
+    .sheetBtn{border:none;cursor:pointer;padding:9px 10px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10);color:#e5e7eb;font-weight:800;touch-action:manipulation;}
+    pre{margin:0;padding:12px 12px;max-height:60vh;overflow:auto;font-size:12px;line-height:1.45;white-space:pre-wrap;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="topRow">
+      <div class="title">My Smart Home</div>
+      <div class="actions">
+        <div class="iconBtn" id="btnBug" title="Debug log">🐞</div>
+        <div class="iconBtn" id="btnRefresh" title="Reconnect">↻</div>
+      </div>
+    </div>
+    <div class="sub"><b id="connText">Connected Devices</b></div>
+  </div>
+
+  <div class="content">
+    <div class="statusBar" id="statusBar">
+      <div class="statusDot"></div>
+      <div class="statusText" id="statusText">Connecting…</div>
+      <div class="statusSub" id="statusSub">—</div>
+    </div>
+
+    <div class="list" id="list"></div>
+
+    <div class="bottom">
+      <div class="btn" id="btnLogout">Logout</div>
+    </div>
+  </div>
+</div>
+
+<div class="backdrop" id="backdrop">
+  <div class="sheet">
+    <div class="sheetHead">
+      <div class="t">Debug log</div>
+      <div style="display:flex;gap:8px">
+        <button class="sheetBtn" id="btnCopy">Copy</button>
+        <button class="sheetBtn" id="btnClear">Clear</button>
+        <button class="sheetBtn" id="btnClose">Close</button>
+      </div>
+    </div>
+    <pre id="logView">ready.</pre>
+  </div>
+</div>
+
+<!-- MQTT.js (browser) -->
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+
+  // ===================== CONFIG =====================
+  // ✅ ESP32(ino)와 동일하게 맞추세요
+  const TOPIC_PREFIX = "pspiceman/myhome";
+
+  // ✅ HiveMQ Cloud 예시: wss://<host>:8884/mqtt  :contentReference[oaicite:2]{index=2}
+  const MQTT_WSS_URL  = "wss://YOUR_HIVEMQ_CLOUD_HOSTNAME:8884/mqtt";
+  const MQTT_USER     = "YOUR_MQTT_USERNAME";
+  const MQTT_PASS     = "YOUR_MQTT_PASSWORD";
+
+  // ===================== UI =====================
+  const connText = $("connText");
+  const statusText = $("statusText");
+  const statusSub  = $("statusSub");
+  const statusBar  = $("statusBar");
+  const list = $("list");
+
+  const btnBug = $("btnBug");
+  const btnRefresh = $("btnRefresh");
+  const btnLogout = $("btnLogout");
+
+  const backdrop = $("backdrop");
+  const logView = $("logView");
+  const btnClose = $("btnClose");
+  const btnCopy = $("btnCopy");
+  const btnClear = $("btnClear");
+
+  function setBar(kind){
+    statusBar.style.background =
+      kind==="good" ? "var(--good)" :
+      kind==="warn" ? "var(--warn)" : "var(--bad)";
+  }
+  function setStatus(main, sub, kind="warn"){
+    statusText.textContent = main;
+    statusSub.textContent = sub || "—";
+    setBar(kind);
+  }
+
+  // ===================== LOG =====================
+  let logs = [];
+  const MAX_LOG = 260;
+  function log(line, obj){
+    const ts = new Date().toLocaleTimeString();
+    let s = `[${ts}] ${line}`;
+    if (obj !== undefined){
+      try { s += "\n" + JSON.stringify(obj, null, 2); }
+      catch { s += "\n" + String(obj); }
+    }
+    logs.unshift(s);
+    logs = logs.slice(0, MAX_LOG);
+    logView.textContent = logs.join("\n\n");
+  }
+
+  btnBug.addEventListener("click", ()=> backdrop.style.display="block");
+  btnClose.addEventListener("click", ()=> backdrop.style.display="none");
+  backdrop.addEventListener("click", (e)=>{ if(e.target===backdrop) backdrop.style.display="none"; });
+  btnClear.addEventListener("click", ()=>{ logs=[]; logView.textContent="cleared."; });
+  btnCopy.addEventListener("click", async ()=>{
+    try{ await navigator.clipboard.writeText(logView.textContent||""); log("copied"); }
+    catch(e){ log("copy failed", String(e)); }
+  });
+
+  // ===================== DEVICES STATE =====================
+  const iconFor = (key)=>{
+    if (key==="myDesk") return "🛠️";
+    if (key==="floor")  return "🔥";
+    if (key==="tablet") return "📱";
+    if (key==="server") return "🖥️";
+    if (key==="water")  return "🚰";
+    return "🔌";
+  };
+  const esc = (s)=> String(s).replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+
+  let devices = [];              // [{key,name,state,online,pending,err}]
+  let stateByKey = {};           // quick map
+  let loggedOut = false;
+
+  function render(){
+    list.innerHTML = "";
+    if (!devices.length){
+      const row = document.createElement("div");
+      row.className = "item";
+      row.innerHTML = `
+        <div class="icon">ℹ️</div>
+        <div class="grow">
+          <div class="name">No devices</div>
+          <div class="key">MQTT 연결 후 자동 표시</div>
+        </div>
+        <div class="toggle">
+          <div class="pill disabled"><span class="pillText">—</span><span class="knob"></span></div>
+        </div>`;
+      list.appendChild(row);
+      return;
+    }
+
+    devices.forEach(d=>{
+      const on = !!d.state;
+      const online = (d.online !== false);
+      const pending = !!d.pending;
+      const disabled = loggedOut || !online || pending;
+
+      const row = document.createElement("div");
+      row.className = "item";
+      row.innerHTML = `
+        <div class="icon">${iconFor(d.key)}</div>
+        <div class="grow">
+          <div class="name">${esc(d.name)}</div>
+          <div class="key">${esc(d.key)}${pending?" · pending…":""}${d.err?(" · "+esc(d.err)):""}</div>
+        </div>
+      `;
+
+      const pill = document.createElement("div");
+      pill.className = "pill" + (on?" on":"") + (disabled?" disabled":"");
+      pill.innerHTML = `<span class="pillText">${on?"ON":"OFF"}</span><span class="knob"></span>`;
+
+      pill.addEventListener("click", ()=>{
+        if (disabled) return;
+        const next = !on;
+
+        // optimistic
+        d.state = next;
+        d.pending = true;
+        render();
+
+        publishCmd(d.key, next);
+      });
+
+      const toggle = document.createElement("div");
+      toggle.className="toggle";
+      toggle.appendChild(pill);
+      row.appendChild(toggle);
+      list.appendChild(row);
+    });
+  }
+
+  // ===================== MQTT =====================
+  let client = null;
+
+  const tCmd    = (key)=> `${TOPIC_PREFIX}/cmd/${key}`;
+  const tState  = (key)=> `${TOPIC_PREFIX}/state/${key}`;
+  const tStates = ()=> `${TOPIC_PREFIX}/state/#`;
+  const tDevs   = ()=> `${TOPIC_PREFIX}/devices`;
+  const tOnline = ()=> `${TOPIC_PREFIX}/online`;
+
+  function connectMqtt(){
+    if (client) { try{ client.end(true); }catch{} client=null; }
+
+    setStatus("Connecting…", "MQTT", "warn");
+    log("mqtt connect", { url: MQTT_WSS_URL });
+
+    client = mqtt.connect(MQTT_WSS_URL, {
+      username: MQTT_USER,
+      password: MQTT_PASS,
+      clean: true,
+      reconnectPeriod: 1500,
+      connectTimeout: 8000,
+      keepalive: 25,
+      clientId: "web-myhome-" + Math.random().toString(16).slice(2),
+    });
+
+    client.on("connect", ()=>{
+      log("mqtt connected");
+      setStatus("Connected", "MQTT OK", "good");
+      connText.textContent = "Connected Devices";
+
+      client.subscribe([tDevs(), tStates(), tOnline()], { qos: 1 }, (err)=>{
+        if (err) log("subscribe err", String(err));
+        else log("subscribed", { devices:tDevs(), states:tStates(), online:tOnline() });
+      });
+    });
+
+    client.on("reconnect", ()=>{ setStatus("Connecting…", "reconnecting", "warn"); log("mqtt reconnect"); });
+    client.on("close", ()=>{ setStatus("Disconnected", "MQTT closed", "bad"); log("mqtt close"); });
+    client.on("error", (e)=>{ setStatus("Disconnected", "MQTT error", "bad"); log("mqtt error", String(e)); });
+
+    client.on("message", (topic, payload)=>{
+      const msg = payload.toString();
+      // devices list
+      if (topic === tDevs()){
+        try{
+          const j = JSON.parse(msg);
+          if (Array.isArray(j.devices)){
+            devices = j.devices;
+            stateByKey = {};
+            devices.forEach(d=> stateByKey[d.key]=d);
+            render();
+            return;
+          }
+        }catch(e){ log("devices parse err", String(e)); }
+      }
+
+      // per-device state
+      if (topic.startsWith(`${TOPIC_PREFIX}/state/`)){
+        try{
+          const j = JSON.parse(msg);
+          if (j && j.key){
+            // map update
+            const cur = stateByKey[j.key];
+            if (cur){
+              Object.assign(cur, {
+                state: !!j.state,
+                online: (j.online !== false),
+                pending: !!j.pending,
+                err: j.err || ""
+              });
+            } else {
+              stateByKey[j.key] = { key:j.key, name:j.key, state:!!j.state, online:(j.online!==false), pending:!!j.pending, err:j.err||"" };
+              devices = Object.values(stateByKey);
+            }
+            render();
+            return;
+          }
+        }catch(e){ /* ignore */ }
+      }
+
+      if (topic === tOnline()){
+        log("esp online", msg);
+      }
+    });
+  }
+
+  function publishCmd(key, on){
+    if (!client || !client.connected){
+      setStatus("Disconnected", "MQTT not connected", "bad");
+      log("publish blocked", { key, on, reason:"not connected" });
+      // revert pending 표시만 풀어주기
+      const cur = stateByKey[key];
+      if (cur){ cur.pending=false; render(); }
+      return;
+    }
+    setStatus("Sending…", `${key} → ${on?"ON":"OFF"}`, "warn");
+    const payload = JSON.stringify({ on: !!on, t: Date.now() });
+    client.publish(tCmd(key), payload, { qos: 1, retain: false }, (err)=>{
+      if (err){
+        setStatus("Command Failed", "publish error", "bad");
+        log("publish err", String(err));
+      } else {
+        setStatus("Command Sent", new Date().toLocaleTimeString(), "good");
+        log("publish ok", { topic: tCmd(key), payload: JSON.parse(payload) });
+      }
+    });
+  }
+
+  // ===================== Buttons =====================
+  btnRefresh.addEventListener("click", ()=>{
+    loggedOut = false;
+    connectMqtt();
+  });
+
+  btnLogout.addEventListener("click", ()=>{
+    loggedOut = true;
+    try{ if(client) client.end(true); }catch{}
+    client=null;
+    devices=[]; stateByKey={};
+    render();
+    setStatus("Logged out", "Tap ↻ to reconnect", "warn");
+    log("logout");
+  });
+
+  // Boot
+  log("boot", { github:true, mode:"MQTT relay only", prefix:TOPIC_PREFIX });
+  render();
+  connectMqtt();
+})();
+</script>
+</body>
+</html>
