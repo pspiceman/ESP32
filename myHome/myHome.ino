@@ -339,7 +339,7 @@ void publishAnnounce(){
   doc["rssi"]=WiFi.RSSI();
   doc["t"]=(unsigned long)time(nullptr);
   String out; serializeJson(doc,out);
-  mqtt.publish(g_topicAnnounce.c_str(), out.c_str(), false);
+  mqtt.publish(g_topicAnnounce.c_str(), out.c_str(), true);  // retained=true
 }
 
 void publishDevices(bool retained){
