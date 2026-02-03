@@ -19,7 +19,6 @@
       --blue1:#1f7cc6; --blue2:#2a8bd6;
       --bg:#eef3f7; --card:#ffffff; --line:#d9e3ee;
       --text:#102a43; --muted:#5b7083;
-      --good:#52b66b; --warn:#f0b429; --bad:#e12d39;
       --shadow:0 10px 22px rgba(16,42,67,.10);
       --r:12px;
     }
@@ -57,7 +56,7 @@
     .content{padding:12px}
 
     .statusBar{
-      background:var(--warn);
+      background:#f0b429;
       color:#fff;
       border-radius:8px;
       padding:10px 12px;
@@ -113,7 +112,7 @@
       display:flex;
       align-items:center;
 
-      /* 기본(OFF)은 오른쪽 정렬 */
+      /* OFF는 오른쪽 */
       justify-content:flex-end;
 
       padding:0 10px;
@@ -127,24 +126,13 @@
       border-color:#2c79d8;
       color:#fff;
 
-      /* ON은 왼쪽 정렬 */
+      /* ON은 왼쪽 */
       justify-content:flex-start;
     }
 
-    .pillLabel{
-      width:100%;
-      pointer-events:none;
-    }
-    /* OFF일 때 글자 오른쪽 */
-    .pill:not(.on) .pillLabel{
-      text-align:right;
-      padding-right:2px;
-    }
-    /* ON일 때 글자 왼쪽 */
-    .pill.on .pillLabel{
-      text-align:left;
-      padding-left:2px;
-    }
+    .pillLabel{width:100%;pointer-events:none;}
+    .pill:not(.on) .pillLabel{ text-align:right; padding-right:2px; }
+    .pill.on .pillLabel{ text-align:left; padding-left:2px; }
 
     .knob{
       width:24px;height:24px;
@@ -156,9 +144,7 @@
       transition:.18s ease;
       pointer-events:none;
     }
-    .pill.on .knob{
-      transform:translateX(52px);
-    }
+    .pill.on .knob{ transform:translateX(52px); }
 
     /* Debug log sheet */
     .backdrop{
@@ -236,10 +222,11 @@
 
 <script>
 (() => {
-
   /* ================= MQTT CONFIG ================= */
   const ROOT = "pspiceman/myhome";
   const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
+
+  const LS_NODE_KEY = "myhome:lastNode";
 
   let client = null;
   let currentNode = null;
@@ -259,12 +246,10 @@
     if(obj) line += "\n" + JSON.stringify(obj,null,2);
     logView.textContent = line + "\n\n" + logView.textContent;
   }
-
   function setStatus(main,sub){
     statusText.textContent = main;
     statusSub.textContent = sub || "—";
   }
-
   function iconFor(key){
     if(key==="myDesk") return "🛠️";
     if(key==="floor") return "🔥";
@@ -284,7 +269,7 @@
           <div class="icon">ℹ️</div>
           <div class="grow">
             <div class="name">Waiting devices...</div>
-            <div class="key">ESP32 announce/devices 수신 대기</div>
+            <div class="key">MQTT retained devices 수신 대기</div>
           </div>
         </div>`;
       return;
@@ -301,12 +286,7 @@
       pill.onclick=()=>{
         if(!currentNode) return;
         const next = !d.state;
-
-        client.publish(
-          `${ROOT}/${currentNode}/cmd/set`,
-          JSON.stringify({key:d.key,on:next})
-        );
-
+        client.publish(`${ROOT}/${currentNode}/cmd/set`, JSON.stringify({key:d.key,on:next}));
         log("CMD sent",{key:d.key,on:next});
       };
 
@@ -322,36 +302,84 @@
     });
   }
 
+  /* ================= NODE PICK ================= */
+  function pickNode(node){
+    if(!node) return;
+    if(currentNode === node) return;
+    currentNode = node;
+    localStorage.setItem(LS_NODE_KEY, node);
+    log("use node",{node});
+    setStatus("MQTT Connected", `node: ${node}`);
+    // (옵션) ESP가 지원하면 즉시 요청
+    client.publish(`${ROOT}/${currentNode}/cmd/get`, JSON.stringify({t:Date.now()}));
+  }
+
   /* ================= MQTT CONNECT ================= */
   function connectMQTT(){
-    client = mqtt.connect(MQTT_URL);
+    const savedNode = localStorage.getItem(LS_NODE_KEY);
+    if(savedNode) currentNode = savedNode;
+
+    client = mqtt.connect(MQTT_URL, {
+      clean: true,
+      reconnectPeriod: 1500,
+      keepalive: 25,
+      connectTimeout: 8000
+    });
 
     client.on("connect",()=>{
       connText.textContent="Connected to Devices";
-      setStatus("MQTT Connected","waiting announce...");
-      log("mqtt connected");
+      setStatus("MQTT Connected", "loading retained devices...");
+      log("mqtt connected",{root:ROOT});
 
+      // ✅ 핵심: announce 기다리지 않고, 바로 모든 node의 devices를 구독
+      client.subscribe(`${ROOT}/+/devices`);
+      // announce는 있어도 되고 없어도 됨(보조)
       client.subscribe(`${ROOT}/announce`);
+
+      // 저장된 node가 있으면 즉시 get 요청(있어도 retained가 더 빠름)
+      if(currentNode){
+        client.publish(`${ROOT}/${currentNode}/cmd/get`, JSON.stringify({t:Date.now()}));
+        setStatus("MQTT Connected", `node: ${currentNode} (saved)`);
+      }
     });
 
     client.on("message",(topic,payload)=>{
       const msg = payload.toString();
 
-      if(topic===`${ROOT}/announce`){
-        const data = JSON.parse(msg);
-        currentNode = data.node;
-        log("node found",data);
-
-        client.subscribe(`${ROOT}/${currentNode}/devices`);
-        client.publish(`${ROOT}/${currentNode}/cmd/get`, JSON.stringify({t:Date.now()}));
+      // announce는 보조로 node 찾기 (retained가 아니면 늦을 수 있음)
+      if(topic === `${ROOT}/announce`){
+        try{
+          const data = JSON.parse(msg);
+          if(!currentNode) pickNode(data.node);
+          log("announce",data);
+        }catch(e){}
         return;
       }
 
-      if(currentNode && topic===`${ROOT}/${currentNode}/devices`){
-        const data = JSON.parse(msg);
-        devices = data.devices || [];
-        render();
-        log("devices updated",{count:devices.length});
+      // ✅ devices: ROOT/{node}/devices 형태에서 node를 뽑아온다
+      // topic 예: pspiceman/myhome/node-xxxx/devices
+      const parts = topic.split("/");
+      if(parts.length >= 4 && parts[0]===ROOT.split("/")[0] && parts[1]===ROOT.split("/")[1] && parts[3]==="devices"){
+        const node = parts[2];
+
+        // savedNode가 있으면 그 node 우선, 없으면 첫 수신 node 채택
+        if(!currentNode) pickNode(node);
+
+        // currentNode와 같은 node에서 온 devices만 화면에 적용 (혼선 방지)
+        if(node === currentNode){
+          try{
+            const data = JSON.parse(msg);
+            devices = data.devices || [];
+            render();
+            log("devices updated",{node, count:devices.length});
+            setStatus("MQTT Connected", `node: ${currentNode}`);
+          }catch(e){
+            log("devices parse err", String(e));
+          }
+        }else{
+          // 다른 node의 devices도 들어오긴 함(멀티 노드 대비). 로그만 남김
+          log("devices from other node", {node});
+        }
       }
     });
 
@@ -367,16 +395,13 @@
   }
 
   /* ================= LOG PANEL ================= */
-  document.getElementById("btnBug").onclick=()=>{
-    backdrop.style.display="block";
-  };
+  document.getElementById("btnBug").onclick=()=>{ backdrop.style.display="block"; };
   window.closeLog=()=>{ backdrop.style.display="none"; };
 
   /* ================= START ================= */
-  log("boot",{github:true,mode:"MQTT ONLY"});
+  log("boot",{github:true,mode:"MQTT ONLY (fast devices subscribe)"});
   render();
   connectMQTT();
-
 })();
 </script>
 </body>
