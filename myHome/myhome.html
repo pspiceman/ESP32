@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
   <title>My Smart Home</title>
 
-  <!-- PWA / Icons (기존 폴더 그대로 사용) -->
   <link rel="icon" href="./icons/favicon.ico">
   <link rel="apple-touch-icon" href="./icons/icon-180x180.png">
   <link rel="manifest" href="./icons/manifest.json">
@@ -61,7 +60,6 @@
     .btn{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;height:44px;border-radius:10px;border:1px solid var(--line);background:#fff;box-shadow:var(--shadow);font-weight:900;cursor:pointer;user-select:none;touch-action:manipulation;}
     .btn:active{transform:scale(.99);opacity:.92}
 
-    /* Debug sheet */
     .backdrop{position:fixed; inset:0;background:rgba(0,0,0,.45);display:none;padding:14px;padding-top:max(14px, env(safe-area-inset-top));padding-bottom:max(14px, env(safe-area-inset-bottom));z-index:100;}
     .sheet{max-width:520px;margin:0 auto;background:#0f172a;color:#e5e7eb;border-radius:16px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.08);}
     .sheetHead{padding:12px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid rgba(255,255,255,.08);}
@@ -112,21 +110,20 @@
   </div>
 </div>
 
-<!-- MQTT.js (browser) -->
+<!-- MQTT.js -->
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
 
-  // ===================== CONFIG =====================
-  // ✅ ESP32(ino)와 동일하게 맞추세요
-  const TOPIC_PREFIX = "pspiceman/myhome";
+  // ===================== MQTT (Public broker) =====================
+  // Browser must use WebSocket: wss://broker.hivemq.com:8884/mqtt
+  const MQTT_WSS_URL  = "wss://broker.hivemq.com:8884/mqtt";
 
-  // ✅ HiveMQ Cloud 예시: wss://<host>:8884/mqtt  :contentReference[oaicite:2]{index=2}
-  const MQTT_WSS_URL  = "wss://YOUR_HIVEMQ_CLOUD_HOSTNAME:8884/mqtt";
-  const MQTT_USER     = "YOUR_MQTT_USERNAME";
-  const MQTT_PASS     = "YOUR_MQTT_PASSWORD";
+  // Root must match ESP32 sketch
+  const TOPIC_ROOT = "pspiceman/myhome";
+  const tAnnounce = () => `${TOPIC_ROOT}/announce`;
 
   // ===================== UI =====================
   const connText = $("connText");
@@ -180,7 +177,7 @@
     catch(e){ log("copy failed", String(e)); }
   });
 
-  // ===================== DEVICES STATE =====================
+  // ===================== DEVICES =====================
   const iconFor = (key)=>{
     if (key==="myDesk") return "🛠️";
     if (key==="floor")  return "🔥";
@@ -191,9 +188,18 @@
   };
   const esc = (s)=> String(s).replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
 
-  let devices = [];              // [{key,name,state,online,pending,err}]
-  let stateByKey = {};           // quick map
+  let devices = [];
+  let stateByKey = {};
   let loggedOut = false;
+
+  // selected node
+  let NODE = localStorage.getItem("MYHOME_NODE") || "";
+  function tNodeRoot(){ return `${TOPIC_ROOT}/${NODE}`; }
+  function tOnline(){ return `${tNodeRoot()}/online`; }
+  function tDevices(){ return `${tNodeRoot()}/devices`; }
+  function tStateAll(){ return `${tNodeRoot()}/state/#`; }
+  function tCmd(key){ return `${tNodeRoot()}/cmd/${key}`; }
+  function tLog(){ return `${tNodeRoot()}/log`; }
 
   function render(){
     list.innerHTML = "";
@@ -203,12 +209,11 @@
       row.innerHTML = `
         <div class="icon">ℹ️</div>
         <div class="grow">
-          <div class="name">No devices</div>
-          <div class="key">MQTT 연결 후 자동 표시</div>
+          <div class="name">${NODE? "Waiting devices…" : "Waiting ESP32…"}</div>
+          <div class="key">${NODE? "MQTT subscribed": "ESP32 announce 수신 후 자동 연결"}</div>
         </div>
-        <div class="toggle">
-          <div class="pill disabled"><span class="pillText">—</span><span class="knob"></span></div>
-        </div>`;
+        <div class="toggle"><div class="pill disabled"><span class="pillText">—</span><span class="knob"></span></div></div>
+      `;
       list.appendChild(row);
       return;
     }
@@ -255,22 +260,28 @@
 
   // ===================== MQTT =====================
   let client = null;
+  let subbedNode = false;
 
-  const tCmd    = (key)=> `${TOPIC_PREFIX}/cmd/${key}`;
-  const tState  = (key)=> `${TOPIC_PREFIX}/state/${key}`;
-  const tStates = ()=> `${TOPIC_PREFIX}/state/#`;
-  const tDevs   = ()=> `${TOPIC_PREFIX}/devices`;
-  const tOnline = ()=> `${TOPIC_PREFIX}/online`;
+  function subscribeNodeTopics(){
+    if(!client || !client.connected || !NODE || subbedNode) return;
+    subbedNode = true;
+
+    client.subscribe([tOnline(), tDevices(), tStateAll(), tLog()], { qos: 1 }, (err)=>{
+      if (err) log("subscribe node err", String(err));
+      else log("subscribed node", { node:NODE });
+    });
+
+    connText.textContent = "Connected Devices";
+    setStatus("Connected", `node=${NODE}`, "good");
+  }
 
   function connectMqtt(){
-    if (client) { try{ client.end(true); }catch{} client=null; }
+    if (client) { try{ client.end(true); }catch{} client=null; subbedNode=false; }
 
     setStatus("Connecting…", "MQTT", "warn");
-    log("mqtt connect", { url: MQTT_WSS_URL });
+    log("mqtt connect", { url: MQTT_WSS_URL, root: TOPIC_ROOT });
 
     client = mqtt.connect(MQTT_WSS_URL, {
-      username: MQTT_USER,
-      password: MQTT_PASS,
       clean: true,
       reconnectPeriod: 1500,
       connectTimeout: 8000,
@@ -280,13 +291,14 @@
 
     client.on("connect", ()=>{
       log("mqtt connected");
-      setStatus("Connected", "MQTT OK", "good");
-      connText.textContent = "Connected Devices";
+      setStatus("Connected", "waiting ESP32…", "warn");
 
-      client.subscribe([tDevs(), tStates(), tOnline()], { qos: 1 }, (err)=>{
-        if (err) log("subscribe err", String(err));
-        else log("subscribed", { devices:tDevs(), states:tStates(), online:tOnline() });
+      client.subscribe([tAnnounce()], { qos: 1 }, (err)=>{
+        if (err) log("subscribe announce err", String(err));
+        else log("subscribed announce", { topic:tAnnounce() });
       });
+
+      if(NODE) subscribeNodeTopics();
     });
 
     client.on("reconnect", ()=>{ setStatus("Connecting…", "reconnecting", "warn"); log("mqtt reconnect"); });
@@ -295,11 +307,50 @@
 
     client.on("message", (topic, payload)=>{
       const msg = payload.toString();
-      // devices list
-      if (topic === tDevs()){
+
+      // announce: choose node automatically (latest online)
+      if (topic === tAnnounce()){
         try{
           const j = JSON.parse(msg);
-          if (Array.isArray(j.devices)){
+          if (j && j.node){
+            // If no node selected, pick it
+            if(!NODE){
+              NODE = j.node;
+              localStorage.setItem("MYHOME_NODE", NODE);
+              subbedNode = false;
+              log("use node", j);
+              subscribeNodeTopics();
+            }
+            // if already selected, ignore others
+          }
+        }catch(e){}
+        return;
+      }
+
+      if(!NODE) return;
+
+      // online
+      if(topic === tOnline()){
+        const v = msg.trim();
+        if(v === "online"){
+          setStatus("Connected", `node=${NODE}`, "good");
+        } else {
+          setStatus("Disconnected", "ESP32 offline", "bad");
+        }
+        return;
+      }
+
+      // log passthrough
+      if(topic === tLog()){
+        log("(esp)", msg);
+        return;
+      }
+
+      // devices list
+      if(topic === tDevices()){
+        try{
+          const j = JSON.parse(msg);
+          if (j && Array.isArray(j.devices)){
             devices = j.devices;
             stateByKey = {};
             devices.forEach(d=> stateByKey[d.key]=d);
@@ -310,40 +361,24 @@
       }
 
       // per-device state
-      if (topic.startsWith(`${TOPIC_PREFIX}/state/`)){
+      if (topic.startsWith(`${tNodeRoot()}/state/`)){
         try{
           const j = JSON.parse(msg);
           if (j && j.key){
-            // map update
             const cur = stateByKey[j.key];
-            if (cur){
-              Object.assign(cur, {
-                state: !!j.state,
-                online: (j.online !== false),
-                pending: !!j.pending,
-                err: j.err || ""
-              });
-            } else {
-              stateByKey[j.key] = { key:j.key, name:j.key, state:!!j.state, online:(j.online!==false), pending:!!j.pending, err:j.err||"" };
-              devices = Object.values(stateByKey);
-            }
+            if (cur) Object.assign(cur, { state:!!j.state, online:(j.online!==false), pending:!!j.pending, err:j.err||"" });
             render();
             return;
           }
-        }catch(e){ /* ignore */ }
-      }
-
-      if (topic === tOnline()){
-        log("esp online", msg);
+        }catch(e){}
       }
     });
   }
 
   function publishCmd(key, on){
-    if (!client || !client.connected){
-      setStatus("Disconnected", "MQTT not connected", "bad");
-      log("publish blocked", { key, on, reason:"not connected" });
-      // revert pending 표시만 풀어주기
+    if (!client || !client.connected || !NODE){
+      setStatus("Disconnected", "MQTT not ready", "bad");
+      log("publish blocked", { key, on, reason:"not ready" });
       const cur = stateByKey[key];
       if (cur){ cur.pending=false; render(); }
       return;
@@ -378,7 +413,7 @@
   });
 
   // Boot
-  log("boot", { github:true, mode:"MQTT relay only", prefix:TOPIC_PREFIX });
+  log("boot", { github:true, mode:"MQTT relay (public broker)", root:TOPIC_ROOT, node:NODE||null });
   render();
   connectMqtt();
 })();
