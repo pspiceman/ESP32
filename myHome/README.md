@@ -20,3 +20,7 @@ If it fails, press Refresh.
 ## Note (GitHub Pages path)
 manifest.json is configured for /ESP32/myHome/.
 If you move folders, update icons/manifest.json start_url + scope.
+
+https://developer.tuya.com/en/
+baekdc@naver.com
+1700note//

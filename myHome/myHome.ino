@@ -1,7 +1,3 @@
-/*
-https://platform.tuya.com/
-baekdc@naver.com -> 1700note//
-*/
 #include <WiFi.h>
 #include <WebServer.h>
 #include <WiFiClientSecure.h>
@@ -27,20 +23,21 @@ struct DeviceItem {
   const char* key;
   const char* name_kr;
   const char* device_id;
-  const char* code;       // "switch_1"
-  bool  state_cache;
-  bool  online_cache;
-  bool  pending;
-  uint32_t last_ms;
+  const char* code;          // ex) "switch_1"
+  bool  state_cache;         // last known state (synced from Tuya status)
+  bool  online_cache;        // last known online (best-effort)
+  bool  pending;             // command queued / in-flight
+  uint32_t last_cmd_ms;      // last cmd duration (ms)
+  uint32_t last_sync_ms;     // last status sync time (millis)
   String last_err;
 };
 
 DeviceItem DEVICES[] = {
-  {"myDesk", "myDesk", "eb622bc2147e960df5e3ez", "switch_1", false, true, false, 0, ""},
-  {"floor",  "장판",   "eb778d36a45024d8d0ymiq", "switch_1", false, true, false, 0, ""},
-  {"tablet", "테블릿", "ebf7ba55e51699856boo3j", "switch_1", false, true, false, 0, ""},
-  {"server", "서버",   "eb07edb5fbddf33dc9xjhb", "switch_1", false, true, false, 0, ""},
-  {"water",  "정수기", "ebe0b0f4ff09a6297e5an3", "switch_1", false, true, false, 0, ""},
+  {"myDesk", "myDesk", "eb622bc2147e960df5e3ez", "switch_1", false, true, false, 0, 0, ""},
+  {"floor",  "장판",   "eb778d36a45024d8d0ymiq", "switch_1", false, true, false, 0, 0, ""},
+  {"tablet", "테블릿", "ebf7ba55e51699856boo3j", "switch_1", false, true, false, 0, 0, ""},
+  {"server", "서버",   "eb07edb5fbddf33dc9xjhb", "switch_1", false, true, false, 0, 0, ""},
+  {"water",  "정수기", "ebe0b0f4ff09a6297e5an3", "switch_1", false, true, false, 0, 0, ""},
 };
 const int DEVICE_COUNT = sizeof(DEVICES) / sizeof(DEVICES[0]);
 
@@ -49,14 +46,14 @@ unsigned long token_expire_epoch = 0;
 
 WebServer server(80);
 
-// debug
+// debug last tuya
 int g_lastTuyaHttp = 0;
 String g_lastTuyaResp = "";
 String g_lastTuyaErr  = "";
 
 // token warmup
 unsigned long g_lastTokenCheckMs = 0;
-const unsigned long TOKEN_WARMUP_INTERVAL_MS = 30000;
+const unsigned long TOKEN_WARMUP_INTERVAL_MS = 30000; // 30s
 
 // ===================== Queue (command) =====================
 struct Cmd { int idx; bool on; uint32_t enq_ms; };
@@ -87,13 +84,17 @@ bool qPop(Cmd &out){
   return true;
 }
 
-// ===================== Status sync =====================
+// ===================== Status sync (real-time-ish) =====================
+// - We poll Tuya status in background (one device per tick) so /api/devices reflects real state.
+// - After /api/set, we force extra status polls for that device to quickly converge.
+
 unsigned long g_lastStatusPollMs = 0;
-const unsigned long STATUS_POLL_INTERVAL_MS = 1200;
+const unsigned long STATUS_POLL_INTERVAL_MS = 900;  // one device per ~0.9s
 int g_statusIdx = 0;
 
-bool g_forceStatus[DEVICE_COUNT] = {false};
-unsigned long g_forceDueMs[DEVICE_COUNT] = {0};
+bool g_forceStatus[DEVICE_COUNT];
+unsigned long g_forceDueMs[DEVICE_COUNT];
+unsigned long g_lastCmdAtMs[DEVICE_COUNT];
 
 // ---- CORS / PNA ----
 void addCORS() {
@@ -101,6 +102,7 @@ void addCORS() {
   server.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   server.sendHeader("Access-Control-Allow-Headers", "*");
   server.sendHeader("Access-Control-Max-Age", "86400");
+  // for Chrome Private Network Access (https page -> http://192.168.x.x)
   server.sendHeader("Access-Control-Allow-Private-Network", "true");
 }
 void handleOptions() { addCORS(); server.send(200); }
@@ -279,36 +281,55 @@ bool tuyaSetSwitch(const char* device_id, const char* codeStr, bool on, String& 
   return success;
 }
 
-bool tuyaGetSwitchStatus(const char* device_id, const char* codeStr, bool &outOn, bool &outOnline, String &outErr){
-  outErr = "";
-  if (!tuyaEnsureToken()) { outErr = String("token_failed: ") + g_lastTuyaErr; return false; }
+bool tuyaGetSwitchStatus(const char* device_id, const char* codeStr, bool &onOut, bool &onlineOut, String &rawResp){
+  if (!tuyaEnsureToken()) { rawResp = String("token_failed: ") + g_lastTuyaErr; return false; }
 
   String path = String("/v1.0/iot-03/devices/") + device_id + "/status";
 
   int httpCode = 0;
   String resp;
   bool okReq = tuyaRequest(false, "GET", path, "", httpCode, resp);
-  if (!okReq) { outErr = g_lastTuyaErr; return false; }
+  rawResp = resp;
+  if (!okReq || !(httpCode >= 200 && httpCode < 300)) {
+    if(!okReq) return false;
+    g_lastTuyaErr = "status http " + String(httpCode);
+    return false;
+  }
 
   DynamicJsonDocument doc(8192);
-  if (deserializeJson(doc, resp) != DeserializationError::Ok) { outErr = "status_json_parse_fail"; return false; }
-
+  if (deserializeJson(doc, resp) != DeserializationError::Ok) { g_lastTuyaErr="status JSON parse failed"; return false; }
   bool success = doc["success"] | false;
-  if (!success) { outErr = (const char*)(doc["msg"] | "status_fail"); return false; }
+  if (!success) { g_lastTuyaErr = String("status fail: ") + (const char*)(doc["msg"] | ""); return false; }
 
-  outOnline = true;
+  bool found = false;
+  bool onVal = false;
+  bool onlineVal = true;
 
   JsonArray result = doc["result"].as<JsonArray>();
   for (JsonObject it : result){
-    const char* code = it["code"];
-    if (code && String(code) == codeStr){
-      if (it["value"].is<bool>()) outOn = it["value"].as<bool>();
-      else outOn = (it["value"].as<int>() != 0);
-      return true;
+    const char* c = it["code"] | "";
+    if (!c) continue;
+
+    if (String(c) == String(codeStr)) {
+      // switch value: bool
+      onVal = it["value"] | false;
+      found = true;
+    }
+    // sometimes online appears as code: "online"
+    if (String(c) == "online") {
+      onlineVal = it["value"] | true;
     }
   }
-  outErr = "code_not_found";
-  return false;
+
+  if(!found){
+    // fallback: keep previous
+    g_lastTuyaErr = "status missing code";
+    return false;
+  }
+
+  onOut = onVal;
+  onlineOut = onlineVal;
+  return true;
 }
 
 DeviceItem* findDeviceByKey(const String& key, int &idxOut) {
@@ -322,21 +343,33 @@ DeviceItem* findDeviceByKey(const String& key, int &idxOut) {
 // ---- handlers ----
 void handleHealth(){
   addCORS();
-  DynamicJsonDocument doc(1024);
+  DynamicJsonDocument doc(768);
   doc["ok"] = true;
   doc["ip"] = WiFi.localIP().toString();
   doc["mdns"] = String(MDNS_NAME) + ".local";
   doc["rssi"] = WiFi.RSSI();
   doc["q"] = (qt - qh + 12) % 12;
-  time_t now = time(nullptr);
-  doc["epoch"] = (unsigned long)now;
+  doc["heap"] = ESP.getFreeHeap();
   String out; serializeJson(doc, out);
   server.send(200, "application/json", out);
 }
 
 void handleDevices(){
   addCORS();
-  DynamicJsonDocument doc(8192);
+
+  // If caller requests fresh=1, schedule forced status sync soon (non-blocking)
+  if (server.hasArg("fresh")) {
+    unsigned long now = millis();
+    for(int i=0;i<DEVICE_COUNT;i++){
+      g_forceStatus[i] = true;
+      g_forceDueMs[i] = now; // ASAP
+    }
+  }
+
+  DynamicJsonDocument doc(6144);
+  doc["ok"] = true;
+  doc["ts_ms"] = (uint32_t)millis();
+
   JsonArray arr = doc.createNestedArray("devices");
   for (int i=0;i<DEVICE_COUNT;i++){
     JsonObject d = arr.createNestedObject();
@@ -345,20 +378,22 @@ void handleDevices(){
     d["state"]= DEVICES[i].state_cache;
     d["online"]= DEVICES[i].online_cache;
     d["pending"]= DEVICES[i].pending;
-    d["last_ms"]= DEVICES[i].last_ms;
+    d["last_cmd_ms"]= DEVICES[i].last_cmd_ms;
+    d["last_sync_ms"]= DEVICES[i].last_sync_ms;
     if (DEVICES[i].last_err.length()) d["err"] = DEVICES[i].last_err;
   }
   String out; serializeJson(doc, out);
   server.send(200, "application/json", out);
 }
 
-// /api/set: 큐에 넣고 즉시 응답
+// /api/set : queue only (fast response)
 void handleSet(){
   addCORS();
   if (!server.hasArg("key") || !server.hasArg("on")){
     server.send(400, "application/json", "{\"ok\":false,\"msg\":\"missing key/on\"}");
     return;
   }
+
   String key = server.arg("key");
   bool on = (server.arg("on")=="1" || server.arg("on")=="true");
 
@@ -369,13 +404,16 @@ void handleSet(){
     return;
   }
 
-  // UI 즉시 반영 (optimistic)
+  // optimistic UI: update cache immediately, mark pending
   t->state_cache = on;
   t->pending = true;
   t->online_cache = true;
   t->last_err = "";
 
   qPushOrReplace(idx, on);
+
+  // after command, we will force status sync (done in loop after cmd)
+  g_lastCmdAtMs[idx] = millis();
 
   DynamicJsonDocument doc(768);
   doc["ok"] = true;
@@ -408,7 +446,7 @@ void connectWiFi(){
 }
 
 void setupTimeNTP(){
-  configTime(9*3600, 0, "pool.ntp.org", "time.nist.gov"); // KST
+  configTime(9*3600, 0, "pool.ntp.org", "time.nist.gov");
   Serial.print("NTP sync");
   for (int i=0;i<30;i++){
     time_t nowSec = time(nullptr);
@@ -424,30 +462,15 @@ void setupMDNS(){
   Serial.print("mDNS started: http://"); Serial.print(MDNS_NAME); Serial.println(".local");
 }
 
-void doStatusSyncOne(int idx){
-  DeviceItem &d = DEVICES[idx];
-  if (d.pending) return;
-
-  bool on=false, online=true;
-  String err;
-  uint32_t t0 = millis();
-  bool ok = tuyaGetSwitchStatus(d.device_id, d.code, on, online, err);
-  uint32_t t1 = millis();
-  d.last_ms = (t1 - t0);
-
-  if (ok){
-    d.state_cache = on;
-    d.online_cache = true;
-    d.last_err = "";
-  } else {
-    d.online_cache = false;
-    d.last_err = err;
-  }
-}
-
 void setup(){
   Serial.begin(115200);
   delay(200);
+
+  for(int i=0;i<DEVICE_COUNT;i++){
+    g_forceStatus[i] = true;
+    g_forceDueMs[i] = 0;
+    g_lastCmdAtMs[i] = 0;
+  }
 
   connectWiFi();
   setupTimeNTP();
@@ -474,10 +497,43 @@ void setup(){
   Serial.println("Web server started.");
 }
 
+// one device status poll (blocking HTTPS, so keep it small & infrequent)
+void pollOneStatus(int idx){
+  if (idx < 0 || idx >= DEVICE_COUNT) return;
+  DeviceItem &d = DEVICES[idx];
+
+  // if just commanded very recently, wait a bit (avoid reading old state immediately)
+  unsigned long now = millis();
+  if (now - g_lastCmdAtMs[idx] < 650) return;
+
+  bool onVal=false, onlineVal=true;
+  String raw;
+  uint32_t t0 = millis();
+  bool ok = tuyaGetSwitchStatus(d.device_id, d.code, onVal, onlineVal, raw);
+  uint32_t t1 = millis();
+
+  if (ok){
+    d.state_cache = onVal;
+    d.online_cache = onlineVal;
+    d.last_err = "";
+    d.last_sync_ms = (uint32_t)millis();
+  } else {
+    // don't flip state_cache here (keep last known), but mark offline/error
+    d.online_cache = false;
+    d.last_err = g_lastTuyaErr.length() ? g_lastTuyaErr : "status_failed";
+    d.last_sync_ms = (uint32_t)millis();
+  }
+
+  // store for debugging
+  g_lastTuyaResp = raw;
+  g_lastTuyaHttp = 200;
+  (void)t0; (void)t1;
+}
+
 void loop(){
   server.handleClient();
 
-  // 토큰 워밍업
+  // token warmup
   unsigned long now = millis();
   if (now - g_lastTokenCheckMs > TOKEN_WARMUP_INTERVAL_MS) {
     g_lastTokenCheckMs = now;
@@ -487,7 +543,7 @@ void loop(){
     }
   }
 
-  // 1) 명령 큐 처리 (한 번에 1개)
+  // 1) process command queue first
   if (!qBusy && !qEmpty()){
     qBusy = true;
     Cmd c; qPop(c);
@@ -499,42 +555,50 @@ void loop(){
       uint32_t t0 = millis();
       bool ok = tuyaSetSwitch(d.device_id, d.code, c.on, tuyaResp);
       uint32_t t1 = millis();
-      d.last_ms = (t1 - t0);
+
+      d.last_cmd_ms = (t1 - t0);
+      d.pending = false;
 
       if (ok){
-        d.state_cache = c.on;
-        d.pending = false;
         d.online_cache = true;
         d.last_err = "";
-
-        // ✅ 명령 직후 빠른 동기화(200ms 뒤 한번)
+        // schedule forced status sync soon (on/off 모두 빠르게 UI/실상태 동기)
         g_forceStatus[c.idx] = true;
-        g_forceDueMs[c.idx] = millis() + 200;
+        g_forceDueMs[c.idx]  = millis() + (c.on ? 650 : 1200); // OFF가 가끔 늦게 반영되는 케이스 보정
       } else {
-        d.pending = false;
         d.online_cache = false;
         d.last_err = g_lastTuyaErr.length()? g_lastTuyaErr : "set_failed";
+        // still try a status sync later
+        g_forceStatus[c.idx] = true;
+        g_forceDueMs[c.idx]  = millis() + 2000;
       }
     }
+
     qBusy = false;
   }
 
-  // 2) 명령 직후 강제 status sync
+  // 2) background status sync (non-blocking schedule; actual call is blocking but small)
   if (!qBusy && qEmpty()){
-    for(int i=0;i<DEVICE_COUNT;i++){
-      if (g_forceStatus[i] && (long)(millis() - g_forceDueMs[i]) >= 0){
-        g_forceStatus[i] = false;
-        doStatusSyncOne(i);
-        break;
+    // forced status first
+    unsigned long now2 = millis();
+    for(int k=0;k<DEVICE_COUNT;k++){
+      if (g_forceStatus[k] && now2 >= g_forceDueMs[k]){
+        g_forceStatus[k] = false;
+        pollOneStatus(k);
+        server.handleClient();
+        return;
       }
     }
-  }
 
-  // 3) 라운드로빈 status 폴링 (실시간 표시 안정화)
-  if (!qBusy && qEmpty() && (now - g_lastStatusPollMs > STATUS_POLL_INTERVAL_MS)) {
-    g_lastStatusPollMs = now;
-    int idx = g_statusIdx;
-    g_statusIdx = (g_statusIdx + 1) % DEVICE_COUNT;
-    doStatusSyncOne(idx);
+    if (now - g_lastStatusPollMs >= STATUS_POLL_INTERVAL_MS){
+      g_lastStatusPollMs = now;
+      int idx = g_statusIdx++ % DEVICE_COUNT;
+
+      // avoid polling while user is commanding that device (queued)
+      if (!DEVICES[idx].pending){
+        pollOneStatus(idx);
+      }
+      server.handleClient();
+    }
   }
 }

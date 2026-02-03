@@ -1,22 +1,22 @@
 {
   "name": "My Smart Home",
   "short_name": "MyHome",
-  "start_url": "/ESP32/myHome/myhome.html",
-  "scope": "/ESP32/myHome/",
+  "start_url": "../myhome.html",
+  "scope": "../",
   "display": "standalone",
   "background_color": "#1f7cc6",
   "theme_color": "#1f7cc6",
   "icons": [
     {
-      "src": "icons/icon-192x192.png",
+      "src": "icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-512x512.png",
+      "src": "icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ],
-  "id": "/ESP32/myHome/myhome.html"
+  "id": "../myhome.html"
 }

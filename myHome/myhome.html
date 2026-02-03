@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
   <title>My Smart Home</title>
 
-  <link rel="icon" href="icons/favicon.ico">
-  <link rel="apple-touch-icon" href="icons/icon-180x180.png">
-  <link rel="manifest" href="icons/manifest.json">
+  <!-- PWA / Icons -->
+  <link rel="icon" href="./icons/favicon.ico">
+  <link rel="apple-touch-icon" href="./icons/icon-180x180.png">
+  <link rel="manifest" href="./icons/manifest.json">
   <meta name="theme-color" content="#1f7cc6">
 
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -66,39 +67,12 @@
     .btn svg{display:block}
     .mini{padding:10px 12px 0;color:var(--muted);font-size:11px;line-height:1.35}
 
-    .backdrop{
-      position:fixed; inset:0;
-      background:rgba(0,0,0,.45);
-      display:none;
-      padding:14px;
-      padding-top:max(14px, env(safe-area-inset-top));
-      padding-bottom:max(14px, env(safe-area-inset-bottom));
-      z-index:100;
-    }
-    .sheet{
-      max-width:520px;margin:0 auto;
-      background:#0f172a;
-      color:#e5e7eb;
-      border-radius:16px;
-      overflow:hidden;
-      box-shadow:0 20px 50px rgba(0,0,0,.45);
-      border:1px solid rgba(255,255,255,.08);
-    }
-    .sheetHead{
-      padding:12px 12px;
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
-      border-bottom:1px solid rgba(255,255,255,.08);
-    }
+    /* Debug sheet */
+    .backdrop{position:fixed; inset:0;background:rgba(0,0,0,.45);display:none;padding:14px;padding-top:max(14px, env(safe-area-inset-top));padding-bottom:max(14px, env(safe-area-inset-bottom));z-index:100;}
+    .sheet{max-width:520px;margin:0 auto;background:#0f172a;color:#e5e7eb;border-radius:16px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.08);}
+    .sheetHead{padding:12px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid rgba(255,255,255,.08);}
     .sheetHead .t{font-weight:900}
-    .sheetBtn{
-      border:none; cursor:pointer;
-      padding:9px 10px; border-radius:12px;
-      background:rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.10);
-      color:#e5e7eb;
-      font-weight:800;
-      touch-action:manipulation;
-    }
+    .sheetBtn{border:none;cursor:pointer;padding:9px 10px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10);color:#e5e7eb;font-weight:800;touch-action:manipulation;}
     pre{margin:0;padding:12px 12px;max-height:60vh;overflow:auto;font-size:12px;line-height:1.45;white-space:pre-wrap;}
   </style>
 </head>
@@ -130,17 +104,23 @@
     <div class="list" id="list"></div>
 
     <div class="bottom">
-      <div class="btn" id="btnRefresh2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-  <path d="M20 12a8 8 0 1 1-2.34-5.66" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-  <path d="M20 4v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-</svg><span>Refresh</span></div>
-      <div class="btn" id="btnLogout"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-  <path d="M12 2v10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-  <path d="M7.5 4.8a8 8 0 1 0 9 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-</svg><span>Logout</span></div>
+      <div class="btn" id="btnRefresh2">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M20 12a8 8 0 1 1-2.34-5.66" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M20 4v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Refresh</span>
+      </div>
+      <div class="btn" id="btnLogout">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 2v10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M7.5 4.8a8 8 0 1 0 9 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span>Logout</span>
+      </div>
     </div>
 
-    <div class="mini" id="mini">Auto refresh: 1800ms</div>
+    <div class="mini" id="mini">Auto refresh: 1500ms</div>
   </div>
 </div>
 
@@ -160,7 +140,6 @@
 
 <script>
 (() => {
-  // ---- UI refs ----
   const $ = (id) => document.getElementById(id);
   const connText = $("connText");
   const statusText = $("statusText");
@@ -182,13 +161,14 @@
 
   // ---- Config ----
   const STORAGE_KEY = "myhome_base";
-  const POLL_MS = 1800;
+  const POLL_MS = 1500;
 
-  // NOTE: mobile에서는 너무 빠른 abort가 "AbortError"를 만들기 쉬워서 여유있게 잡음
-  const PROBE_TIMEOUT_MS = 1800;
-  const FETCH_TIMEOUT_MS = 15000;
+  // GitHub Pages(https) -> ESP32(http) 는 네트워크 상황에 따라 지연이 생길 수 있어 timeout 여유
+  const PROBE_TIMEOUT_MS = 2500;
+  const FETCH_TIMEOUT_MS = 25000;
   const CONCURRENCY = 10;
 
+  // subnets to try (silent)
   const SUBNETS = [
     { prefix: "http://192.168.31.", start: 1, end: 254 },
     { prefix: "http://192.168.0.",  start: 1, end: 254 },
@@ -203,11 +183,11 @@
   let busy = new Set();
   let loggedOut = false;
   let inFlight = false;
+  let failCount = 0;
 
   // ---- Logging ----
   let logs = [];
   const MAX_LOG = 260;
-
   function log(line, obj){
     const ts = new Date().toLocaleTimeString();
     let s = `[${ts}] ${line}`;
@@ -220,12 +200,8 @@
     if (logView) logView.textContent = logs.join("\n\n");
   }
 
-  window.addEventListener("error", (e) => {
-    log("JS ERROR", { message: e.message, source: e.filename, line: e.lineno, col: e.colno });
-  });
-  window.addEventListener("unhandledrejection", (e) => {
-    log("PROMISE REJECT", String(e.reason));
-  });
+  window.addEventListener("error", (e) => log("JS ERROR", { message: e.message, source: e.filename, line: e.lineno, col: e.colno }));
+  window.addEventListener("unhandledrejection", (e) => log("PROMISE REJECT", String(e.reason)));
 
   function setBarColor(kind){
     statusBar.style.background =
@@ -251,9 +227,7 @@
     return "🔌";
   }
   function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, m => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-    }[m]));
+    return String(s).replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
   }
 
   async function fetchJson(url, timeoutMs){
@@ -286,6 +260,7 @@
     BASE = fixed;
     localStorage.setItem(STORAGE_KEY, BASE);
     connText.textContent = "Connected Devices";
+    failCount = 0;
     log("useBase", { BASE });
   }
 
@@ -311,24 +286,22 @@
   }
 
   async function discoverOnce(){
-    setStatus("Connecting…", "discovering", "warn");
-
+    // 1) saved base
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved){
       const hb = await probeBase(saved);
       if (hb){ useBase(saved, hb); return true; }
     }
-
+    // 2) mdns
     for (const m of MDNS_CANDIDATES){
       const hb = await probeBase(m);
       if (hb){ useBase(m, hb); return true; }
     }
-
+    // 3) scan subnets (silent)
     for (const s of SUBNETS){
       const r = await scanOneSubnet(s);
       if (r){ useBase(r.base, r.hb); return true; }
     }
-
     return false;
   }
 
@@ -382,6 +355,10 @@
 
         const next = !on;
         busy.add(d.key);
+
+        // optimistic UI
+        d.state = next;
+        d.pending = true;
         render();
 
         setStatus("Sending…", `${d.name} → ${next ? "ON":"OFF"}`, "warn");
@@ -393,7 +370,11 @@
 
           if (r.ok && r.body && r.body.ok === true){
             log("set OK", r.body);
-            setStatus("All Systems Operational", new Date().toLocaleTimeString(), "good");
+            setStatus("Command Sent", new Date().toLocaleTimeString(), "good");
+
+            // fast re-sync (ESP32 will also do forced status poll)
+            setTimeout(()=>loadDevices(true), 700);
+            setTimeout(()=>loadDevices(true), 1800);
           } else {
             log("set ERR", { status: r.status, body: r.body, url: u });
             setStatus("Command Failed", "API error", "bad");
@@ -401,9 +382,12 @@
         } catch(e){
           log("set ERR (fetch)", String(e));
           setStatus("Connecting…", "retrying…", "warn");
-          BASE = null;
+          // keep BASE but mark fail
+          failCount++;
+          if (failCount >= 3) BASE = null;
         } finally {
           busy.delete(d.key);
+          // let poll update pending
           render();
         }
       });
@@ -412,17 +396,18 @@
     });
   }
 
-  async function loadDevices(){
+  async function loadDevices(forceFresh=false){
     if (!BASE || loggedOut) return false;
     if (inFlight) return true;
     inFlight = true;
 
-    const u = apiUrl(`/api/devices?fresh=1`);
+    const u = apiUrl(`/api/devices${forceFresh ? "?fresh=1" : ""}`);
     try{
       const r = await fetchJson(u, FETCH_TIMEOUT_MS);
       if (r.ok && r.body && Array.isArray(r.body.devices)){
         devices = r.body.devices;
         render();
+        failCount = 0;
 
         const anyOffline = devices.some(x => x.online === false);
         const anyErr = devices.some(x => x.err);
@@ -433,14 +418,17 @@
 
         return true;
       }
+
       log("devices ERR", { status:r.status, body:r.body, url:u });
+      failCount++;
       setStatus("Connecting…", "retrying…", "warn");
-      BASE = null;
+      if (failCount >= 3) BASE = null;
       return false;
     } catch(e){
       log("devices ERR (fetch)", { url:u, err:String(e) });
+      failCount++;
       setStatus("Connecting…", "retrying…", "warn");
-      BASE = null;
+      if (failCount >= 3) BASE = null;
       return false;
     } finally {
       inFlight = false;
@@ -449,12 +437,14 @@
 
   async function ensureConnected(){
     if (BASE) return true;
+
+    setStatus("Connecting…", "discovering", "warn");
     const ok = await discoverOnce();
     if (!ok){
       setStatus("Connect Failed", "ESP32 not found", "bad");
       return false;
     }
-    await loadDevices();
+    await loadDevices(true);
     return true;
   }
 
@@ -468,7 +458,7 @@
         return;
       }
       if (busy.size) return;
-      await loadDevices();
+      await loadDevices(false);
     }, POLL_MS);
   }
   function stopPoll(){ if (pollTimer) clearInterval(pollTimer); pollTimer=null; }
@@ -511,7 +501,7 @@
   });
 
   // Boot
-  log("boot", { github:true, pollMs:POLL_MS, note:"v2 timeouts+no-overlap" });
+  log("boot", { github:true, pollMs:POLL_MS, note:"vFinal realtime status sync" });
   connText.textContent = "Connected Devices";
   setStatus("Connecting…", "starting…", "warn");
   render();
