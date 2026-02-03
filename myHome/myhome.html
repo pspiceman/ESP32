@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
   <title>My Smart Home</title>
 
+  <!-- ICON / PWA -->
   <link rel="icon" href="icons/favicon.ico">
   <link rel="apple-touch-icon" href="icons/icon-180x180.png">
   <link rel="manifest" href="icons/manifest.json">
   <meta name="theme-color" content="#1f7cc6">
 
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="MyHome">
+  <!-- MQTT.js -->
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
   <style>
     :root{
@@ -24,55 +24,148 @@
       --r:12px;
     }
     *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      background:var(--bg);
+      color:var(--text);
+      -webkit-tap-highlight-color:transparent;
+    }
     .wrap{max-width:420px;margin:0 auto;padding-bottom:18px}
-    .top{background:linear-gradient(180deg,var(--blue2),var(--blue1));padding:18px 14px 10px;padding-top:calc(18px + env(safe-area-inset-top));color:#fff;position:sticky;top:0;z-index:10;box-shadow:0 6px 18px rgba(0,0,0,.12);}
-    .topRow{display:flex;align-items:center;justify-content:space-between;gap:10px;}
-    .title{font-size:22px;font-weight:800;letter-spacing:.2px;}
-    .actions{display:flex;gap:10px;align-items:center;}
-    .iconBtn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.10);cursor:pointer;user-select:none;touch-action:manipulation;}
-    .iconBtn:active{transform:scale(.99);opacity:.92}
-    .sub{margin-top:8px;font-size:12px;opacity:.92;}
-    .sub b{font-weight:800}
 
-    .content{padding:12px 12px 0}
-    .statusBar{background:var(--good);color:#fff;border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);margin-bottom:10px;}
-    .statusDot{width:10px;height:10px;border-radius:999px;background:#eaffef;box-shadow:0 0 0 4px rgba(255,255,255,.18);}
+    .top{
+      background:linear-gradient(180deg,var(--blue2),var(--blue1));
+      padding:18px 14px 10px;
+      padding-top:calc(18px + env(safe-area-inset-top));
+      color:#fff;
+      position:sticky;top:0;z-index:10;
+      box-shadow:0 6px 18px rgba(0,0,0,.12);
+    }
+    .topRow{display:flex;align-items:center;justify-content:space-between}
+    .title{font-size:22px;font-weight:800;}
+    .actions{display:flex;gap:10px;}
+    .iconBtn{
+      width:38px;height:38px;border-radius:10px;
+      display:grid;place-items:center;
+      border:1px solid rgba(255,255,255,.35);
+      background:rgba(255,255,255,.10);
+      cursor:pointer;
+      user-select:none;
+    }
+
+    .sub{margin-top:8px;font-size:12px;opacity:.92;}
+    .content{padding:12px}
+
+    .statusBar{
+      background:var(--warn);
+      color:#fff;
+      border-radius:8px;
+      padding:10px 12px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      box-shadow:var(--shadow);
+      margin-bottom:10px;
+    }
+    .statusDot{
+      width:10px;height:10px;border-radius:999px;
+      background:#fff;
+    }
     .statusText{font-weight:800;font-size:13px}
     .statusSub{margin-left:auto;font-size:12px;opacity:.95}
 
-    .list{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);}
-    .item{display:flex;align-items:center;gap:10px;padding:12px 12px;border-top:1px solid var(--line);}
+    .list{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--r);
+      overflow:hidden;
+      box-shadow:var(--shadow);
+    }
+
+    .item{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:12px;
+      border-top:1px solid var(--line);
+    }
     .item:first-child{border-top:none}
-    .icon{width:34px;height:34px;border-radius:8px;background:#f2f7ff;border:1px solid #e1ecfb;display:grid;place-items:center;flex:0 0 auto;}
+
+    .icon{
+      width:34px;height:34px;border-radius:8px;
+      background:#f2f7ff;
+      border:1px solid #e1ecfb;
+      display:grid;place-items:center;
+      user-select:none;
+    }
+
+    .grow{flex:1;min-width:0}
     .name{font-weight:800}
     .key{font-size:12px;color:var(--muted)}
-    .grow{flex:1;min-width:0}
-    .grow .name,.grow .key{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-    .toggle{display:flex;align-items:center;gap:8px;flex:0 0 auto;user-select:none;touch-action:manipulation;}
-    .pill{width:82px;height:30px;border-radius:999px;background:#e6edf5;border:1px solid #d3dfea;position:relative;display:flex;align-items:center;padding:0 10px;font-weight:900;font-size:12px;color:#6b7f91;cursor:pointer;}
-    .pill.on{background:#2c79d8;border-color:#2c79d8;color:#fff;}
-    .knob{width:24px;height:24px;border-radius:999px;background:#fff;position:absolute;top:2px;left:3px;box-shadow:0 6px 14px rgba(0,0,0,.18);transition:.18s ease;pointer-events:none;}
-    .pill.on .knob{transform:translateX(52px);}
-    .pillText{z-index:1}
-    .pill.on .pillText{margin-left:6px}
-    .pill:not(.on) .pillText{margin-left:auto;margin-right:6px}
-    .pill.disabled{opacity:.55;pointer-events:none;cursor:default;}
+    /* ===== Toggle Pill ===== */
+    .pill{
+      width:82px;height:30px;
+      border-radius:999px;
+      background:#e6edf5;
+      border:1px solid #d3dfea;
+      position:relative;
+      display:flex;
+      align-items:center;
 
-    .bottom{display:flex;gap:10px;padding:12px 12px 0;}
-    .btn{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;height:44px;border-radius:10px;border:1px solid var(--line);background:#fff;box-shadow:var(--shadow);font-weight:900;cursor:pointer;user-select:none;touch-action:manipulation;}
-    .btn:active{transform:scale(.99);opacity:.92}
-    .btn svg{display:block}
-    .mini{padding:10px 12px 0;color:var(--muted);font-size:11px;line-height:1.35}
+      /* 기본(OFF)은 오른쪽 정렬 */
+      justify-content:flex-end;
 
+      padding:0 10px;
+      font-weight:900;
+      font-size:12px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .pill.on{
+      background:#2c79d8;
+      border-color:#2c79d8;
+      color:#fff;
+
+      /* ON은 왼쪽 정렬 */
+      justify-content:flex-start;
+    }
+
+    .pillLabel{
+      width:100%;
+      pointer-events:none;
+    }
+    /* OFF일 때 글자 오른쪽 */
+    .pill:not(.on) .pillLabel{
+      text-align:right;
+      padding-right:2px;
+    }
+    /* ON일 때 글자 왼쪽 */
+    .pill.on .pillLabel{
+      text-align:left;
+      padding-left:2px;
+    }
+
+    .knob{
+      width:24px;height:24px;
+      border-radius:999px;
+      background:#fff;
+      position:absolute;
+      top:2px;left:3px;
+      box-shadow:0 6px 14px rgba(0,0,0,.18);
+      transition:.18s ease;
+      pointer-events:none;
+    }
+    .pill.on .knob{
+      transform:translateX(52px);
+    }
+
+    /* Debug log sheet */
     .backdrop{
       position:fixed; inset:0;
       background:rgba(0,0,0,.45);
       display:none;
       padding:14px;
-      padding-top:max(14px, env(safe-area-inset-top));
-      padding-bottom:max(14px, env(safe-area-inset-bottom));
       z-index:100;
     }
     .sheet{
@@ -81,43 +174,42 @@
       color:#e5e7eb;
       border-radius:16px;
       overflow:hidden;
-      box-shadow:0 20px 50px rgba(0,0,0,.45);
-      border:1px solid rgba(255,255,255,.08);
     }
     .sheetHead{
-      padding:12px 12px;
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
-      border-bottom:1px solid rgba(255,255,255,.08);
+      padding:12px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      border-bottom:1px solid rgba(255,255,255,.1);
     }
-    .sheetHead .t{font-weight:900}
-    .sheetBtn{
-      border:none; cursor:pointer;
-      padding:9px 10px; border-radius:12px;
-      background:rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.10);
-      color:#e5e7eb;
-      font-weight:800;
-      touch-action:manipulation;
+    .sheetHead button{
+      border:none;
+      padding:8px 12px;
+      border-radius:10px;
+      cursor:pointer;
     }
-    pre{margin:0;padding:12px 12px;max-height:60vh;overflow:auto;font-size:12px;line-height:1.45;white-space:pre-wrap;}
+    pre{
+      margin:0;
+      padding:12px;
+      max-height:60vh;
+      overflow:auto;
+      font-size:12px;
+      white-space:pre-wrap;
+    }
   </style>
 </head>
+
 <body>
 <div class="wrap">
+
   <div class="top">
     <div class="topRow">
       <div class="title">My Smart Home</div>
       <div class="actions">
-        <div class="iconBtn" id="btnBug" title="Debug log">🐞</div>
-        <div class="iconBtn" id="btnRefresh" title="Refresh">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M20 12a8 8 0 1 1-2.34-5.66" stroke="white" stroke-width="2" stroke-linecap="round"/>
-            <path d="M20 4v6h-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
+        <div class="iconBtn" id="btnBug" title="Log">🐞</div>
       </div>
     </div>
-    <div class="sub"><b id="connText">Connected Devices</b></div>
+    <div class="sub"><b id="connText">MQTT Connecting...</b></div>
   </div>
 
   <div class="content">
@@ -128,31 +220,15 @@
     </div>
 
     <div class="list" id="list"></div>
-
-    <div class="bottom">
-      <div class="btn" id="btnRefresh2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-  <path d="M20 12a8 8 0 1 1-2.34-5.66" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-  <path d="M20 4v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-</svg><span>Refresh</span></div>
-      <div class="btn" id="btnLogout"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-  <path d="M12 2v10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-  <path d="M7.5 4.8a8 8 0 1 0 9 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-</svg><span>Logout</span></div>
-    </div>
-
-    <div class="mini" id="mini">Auto refresh: 1800ms</div>
   </div>
 </div>
 
+<!-- LOG PANEL -->
 <div class="backdrop" id="backdrop">
   <div class="sheet">
     <div class="sheetHead">
-      <div class="t">Debug log</div>
-      <div style="display:flex;gap:8px">
-        <button class="sheetBtn" id="btnCopy">Copy</button>
-        <button class="sheetBtn" id="btnClear">Clear</button>
-        <button class="sheetBtn" id="btnClose">Close</button>
-      </div>
+      <div><b>Debug Log</b></div>
+      <button onclick="closeLog()">Close</button>
     </div>
     <pre id="logView">ready.</pre>
   </div>
@@ -160,365 +236,147 @@
 
 <script>
 (() => {
-  // ---- UI refs ----
-  const $ = (id) => document.getElementById(id);
-  const connText = $("connText");
-  const statusText = $("statusText");
-  const statusSub  = $("statusSub");
-  const statusBar  = $("statusBar");
-  const list = $("list");
-  const mini = $("mini");
 
-  const btnBug = $("btnBug");
-  const btnRefresh = $("btnRefresh");
-  const btnRefresh2 = $("btnRefresh2");
-  const btnLogout = $("btnLogout");
+  /* ================= MQTT CONFIG ================= */
+  const ROOT = "pspiceman/myhome";
+  const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
 
-  const backdrop = $("backdrop");
-  const logView = $("logView");
-  const btnClose = $("btnClose");
-  const btnCopy = $("btnCopy");
-  const btnClear = $("btnClear");
-
-  // ---- Config ----
-  const STORAGE_KEY = "myhome_base";
-  const POLL_MS = 1800;
-
-  // NOTE: mobile에서는 너무 빠른 abort가 "AbortError"를 만들기 쉬워서 여유있게 잡음
-  const PROBE_TIMEOUT_MS = 1800;
-  const FETCH_TIMEOUT_MS = 15000;
-  const CONCURRENCY = 10;
-
-  const SUBNETS = [
-    { prefix: "http://192.168.31.", start: 1, end: 254 },
-    { prefix: "http://192.168.0.",  start: 1, end: 254 },
-    { prefix: "http://192.168.1.",  start: 1, end: 254 },
-  ];
-  const MDNS_CANDIDATES = ["http://myhome.local", "http://myhome.local:80"];
-
-  // ---- State ----
-  let BASE = null;
+  let client = null;
+  let currentNode = null;
   let devices = [];
-  let pollTimer = null;
-  let busy = new Set();
-  let loggedOut = false;
-  let inFlight = false;
 
-  // ---- Logging ----
-  let logs = [];
-  const MAX_LOG = 260;
+  /* ================= UI ================= */
+  const list = document.getElementById("list");
+  const connText = document.getElementById("connText");
+  const statusText = document.getElementById("statusText");
+  const statusSub = document.getElementById("statusSub");
+  const logView = document.getElementById("logView");
+  const backdrop = document.getElementById("backdrop");
 
-  function log(line, obj){
+  function log(msg,obj){
     const ts = new Date().toLocaleTimeString();
-    let s = `[${ts}] ${line}`;
-    if (obj !== undefined){
-      try { s += "\n" + JSON.stringify(obj, null, 2); }
-      catch { s += "\n" + String(obj); }
-    }
-    logs.unshift(s);
-    logs = logs.slice(0, MAX_LOG);
-    if (logView) logView.textContent = logs.join("\n\n");
+    let line = `[${ts}] ${msg}`;
+    if(obj) line += "\n" + JSON.stringify(obj,null,2);
+    logView.textContent = line + "\n\n" + logView.textContent;
   }
 
-  window.addEventListener("error", (e) => {
-    log("JS ERROR", { message: e.message, source: e.filename, line: e.lineno, col: e.colno });
-  });
-  window.addEventListener("unhandledrejection", (e) => {
-    log("PROMISE REJECT", String(e.reason));
-  });
-
-  function setBarColor(kind){
-    statusBar.style.background =
-      kind === "good" ? "var(--good)" :
-      kind === "warn" ? "var(--warn)" :
-      "var(--bad)";
-  }
-  function setStatus(main, sub, kind="good"){
+  function setStatus(main,sub){
     statusText.textContent = main;
-    statusSub.textContent  = sub || "—";
-    setBarColor(kind);
+    statusSub.textContent = sub || "—";
   }
-
-  const baseUrl = () => (BASE || "").replace(/\/+$/, "");
-  const apiUrl  = (p) => baseUrl() + p;
 
   function iconFor(key){
-    if (key === "myDesk") return "🛠️";
-    if (key === "floor")  return "🔥";
-    if (key === "tablet") return "📱";
-    if (key === "server") return "🖥️";
-    if (key === "water")  return "🚰";
+    if(key==="myDesk") return "🛠️";
+    if(key==="floor") return "🔥";
+    if(key==="tablet") return "📱";
+    if(key==="server") return "🖥️";
+    if(key==="water") return "🚰";
     return "🔌";
   }
-  function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, m => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-    }[m]));
-  }
 
-  async function fetchJson(url, timeoutMs){
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), timeoutMs);
-    try{
-      const res = await fetch(url, { signal: ctrl.signal, cache:"no-store" });
-      const txt = await res.text();
-      let body; try { body = JSON.parse(txt); } catch { body = { raw: txt }; }
-      return { ok: res.ok, status: res.status, body };
-    } finally { clearTimeout(t); }
-  }
-
-  async function probeBase(base){
-    const url = base.replace(/\/+$/, "") + "/api/health";
-    try{
-      const r = await fetchJson(url, PROBE_TIMEOUT_MS);
-      const ok = r.ok && r.body && r.body.ok === true;
-      if (ok) log("probe OK", { base, ip: r.body.ip, mdns: r.body.mdns });
-      return ok ? r.body : null;
-    } catch(e){
-      log("probe ERR", { base, err: String(e) });
-      return null;
-    }
-  }
-
-  function useBase(base, healthBody=null){
-    let fixed = base.replace(/\/+$/, "");
-    if (healthBody && healthBody.ip) fixed = "http://" + healthBody.ip;
-    BASE = fixed;
-    localStorage.setItem(STORAGE_KEY, BASE);
-    connText.textContent = "Connected Devices";
-    log("useBase", { BASE });
-  }
-
-  async function scanOneSubnet(sub){
-    let next = sub.start;
-    let found = null;
-    let foundHealth = null;
-    let stopped = false;
-
-    async function worker(){
-      while(!stopped){
-        const i = next++;
-        if (i > sub.end) return;
-        const base = sub.prefix + i;
-        const hb = await probeBase(base);
-        if (hb){ found = base; foundHealth = hb; stopped = true; return; }
-      }
-    }
-    const workers = [];
-    for (let k=0;k<CONCURRENCY;k++) workers.push(worker());
-    await Promise.all(workers);
-    return found ? { base: found, hb: foundHealth } : null;
-  }
-
-  async function discoverOnce(){
-    setStatus("Connecting…", "discovering", "warn");
-
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved){
-      const hb = await probeBase(saved);
-      if (hb){ useBase(saved, hb); return true; }
-    }
-
-    for (const m of MDNS_CANDIDATES){
-      const hb = await probeBase(m);
-      if (hb){ useBase(m, hb); return true; }
-    }
-
-    for (const s of SUBNETS){
-      const r = await scanOneSubnet(s);
-      if (r){ useBase(r.base, r.hb); return true; }
-    }
-
-    return false;
-  }
-
+  /* ================= RENDER ================= */
   function render(){
     list.innerHTML = "";
 
-    if (!devices.length){
-      const row = document.createElement("div");
-      row.className = "item";
-      row.innerHTML = `
-        <div class="icon">ℹ️</div>
-        <div class="grow">
-          <div class="name">No devices</div>
-          <div class="key">연결되면 목록이 표시됩니다</div>
-        </div>
-        <div class="toggle">
-          <div class="pill disabled"><span class="pillText">—</span><span class="knob"></span></div>
-        </div>
-      `;
-      list.appendChild(row);
+    if(!devices.length){
+      list.innerHTML = `
+        <div class="item">
+          <div class="icon">ℹ️</div>
+          <div class="grow">
+            <div class="name">Waiting devices...</div>
+            <div class="key">ESP32 announce/devices 수신 대기</div>
+          </div>
+        </div>`;
       return;
     }
 
-    devices.forEach(d => {
-      const on = !!d.state;
-      const online = (d.online !== false);
-      const pending = !!d.pending;
-      const disabled = loggedOut || busy.has(d.key) || !online || !BASE || pending;
-
+    devices.forEach(d=>{
       const row = document.createElement("div");
-      row.className = "item";
-      row.innerHTML = `
-        <div class="icon">${iconFor(d.key)}</div>
-        <div class="grow">
-          <div class="name">${escapeHtml(d.name)}</div>
-          <div class="key">${escapeHtml(d.key)}${pending ? " · pending…" : ""}${d.err ? (" · " + escapeHtml(d.err)) : ""}</div>
-        </div>
-      `;
+      row.className="item";
 
       const pill = document.createElement("div");
-      pill.className = "pill" + (on ? " on":"") + (disabled ? " disabled":"");
-      pill.innerHTML = `<span class="pillText">${on ? "ON":"OFF"}</span><span class="knob"></span>`;
+      pill.className="pill"+(d.state?" on":"");
+      pill.innerHTML=`<span class="pillLabel">${d.state ? "ON" : "OFF"}</span><span class="knob"></span>`;
 
-      const toggle = document.createElement("div");
-      toggle.className = "toggle";
-      toggle.appendChild(pill);
-      row.appendChild(toggle);
+      pill.onclick=()=>{
+        if(!currentNode) return;
+        const next = !d.state;
 
-      pill.addEventListener("click", async () => {
-        if (disabled) return;
+        client.publish(
+          `${ROOT}/${currentNode}/cmd/set`,
+          JSON.stringify({key:d.key,on:next})
+        );
 
-        const next = !on;
-        busy.add(d.key);
-        render();
+        log("CMD sent",{key:d.key,on:next});
+      };
 
-        setStatus("Sending…", `${d.name} → ${next ? "ON":"OFF"}`, "warn");
-        log("toggle", { key: d.key, next });
-
-        try{
-          const u = apiUrl(`/api/set?key=${encodeURIComponent(d.key)}&on=${next ? "1":"0"}`);
-          const r = await fetchJson(u, FETCH_TIMEOUT_MS);
-
-          if (r.ok && r.body && r.body.ok === true){
-            log("set OK", r.body);
-            setStatus("All Systems Operational", new Date().toLocaleTimeString(), "good");
-          } else {
-            log("set ERR", { status: r.status, body: r.body, url: u });
-            setStatus("Command Failed", "API error", "bad");
-          }
-        } catch(e){
-          log("set ERR (fetch)", String(e));
-          setStatus("Connecting…", "retrying…", "warn");
-          BASE = null;
-        } finally {
-          busy.delete(d.key);
-          render();
-        }
-      });
-
+      row.innerHTML=`
+        <div class="icon">${iconFor(d.key)}</div>
+        <div class="grow">
+          <div class="name">${d.name}</div>
+          <div class="key">${d.key}</div>
+        </div>
+      `;
+      row.appendChild(pill);
       list.appendChild(row);
     });
   }
 
-  async function loadDevices(){
-    if (!BASE || loggedOut) return false;
-    if (inFlight) return true;
-    inFlight = true;
+  /* ================= MQTT CONNECT ================= */
+  function connectMQTT(){
+    client = mqtt.connect(MQTT_URL);
 
-    const u = apiUrl(`/api/devices?fresh=1`);
-    try{
-      const r = await fetchJson(u, FETCH_TIMEOUT_MS);
-      if (r.ok && r.body && Array.isArray(r.body.devices)){
-        devices = r.body.devices;
-        render();
+    client.on("connect",()=>{
+      connText.textContent="Connected to Devices";
+      setStatus("MQTT Connected","waiting announce...");
+      log("mqtt connected");
 
-        const anyOffline = devices.some(x => x.online === false);
-        const anyErr = devices.some(x => x.err);
+      client.subscribe(`${ROOT}/announce`);
+    });
 
-        if (!anyOffline && !anyErr) setStatus("All Systems Operational", new Date().toLocaleTimeString(), "good");
-        else if (anyOffline) setStatus("Some Devices Offline", new Date().toLocaleTimeString(), "warn");
-        else setStatus("Some Devices Error", new Date().toLocaleTimeString(), "warn");
+    client.on("message",(topic,payload)=>{
+      const msg = payload.toString();
 
-        return true;
-      }
-      log("devices ERR", { status:r.status, body:r.body, url:u });
-      setStatus("Connecting…", "retrying…", "warn");
-      BASE = null;
-      return false;
-    } catch(e){
-      log("devices ERR (fetch)", { url:u, err:String(e) });
-      setStatus("Connecting…", "retrying…", "warn");
-      BASE = null;
-      return false;
-    } finally {
-      inFlight = false;
-    }
-  }
+      if(topic===`${ROOT}/announce`){
+        const data = JSON.parse(msg);
+        currentNode = data.node;
+        log("node found",data);
 
-  async function ensureConnected(){
-    if (BASE) return true;
-    const ok = await discoverOnce();
-    if (!ok){
-      setStatus("Connect Failed", "ESP32 not found", "bad");
-      return false;
-    }
-    await loadDevices();
-    return true;
-  }
-
-  function startPoll(){
-    stopPoll();
-    pollTimer = setInterval(async () => {
-      if (loggedOut) return;
-
-      if (!BASE){
-        await ensureConnected();
+        client.subscribe(`${ROOT}/${currentNode}/devices`);
+        client.publish(`${ROOT}/${currentNode}/cmd/get`, JSON.stringify({t:Date.now()}));
         return;
       }
-      if (busy.size) return;
-      await loadDevices();
-    }, POLL_MS);
+
+      if(currentNode && topic===`${ROOT}/${currentNode}/devices`){
+        const data = JSON.parse(msg);
+        devices = data.devices || [];
+        render();
+        log("devices updated",{count:devices.length});
+      }
+    });
+
+    client.on("close",()=>{
+      setStatus("Disconnected","retry...");
+      log("mqtt closed");
+    });
+
+    client.on("error",(err)=>{
+      setStatus("MQTT Error","see log");
+      log("mqtt error",String(err));
+    });
   }
-  function stopPoll(){ if (pollTimer) clearInterval(pollTimer); pollTimer=null; }
 
-  async function doRefresh(){
-    loggedOut = false;
-    setStatus("Connecting…", "refresh", "warn");
-    log("refresh pressed");
-    BASE = null;
-    devices = [];
-    render();
-    await ensureConnected();
-  }
+  /* ================= LOG PANEL ================= */
+  document.getElementById("btnBug").onclick=()=>{
+    backdrop.style.display="block";
+  };
+  window.closeLog=()=>{ backdrop.style.display="none"; };
 
-  // Log panel
-  function openLog(){ backdrop.style.display = "block"; }
-  function closeLog(){ backdrop.style.display = "none"; }
-
-  btnBug.addEventListener("click", openLog);
-  btnClose.addEventListener("click", closeLog);
-  backdrop.addEventListener("click", (e)=>{ if(e.target===backdrop) closeLog(); });
-  btnClear.addEventListener("click", ()=>{ logs=[]; logView.textContent="cleared."; });
-  btnCopy.addEventListener("click", async ()=>{
-    try{ await navigator.clipboard.writeText(logView.textContent||""); log("copied"); }
-    catch(e){ log("copy failed", String(e)); }
-  });
-
-  btnRefresh.addEventListener("click", doRefresh);
-  btnRefresh2.addEventListener("click", doRefresh);
-
-  btnLogout.addEventListener("click", ()=>{
-    loggedOut = true;
-    stopPoll();
-    localStorage.removeItem(STORAGE_KEY);
-    BASE=null; devices=[];
-    render();
-    connText.textContent = "Connected Devices";
-    setStatus("Logged out", "Tap Refresh", "warn");
-    log("logout");
-  });
-
-  // Boot
-  log("boot", { github:true, pollMs:POLL_MS, note:"v2 timeouts+no-overlap" });
-  connText.textContent = "Connected Devices";
-  setStatus("Connecting…", "starting…", "warn");
+  /* ================= START ================= */
+  log("boot",{github:true,mode:"MQTT ONLY"});
   render();
-  mini.textContent = `Auto refresh: ${POLL_MS}ms`;
+  connectMQTT();
 
-  startPoll();
-  ensureConnected();
 })();
 </script>
 </body>
