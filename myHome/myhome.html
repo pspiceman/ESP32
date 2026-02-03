@@ -5,13 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
   <title>My Smart Home</title>
 
-  <!-- Install / App icon (GitHub Pages) -->
   <link rel="icon" href="icons/favicon.ico">
   <link rel="apple-touch-icon" href="icons/icon-180x180.png">
   <link rel="manifest" href="icons/manifest.json">
   <meta name="theme-color" content="#1f7cc6">
 
-  <!-- iOS "Add to Home Screen" -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="MyHome">
@@ -31,8 +29,9 @@
     .top{background:linear-gradient(180deg,var(--blue2),var(--blue1));padding:18px 14px 10px;padding-top:calc(18px + env(safe-area-inset-top));color:#fff;position:sticky;top:0;z-index:10;box-shadow:0 6px 18px rgba(0,0,0,.12);}
     .topRow{display:flex;align-items:center;justify-content:space-between;gap:10px;}
     .title{font-size:22px;font-weight:800;letter-spacing:.2px;}
-    .refreshBtn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.10);cursor:pointer;user-select:none;touch-action:manipulation;}
-    .refreshBtn:active{transform:scale(.99);opacity:.92}
+    .actions{display:flex;gap:10px;align-items:center;}
+    .iconBtn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.10);cursor:pointer;user-select:none;touch-action:manipulation;}
+    .iconBtn:active{transform:scale(.99);opacity:.92}
     .sub{margin-top:8px;font-size:12px;opacity:.92;}
     .sub b{font-weight:800}
 
@@ -65,19 +64,6 @@
     .btn{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;height:44px;border-radius:10px;border:1px solid var(--line);background:#fff;box-shadow:var(--shadow);font-weight:900;cursor:pointer;user-select:none;touch-action:manipulation;}
     .btn:active{transform:scale(.99);opacity:.92}
     .mini{padding:10px 12px 0;color:var(--muted);font-size:11px;line-height:1.35}
-
-    .bug{
-      position:fixed; right:14px;
-      bottom:calc(14px + env(safe-area-inset-bottom));
-      width:54px;height:54px;border-radius:18px;
-      display:grid;place-items:center;
-      border:1px solid rgba(16,42,67,.14);
-      background:#ffffff;
-      box-shadow:0 12px 26px rgba(16,42,67,.18);
-      cursor:pointer; user-select:none; touch-action:manipulation;
-      z-index:99;
-    }
-    .bug:active{transform:scale(.99);opacity:.92}
 
     .backdrop{
       position:fixed; inset:0;
@@ -120,11 +106,14 @@
   <div class="top">
     <div class="topRow">
       <div class="title">My Smart Home</div>
-      <div class="refreshBtn" id="btnRefresh" title="Refresh">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M20 12a8 8 0 1 1-2.34-5.66" stroke="white" stroke-width="2" stroke-linecap="round"/>
-          <path d="M20 4v6h-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+      <div class="actions">
+        <div class="iconBtn" id="btnBug" title="Debug log">🐞</div>
+        <div class="iconBtn" id="btnRefresh" title="Refresh">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M20 12a8 8 0 1 1-2.34-5.66" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <path d="M20 4v6h-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
       </div>
     </div>
     <div class="sub"><b id="connText">Connected Devices</b></div>
@@ -144,11 +133,9 @@
       <div class="btn" id="btnLogout"><span>⏻</span><span>Logout</span></div>
     </div>
 
-    <div class="mini" id="mini">Auto refresh: 1500ms</div>
+    <div class="mini" id="mini">Auto refresh: 1800ms</div>
   </div>
 </div>
-
-<div class="bug" id="bugBtn" title="Debug log">🐞</div>
 
 <div class="backdrop" id="backdrop">
   <div class="sheet">
@@ -166,56 +153,72 @@
 
 <script>
 (() => {
+  // ---- UI refs ----
+  const $ = (id) => document.getElementById(id);
+  const connText = $("connText");
+  const statusText = $("statusText");
+  const statusSub  = $("statusSub");
+  const statusBar  = $("statusBar");
+  const list = $("list");
+  const mini = $("mini");
+
+  const btnBug = $("btnBug");
+  const btnRefresh = $("btnRefresh");
+  const btnRefresh2 = $("btnRefresh2");
+  const btnLogout = $("btnLogout");
+
+  const backdrop = $("backdrop");
+  const logView = $("logView");
+  const btnClose = $("btnClose");
+  const btnCopy = $("btnCopy");
+  const btnClear = $("btnClear");
+
+  // ---- Config ----
   const STORAGE_KEY = "myhome_base";
-  const POLL_MS = 1500;
+  const POLL_MS = 1800;
+
+  // NOTE: mobile에서는 너무 빠른 abort가 "AbortError"를 만들기 쉬워서 여유있게 잡음
+  const PROBE_TIMEOUT_MS = 1800;
+  const FETCH_TIMEOUT_MS = 15000;
+  const CONCURRENCY = 10;
 
   const SUBNETS = [
     { prefix: "http://192.168.31.", start: 1, end: 254 },
     { prefix: "http://192.168.0.",  start: 1, end: 254 },
     { prefix: "http://192.168.1.",  start: 1, end: 254 },
   ];
-  const CONCURRENCY = 18;
-  const PROBE_TIMEOUT_MS = 800;
-  const FETCH_TIMEOUT_MS = 12000;
   const MDNS_CANDIDATES = ["http://myhome.local", "http://myhome.local:80"];
 
-  const connText = document.getElementById("connText");
-  const statusText = document.getElementById("statusText");
-  const statusSub  = document.getElementById("statusSub");
-  const statusBar  = document.getElementById("statusBar");
-  const list = document.getElementById("list");
-  const mini = document.getElementById("mini");
-  const btnRefresh = document.getElementById("btnRefresh");
-  const btnRefresh2 = document.getElementById("btnRefresh2");
-  const btnLogout = document.getElementById("btnLogout");
-
-  const bugBtn = document.getElementById("bugBtn");
-  const backdrop = document.getElementById("backdrop");
-  const logView = document.getElementById("logView");
-  const btnClose = document.getElementById("btnClose");
-  const btnCopy = document.getElementById("btnCopy");
-  const btnClear = document.getElementById("btnClear");
-
+  // ---- State ----
   let BASE = null;
   let devices = [];
   let pollTimer = null;
   let busy = new Set();
   let loggedOut = false;
+  let inFlight = false;
 
+  // ---- Logging ----
   let logs = [];
-  const MAX_LOG = 240;
+  const MAX_LOG = 260;
 
   function log(line, obj){
     const ts = new Date().toLocaleTimeString();
     let s = `[${ts}] ${line}`;
     if (obj !== undefined){
-      try { s += "\\n" + JSON.stringify(obj, null, 2); }
-      catch { s += "\\n" + String(obj); }
+      try { s += "\n" + JSON.stringify(obj, null, 2); }
+      catch { s += "\n" + String(obj); }
     }
     logs.unshift(s);
     logs = logs.slice(0, MAX_LOG);
-    logView.textContent = logs.join("\\n\\n");
+    if (logView) logView.textContent = logs.join("\n\n");
   }
+
+  window.addEventListener("error", (e) => {
+    log("JS ERROR", { message: e.message, source: e.filename, line: e.lineno, col: e.colno });
+  });
+  window.addEventListener("unhandledrejection", (e) => {
+    log("PROMISE REJECT", String(e.reason));
+  });
 
   function setBarColor(kind){
     statusBar.style.background =
@@ -229,7 +232,7 @@
     setBarColor(kind);
   }
 
-  const baseUrl = () => (BASE || "").replace(/\\/+$/, "");
+  const baseUrl = () => (BASE || "").replace(/\/+$/, "");
   const apiUrl  = (p) => baseUrl() + p;
 
   function iconFor(key){
@@ -258,17 +261,20 @@
   }
 
   async function probeBase(base){
-    const url = base.replace(/\\/+$/, "") + "/api/health";
+    const url = base.replace(/\/+$/, "") + "/api/health";
     try{
       const r = await fetchJson(url, PROBE_TIMEOUT_MS);
       const ok = r.ok && r.body && r.body.ok === true;
       if (ok) log("probe OK", { base, ip: r.body.ip, mdns: r.body.mdns });
       return ok ? r.body : null;
-    } catch { return null; }
+    } catch(e){
+      log("probe ERR", { base, err: String(e) });
+      return null;
+    }
   }
 
   function useBase(base, healthBody=null){
-    let fixed = base.replace(/\\/+$/, "");
+    let fixed = base.replace(/\/+$/, "");
     if (healthBody && healthBody.ip) fixed = "http://" + healthBody.ip;
     BASE = fixed;
     localStorage.setItem(STORAGE_KEY, BASE);
@@ -317,17 +323,6 @@
     }
 
     return false;
-  }
-
-  async function ensureConnected(){
-    if (BASE) return true;
-    const ok = await discoverOnce();
-    if (!ok){
-      setStatus("Connecting…", "retrying…", "warn");
-      return false;
-    }
-    await loadDevices();
-    return true;
   }
 
   function render(){
@@ -412,7 +407,10 @@
 
   async function loadDevices(){
     if (!BASE || loggedOut) return false;
-    const u = apiUrl(`/api/devices`);
+    if (inFlight) return true;
+    inFlight = true;
+
+    const u = apiUrl(`/api/devices?fresh=1`);
     try{
       const r = await fetchJson(u, FETCH_TIMEOUT_MS);
       if (r.ok && r.body && Array.isArray(r.body.devices)){
@@ -437,13 +435,27 @@
       setStatus("Connecting…", "retrying…", "warn");
       BASE = null;
       return false;
+    } finally {
+      inFlight = false;
     }
+  }
+
+  async function ensureConnected(){
+    if (BASE) return true;
+    const ok = await discoverOnce();
+    if (!ok){
+      setStatus("Connect Failed", "ESP32 not found", "bad");
+      return false;
+    }
+    await loadDevices();
+    return true;
   }
 
   function startPoll(){
     stopPoll();
     pollTimer = setInterval(async () => {
       if (loggedOut) return;
+
       if (!BASE){
         await ensureConnected();
         return;
@@ -464,9 +476,13 @@
     await ensureConnected();
   }
 
-  bugBtn.addEventListener("click", () => backdrop.style.display = "block");
-  btnClose.addEventListener("click", () => backdrop.style.display = "none");
-  backdrop.addEventListener("click", (e)=>{ if(e.target===backdrop) backdrop.style.display="none"; });
+  // Log panel
+  function openLog(){ backdrop.style.display = "block"; }
+  function closeLog(){ backdrop.style.display = "none"; }
+
+  btnBug.addEventListener("click", openLog);
+  btnClose.addEventListener("click", closeLog);
+  backdrop.addEventListener("click", (e)=>{ if(e.target===backdrop) closeLog(); });
   btnClear.addEventListener("click", ()=>{ logs=[]; logView.textContent="cleared."; });
   btnCopy.addEventListener("click", async ()=>{
     try{ await navigator.clipboard.writeText(logView.textContent||""); log("copied"); }
@@ -487,7 +503,8 @@
     log("logout");
   });
 
-  log("boot", { github:true, pollMs:POLL_MS });
+  // Boot
+  log("boot", { github:true, pollMs:POLL_MS, note:"v2 timeouts+no-overlap" });
   connText.textContent = "Connected Devices";
   setStatus("Connecting…", "starting…", "warn");
   render();
