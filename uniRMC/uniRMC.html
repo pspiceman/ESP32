@@ -348,13 +348,115 @@ main{ gap:4px; } /* was 12px */
 .logbtn-right{ width:110px; padding:6px 0; text-align:center; font-size:12px; line-height:1; letter-spacing:.3px; }
 
 
+
+
+/* === Day/Night theme toggle === */
+.iconbtn{
+  width:34px;
+  height:34px;
+  padding:0;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.10);
+  color:#fff;
+  font-size:16px;
+  line-height:1;
+  box-shadow: 0 12px 22px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.16);
+}
+.iconbtn:active{
+  transform: translateY(2px) scale(0.985);
+  filter: brightness(0.92);
+}
+
+/* Day mode */
+body.day{
+  background:#f4f6fb;
+  color:#0b0f14;
+}
+body.day header{
+  background:rgba(244,246,251,.92);
+  border-bottom:1px solid rgba(0,0,0,.10);
+}
+body.day .brand-title{
+  color: rgba(18,18,18,.92) !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,.75), 0 10px 22px rgba(0,0,0,.12) !important;
+}
+body.day .pill{
+  background:rgba(0,0,0,.06);
+  border:1px solid rgba(0,0,0,.10);
+  box-shadow: 0 10px 18px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.70);
+  color:#0b0f14;
+}
+body.day .pill.ok, body.day .pill.good{
+  background: linear-gradient(180deg,#ffffff,#eef3ff);
+  border:1px solid rgba(34,197,94,.85);
+  box-shadow: 0 0 0 1px rgba(34,197,94,.20), 0 0 14px rgba(34,197,94,.10), 0 10px 18px rgba(0,0,0,.10),
+              inset 0 1px 0 rgba(255,255,255,.85), inset 0 -6px 14px rgba(0,0,0,.06);
+  color:#0b0f14;
+  text-shadow:none;
+}
+body.day #st-rssi{
+  border:1px solid rgba(59,130,246,.85);
+  box-shadow: 0 0 0 1px rgba(59,130,246,.22),
+              0 0 12px rgba(59,130,246,.10),
+              0 10px 18px rgba(0,0,0,.10),
+              inset 0 1px 0 rgba(255,255,255,.85), inset 0 -6px 14px rgba(0,0,0,.06);
+}
+body.day main > section{
+  border:1px solid rgba(0,0,0,.10);
+  background: radial-gradient(1200px 420px at 18% 0%,
+              rgba(0,0,0,.03),
+              rgba(0,0,0,.02) 38%,
+              rgba(255,255,255,.60) 100%);
+  box-shadow: 0 18px 42px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.85), inset 0 -14px 28px rgba(0,0,0,.06);
+}
+body.day main > section h2{
+  color: rgba(20,20,20,.92) !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,.70), 0 10px 22px rgba(0,0,0,.10);
+}
+body.day button, body.day .btn, body.day .logbtn{
+  border:1px solid rgba(0,0,0,.12);
+  background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(253,254,255,.94)); /* very subtle gradient */
+  color:#0b0f14;
+  text-shadow:none;
+  box-shadow: 0 1px 2px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.35); /* ~1/2 depth */
+  filter: saturate(0.70);
+}
+body.day button:active, body.day .btn:active, body.day .logbtn:active{
+  box-shadow: 0 1px 1px rgba(0,0,0,.05), inset 0 1px 2px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.28) !important; /* ~1/2 depth */
+  transform: translateY(1px);
+  filter: saturate(0.70) brightness(0.995);
+}
+body.day .log{
+  background:rgba(255,255,255,.70);
+  border:1px solid rgba(0,0,0,.10);
+  color:#0b0f14;
+}
+body.day .iconbtn{
+  border:1px solid rgba(0,0,0,.12);
+  background:rgba(255,255,255,.75);
+  color:#0b0f14;
+  box-shadow: 0 10px 18px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.85);
+}
+
+
+body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
+  box-shadow: 0 1px 3px rgba(0,0,0,.055), inset 0 1px 0 rgba(255,255,255,.35) !important; /* ~1/2 lift */
+  filter: saturate(0.70);
+}
 </style>
 </head>
 <body>
 <header>
 <div class="row" style="justify-content:space-between">
 <div class="brand-title" style="font-weight:800; letter-spacing:.2px; font-size:24px;">Universal RMC</div>
-<div class="pill" id="clock">--:--</div>
+<div class="row" style="gap:8px; align-items:center; justify-content:flex-end;">
+  <div class="pill" id="clock">--:--</div>
+  <button id="themeToggle" class="iconbtn" type="button" aria-label="주/야간 전환" title="주/야간 전환">☀️</button>
+</div>
 </div>
 <div class="row status-row" style="margin-top:6px">
 <div class="pill bad" id="st-mqtt">MQTT: --</div>
@@ -680,6 +782,39 @@ main{ gap:4px; } /* was 12px */
     const fresh = bleLastTs && (Date.now() - bleLastTs) <= BLE_STALE_MS;
     return mqttOk && !!ble && fresh;
   }
+
+  // Theme (Night default) — persisted in localStorage
+  const THEME_KEY = "urmc_theme"; // "night" | "day"
+  const themeBtn = document.getElementById("themeToggle");
+
+  function applyTheme(theme){
+    const isDay = (theme === "day");
+    document.body.classList.toggle("day", isDay);
+    if(themeBtn){
+      // Show the *other* mode icon (tap to switch)
+      themeBtn.textContent = isDay ? "🌙" : "☀️";
+    }
+    try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
+  }
+
+  function toggleTheme(){
+    const cur = document.body.classList.contains("day") ? "day" : "night";
+    applyTheme(cur === "day" ? "night" : "day");
+  }
+
+  // Init theme early
+  (function(){
+    let saved = "night";
+    try{ saved = localStorage.getItem(THEME_KEY) || "night"; }catch(e){}
+    if(saved !== "day") saved = "night";
+    applyTheme(saved);
+  })();
+
+  if(themeBtn){
+    themeBtn.addEventListener("click", toggleTheme);
+  }
+
+
 window.addEventListener('load', ()=>{ connect(); });
 
   // Clock
