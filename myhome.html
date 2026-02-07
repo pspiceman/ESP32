@@ -301,6 +301,11 @@
         const topic = `${CMND}/${d.key}/POWER`;
         const payload = next ? "ON" : "OFF";
         client.publish(topic, payload);
+    // legacy mirror for POWER commands under ROOT
+    if(ENABLE_LEGACY_TOPICS && _topic.startsWith(`${ROOT}/cmnd/`) && _topic.endsWith(`/POWER`)){
+      const legacy = topic.replace(`${ROOT}/`, '');
+      client.publish(legacy, payload);
+    }
         log("CMD sent", {topic, payload});
       };
 
@@ -378,7 +383,7 @@
       const msg = payload.toString();
       log("MQTT RX", {topic, msg: msg.length>200 ? (msg.slice(0,200)+"...") : msg});
 
-      const parts = topic.split("/");
+      const parts = _topic.split("/");
       // expected: pspiceman/myhome/stat/<dev>/POWER ...
       if(parts.length < 5) return;
       if(parts[0] !== "pspiceman" || parts[1] !== "myhome") return;
