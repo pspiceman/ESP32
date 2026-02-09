@@ -192,6 +192,7 @@
     <div class="topRow">
       <div class="title">My Smart Home</div>
       <div class="actions">
+        <div class="iconBtn" id="btnRefresh" title="Refresh">⟳</div>
         <div class="iconBtn" id="btnBug" title="Log">🐞</div>
       </div>
     </div>
@@ -302,17 +303,44 @@
     });
   }
 
+  /* ================= ON-DEMAND REFRESH (Quota Saver) ================= */
+  const REFRESH_DEBOUNCE_MS = 8000; // refresh 폭주 방지
+  const AUTO_SWITCH_GRACE_MS = 20000; // saved node가 살아있지 않으면 다른 node로 자동 전환
+  let lastRefreshAt = 0;
+  let lastSeenAtByNode = {}; // {node: ms}
+
+  function publishRefresh(reason){
+    if(!client || !client.connected){
+      log("refresh skipped (mqtt not ready)", {reason});
+      return;
+    }
+    if(!currentNode){
+      log("refresh skipped (no node)", {reason});
+      return;
+    }
+    const now = Date.now();
+    if(now - lastRefreshAt < REFRESH_DEBOUNCE_MS){
+      log("refresh skipped (debounce)", {reason});
+      return;
+    }
+    lastRefreshAt = now;
+    client.publish(`${ROOT}/${currentNode}/cmd/refresh`, JSON.stringify({t:now, reason}));
+    log("refresh requested", {node: currentNode, reason});
+    setStatus("MQTT Connected", `node: ${currentNode} (refreshing)`);
+  }
+
   /* ================= NODE PICK ================= */
-  function pickNode(node){
+  function pickNode(node, why){
     if(!node) return;
     if(currentNode === node) return;
     currentNode = node;
     localStorage.setItem(LS_NODE_KEY, node);
-    log("use node",{node});
+    log("use node", {node, why: why || "manual/auto"});
     setStatus("MQTT Connected", `node: ${node}`);
-    // (옵션) ESP가 지원하면 즉시 요청
-    client.publish(`${ROOT}/${currentNode}/cmd/get`, JSON.stringify({t:Date.now()}));
+    // node가 바뀌면 1회 동기화 요청
+    publishRefresh("node_selected");
   }
+
 
   /* ================= MQTT CONNECT ================= */
   function connectMQTT(){
@@ -336,12 +364,12 @@
       // announce는 있어도 되고 없어도 됨(보조)
       client.subscribe(`${ROOT}/announce`);
 
-      // 저장된 node가 있으면 즉시 get 요청(있어도 retained가 더 빠름)
+      // 저장된 node가 있으면: 최초 화면 로드 시 1회만 refresh
       if(currentNode){
-        client.publish(`${ROOT}/${currentNode}/cmd/get`, JSON.stringify({t:Date.now()}));
         setStatus("MQTT Connected", `node: ${currentNode} (saved)`);
+        publishRefresh("page_load_saved_node");
       }
-    });
+      });
 
     client.on("message",(topic,payload)=>{
       const msg = payload.toString();
@@ -350,7 +378,16 @@
       if(topic === `${ROOT}/announce`){
         try{
           const data = JSON.parse(msg);
-          if(!currentNode) pickNode(data.node);
+          lastSeenAtByNode[data.node] = Date.now();
+          // saved node가 없거나, saved node가 일정 시간 동안 보이지 않으면 자동 전환
+          if(!currentNode){
+            pickNode(data.node, "announce_first");
+          }else{
+            const seen = lastSeenAtByNode[currentNode] || 0;
+            if(Date.now() - seen > AUTO_SWITCH_GRACE_MS){
+              pickNode(data.node, "announce_auto_switch");
+            }
+          }
           log("announce",data);
         }catch(e){}
         return;
@@ -379,6 +416,10 @@
         }else{
           // 다른 node의 devices도 들어오긴 함(멀티 노드 대비). 로그만 남김
           log("devices from other node", {node});
+          const seen = lastSeenAtByNode[currentNode] || 0;
+          if(Date.now() - seen > AUTO_SWITCH_GRACE_MS){
+            pickNode(node, "devices_auto_switch");
+          }
         }
       }
     });
@@ -396,7 +437,18 @@
 
   /* ================= LOG PANEL ================= */
   document.getElementById("btnBug").onclick=()=>{ backdrop.style.display="block"; };
+  document.getElementById("btnRefresh").onclick=()=>{ publishRefresh("manual_refresh"); };
   window.closeLog=()=>{ backdrop.style.display="none"; };
+
+  /* ================= PAGE VISIBILITY / FOCUS ================= */
+  document.addEventListener("visibilitychange", ()=>{
+    if(document.visibilityState === "visible"){
+      publishRefresh("visibility_visible");
+    }
+  });
+  window.addEventListener("focus", ()=>{
+    publishRefresh("window_focus");
+  });
 
   /* ================= START ================= */
   log("boot",{github:true,mode:"MQTT ONLY (fast devices subscribe)"});
