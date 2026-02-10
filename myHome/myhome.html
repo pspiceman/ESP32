@@ -269,7 +269,7 @@
         <div class="item">
           <div class="icon">ℹ️</div>
           <div class="grow">
-            <div class="name">Waiting devices...</div>
+            <div class="name">Connected to Devices</div>
             <div class="key">MQTT retained devices 수신 대기</div>
           </div>
         </div>`;
@@ -341,7 +341,6 @@
     publishRefresh("node_selected");
   }
 
-
   /* ================= MQTT CONNECT ================= */
   function connectMQTT(){
     const savedNode = localStorage.getItem(LS_NODE_KEY);
@@ -369,7 +368,7 @@
         setStatus("MQTT Connected", `node: ${currentNode} (saved)`);
         publishRefresh("page_load_saved_node");
       }
-      });
+    });
 
     client.on("message",(topic,payload)=>{
       const msg = payload.toString();
