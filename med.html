@@ -2,85 +2,380 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>투약 기록 (2026~) - Cloud Sync</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>투약 시간 기록 (2026~)</title>
   <style>
-    :root{
-      color-scheme: light dark;
-      --bg: Canvas; --fg: CanvasText; --muted: rgba(128,128,128,.75);
-      --line: rgba(128,128,128,.28); --card: rgba(128,128,128,.10);
-      --accent: #0a84ff; --danger: #ff3b30; --warn: #ffcc00;
-      --radius: 16px; --pad: 14px; --tap: 48px;
-      --shadow: 0 6px 18px rgba(0,0,0,.10); --shadow2: 0 10px 30px rgba(0,0,0,.14);
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; padding: 18px; }
+    .wrap { max-width: 980px; margin: 0 auto; }
+    h1 { font-size: 20px; margin: 0 0 12px; }
+    .card { border: 1px solid rgba(128,128,128,.35); border-radius: 12px; padding: 14px; margin: 12px 0; }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+    label { display: grid; gap: 6px; font-size: 13px; }
+    input, select, button, textarea {
+      font: inherit; padding: 10px 10px; border-radius: 10px;
+      border: 1px solid rgba(128,128,128,.35); background: transparent;
     }
-    *{ box-sizing:border-box; }
-    body{ margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,Arial,sans-serif; background:var(--bg); color:var(--fg); }
-    .wrap{ max-width:720px; margin:0 auto; padding: calc(env(safe-area-inset-top) + 14px) 14px calc(92px + env(safe-area-inset-bottom)); }
-    header{ display:flex; align-items:flex-end; gap:10px; margin-bottom:12px; }
-    h1{ margin:0; font-size:20px; letter-spacing:-0.2px; }
-    .sub{ margin-left:auto; font-size:12px; color:var(--muted); text-align:right; }
-    .card{ background: color-mix(in oklab, var(--card) 100%, transparent); border:1px solid var(--line); border-radius:var(--radius); padding:var(--pad); box-shadow:var(--shadow); margin:12px 0; }
-    .grid{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
-    .grid .full{ grid-column: 1 / -1; }
-    label{ display:grid; gap:6px; font-size:12px; color:var(--muted); }
-    input, select, button{ width:100%; min-height:var(--tap); border-radius:14px; border:1px solid var(--line); background:transparent; color:var(--fg); padding:10px 12px; font:inherit; font-size:16px; }
-    input::placeholder{ color: color-mix(in oklab, var(--muted) 70%, transparent); }
-    .pill{ display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:999px; border:1px solid var(--line); font-size:12px; color:var(--muted); margin-top:10px; background: color-mix(in oklab, var(--card) 70%, transparent); }
-    .dot{ width:10px; height:10px; border-radius:999px; background:var(--warn); }
-    .pill.ok .dot{ background:#2ecc71; } .pill.bad .dot{ background:var(--danger); } .pill.warn .dot{ background:var(--warn); }
-    .seg{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
-    .seg button{ min-height:44px; font-size:14px; }
-    .seg button.active{ border-color: color-mix(in oklab, var(--accent) 70%, var(--line)); box-shadow:var(--shadow2); }
-    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .row .grow{ flex:1 1 auto; }
-    .listHeader{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
-    .count{ font-size:12px; color:var(--muted); }
-    .item{ border:1px solid var(--line); border-radius:16px; padding:12px; background: color-mix(in oklab, var(--card) 60%, transparent); display:flex; gap:12px; align-items:center; margin-bottom:10px; }
-    .item .when{ display:grid; gap:2px; min-width:110px; }
-    .item .date{ font-weight:700; font-size:14px; }
-    .item .time{ font-size:13px; color:var(--muted); }
-    .item .note{ flex:1 1 auto; font-size:13px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .item .actions{ display:flex; gap:8px; }
-    .iconBtn{ width:44px; min-height:44px; padding:0; border-radius:14px; display:grid; place-items:center; font-size:16px; }
-    .bottomBar{ position:fixed; left:0; right:0; bottom:0; padding:10px 14px calc(10px + env(safe-area-inset-bottom)); background: color-mix(in oklab, var(--bg) 85%, transparent); backdrop-filter: blur(10px); border-top:1px solid var(--line); }
-    .barInner{ max-width:720px; margin:0 auto; display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
-    .btn{ min-height:52px; border-radius:16px; font-weight:700; }
-    .btn.primary{ border-color: color-mix(in oklab, var(--accent) 75%, var(--line)); }
-    .btn.danger{ border-color: color-mix(in oklab, var(--danger) 75%, var(--line)); color:var(--danger); }
-    details summary{ cursor:pointer; list-style:none; user-select:none; font-size:14px; font-weight:700; }
-    details summary::-webkit-details-marker{ display:none; }
-    .smallBtn{ min-height:44px; font-size:14px; }
-    .dangerText{ color:var(--danger); }
-    @media (min-width:560px){ .grid{ grid-template-columns: 1fr 1fr 1fr; } .grid .full{ grid-column:1 / -1; } }
+    button { cursor: pointer; }
+    button.primary { border-color: rgba(0, 140, 255, .6); }
+    .muted { opacity: .75; font-size: 12px; }
+    .ok { color: #2aa44f; }
+    .bad { color: #d45555; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border-bottom: 1px solid rgba(128,128,128,.25); padding: 8px; text-align: left; font-size: 13px; }
+    th { font-weight: 700; }
+    td.actions { width: 1%; white-space: nowrap; }
+    .pill { display:inline-block; padding:2px 8px; border:1px solid rgba(128,128,128,.35); border-radius:999px; font-size:12px; }
+    .right { margin-left:auto; display:flex; gap:8px; flex-wrap:wrap; }
+    .warn { background: rgba(255, 193, 7, .12); border-color: rgba(255, 193, 7, .35); }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>투약 기록 (2026~)</h1>
-      <div class="sub">
-        <div id="authLine">로그인 필요</div>
-        <div style="opacity:.8;">mymed-35647</div>
-      </div>
-    </header>
+<div class="wrap">
+  <h1>투약 시간 기록 (2026년~)</h1>
+  <div class="muted">저장 위치: 이 브라우저의 로컬 저장소(LocalStorage). 필요하면 TXT로 내보내기/가져오기 가능.</div>
 
-    <div class="card" id="authCard">
-      <div class="row">
-        <button id="loginBtn" class="smallBtn" type="button">Google로 로그인</button>
-        <button id="logoutBtn" class="smallBtn dangerText" type="button" style="display:none;">로그아웃</button>
-      </div>
-      <div class="pill warn" id="statusPill"><span class="dot"></span><span id="statusText">대기</span></div>
-      <div style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.4;">
-        같은 Google 계정으로 로그인하면 기기/브라우저가 달라도 동일 데이터가 열립니다.
+  <div class="card">
+    <div class="row">
+      <label>
+        날짜
+        <input type="date" id="dateInput" />
+      </label>
+
+      <label>
+        투약 시간
+        <input type="time" id="timeInput" step="60" />
+      </label>
+
+      <label>
+        메모(선택)
+        <input type="text" id="noteInput" placeholder="예: 아침 식후" maxlength="120" />
+      </label>
+
+      <div class="right">
+        <button class="primary" id="saveBtn">저장</button>
+        <button id="clearDayBtn">해당 날짜 삭제</button>
       </div>
     </div>
 
-    <div class="card" id="entryCard">
-      <div class="grid">
+    <div class="row" style="margin-top:10px;">
+      <div class="pill warn" id="statusPill">상태: 대기</div>
+      <div class="muted" id="autosaveHint">※ 날짜/시간 변경 후 저장 버튼을 누르면 기록됩니다.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <label>
+        보기 기준
+        <select id="viewMode">
+          <option value="month">월별 보기</option>
+          <option value="all">전체 보기</option>
+        </select>
+      </label>
+
+      <label id="monthLabel">
+        월
+        <input type="month" id="monthInput" />
+      </label>
+
+      <div class="right">
+        <button id="exportBtn">TXT 내보내기</button>
         <label>
-          날짜
-          <input type="date" id="dateInput" />
+          TXT 가져오기
+          <input type="file" id="importFile" accept=".txt,text/plain" />
         </label>
-        <label>
-          투약 시간
-          <input type="time" id="timeInput
+        <button id="wipeAllBtn" class="bad">전체 초기화</button>
+      </div>
+    </div>
+
+    <div class="muted" style="margin-top:10px;">
+      TXT 형식은 아래처럼 한 줄에 하나씩 저장됩니다 (탭으로 구분):<br/>
+      <code>2026-02-12\t08:30\t아침 식후</code>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div class="muted">기록 개수: <b id="countSpan">0</b></div>
+      <div class="right muted">정렬: 날짜 오름차순</div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>날짜</th>
+          <th>시간</th>
+          <th>메모</th>
+          <th class="actions">작업</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(() => {
+  const LS_KEY = "medLog.v1";
+  const dateInput = document.getElementById("dateInput");
+  const timeInput = document.getElementById("timeInput");
+  const noteInput = document.getElementById("noteInput");
+  const saveBtn = document.getElementById("saveBtn");
+  const clearDayBtn = document.getElementById("clearDayBtn");
+  const exportBtn = document.getElementById("exportBtn");
+  const importFile = document.getElementById("importFile");
+  const wipeAllBtn = document.getElementById("wipeAllBtn");
+  const tbody = document.getElementById("tbody");
+  const statusPill = document.getElementById("statusPill");
+  const countSpan = document.getElementById("countSpan");
+  const viewMode = document.getElementById("viewMode");
+  const monthInput = document.getElementById("monthInput");
+  const monthLabel = document.getElementById("monthLabel");
+
+  // data: { "YYYY-MM-DD": { time: "HH:MM", note: "...", updatedAt: 123 } }
+  function loadData() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return {};
+      const obj = JSON.parse(raw);
+      if (obj && typeof obj === "object") return obj;
+      return {};
+    } catch {
+      return {};
+    }
+  }
+
+  function saveData(data) {
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+  }
+
+  function setStatus(text, kind="ok") {
+    statusPill.textContent = "상태: " + text;
+    statusPill.classList.remove("ok", "bad", "warn");
+    statusPill.classList.add(kind);
+  }
+
+  function todayISO() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${dd}`;
+  }
+
+  function monthISO(d = new Date()) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    return `${y}-${m}`;
+  }
+
+  function validateDate(dateStr) {
+    if (!dateStr) return { ok: false, msg: "날짜를 선택하세요." };
+    const year = Number(dateStr.slice(0,4));
+    if (!Number.isFinite(year)) return { ok:false, msg:"날짜 형식이 올바르지 않습니다." };
+    if (year < 2026) return { ok:false, msg:"2026년부터 기록할 수 있어요." };
+    return { ok:true, msg:"OK" };
+  }
+
+  function filterKeysByView(keys) {
+    if (viewMode.value === "all") return keys;
+    const ym = monthInput.value; // "YYYY-MM"
+    if (!ym) return keys;
+    return keys.filter(k => k.startsWith(ym + "-"));
+  }
+
+  function render() {
+    const data = loadData();
+    const keys = Object.keys(data).sort(); // date asc
+    const viewKeys = filterKeysByView(keys);
+
+    countSpan.textContent = String(viewKeys.length);
+    tbody.innerHTML = "";
+
+    for (const k of viewKeys) {
+      const row = data[k];
+      const tr = document.createElement("tr");
+
+      const tdDate = document.createElement("td");
+      tdDate.textContent = k;
+
+      const tdTime = document.createElement("td");
+      tdTime.textContent = row.time || "";
+
+      const tdNote = document.createElement("td");
+      tdNote.textContent = row.note || "";
+
+      const tdAct = document.createElement("td");
+      tdAct.className = "actions";
+
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "불러오기";
+      editBtn.addEventListener("click", () => {
+        dateInput.value = k;
+        timeInput.value = row.time || "";
+        noteInput.value = row.note || "";
+        setStatus("불러옴", "ok");
+      });
+
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "삭제";
+      delBtn.addEventListener("click", () => {
+        const data2 = loadData();
+        delete data2[k];
+        saveData(data2);
+        setStatus("삭제됨", "warn");
+        render();
+      });
+
+      tdAct.appendChild(editBtn);
+      tdAct.appendChild(document.createTextNode(" "));
+      tdAct.appendChild(delBtn);
+
+      tr.appendChild(tdDate);
+      tr.appendChild(tdTime);
+      tr.appendChild(tdNote);
+      tr.appendChild(tdAct);
+      tbody.appendChild(tr);
+    }
+  }
+
+  function upsertEntry() {
+    const dateStr = dateInput.value;
+    const timeStr = timeInput.value;
+
+    const v = validateDate(dateStr);
+    if (!v.ok) { setStatus(v.msg, "bad"); return; }
+    if (!timeStr) { setStatus("투약 시간을 입력하세요.", "bad"); return; }
+
+    const noteStr = (noteInput.value || "").trim();
+
+    const data = loadData();
+    data[dateStr] = { time: timeStr, note: noteStr, updatedAt: Date.now() };
+    saveData(data);
+    setStatus("저장됨", "ok");
+    render();
+  }
+
+  function clearDay() {
+    const dateStr = dateInput.value;
+    const v = validateDate(dateStr);
+    if (!v.ok) { setStatus(v.msg, "bad"); return; }
+
+    const data = loadData();
+    if (data[dateStr]) {
+      delete data[dateStr];
+      saveData(data);
+      setStatus("해당 날짜 기록 삭제됨", "warn");
+      render();
+    } else {
+      setStatus("삭제할 기록이 없어요.", "warn");
+    }
+  }
+
+  function exportTxt() {
+    const data = loadData();
+    const keys = Object.keys(data).sort();
+    const lines = [];
+    lines.push("# 투약 시간 기록 (medLog.v1)");
+    lines.push("# 형식: YYYY-MM-DD<TAB>HH:MM<TAB>NOTE");
+    for (const k of keys) {
+      const row = data[k] || {};
+      const note = (row.note ?? "").replaceAll("\t", " ").replaceAll("\n", " ");
+      lines.push(`${k}\t${row.time ?? ""}\t${note}`);
+    }
+    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `med_log_${monthISO(new Date())}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    setStatus("TXT로 내보냄", "ok");
+  }
+
+  function importTxtFile(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result || "");
+      const lines = text.split(/\r?\n/);
+
+      const data = loadData();
+      let added = 0, skipped = 0;
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith("#")) continue;
+
+        let parts = trimmed.split("\t");
+        if (parts.length < 2) parts = trimmed.split(/\s{2,}|\s+/);
+
+        const dateStr = (parts[0] || "").trim();
+        const timeStr = (parts[1] || "").trim();
+        const noteStr = (parts.slice(2).join(" ") || "").trim();
+
+        const v = validateDate(dateStr);
+        if (!v.ok || !/^\d{2}:\d{2}$/.test(timeStr)) { skipped++; continue; }
+
+        data[dateStr] = { time: timeStr, note: noteStr, updatedAt: Date.now() };
+        added++;
+      }
+
+      saveData(data);
+      render();
+      setStatus(`가져옴 (추가/갱신 ${added}건, 건너뜀 ${skipped}건)`, added ? "ok" : "warn");
+      importFile.value = "";
+    };
+    reader.readAsText(file, "utf-8");
+  }
+
+  function wipeAll() {
+    const ok = confirm("정말로 모든 기록을 삭제할까요? (되돌릴 수 없음)");
+    if (!ok) return;
+    localStorage.removeItem(LS_KEY);
+    setStatus("전체 초기화됨", "warn");
+    render();
+  }
+
+  function syncMonthVisibility() {
+    if (viewMode.value === "month") {
+      monthLabel.style.display = "";
+    } else {
+      monthLabel.style.display = "none";
+    }
+    render();
+  }
+
+  // init defaults
+  dateInput.value = todayISO();
+  monthInput.value = monthISO(new Date());
+  setStatus("준비 완료", "ok");
+  render();
+  syncMonthVisibility();
+
+  // events
+  saveBtn.addEventListener("click", upsertEntry);
+  clearDayBtn.addEventListener("click", clearDay);
+  exportBtn.addEventListener("click", exportTxt);
+  wipeAllBtn.addEventListener("click", wipeAll);
+  viewMode.addEventListener("change", syncMonthVisibility);
+  monthInput.addEventListener("change", render);
+
+  importFile.addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) importTxtFile(file);
+  });
+
+  // Quick save on Enter in note field
+  noteInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      upsertEntry();
+    }
+  });
+})();
+</script>
+</body>
+</html>
