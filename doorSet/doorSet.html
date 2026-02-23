@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>Door Control - WiFi / LoRa</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #e5e7eb;
+      color: #222;
+      min-height: 100vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 8px;
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+    body.night-mode { background: #020617; color: #e5e7eb; }
+
+    .container {
+      width: 100%;
+      max-width: 400px;
+      background: #f3f4f6;
+      border-radius: 18px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+      padding: 16px 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: background 0.25s ease, box-shadow 0.25s ease;
+    }
+    body.night-mode .container {
+      background: #0f172a;
+      box-shadow: 0 10px 30px rgba(15,23,42,0.8);
+    }
+
+    .header-row {
+      position: relative;
+      margin-bottom: 14px;
+      padding: 0 42px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .title {
+      text-align: center;
+      font-family: "Georgia", "Times New Roman", serif;
+      font-size: clamp(1.8rem, 7.5vw, 2.3rem);
+      font-weight: 800;
+      color: #111827;
+      transform: translateX(6px);
+      text-shadow:
+        0 1px 0 #f9fafb,
+        0 3px 6px rgba(15, 23, 42, 0.35),
+        0 8px 20px rgba(15, 23, 42, 0.18);
+    }
+    body.night-mode .title {
+      color: #e5e7eb;
+      text-shadow:
+        0 1px 0 #020617,
+        0 4px 14px rgba(0, 0, 0, 0.9);
+    }
+
+    .mode-toggle-btn {
+      position: absolute;
+      top: 50%; right: 0;
+      transform: translateY(-50%);
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      border: none;
+      background: #d1d5db;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      transition: background 0.2s ease, box-shadow 0.2s ease;
+    }
+    .mode-toggle-btn:active { box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
+    body.night-mode .mode-toggle-btn {
+      background: #1e293b;
+      box-shadow: 0 3px 10px rgba(15,23,42,0.9);
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 0.78rem;
+      color: #555;
+      margin-bottom: 4px;
+    }
+    body.night-mode .subtitle { color: #9ca3af; }
+
+    /* WiFi / LoRa 모드 선택 버튼 */
+    .mode-switch {
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .mode-switch-left { display: flex; gap: 8px; }
+    .mode-switch-right { margin-left: auto; }
+    .mode-btn {
+      padding: 4px 14px;
+      font-size: 0.8rem;
+      border-radius: 999px;
+      border: 1px solid #9ca3af;
+      background: #d1d5db;
+      color: #111827;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .mode-btn.active {
+      background: #111827;
+      color: #f9fafb;
+      border-color: #111827;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    body.night-mode .mode-btn {
+      background: #1e293b;
+      color: #e5e7eb;
+      border-color: #4b5563;
+    }
+    body.night-mode .mode-btn.active {
+      background: #f97316;
+      color: #111827;
+      border-color: #f97316;
+      box-shadow: 0 2px 8px rgba(248, 113, 113, 0.6);
+    }
+
+    /* =========================================================
+       카드(3영역) 스타일 개선
+       - 주간: 뉴모피즘/입체감(양방향 그림자 + 미세 그라데이션)
+       - 야간: 구분선(그레이 윤곽선) + 입체감(미세 그라데이션+하이라이트)
+       ========================================================= */
+    .card {
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 8px;
+      background: linear-gradient(145deg, #f0f2f5, #d9dde4); /* 주간 입체감 */
+      border: 1px solid rgba(255,255,255,0.55);
+      box-shadow:
+        10px 10px 22px rgba(17, 24, 39, 0.18),
+        -10px -10px 22px rgba(255, 255, 255, 0.90),
+        inset 0 1px 0 rgba(255, 255, 255, 0.65);
+      transition: background 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+    /* ✅ 야간모드 카드: 윤곽선 유지 + 입체감 조금 올림 */
+    body.night-mode .card {
+      background: linear-gradient(145deg, #0f172a, #0a1222);
+      border: 1px solid rgba(148, 163, 184, 0.34);
+      box-shadow:
+        0 14px 28px rgba(0, 0, 0, 0.55),
+        0 -2px 10px rgba(148, 163, 184, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
+    }
+    .status-text-group { display: flex; flex-direction: column; gap: 4px; }
+    .status-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .status-left { display: flex; align-items: center; gap: 6px; }
+    .status-right { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .inline-value { font-size: 0.8rem; font-weight: 1000; color: #111827; }
+    
+    /* Thin value style for lux + threshold numbers (per UI request) */
+    #lux-node, #lux-gw, #threshold-node, #threshold-gw { font-weight: 300 !important; }
+body.night-mode .inline-value { color: #e5e7eb; }
+    .status-label { font-size: 0.8rem; color: #444; }
+    body.night-mode .status-label { color: #9ca3af; }
+
+    .status-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: #d4d4d8;
+      color: #333;
+    }
+    .status-pill.ok  { background: #c8f2d5; color: #1a7f3b; }
+    .status-pill.bad { background: #ffd1d1; color: #b91c1c; }
+    body.night-mode .status-pill { background: #1e293b; color: #e5e7eb; }
+    body.night-mode .status-pill.ok {
+      background: rgba(22,163,74,0.18); color: #4ade80;
+    }
+    body.night-mode .status-pill.bad {
+      background: rgba(248,113,113,0.2); color: #fecaca;
+    }
+
+    .reset-btn {
+      padding: 4px 14px;
+      font-size: 0.8rem;
+      font-weight: 1000;
+      border-radius: 999px;
+      border: 1px solid #ef4444;
+      cursor: pointer;
+      background: #d1d5db;
+      color: #111827;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+      white-space: nowrap;
+      transition:
+        background 0.15s ease,
+        transform 0.1s ease,
+        box-shadow 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
+    }
+    .reset-btn:hover {
+      background: #e5e7eb;
+      border-color: #dc2626;
+      color: #111827;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.18);
+    }
+    .reset-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    body.night-mode .reset-btn {
+      background: #111827;
+      border-color: #fb7185;
+      color: #e5e7eb;
+      box-shadow: 0 3px 8px rgba(15,23,42,0.9);
+    }
+    body.night-mode .reset-btn:hover {
+      background: #020617;
+      border-color: #fca5a5;
+      color: #f9fafb;
+    }
+
+    .lux-label,
+    .lux-value {
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #333333;
+    }
+    .lux-label { margin-bottom: 2px; }
+    .lux-value { margin-top: 4px; }
+    body.night-mode .lux-label,
+    body.night-mode .lux-value { color: #e5e7eb; }
+
+    .threshold-row {
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      gap: 6px;
+    }
+
+    .button-wrap {
+      margin-top: 6px; text-align: center; }
+
+    .led-btn {
+      display: inline-block;
+      width: 100%;
+      padding: 46px 28px;
+      font-family: system-ui, -apple-system, "SF Pro Display", "Apple SD Gothic Neo", "Segoe UI Variable", "Segoe UI", "Noto Sans KR", sans-serif;
+      font-size: 2.30rem;
+      font-weight: 400;
+      font-variation-settings: "wght" 400;
+      font-synthesis: none;
+      border-radius: 24px;
+      border: none;
+      cursor: pointer;
+      background: #16a34a;
+      color: #fff;
+      box-shadow:
+        0 8px 16px rgba(15, 23, 42, 0.4),
+        inset 0 2px 3px rgba(255, 255, 255, 0.2);
+      transition:
+        transform 0.1s ease,
+        box-shadow 0.1s ease,
+        opacity 0.1s ease,
+        background 0.2s ease,
+        filter 0.2s ease;
+      letter-spacing: 0.3px;
+    }
+    .led-btn:hover {
+      background: #15803d;
+    }
+    .led-btn:active {
+      transform: translateY(2px);
+      box-shadow:
+        0 4px 10px rgba(15, 23, 42, 0.7),
+        inset 0 1px 2px rgba(0, 0, 0, 0.3);
+      opacity: 0.97;
+    }
+    .led-btn.clicked {
+      filter: brightness(1.05);
+      box-shadow:
+        0 0 0 4px rgba(37,99,235,0.35),
+        0 12px 20px rgba(15, 23, 42, 0.6);
+    }
+    body.night-mode .led-btn {
+      background: #16a34a;
+      box-shadow:
+        0 8px 18px rgba(15, 23, 42, 0.85),
+        inset 0 2px 3px rgba(255, 255, 255, 0.08);
+    }
+    body.night-mode .led-btn.clicked {
+      box-shadow:
+        0 0 0 4px rgba(59,130,246,0.6),
+        0 12px 22px rgba(15, 23, 42, 0.95);
+    }
+
+    .door-state-window {
+      background: rgba(255,255,255,0.58);
+      border: 1px solid rgba(17, 24, 39, 0.10);
+      border-radius: 18px;
+      padding: 10px 12px;
+      margin-top: 6px;
+      margin-bottom: 12px;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.65),
+        0 6px 14px rgba(15, 23, 42, 0.10);
+    }
+    body.night-mode .door-state-window {
+      background: rgba(2, 6, 23, 0.55);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.06),
+        0 10px 22px rgba(0,0,0,0.45);
+    }
+
+    .door-state-row {
+      margin-top: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.14rem;
+      font-family: system-ui, -apple-system, "SF Pro Display", "Apple SD Gothic Neo", "Segoe UI Variable", "Segoe UI", "Noto Sans KR", sans-serif;
+      font-weight: 300;
+      letter-spacing: 0.2px;
+    }
+    .door-label { font-weight: 400;}
+
+    .door-state-badge {
+      min-width: 80px;
+      text-align: center;
+      padding: 4px 14px;
+      border-radius: 12px;
+      color: #ffffff;
+      background: #374151;
+    }
+    .door-state-badge.door-open { background: #2563eb; }
+    .door-state-badge.door-close { background: #374151; }
+    body.night-mode .door-state-badge.door-open { background: #2563eb; }
+
+    .footer {
+      margin-top: 6px;
+      font-size: 0.72rem;
+      color: #555;
+      line-height: 1.45;
+    }
+    .footer-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2px;
+      gap: 6px;
+    }
+    .footer-small { font-size: 0.7rem; }
+    body.night-mode .footer { color: #9ca3af; }
+
+    .divider {
+      height: 1px;
+      background: #d4d4d8;
+      margin: 4px 0;
+    }
+    body.night-mode .divider {
+      background: #1f2937;
+    }
+
+    #wifi-panel, #lora-panel { width: 100%; }
+    #lora-panel { display: none; }
+
+    @media (max-width: 480px) {
+      body { padding: 8px 6px; }
+      .container { max-width: 100%; border-radius: 14px; }
+    }
+  
+    /* Ensure Open/Close button weight */
+    .led-btn { font-weight: 400 !important; }
+
+    /* 기준값 설정 (Door상태 아래) */
+    .threshold-input-row{
+      margin-top: 16px;
+      margin-bottom: 14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      flex-wrap:nowrap;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.55);
+      border: 1px solid rgba(17,24,39,0.10);
+    }
+    body.night-mode .threshold-input-row{
+      background: rgba(2,6,23,0.55);
+      border-color: rgba(148,163,184,0.22);
+    }
+    .threshold-input-row .thr-label{
+      font-size:0.85rem;
+      color:#374151;
+      white-space:nowrap;
+      font-weight:600;
+    }
+    body.night-mode .threshold-input-row .thr-label{ color:#cbd5e1; }
+    .threshold-input-row input{
+      width: 78px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(107,114,128,0.5);
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-align: right;
+      background: #f9fafb;
+      color: #111827;
+      outline: none;
+    }
+    body.night-mode .threshold-input-row input{
+      background: #020617;
+      color: #e5e7eb;
+      border-color: #334155;
+    }
+    .small-btn{
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      border-radius: 999px;
+      border: 1px solid rgba(107,114,128,0.55);
+      background: rgba(209,213,219,0.9);
+      color: #111827;
+      cursor: pointer;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+      white-space: nowrap;
+      transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    .small-btn:active{
+      transform: translateY(1px);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    }
+    body.night-mode .small-btn{
+      background: rgba(30,41,59,0.85);
+      color: #e5e7eb;
+      border-color: rgba(148,163,184,0.28);
+      box-shadow: 0 3px 10px rgba(15,23,42,0.9);
+    }
+
+  </style>
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" href="./doorControl-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="./doorControl-192.png">
+
+</head>
+
+<body class="night-mode">
+  <div class="container">
+    <div class="header-row">
+      <div class="title">Door Control</div>
+      <button id="mode-toggle-btn" class="mode-toggle-btn" aria-label="Toggle day/night mode">🌙</button>
+    </div>
+    <div class="mode-switch">
+      <div class="mode-switch-left">
+        <button id="btn-wifi" class="mode-btn active">WiFi</button>
+        <button id="btn-lora" class="mode-btn">LoRa</button>
+      </div>
+      <div class="mode-switch-right">
+        <!-- ✅ RESET: WiFi/LoRa 버튼 라인 우측 끝 -->
+        <button id="reset-btn-node" class="reset-btn">RESET</button>
+        <button id="reset-btn-gw" class="reset-btn" style="display:none;">RESET</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- WiFi 패널 -->
+    <div id="wifi-panel">
+      <div class="card">
+        <div class="status-text-group">
+          <!-- ✅ 밝기 + lux 값: MQTT 라인 우측 끝 / MQTT와 같은 폰트 -->
+          <div class="status-line">
+            <div class="status-left">
+              <span class="status-label">MQTT:</span>
+              <span id="mqtt-status-node" class="status-pill bad">연결 안 됨</span>
+            </div>
+            <div class="status-right">
+              <span class="status-label">밝기[lx]:</span>
+              <span id="lux-node" class="inline-value">-</span>
+            </div>
+          </div>
+
+          <!-- ✅ Open 기준(lx): 장비상태 라인 우측 끝 / 장비상태와 같은 폰트 -->
+          <div class="status-line">
+            <div class="status-left">
+              <span class="status-label">장비상태:</span>
+              <span id="device-status-node" class="status-pill bad">데이터 없음</span>
+            </div>
+            <div class="status-right">
+              <span class="status-label">Open 기준(lx):</span>
+              <span id="threshold-node" class="inline-value">-</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <!-- ✅ Door상태(로보토/사이즈 업): 버튼 위로 이동 -->
+        <div class="door-state-window">
+          <div class="door-state-row">
+          <span class="door-label">Door상태</span>
+          <span id="door-state-node" class="door-state-badge door-close">Close</span>
+        </div>
+        </div>
+
+        <div class="threshold-input-row">
+          <span class="thr-label">기준값 설정:</span>
+          <input id="threshold-input-wifi" type="text" inputmode="numeric" autocomplete="off" value="10" />
+          <button id="threshold-apply-btn-wifi" class="small-btn">적용</button>
+        </div>
+
+
+        <div class="button-wrap">
+          <button id="led-btn-node" class="led-btn">Open/Close</button>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div class="footer-row footer-small">
+          <span>RSSI(Node-공유기):</span>
+          <span><span id="rssi2-node">-</span> dBm</span>
+        </div>
+        <div class="footer-row footer-small">
+          <span>업데이트 시각:</span>
+          <span id="last-update-node">-</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- LoRa 패널 -->
+    <div id="lora-panel">
+      <div class="card">
+        <div class="status-text-group">
+          <!-- ✅ 밝기 + lux 값: MQTT 라인 우측 끝 / MQTT와 같은 폰트 -->
+          <div class="status-line">
+            <div class="status-left">
+              <span class="status-label">MQTT:</span>
+              <span id="mqtt-status-gw" class="status-pill bad">연결 안 됨</span>
+            </div>
+            <div class="status-right">
+              <span class="status-label">밝기[lx]:</span>
+              <span id="lux-gw" class="inline-value">-</span>
+            </div>
+          </div>
+
+          <!-- ✅ Open 기준(lx): 장비상태 라인 우측 끝 / 장비상태와 같은 폰트 -->
+          <div class="status-line">
+            <div class="status-left">
+              <span class="status-label">장비상태:</span>
+              <span id="device-status-gw" class="status-pill bad">데이터 없음</span>
+            </div>
+            <div class="status-right">
+              <span class="status-label">Open 기준(lx):</span>
+              <span id="threshold-gw" class="inline-value">-</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <!-- ✅ Door상태(로보토/사이즈 업): 버튼 위로 이동 -->
+        <div class="door-state-window">
+          <div class="door-state-row">
+          <span class="door-label">Door상태</span>
+          <span id="door-state-gw" class="door-state-badge door-close">Close</span>
+        </div>
+        </div>
+
+        <div class="threshold-input-row">
+          <span class="thr-label">기준값 설정:</span>
+          <input id="threshold-input-lora" type="text" inputmode="numeric" autocomplete="off" value="10" />
+          <button id="threshold-apply-btn-lora" class="small-btn">적용</button>
+        </div>
+
+
+        <div class="button-wrap">
+          <button id="led-btn-gw" class="led-btn">Open/Close</button>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div class="footer-row">
+          <span>RSSI1(Node-GW): <span id="rssi1-gw">-</span> dBm</span>
+          <span>RSSI2(GW-공유기): <span id="rssi2-gw">-</span> dBm</span>
+        </div>
+        <div class="footer-row footer-small">
+          <span>업데이트 시각:</span>
+          <span id="last-update-gw">-</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const MQTT_URL  = "wss://51892257f9da45da963ae82069913afc.s1.eu.hivemq.cloud:8884/mqtt";
+    const MQTT_USER = "hivemq.webclient.1765336525937";
+    const MQTT_PASS = "&x%m0CB4IS9X1Adgy:a?";
+
+    const N_TOP_LUX_VALUE  = "tswell/node1/lux/value";
+    const N_TOP_LUX_STATE  = "tswell/node1/lux/state";
+    const N_TOP_RSSI2      = "tswell/node1/rssi2";
+    const N_TOP_LED_CMD    = "tswell/node1/cmd/led";
+    const N_TOP_RESET_CMD  = "tswell/node1/cmd/reset";
+
+    const G_TOP_LUX_VALUE  = "tswell/lux/value";
+    const G_TOP_LUX_STATE  = "tswell/lux/state";
+    const G_TOP_RSSI1      = "tswell/rssi1";
+    const G_TOP_RSSI2      = "tswell/rssi2";
+    const G_TOP_STATUS     = "tswell/status";
+    const G_TOP_LED_CMD    = "tswell/cmd/led";
+    const G_TOP_RESET_CMD  = "tswell/cmd/reset";
+
+    const TOPIC_THRESHOLD_STATE = "tswell/node1/config/threshold";
+
+    const clientId = "WEB-ALL-" + Math.random().toString(16).substr(2, 8);
+    const client   = new Paho.Client(MQTT_URL, clientId);
+
+    const btnWifi   = document.getElementById("btn-wifi");
+    const btnLora   = document.getElementById("btn-lora");
+    const wifiPanel = document.getElementById("wifi-panel");
+    const loraPanel = document.getElementById("lora-panel");
+
+    const modeToggleBtn = document.getElementById("mode-toggle-btn");
+    let isNightMode = true;
+
+    const mqttStatusNode   = document.getElementById("mqtt-status-node");
+    const deviceStatusNode = document.getElementById("device-status-node");
+    const luxNodeEl        = document.getElementById("lux-node");
+    const doorNodeBadge    = document.getElementById("door-state-node");
+    const rssi2NodeEl      = document.getElementById("rssi2-node");
+    const lastUpdateNodeEl = document.getElementById("last-update-node");
+    const ledBtnNode       = document.getElementById("led-btn-node");
+    const resetBtnNode     = document.getElementById("reset-btn-node");
+    const thresholdNodeEl  = document.getElementById("threshold-node");
+
+    const mqttStatusGw   = document.getElementById("mqtt-status-gw");
+    const deviceStatusGw = document.getElementById("device-status-gw");
+    const luxGwEl        = document.getElementById("lux-gw");
+    const doorGwBadge    = document.getElementById("door-state-gw");
+    const rssi1GwEl      = document.getElementById("rssi1-gw");
+    const rssi2GwEl      = document.getElementById("rssi2-gw");
+    const lastUpdateGwEl = document.getElementById("last-update-gw");
+    const ledBtnGw       = document.getElementById("led-btn-gw");
+    const resetBtnGw     = document.getElementById("reset-btn-gw");
+    const thresholdGwEl  = document.getElementById("threshold-gw");
+
+    
+
+
+    const thresholdInputWifi    = document.getElementById("threshold-input-wifi");
+    const thresholdApplyBtnWifi = document.getElementById("threshold-apply-btn-wifi");
+    const thresholdInputLora    = document.getElementById("threshold-input-lora");
+    const thresholdApplyBtnLora = document.getElementById("threshold-apply-btn-lora");
+
+    function attachThresholdSanitizer(inputEl) {
+      if (!inputEl) return;
+      inputEl.addEventListener("input", () => {
+        let v = inputEl.value.replace(/\D/g, "");
+        if (v.length > 4) v = v.slice(0, 4);
+        inputEl.value = v;
+      });
+    }
+    attachThresholdSanitizer(thresholdInputWifi);
+    attachThresholdSanitizer(thresholdInputLora);
+
+    function sendThresholdFrom(inputEl) {
+      if (!client.isConnected()) {
+        alert("MQTT 연결이 되지 않았습니다.");
+        return;
+      }
+      const raw = (inputEl?.value || "").trim();
+      if (raw === "") {
+        alert("0~9999 값을 입력하세요.");
+        return;
+      }
+      const v = parseInt(raw, 10);
+      if (isNaN(v) || v < 0 || v > 9999) {
+        alert("0~9999 범위의 값만 가능합니다.");
+        return;
+      }
+      const payload = v.toString();
+      const msg = new Paho.Message(payload);
+      msg.destinationName = TOPIC_THRESHOLD_STATE;
+      msg.qos = 1;
+      msg.retained = true;
+      client.send(msg);
+
+      luxThreshold = v;
+      if (thresholdNodeEl) thresholdNodeEl.textContent = v;
+      if (thresholdGwEl)   thresholdGwEl.textContent   = v;
+          if (thresholdInputWifi) thresholdInputWifi.value = v.toString();
+          if (thresholdInputLora) thresholdInputLora.value = v.toString();
+      if (thresholdInputWifi) thresholdInputWifi.value = v.toString();
+      if (thresholdInputLora) thresholdInputLora.value = v.toString();
+    }
+
+    if (thresholdApplyBtnWifi) thresholdApplyBtnWifi.addEventListener("click", () => sendThresholdFrom(thresholdInputWifi));
+    if (thresholdApplyBtnLora) thresholdApplyBtnLora.addEventListener("click", () => sendThresholdFrom(thresholdInputLora));
+
+const originalLedLabelNode = ledBtnNode.textContent;
+    const originalLedLabelGw   = ledBtnGw.textContent;
+
+    let lastDataNode = 0;
+    let lastDataGw   = 0;
+    let luxThreshold = null;
+
+    function updateDoorNode(isOpen) {
+      doorNodeBadge.textContent = isOpen ? "Open" : "Close";
+      doorNodeBadge.classList.remove("door-open", "door-close");
+      doorNodeBadge.classList.add(isOpen ? "door-open" : "door-close");
+    }
+    function updateDoorGw(isOpen) {
+      doorGwBadge.textContent = isOpen ? "Open" : "Close";
+      doorGwBadge.classList.remove("door-open", "door-close");
+      doorGwBadge.classList.add(isOpen ? "door-open" : "door-close");
+    }
+
+    function setMqttStatus(connected) {
+      [mqttStatusNode, mqttStatusGw].forEach(p => {
+        if (!p) return;
+        if (connected) {
+          p.textContent = "연결됨";
+          p.classList.remove("bad");
+          p.classList.add("ok");
+        } else {
+          p.textContent = "연결 안 됨";
+          p.classList.remove("ok");
+          p.classList.add("bad");
+        }
+      });
+    }
+
+    function updateDeviceStatusNode() {
+      const now = Date.now();
+      if (lastDataNode > 0 && now - lastDataNode < 15000) {
+        deviceStatusNode.textContent = "데이터 수신 중";
+        deviceStatusNode.classList.remove("bad");
+        deviceStatusNode.classList.add("ok");
+      } else {
+        deviceStatusNode.textContent = "데이터 없음";
+        deviceStatusNode.classList.remove("ok");
+        deviceStatusNode.classList.add("bad");
+      }
+    }
+    function updateDeviceStatusGw() {
+      const now = Date.now();
+      if (lastDataGw > 0 && now - lastDataGw < 15000) {
+        deviceStatusGw.textContent = "데이터 수신 중";
+        deviceStatusGw.classList.remove("bad");
+        deviceStatusGw.classList.add("ok");
+      } else {
+        deviceStatusGw.textContent = "데이터 없음";
+        deviceStatusGw.classList.remove("ok");
+        deviceStatusGw.classList.add("bad");
+      }
+    }
+
+    function applyMode() {
+      if (isNightMode) {
+        document.body.classList.add("night-mode");
+        modeToggleBtn.textContent = "🌙";
+      } else {
+        document.body.classList.remove("night-mode");
+        modeToggleBtn.textContent = "☀️";
+      }
+    }
+    modeToggleBtn.addEventListener("click", () => {
+      isNightMode = !isNightMode;
+      applyMode();
+    });
+
+    function showWifi() {
+      wifiPanel.style.display = "block";
+      loraPanel.style.display = "none";
+      btnWifi.classList.add("active");
+      btnLora.classList.remove("active");
+      // ✅ RESET 버튼: WiFi/LoRa에 따라 노출
+      resetBtnNode.style.display = "";
+      resetBtnGw.style.display   = "none";
+    }
+    function showLora() {
+      wifiPanel.style.display = "none";
+      loraPanel.style.display = "block";
+      btnWifi.classList.remove("active");
+      btnLora.classList.add("active");
+      // ✅ RESET 버튼: WiFi/LoRa에 따라 노출
+      resetBtnNode.style.display = "none";
+      resetBtnGw.style.display   = "";
+    }
+    btnWifi.addEventListener("click", showWifi);
+    btnLora.addEventListener("click", showLora);
+
+    client.onConnectionLost = function (responseObject) {
+      console.log("onConnectionLost:", responseObject.errorMessage);
+      setMqttStatus(false);
+      setTimeout(connectMQTT, 3000);
+    };
+
+    client.onMessageArrived = function (message) {
+      const topic   = message.destinationName;
+      const payload = message.payloadString;
+      console.log("onMessageArrived:", topic, payload);
+
+      if (topic === N_TOP_LUX_VALUE) {
+        const v = parseFloat(payload);
+        if (!isNaN(v)) {
+          const iv = Math.round(v);
+          luxNodeEl.textContent = iv;
+          if (luxThreshold != null) updateDoorNode(iv > luxThreshold);
+        } else {
+          luxNodeEl.textContent = payload;
+        }
+        lastDataNode = Date.now();
+        updateDeviceStatusNode();
+        lastUpdateNodeEl.textContent = new Date().toLocaleString();
+
+      } else if (topic === N_TOP_LUX_STATE) {
+        if (luxThreshold == null) updateDoorNode(payload === "OPEN");
+        lastDataNode = Date.now();
+        updateDeviceStatusNode();
+        lastUpdateNodeEl.textContent = new Date().toLocaleString();
+
+      } else if (topic === N_TOP_RSSI2) {
+        rssi2NodeEl.textContent = payload;
+      }
+
+      else if (topic === G_TOP_LUX_VALUE) {
+        const v = parseFloat(payload);
+        if (!isNaN(v)) {
+          const iv = Math.round(v);
+          luxGwEl.textContent = iv;
+          if (luxThreshold != null) updateDoorGw(iv > luxThreshold);
+        } else {
+          luxGwEl.textContent = payload;
+        }
+        lastDataGw = Date.now();
+        updateDeviceStatusGw();
+        lastUpdateGwEl.textContent = new Date().toLocaleString();
+
+      } else if (topic === G_TOP_LUX_STATE) {
+        if (luxThreshold == null) updateDoorGw(payload === "OPEN");
+        lastDataGw = Date.now();
+        updateDeviceStatusGw();
+        lastUpdateGwEl.textContent = new Date().toLocaleString();
+
+      } else if (topic === G_TOP_RSSI1) {
+        rssi1GwEl.textContent = payload;
+      } else if (topic === G_TOP_RSSI2) {
+        rssi2GwEl.textContent = payload;
+      } else if (topic === G_TOP_STATUS) {
+        console.log("GW STATUS:", payload);
+      }
+
+      if (topic === TOPIC_THRESHOLD_STATE) {
+        const v = parseInt(payload, 10);
+        if (!isNaN(v)) {
+          luxThreshold = v;
+          thresholdNodeEl.textContent = v;
+          thresholdGwEl.textContent   = v;
+          if (thresholdInputWifi) thresholdInputWifi.value = v.toString();
+          if (thresholdInputLora) thresholdInputLora.value = v.toString();
+          console.log("임계값 수신:", v);
+        }
+      }
+    };
+
+    function connectMQTT() {
+      console.log("MQTT 연결 시도...", MQTT_URL, clientId);
+      client.connect({
+        useSSL: true,
+        timeout: 10,
+        cleanSession: true,
+        userName: MQTT_USER,
+        password: MQTT_PASS,
+        onSuccess: function () {
+          console.log("MQTT 연결 성공");
+          setMqttStatus(true);
+
+          client.subscribe(N_TOP_LUX_VALUE);
+          client.subscribe(N_TOP_LUX_STATE);
+          client.subscribe(N_TOP_RSSI2);
+
+          client.subscribe(G_TOP_LUX_VALUE);
+          client.subscribe(G_TOP_LUX_STATE);
+          client.subscribe(G_TOP_RSSI1);
+          client.subscribe(G_TOP_RSSI2);
+          client.subscribe(G_TOP_STATUS);
+
+          client.subscribe(TOPIC_THRESHOLD_STATE);
+        },
+        onFailure: function (err) {
+          console.error("MQTT 연결 실패:", err.errorMessage || err);
+          setMqttStatus(false);
+          setTimeout(connectMQTT, 4000);
+        },
+      });
+    }
+
+    ledBtnNode.addEventListener("click", function () {
+      if (!client.isConnected()) { alert("MQTT 연결이 되지 않았습니다."); return; }
+      ledBtnNode.classList.add("clicked");
+      ledBtnNode.textContent = "명령 전송";
+      setTimeout(() => {
+        ledBtnNode.classList.remove("clicked");
+        ledBtnNode.textContent = originalLedLabelNode;
+      }, 600);
+
+      const msg = new Paho.Message("PULSE");
+      msg.destinationName = N_TOP_LED_CMD;
+      client.send(msg);
+    });
+
+    resetBtnNode.addEventListener("click", function () {
+      if (!client.isConnected()) { alert("MQTT 연결이 되지 않았습니다."); return; }
+      const ok = confirm("Node를 소프트 리셋할까요?");
+      if (!ok) return;
+      const msg = new Paho.Message("RESET_NODE");
+      msg.destinationName = N_TOP_RESET_CMD;
+      client.send(msg);
+    });
+
+    ledBtnGw.addEventListener("click", function () {
+      if (!client.isConnected()) { alert("MQTT 연결이 되지 않았습니다."); return; }
+      ledBtnGw.classList.add("clicked");
+      ledBtnGw.textContent = "명령 전송";
+      setTimeout(() => {
+        ledBtnGw.classList.remove("clicked");
+        ledBtnGw.textContent = originalLedLabelGw;
+      }, 600);
+
+      const msg = new Paho.Message("PULSE");
+      msg.destinationName = G_TOP_LED_CMD;
+      client.send(msg);
+    });
+
+    resetBtnGw.addEventListener("click", function () {
+      if (!client.isConnected()) { alert("MQTT 연결이 되지 않았습니다."); return; }
+      const ok = confirm("Gateway와 Node를 순차적으로 재시작할까요?");
+      if (!ok) return;
+      const msg = new Paho.Message("SOFT_RESET");
+      msg.destinationName = G_TOP_RESET_CMD;
+      client.send(msg);
+    });
+
+    setInterval(updateDeviceStatusNode, 5000);
+    setInterval(updateDeviceStatusGw,   5000);
+
+    applyMode();
+    showWifi();
+    connectMQTT();
+  </script>
+
+  <!-- PWA Install (Android/Chrome/Edge) -->
+  <button id="installBtn" style="
+    position: fixed; right: 16px; bottom: 16px; z-index: 9999;
+    padding: 12px 14px; border-radius: 999px; border: 0;
+    font-weight: 700; cursor: pointer; display: none;
+    box-shadow: 0 6px 18px rgba(0,0,0,.25);
+  ">설치</button>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js");
+      });
+    }
+  </script>
+
+
+  <script>
+    // PWA install prompt (Android/Chrome/Edge)
+    let deferredPrompt = null;
+    const installBtn = document.getElementById("installBtn");
+
+    window.addEventListener("beforeinstallprompt", (e) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      deferredPrompt = e;
+      if (installBtn) installBtn.style.display = "inline-flex";
+    });
+
+    if (installBtn) {
+      installBtn.addEventListener("click", async () => {
+        if (!deferredPrompt) return;
+        installBtn.style.display = "none";
+        deferredPrompt.prompt();
+        try {
+          await deferredPrompt.userChoice;
+        } finally {
+          deferredPrompt = null;
+        }
+      });
+    }
+
+    window.addEventListener("appinstalled", () => {
+      if (installBtn) installBtn.style.display = "none";
+    });
+
+    // iOS 안내 (Safari는 자동 설치 프롬프트 없음)
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+    if (isIOS && !isStandalone) {
+      // 필요 시 사용자에게만 안내 (너무 시끄럽지 않게)
+      // alert("iPhone/iPad: 공유 버튼(⬆️) → '홈 화면에 추가'로 설치하세요.");
+    }
+  </script>
+
+</body>
+</html>
