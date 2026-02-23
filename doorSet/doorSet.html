@@ -473,8 +473,8 @@ body.night-mode .inline-value { color: #e5e7eb; }
   <!-- PWA -->
   <link rel="manifest" href="./manifest.webmanifest">
   <meta name="theme-color" content="#0b1020">
-  <link rel="icon" href="./doorCOntrol.png" type="image/png">
-  <link rel="apple-touch-icon" href="./doorCOntrol.png">
+  <link rel="icon" href="./doorControl.png" type="image/png">
+  <link rel="apple-touch-icon" href="./doorControl.png">
 
 </head>
 
@@ -984,58 +984,11 @@ const originalLedLabelNode = ledBtnNode.textContent;
     connectMQTT();
   </script>
 
-  <!-- PWA Install (Android/Chrome/Edge) -->
-  <button id="installBtn" style="
-    position: fixed; right: 16px; bottom: 16px; z-index: 9999;
-    padding: 12px 14px; border-radius: 999px; border: 0;
-    font-weight: 700; cursor: pointer; display: none;
-    box-shadow: 0 6px 18px rgba(0,0,0,.25);
-  ">설치</button>
-
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("./sw.js");
       });
-    }
-  </script>
-
-
-  <script>
-    // PWA install prompt (Android/Chrome/Edge)
-    let deferredPrompt = null;
-    const installBtn = document.getElementById("installBtn");
-
-    window.addEventListener("beforeinstallprompt", (e) => {
-      // Prevent the mini-infobar from appearing on mobile
-      e.preventDefault();
-      deferredPrompt = e;
-      if (installBtn) installBtn.style.display = "inline-flex";
-    });
-
-    if (installBtn) {
-      installBtn.addEventListener("click", async () => {
-        if (!deferredPrompt) return;
-        installBtn.style.display = "none";
-        deferredPrompt.prompt();
-        try {
-          await deferredPrompt.userChoice;
-        } finally {
-          deferredPrompt = null;
-        }
-      });
-    }
-
-    window.addEventListener("appinstalled", () => {
-      if (installBtn) installBtn.style.display = "none";
-    });
-
-    // iOS 안내 (Safari는 자동 설치 프롬프트 없음)
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    const isStandalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
-    if (isIOS && !isStandalone) {
-      // 필요 시 사용자에게만 안내 (너무 시끄럽지 않게)
-      // alert("iPhone/iPad: 공유 버튼(⬆️) → '홈 화면에 추가'로 설치하세요.");
     }
   </script>
 
