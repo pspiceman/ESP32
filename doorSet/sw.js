@@ -1,7 +1,7 @@
 const CACHE_NAME = "door-control-pwa-v2";
 const ASSETS = [
   "./",
-  "./doorSet_pwa.html",
+  "./doorSet.html",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
@@ -32,7 +32,7 @@ self.addEventListener("fetch", (event) => {
         return net;
       } catch (e) {
         const cache = await caches.open(CACHE_NAME);
-        return (await cache.match("./doorSet_pwa.html")) || (await cache.match("./"));
+        return (await cache.match("./doorSet.html")) || (await cache.match("./"));
       }
     })());
     return;

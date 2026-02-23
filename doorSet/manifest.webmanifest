@@ -1,7 +1,7 @@
 {
   "name": "Door Control",
   "short_name": "DoorCtrl",
-  "start_url": "./doorSet_pwa.html",
+  "start_url": "./doorSet.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0b1020",
