@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>주식 5종목 수익률 계산기</title>
+  <style>
+    :root{
+      --bg: #f5f7fb;
+      --card:#ffffff;
+      --border:#d9dde5;
+      --muted:#6b7280;
+      --head:#f1f3f7;
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", sans-serif;
+      background: var(--bg);
+      color:#111;
+    }
+    .wrap{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 16px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    }
+    h1{ margin:4px 0 10px; font-size:20px; }
+    .hint{ margin:0 0 14px; color:var(--muted); font-size:13px; line-height:1.45; }
+
+    .topbar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      margin: 0 0 12px;
+    }
+    .controls{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      background: var(--card);
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      padding:10px;
+    }
+    .control{
+      display:flex; align-items:center; gap:8px;
+      font-size:13px; color:var(--muted);
+    }
+    select, input[type="color"]{
+      border:1px solid var(--border);
+      border-radius: 10px;
+      padding:8px;
+      background:#fff;
+      font-size:14px;
+    }
+
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow:hidden;
+      box-shadow: 0 1px 0 rgba(0,0,0,.02);
+    }
+
+    /* 모바일에서 표가 잘리면 가로 스크롤 */
+    .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling: touch; }
+    table{
+      width:100%;
+      border-collapse: collapse;
+      min-width: 820px; /* 모바일에서 가로 스크롤 생기도록 */
+    }
+    th, td{
+      border: 1px solid var(--border);
+      padding: 10px;
+      vertical-align: middle;
+      background:#fff;
+    }
+    th{
+      background: var(--head);
+      text-align:left;
+      font-weight:700;
+      white-space:nowrap;
+    }
+    td.num{ text-align:right; font-variant-numeric: tabular-nums; white-space:nowrap; }
+    input[type="text"], input[type="number"]{
+      width:100%;
+      padding: 10px 10px;
+      border: 1px solid #cfd5df;
+      border-radius: 10px;
+      font-size: 16px; /* iOS 확대 방지 */
+      background:#fff;
+    }
+    input[type="number"]{ text-align:right; }
+
+    tfoot td{
+      font-weight:800;
+      background:#fafbfe;
+    }
+
+    .subtotals{
+      padding: 12px 12px 14px;
+      border-top: 1px solid var(--border);
+      color:#333;
+      font-size:13px;
+      line-height:1.6;
+      background: #fff;
+    }
+    .subtotals b{ font-variant-numeric: tabular-nums; }
+    .pos{ color:#0b6; }
+    .neg{ color:#d33; }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top: 12px;
+    }
+    button{
+      padding: 11px 14px;
+      border: 1px solid var(--border);
+      background:#fff;
+      border-radius: 12px;
+      cursor:pointer;
+      font-size: 14px;
+    }
+    button:active{ transform: translateY(1px); }
+
+    .saved{
+      margin-left:auto;
+      font-size:12px;
+      color: var(--muted);
+    }
+
+    @media (max-width:520px){
+      h1{ font-size:18px; }
+      .controls{ width:100%; }
+      .saved{ width:100%; margin-left:0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <h1>주식 5종목 수익률 계산기</h1>
+        <p class="hint">
+          주식명 / 매입가 / 현재가 / 주식수(수량)를 입력하면 자동 계산됩니다.<br/>
+          합계 수익률은 <b>가중 수익률</b>(총손익 ÷ 총투자금) 입니다. (자동저장됨)
+        </p>
+      </div>
+
+      <div class="controls">
+        <div class="control">
+          테마
+          <select id="themeSelect">
+            <option value="light">라이트</option>
+            <option value="blue">블루</option>
+            <option value="dark">다크</option>
+          </select>
+        </div>
+        <div class="control">
+          배경색
+          <input id="bgPicker" type="color" value="#f5f7fb" />
+        </div>
+      </div>
+
+      <div class="saved" id="saveStatus">저장 상태: -</div>
+    </div>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th style="width:20%;">주식명</th>
+              <th style="width:12%;">매입가</th>
+              <th style="width:12%;">현재가</th>
+              <th style="width:10%;">주식수</th>
+              <th style="width:16%;">매매차익</th>
+              <th style="width:12%;">수익률</th>
+              <th style="width:18%;">평가금액</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <!-- 5 rows -->
+            <tr>
+              <td><input type="text" class="name" placeholder="예: 삼성전" /></td>
+              <td><input type="number" class="buy" placeholder="0" min="0" step="any" inputmode="decimal" /></td>
+              <td><input type="number" class="cur" placeholder="0" min="0" step="any" inputmode="decimal" /></td>
+              <td><input type="number" class="qty" placeholder="0" min="0" step="1" inputmode="numeric" /></td>
+              <td class="num diff">-</td>
+              <td class="num rate">-</td>
+              <td class="num val">-</td>
+            </tr>
+            <tr>
+              <td><input type="text" class="name" placeholder="예: NAVER" /></td>
+              <td><input type="number" class="buy" placeholder="0" min="0" step="any" inputmode="decimal" /></td>
+              <td><input type="number" class="cur" placeholder="0" min="0" step="any" inputmode="decimal" /></td>
+              <td><input type="number" class="qty" placeholder="0" min="0" step="1" inputmode="numeric" /></td>
+              <td class="num diff">-</td>
+              <td class="num rate">-</td>
+              <td class="num val">-</td>
+            </tr>
+            <tr>
+              <td><input type="text" class="name" placeholder="예: 카카오" /></td>
+              <td><input type="number" class="buy" placeholder="0" min="0" step="any" inputmode="decimal" /></td>
+              <td><input type="number" class="cur" placeholder="0" min="0" step="any" inputmode="decimal" /></td>
+              <td><input type="number" class="qty" placeholder="0" min="0" step="1" inputmode="numeric" /></td>
+              <td class="num diff">-</td>
+              <td class="num rate">-</td>
+              <td class="num val">-</td>
+            </tr>
+            <tr>
+              <td><input type="text" class="name" placeholder="예: 현대차" /></td>
+              <td><input type="number" class="buy" placeholder="0" min="0" step="any" inputmode="decimal" /></td>
+              <td><input type="number" class="cur" placeholder="0" min="0" step="any" inputmode="decimal" /></td>
+              <td><input type="number" class="qty" placeholder="0" min="0" step="1" inputmode="numeric" /></td>
+              <td class="num diff">-</td>
+              <td class="num rate">-</td>
+              <td class="num val">-</td>
+            </tr>
+            <tr>
+              <td><input type="text" class="name" placeholder="예: LG화" /></td>
+              <td><input type="number" class="buy" placeholder="0" min="0" step="any" inputmode="decimal" /></td>
+              <td><input type="number" class="cur" placeholder="0" min="0" step="any" inputmode="decimal" /></td>
+              <td><input type="number" class="qty" placeholder="0" min="0" step="1" inputmode="numeric" /></td>
+              <td class="num diff">-</td>
+              <td class="num rate">-</td>
+              <td class="num val">-</td>
+            </tr>
+          </tbody>
+
+          <tfoot>
+            <tr>
+              <td colspan="4">합계</td>
+              <td class="num" id="sumDiff">-</td>
+              <td class="num" id="sumRate">-</td>
+              <td class="num" id="sumVal">-</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="subtotals">
+        총투자금(매입가×수량): <b id="sumCost">-</b> /
+        총평가금(현재가×수량): <b id="sumValue">-</b> /
+        총손익: <b id="sumPnl">-</b> /
+        합계 수익률: <b id="sumRoi">-</b>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="resetBtn" type="button">초기화(저장값도 삭제)</button>
+      <button id="demoBtn" type="button">예시값 넣기</button>
+    </div>
+  </div>
+
+  <script>
+    // ====== 저장 키(브라우저별로 저장됨) ======
+    const STORE_KEY = "stock5_calc_v3";
+
+    // ====== 표시 포맷 ======
+    const fmtMoney = (n) => Number.isFinite(n) ? Math.round(n).toLocaleString("ko-KR") : "-";
+    const fmtPct   = (n) => Number.isFinite(n) ? (n*100).toFixed(2) + "%" : "-";
+
+    function setSignClass(el, v){
+      el.classList.remove("pos","neg");
+      if(!Number.isFinite(v) || v === 0) return;
+      el.classList.add(v > 0 ? "pos" : "neg");
+    }
+
+    function nowTime(){
+      const d = new Date();
+      return d.toLocaleString("ko-KR", { hour12:false });
+    }
+
+    // ====== 데이터 수집/적용 ======
+    function collectData(){
+      const rows = [...document.querySelectorAll("#tbl tbody tr")];
+      const items = rows.map(tr => ({
+        name: tr.querySelector(".name").value ?? "",
+        buy : tr.querySelector(".buy").value ?? "",
+        cur : tr.querySelector(".cur").value ?? "",
+        qty : tr.querySelector(".qty").value ?? "",
+      }));
+
+      return {
+        version: 1,
+        savedAt: Date.now(),
+        theme: document.getElementById("themeSelect").value,
+        bg: document.getElementById("bgPicker").value,
+        items
+      };
+    }
+
+    function applyData(data){
+      if(!data || !data.items) return;
+      const rows = [...document.querySelectorAll("#tbl tbody tr")];
+
+      rows.forEach((tr, i) => {
+        const it = data.items[i] || {};
+        tr.querySelector(".name").value = it.name ?? "";
+        tr.querySelector(".buy").value  = it.buy  ?? "";
+        tr.querySelector(".cur").value  = it.cur  ?? "";
+        tr.querySelector(".qty").value  = it.qty  ?? "";
+      });
+
+      if(data.theme) document.getElementById("themeSelect").value = data.theme;
+      if(data.bg) document.getElementById("bgPicker").value = data.bg;
+
+      applyTheme();
+      calc();
+    }
+
+    // ====== localStorage 저장/로드 ======
+    function save(){
+      const payload = collectData();
+      localStorage.setItem(STORE_KEY, JSON.stringify(payload));
+      document.getElementById("saveStatus").textContent = "저장 상태: 저장됨 (" + nowTime() + ")";
+    }
+
+    function load(){
+      try{
+        const raw = localStorage.getItem(STORE_KEY);
+        if(!raw) {
+          document.getElementById("saveStatus").textContent = "저장 상태: 저장된 데이터 없음";
+          applyTheme();
+          calc();
+          return;
+        }
+        const data = JSON.parse(raw);
+        applyData(data);
+        document.getElementById("saveStatus").textContent = "저장 상태: 불러옴 (" + new Date(data.savedAt).toLocaleString("ko-KR",{hour12:false}) + ")";
+      }catch(e){
+        document.getElementById("saveStatus").textContent = "저장 상태: 불러오기 실패";
+        applyTheme();
+        calc();
+      }
+    }
+
+    function clearStorage(){
+      localStorage.removeItem(STORE_KEY);
+      document.getElementById("saveStatus").textContent = "저장 상태: 저장값 삭제됨 (" + nowTime() + ")";
+    }
+
+    // ====== 계산 ======
+    function calc(){
+      const rows = document.querySelectorAll("#tbl tbody tr");
+
+      let totalCost = 0;
+      let totalValue = 0;
+      let totalPnl = 0;
+
+      rows.forEach(tr => {
+        const buy = parseFloat(tr.querySelector(".buy").value);
+        const cur = parseFloat(tr.querySelector(".cur").value);
+        const qty = parseFloat(tr.querySelector(".qty").value);
+
+        const diffTd = tr.querySelector(".diff");
+        const rateTd = tr.querySelector(".rate");
+        const valTd  = tr.querySelector(".val");
+
+        let pnl = NaN, roi = NaN, val = NaN;
+
+        if(Number.isFinite(buy) && Number.isFinite(cur) && Number.isFinite(qty)){
+          pnl = (cur - buy) * qty;
+          val = cur * qty;
+          const cost = buy * qty;
+          if(cost !== 0) roi = pnl / cost;
+
+          totalCost += cost;
+          totalValue += val;
+          totalPnl += pnl;
+        }
+
+        diffTd.textContent = Number.isFinite(pnl) ? fmtMoney(pnl) : "-";
+        rateTd.textContent = Number.isFinite(roi) ? fmtPct(roi) : "-";
+        valTd.textContent  = Number.isFinite(val) ? fmtMoney(val) : "-";
+
+        setSignClass(diffTd, pnl);
+        setSignClass(rateTd, roi);
+      });
+
+      const totalRoi = (totalCost !== 0) ? (totalPnl / totalCost) : NaN;
+
+      document.getElementById("sumDiff").textContent = (totalCost !== 0 || totalPnl !== 0) ? fmtMoney(totalPnl) : "-";
+      document.getElementById("sumVal").textContent  = (totalValue !== 0) ? fmtMoney(totalValue) : "-";
+      document.getElementById("sumRate").textContent = Number.isFinite(totalRoi) ? fmtPct(totalRoi) : "-";
+
+      const sumCost  = document.getElementById("sumCost");
+      const sumValue = document.getElementById("sumValue");
+      const sumPnl   = document.getElementById("sumPnl");
+      const sumRoi   = document.getElementById("sumRoi");
+
+      sumCost.textContent  = (totalCost !== 0) ? fmtMoney(totalCost) : "-";
+      sumValue.textContent = (totalValue !== 0) ? fmtMoney(totalValue) : "-";
+      sumPnl.textContent   = (totalCost !== 0 || totalPnl !== 0) ? fmtMoney(totalPnl) : "-";
+      sumRoi.textContent   = Number.isFinite(totalRoi) ? fmtPct(totalRoi) : "-";
+
+      setSignClass(sumPnl, totalPnl);
+      setSignClass(sumRoi, totalRoi);
+    }
+
+    // ====== 테마/배경 ======
+    function applyTheme(){
+      const theme = document.getElementById("themeSelect").value;
+      const bg = document.getElementById("bgPicker").value;
+
+      // 기본 테마 팔레트
+      const themes = {
+        light: { card:"#ffffff", border:"#d9dde5", muted:"#6b7280", head:"#f1f3f7" },
+        blue:  { card:"#ffffff", border:"#cfd9ee", muted:"#5b6b86", head:"#eef3ff" },
+        dark:  { card:"#121826", border:"#2a3447", muted:"#a7b0c0", head:"#1a2233" }
+      };
+
+      const t = themes[theme] || themes.light;
+
+      document.documentElement.style.setProperty("--bg", bg || "#f5f7fb");
+      document.documentElement.style.setProperty("--card", t.card);
+      document.documentElement.style.setProperty("--border", t.border);
+      document.documentElement.style.setProperty("--muted", t.muted);
+      document.documentElement.style.setProperty("--head", t.head);
+
+      // 다크일 때 표 셀 배경도 자연스럽게
+      if(theme === "dark"){
+        document.body.style.color = "#e7eaf0";
+        document.querySelectorAll("th, td").forEach(el => el.style.background = (el.tagName==="TH") ? "#1a2233" : "#121826");
+        document.querySelectorAll("input").forEach(el => { el.style.background="#0f1522"; el.style.color="#e7eaf0"; el.style.borderColor="#2a3447"; });
+      }else{
+        document.body.style.color = "#111";
+        document.querySelectorAll("th, td").forEach(el => el.style.background = "");
+        document.querySelectorAll("input").forEach(el => { el.style.background=""; el.style.color=""; el.style.borderColor=""; });
+      }
+    }
+
+    // ====== 이벤트 연결 (입력하면 계산 + 저장) ======
+    const debouncedSave = (() => {
+      let t;
+      return () => {
+        clearTimeout(t);
+        t = setTimeout(save, 250); // 너무 자주 저장 안되게 살짝 딜레이
+      };
+    })();
+
+    document.querySelectorAll("#tbl input").forEach(inp => {
+      inp.addEventListener("input", () => { calc(); debouncedSave(); });
+      inp.addEventListener("change", () => { calc(); save(); });
+    });
+
+    document.getElementById("themeSelect").addEventListener("change", () => {
+      applyTheme(); save();
+    });
+    document.getElementById("bgPicker").addEventListener("input", () => {
+      applyTheme(); debouncedSave();
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      document.querySelectorAll("#tbl input").forEach(inp => inp.value = "");
+      clearStorage();
+      applyTheme();
+      calc();
+    });
+
+    document.getElementById("demoBtn").addEventListener("click", () => {
+      const demo = [
+        ["A", 50000, 54000, 10],
+        ["B", 120000, 110000, 3],
+        ["C", 30000, 30000, 20],
+        ["D", 80000, 92000, 5],
+        ["E", 15000, 13500, 100],
+      ];
+      const rows = document.querySelectorAll("#tbl tbody tr");
+      rows.forEach((tr,i) => {
+        tr.querySelector(".name").value = demo[i][0];
+        tr.querySelector(".buy").value  = demo[i][1];
+        tr.querySelector(".cur").value  = demo[i][2];
+        tr.querySelector(".qty").value  = demo[i][3];
+      });
+      applyTheme();
+      calc();
+      save();
+    });
+
+    // 최초 로드
+    load();
+  </script>
+</body>
+</html>
