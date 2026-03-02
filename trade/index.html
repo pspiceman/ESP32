@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>코스피 매수/매도 캘린더</title>
+
+  <!-- PWA (Android/Chrome 설치용) -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f14">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --text:#e9eef5;
+      --muted:#9fb0c3;
+      --accent:#7aa7ff;
+
+      --cardBorder: rgba(255,255,255,0.10);
+      --cellBorder: rgba(255,255,255,0.06);
+
+      --ev-futures:#ffb020;
+      --ev-witch:#ff5a7a;
+      --ev-msci:#42d392;
+      --ev-yearend:#c084fc;
+
+      --rec-buy:#56c8ff;
+      --rec-sell:#ff6b3d;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      background:linear-gradient(180deg, #070a0f, var(--bg));
+      color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", Segoe UI, Roboto, Helvetica, Arial;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrap{ max-width: 520px; margin: 0 auto; padding: 16px 14px 24px; }
+
+    header{
+      position: sticky; top: 0; z-index: 5;
+      backdrop-filter: blur(10px);
+      background: rgba(11,15,20,0.65);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 14px 0 10px;
+    }
+
+    .title{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding: 0 2px; }
+    h1{ font-size: 16px; margin:0; line-height:1.3; letter-spacing:0.2px; }
+    .sub{ margin-top:4px; color:var(--muted); font-size:12px; line-height:1.35; }
+
+    .nav{ margin-top: 12px; display:flex; gap:10px; align-items:center; justify-content:space-between; padding: 0 2px; }
+    .nav .month{ font-size: 18px; font-weight: 800; letter-spacing:0.2px; }
+
+    .btn{
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+      font-size: 13px;
+      min-width: 58px;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:active{ transform: translateY(1px); background: rgba(255,255,255,0.1); }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      border: 1px solid var(--cardBorder);
+      border-radius: 18px;
+      overflow:hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+
+    .dow{
+      display:grid;
+      grid-template-columns: repeat(7, 1fr);
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .dow div{ padding: 10px 0; text-align:center; font-size: 12px; color: var(--muted); }
+
+    .grid{ display:grid; grid-template-columns: repeat(7, 1fr); }
+
+    .cell{
+      min-height: 64px;
+      padding: 8px 8px 10px;
+      border-right: 1px solid var(--cellBorder);
+      border-bottom: 1px solid var(--cellBorder);
+      background: rgba(0,0,0,0.12);
+      position:relative;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      user-select:none;
+    }
+    .cell:nth-child(7n){ border-right: none; }
+
+    .cell.muted{
+      background: rgba(0,0,0,0.06);
+      color: rgba(233,238,245,0.35);
+    }
+
+    .day{
+      font-size: 13px;
+      font-weight: 750;
+      line-height: 1;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    .dots{
+      position:absolute;
+      left:8px;
+      bottom:7px;
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      max-width: calc(100% - 16px);
+    }
+    .dot{
+      width:8px;
+      height:8px;
+      border-radius: 50%;
+      opacity: 0.95;
+      border: 1px solid rgba(0,0,0,0.25);
+    }
+
+    .selected{
+      outline: 2px solid rgba(122,167,255,0.75);
+      outline-offset: -2px;
+      background: rgba(122,167,255,0.10);
+    }
+
+    /* ✅ 이벤트 있는 날 돋보기 아이콘 */
+    .mag{
+      position:absolute;
+      right:7px;
+      top:7px;
+      width:20px;
+      height:20px;
+      border-radius: 999px;
+      background: rgba(122,167,255,0.12);
+      border: 1px solid rgba(122,167,255,0.25);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      pointer-events:none;
+    }
+    .mag svg{
+      width:14px;
+      height:14px;
+      display:block;
+    }
+
+    .panel{ margin-top: 14px; padding: 14px 14px 12px; }
+    .panel h2{ margin:0 0 6px 0; font-size: 14px; letter-spacing:0.2px; }
+    .panel .date{ color: var(--muted); font-size: 12px; margin-bottom: 10px; }
+
+    .sectionTitle{
+      margin: 10px 0 8px;
+      font-size: 12px;
+      color: rgba(233,238,245,0.9);
+      letter-spacing: 0.2px;
+      font-weight: 800;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .sectionTitle .bar{
+      width: 10px; height: 10px; border-radius: 999px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .list{ display:flex; flex-direction:column; gap:10px; }
+    .item{
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 10px 10px;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+    }
+    .tag{ min-width: 10px; height: 10px; margin-top: 4px; border-radius: 999px; }
+    .item .name{ font-size: 13px; font-weight: 800; margin:0; line-height:1.25; }
+    .item .desc{ margin:4px 0 0 0; color: var(--muted); font-size: 12px; line-height:1.35; }
+
+    .legend{
+      margin-top: 14px;
+      padding: 12px 14px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px 10px;
+      align-items:center;
+    }
+    .lg{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size: 12px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      padding: 8px 10px;
+      border-radius: 999px;
+    }
+    .lg .dot{ width:10px; height:10px; border:none; }
+
+    .footer{
+      margin-top: 14px;
+      color: rgba(159,176,195,0.85);
+      font-size: 11px;
+      line-height:1.45;
+      padding: 0 2px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap" style="padding-bottom:10px;">
+      <div class="title">
+        <div>
+          <h1>코스피 매수/매도 캘린더</h1>
+          <div class="sub">캘린더: 매수/매도 추천(점) + 이벤트 있는 날(돋보기) · 날짜 탭 → 하단 상세</div>
+        </div>
+        <button class="btn" id="btnToday" title="오늘로 이동">오늘</button>
+      </div>
+
+      <div class="nav">
+        <button class="btn" id="prev">이전</button>
+        <div class="month" id="monthLabel">—</div>
+        <button class="btn" id="next">다음</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="dow">
+        <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+      </div>
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <div class="card panel" id="panel">
+      <h2>선택 날짜</h2>
+      <div class="date" id="panelDate">—</div>
+
+      <div class="sectionTitle"><span class="bar"></span>1) 매수/매도</div>
+      <div class="list" id="panelRec"></div>
+
+      <div class="sectionTitle"><span class="bar"></span>2) 이벤트</div>
+      <div class="list" id="panelEvt"></div>
+    </div>
+
+    <div class="card legend">
+      <div class="lg"><span class="dot" style="background:var(--rec-buy)"></span>매수 추천</div>
+      <div class="lg"><span class="dot" style="background:var(--rec-sell)"></span>매도 추천</div>
+      <div class="lg"><span class="dot" style="background:rgba(122,167,255,0.9)"></span>돋보기 = 이벤트 있음</div>
+    </div>
+
+    <div class="footer">
+      * 추천일은 만기/리밸런싱 전후 변동성 구간을 “분할” 관점으로 표시합니다.<br/>
+      * 영업일 계산은 주말만 제외합니다(공휴일 미반영).<br/>
+      * 2026년 이후도 자동 생성(규칙 기반): 분기 만기(2번째 목), 쿼드위칭(3번째 금), MSCI(2/5/8/11월 마지막 평일), 연말(12월 마지막 평일).
+    </div>
+  </div>
+
+  <script>
+    const css = (v)=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+    const COLOR = {
+      BUY: css("--rec-buy"),
+      SELL: css("--rec-sell"),
+      FUTURES: css("--ev-futures"),
+      WITCH: css("--ev-witch"),
+      MSCI: css("--ev-msci"),
+      YEAREND: css("--ev-yearend"),
+      ACCENT: css("--accent"),
+    };
+
+    const pad2 = (n)=>String(n).padStart(2,"0");
+    const keyOf = (y,m,d)=>`${y}-${pad2(m+1)}-${pad2(d)}`;
+    const parseKey = (key)=>{ const [y,m,d]=key.split("-").map(Number); return new Date(y,m-1,d); };
+    const toKey = (dt)=>`${dt.getFullYear()}-${pad2(dt.getMonth()+1)}-${pad2(dt.getDate())}`;
+    const weekdayKor = (dt)=>["일","월","화","수","목","금","토"][dt.getDay()];
+    const isWeekend = (dt)=> (dt.getDay()===0 || dt.getDay()===6);
+
+    function shiftBizDays(key, n){
+      let dt = parseKey(key);
+      const step = n>=0 ? 1 : -1;
+      let remaining = Math.abs(n);
+      while(remaining>0){
+        dt = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()+step);
+        if(!isWeekend(dt)) remaining--;
+      }
+      return toKey(dt);
+    }
+
+    function nthWeekdayOfMonth(year, monthIndex, weekday, n){
+      const first = new Date(year, monthIndex, 1);
+      const delta = (weekday - first.getDay() + 7) % 7;
+      const day = 1 + delta + (n-1)*7;
+      return new Date(year, monthIndex, day);
+    }
+    function lastWeekdayOfMonth(year, monthIndex){
+      let dt = new Date(year, monthIndex+1, 0);
+      while(isWeekend(dt)) dt = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()-1);
+      return dt;
+    }
+    function lastWeekdayOfYear(year){
+      let dt = new Date(year, 11, 31);
+      while(isWeekend(dt)) dt = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()-1);
+      return dt;
+    }
+
+    function generateBaseEventsForYear(year){
+      const out = {};
+      const add = (key, obj)=>{ if(!out[key]) out[key]=[]; out[key].push(obj); };
+
+      const qMonths = [2,5,8,11]; // Mar, Jun, Sep, Dec
+      qMonths.forEach(mi=>{
+        add(toKey(nthWeekdayOfMonth(year, mi, 4, 2)), { type:"futures", title:"KRX KOSPI200 선물(분기) 만기" });
+        add(toKey(nthWeekdayOfMonth(year, mi, 5, 3)), { type:"witch", title:"미국 쿼드러플 위칭" });
+      });
+
+      [1,4,7,10].forEach(mi=>{
+        add(toKey(lastWeekdayOfMonth(year, mi)), { type:"msci", title:"MSCI 분기 리밸런싱 반영(종가)" });
+      });
+
+      add(toKey(lastWeekdayOfYear(year)), { type:"yearend", title:"연말 마지막 영업일(수급 정리)" });
+      return out;
+    }
+
+    // 추천일 생성:
+    // - 선물/쿼드위칭: 매도 -3~-1, 매수 +1~+3
+    // - MSCI: 매수 +1~+3 (매도 제외)
+    // - 연말: 매도 -5~-1, 매수 +2~+5
+    function buildRecommendations(baseEventsByDate){
+      const out = {};
+      const add = (key, obj)=>{ if(!out[key]) out[key]=[]; out[key].push(obj); };
+
+      Object.keys(baseEventsByDate).forEach(eventKey=>{
+        (baseEventsByDate[eventKey] || []).forEach(ev=>{
+          const isYearEnd = ev.type === "yearend";
+
+          if(ev.type !== "msci"){
+            const sellFrom = isYearEnd ? 5 : 3;
+            for(let i=sellFrom; i>=1; i--){
+              const dk = shiftBizDays(eventKey, -i);
+              add(dk, {
+                side:"sell", dotColor: COLOR.SELL,
+                title:"매도 추천(분할)",
+                detail:`${ev.title} 전 영업일 -${i}일 구간(주말만 제외).`,
+                refEventDate: eventKey, refEventTitle: ev.title
+              });
+            }
+          }
+
+          const buyStart = isYearEnd ? 2 : 1;
+          const buyEnd   = isYearEnd ? 5 : 3;
+          for(let i=buyStart; i<=buyEnd; i++){
+            const dk = shiftBizDays(eventKey, +i);
+            add(dk, {
+              side:"buy", dotColor: COLOR.BUY,
+              title:"매수 추천(분할)",
+              detail:`${ev.title} 이후 영업일 +${i}일 구간(주말만 제외).`,
+              refEventDate: eventKey, refEventTitle: ev.title
+            });
+          }
+        });
+      });
+
+      return out;
+    }
+
+    const YEAR_CACHE = new Map();
+    function getYearData(year){
+      if(YEAR_CACHE.has(year)) return YEAR_CACHE.get(year);
+      const events = generateBaseEventsForYear(year);
+      const recs = buildRecommendations(events);
+      const data = {events, recs};
+      YEAR_CACHE.set(year, data);
+      return data;
+    }
+
+    // ✅ 캘린더 점: 추천(매수/매도)만
+    function getRecDotsForDate(key){
+      const y = parseKey(key).getFullYear();
+      const {recs} = getYearData(y);
+      const recItems = recs[key] || [];
+      const colors = recItems.map(r=>r.dotColor);
+      const uniq = [];
+      colors.forEach(c=>{ if(!uniq.includes(c)) uniq.push(c); });
+      return uniq.slice(0, 2);
+    }
+
+    // ✅ 돋보기 표시: 이벤트가 있으면 true
+    function hasEventOnDate(key){
+      const y = parseKey(key).getFullYear();
+      const {events} = getYearData(y);
+      return (events[key] || []).length > 0;
+    }
+
+    function getItemsForDate(key){
+      const y = parseKey(key).getFullYear();
+      const {events, recs} = getYearData(y);
+
+      const recItems = (recs[key] || []).sort((a,b)=>{
+        const pa = (a.side==="sell") ? 0 : 1;
+        const pb = (b.side==="sell") ? 0 : 1;
+        return pa - pb;
+      });
+
+      const evtItems = (events[key] || []);
+      return {recItems, evtItems};
+    }
+
+    const gridEl = document.getElementById("grid");
+    const monthLabel = document.getElementById("monthLabel");
+    const panelDate = document.getElementById("panelDate");
+    const panelRec = document.getElementById("panelRec");
+    const panelEvt = document.getElementById("panelEvt");
+    const KOR_MONTH = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
+
+    const now = new Date();
+    let viewYear = now.getFullYear();
+    let viewMonth = now.getMonth();
+    let selectedKey = toKey(now);
+
+    function formatKeyKorean(key){
+      const dt = parseKey(key);
+      return `${dt.getFullYear()}년 ${dt.getMonth()+1}월 ${dt.getDate()}일 (${weekdayKor(dt)})`;
+    }
+
+    function makeItem(color, title, desc){
+      const item = document.createElement("div");
+      item.className = "item";
+
+      const tag = document.createElement("div");
+      tag.className = "tag";
+      tag.style.background = color;
+
+      const box = document.createElement("div");
+      const name = document.createElement("p");
+      name.className = "name";
+      name.textContent = title;
+
+      const detail = document.createElement("p");
+      detail.className = "desc";
+      detail.textContent = desc;
+
+      box.appendChild(name);
+      box.appendChild(detail);
+
+      item.appendChild(tag);
+      item.appendChild(box);
+      return item;
+    }
+
+    // 돋보기 SVG(첨부 느낌의 심플 아이콘)
+    function makeMagnifier(){
+      const wrap = document.createElement("div");
+      wrap.className = "mag";
+      wrap.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="11" cy="11" r="6.5" stroke="rgba(122,167,255,0.95)" stroke-width="2"/>
+          <path d="M16.2 16.2L21 21" stroke="rgba(122,167,255,0.95)" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      `;
+      return wrap;
+    }
+
+    function render(){
+      monthLabel.textContent = `${viewYear}년 ${KOR_MONTH[viewMonth]}`;
+
+      const first = new Date(viewYear, viewMonth, 1);
+      const last  = new Date(viewYear, viewMonth + 1, 0);
+      const firstDow = first.getDay();
+      const daysInMonth = last.getDate();
+
+      const prevLast = new Date(viewYear, viewMonth, 0);
+      const prevDays = prevLast.getDate();
+
+      gridEl.innerHTML = "";
+      const totalCells = 42;
+
+      for(let i=0; i<totalCells; i++){
+        const cell = document.createElement("div");
+        cell.className = "cell";
+
+        let y=viewYear, m=viewMonth, d=0;
+        if(i < firstDow){
+          d = prevDays - (firstDow - 1 - i);
+          const pm = viewMonth - 1;
+          if(pm < 0){ y = viewYear - 1; m = 11; } else { m = pm; }
+          cell.classList.add("muted");
+        } else if(i >= firstDow + daysInMonth){
+          d = (i - (firstDow + daysInMonth)) + 1;
+          const nm = viewMonth + 1;
+          if(nm > 11){ y = viewYear + 1; m = 0; } else { m = nm; }
+          cell.classList.add("muted");
+        } else {
+          d = (i - firstDow) + 1;
+        }
+
+        const key = keyOf(y,m,d);
+
+        const dayEl = document.createElement("div");
+        dayEl.className = "day";
+        dayEl.textContent = d;
+        cell.appendChild(dayEl);
+
+        // ✅ 추천 점만 표시
+        const dots = getRecDotsForDate(key);
+        if(dots.length){
+          const dotsEl = document.createElement("div");
+          dotsEl.className = "dots";
+          dots.forEach(color=>{
+            const dot = document.createElement("span");
+            dot.className = "dot";
+            dot.style.background = color;
+            dotsEl.appendChild(dot);
+          });
+          cell.appendChild(dotsEl);
+        }
+
+        // ✅ 이벤트 있는 날: 돋보기 표시
+        if(hasEventOnDate(key)){
+          cell.appendChild(makeMagnifier());
+        }
+
+        if(key === selectedKey) cell.classList.add("selected");
+
+        cell.addEventListener("click", ()=>{
+          selectedKey = key;
+          const dt = parseKey(key);
+          viewYear = dt.getFullYear();
+          viewMonth = dt.getMonth();
+          render();
+          renderPanel(key);
+          document.getElementById("panel").scrollIntoView({behavior:"smooth", block:"start"});
+        });
+
+        gridEl.appendChild(cell);
+      }
+
+      renderPanel(selectedKey);
+    }
+
+    function renderPanel(key){
+      panelDate.textContent = formatKeyKorean(key);
+
+      const {recItems, evtItems} = getItemsForDate(key);
+
+      panelRec.innerHTML = "";
+      if(!recItems.length){
+        const empty = document.createElement("div");
+        empty.style.color = "var(--muted)";
+        empty.style.fontSize = "12px";
+        empty.textContent = "매수/매도 추천이 없습니다.";
+        panelRec.appendChild(empty);
+      } else {
+        recItems.forEach(rec=>{
+          panelRec.appendChild(makeItem(
+            rec.side === "buy" ? COLOR.BUY : COLOR.SELL,
+            `${rec.title}${rec.side==="buy" ? " 🟦" : " 🟥"}`,
+            `${rec.detail} (기준 이벤트: ${rec.refEventTitle} · ${rec.refEventDate})`
+          ));
+        });
+      }
+
+      panelEvt.innerHTML = "";
+      if(!evtItems.length){
+        const empty = document.createElement("div");
+        empty.style.color = "var(--muted)";
+        empty.style.fontSize = "12px";
+        empty.textContent = "이벤트가 없습니다.";
+        panelEvt.appendChild(empty);
+      } else {
+        evtItems.forEach(ev=>{
+          const color =
+            ev.type==="futures" ? COLOR.FUTURES :
+            ev.type==="witch"   ? COLOR.WITCH :
+            ev.type==="msci"    ? COLOR.MSCI :
+            ev.type==="yearend" ? COLOR.YEAREND : COLOR.ACCENT;
+
+          panelEvt.appendChild(makeItem(color, ev.title, "규칙 기반 이벤트(공휴일 미반영)."));
+        });
+      }
+    }
+
+    document.getElementById("prev").addEventListener("click", ()=>{
+      viewMonth--;
+      if(viewMonth < 0){ viewMonth = 11; viewYear--; }
+      selectedKey = keyOf(viewYear, viewMonth, 1);
+      render();
+    });
+
+    document.getElementById("next").addEventListener("click", ()=>{
+      viewMonth++;
+      if(viewMonth > 11){ viewMonth = 0; viewYear++; }
+      selectedKey = keyOf(viewYear, viewMonth, 1);
+      render();
+    });
+
+    document.getElementById("btnToday").addEventListener("click", ()=>{
+      const t = new Date();
+      viewYear = t.getFullYear();
+      viewMonth = t.getMonth();
+      selectedKey = toKey(t);
+      render();
+    });
+
+    render();
+  </script>
+
+  <script>
+    // PWA 서비스워커 등록(오프라인/설치 지원)
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(() => {});
+      });
+    }
+  </script>
+</body>
+
+</html>
