@@ -13,10 +13,8 @@ const char* password = "1700note";
 /***************** MQTT (HiveMQ Cloud) *****************/
 const char*    MQTT_BROKER = "51892257f9da45da963ae82069913afc.s1.eu.hivemq.cloud";
 const uint16_t MQTT_PORT   = 8883;
-
 const char*    MQTT_USER   = "hivemq.webclient.1765336525937";
 const char*    MQTT_PASS   = "&x%m0CB4IS9X1Adgy:a?";
-
 String         clientId    = "ESP32-Node-" + String((uint32_t)ESP.getEfuseMac(), HEX);
 
 /***************** Root CA *****************/
@@ -80,20 +78,27 @@ const char* TOPIC_NODE_THRESHOLD_STATE = "tswell/node1/config/threshold";
 BH1750 lightMeter;
 
 /***************** 타이밍 *****************/
-unsigned long lastSendTime         = 0;
-const unsigned long SEND_INTERVAL  = 2000;
+unsigned long lastSendTime              = 0;
+const unsigned long SEND_INTERVAL_MS    = 1000;   // 2초 -> 1초로 단축하여 웹 타임아웃 흔들림 감소
 
-unsigned long lastWiFiRetryTime    = 0;
-const unsigned long WIFI_RETRY_MS  = 10000;
+unsigned long lastWiFiRetryTime         = 0;
+const unsigned long WIFI_RETRY_MS       = 10000;
 
-unsigned long lastMQTTRetryTime    = 0;
-const unsigned long MQTT_RETRY_MS  = 5000;
+unsigned long lastMQTTRetryTime         = 0;
+const unsigned long MQTT_RETRY_MS       = 3000;
 
-unsigned long pulseUntil           = 0;
+unsigned long pulseUntil                = 0;
+unsigned long lastMqttLoopTime          = 0;
+const unsigned long MQTT_LOOP_GAP_MS    = 10;
 
 /***************** 상태 *****************/
 int luxThreshold = 10;
 bool wifiStarted = false;
+bool mqttWasConnected = false;
+bool sensorValid = false;
+int  lastLuxInt = 0;
+String lastDoorState = "CLOSE";
+long lastWifiRssi = 0;
 
 WiFiClientSecure wifiClient;
 PubSubClient mqttClient(wifiClient);
@@ -105,13 +110,13 @@ void serviceWiFi();
 void serviceMQTT();
 void mqttCallback(char* topic, byte* payload, unsigned int length);
 void receiveLoRa();
-void sendSensorData();
+void updateSensorCache();
+void publishCachedData(bool publishLoRa, bool publishMqtt, bool forceStatus);
 void handleCommand(const String& cmd);
 void servicePulse();
 void publishThresholdState();
 void publishStatus(const char* statusMsg, bool retain = true);
 
-/***************** LoRa 초기화 *****************/
 void setupLoRa() {
   SPI.begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_SS);
   LoRa.setPins(LORA_SS, LORA_RST, LORA_DIO0);
@@ -128,7 +133,6 @@ void setupLoRa() {
   Serial.println(" 성공!");
 }
 
-/***************** WiFi 시작 *****************/
 void startWiFi() {
   Serial.print("[WiFi] 연결 시도: ");
   Serial.println(ssid);
@@ -139,7 +143,6 @@ void startWiFi() {
   lastWiFiRetryTime = millis();
 }
 
-/***************** WiFi 서비스 (non-blocking) *****************/
 void serviceWiFi() {
   wl_status_t st = WiFi.status();
 
@@ -149,6 +152,7 @@ void serviceWiFi() {
     if (st == WL_CONNECTED) {
       Serial.print("[WiFi] 연결됨, IP: ");
       Serial.println(WiFi.localIP());
+      lastWifiRssi = WiFi.RSSI();
       publishStatus("WIFI_CONNECTED");
     } else {
       Serial.print("[WiFi] 상태 변경: ");
@@ -169,14 +173,12 @@ void serviceWiFi() {
   }
 }
 
-/***************** MQTT 상태 publish *****************/
 void publishStatus(const char* statusMsg, bool retain) {
   if (mqttClient.connected()) {
     mqttClient.publish(TOPIC_NODE_STATUS, statusMsg, retain);
   }
 }
 
-/***************** Threshold 상태 publish *****************/
 void publishThresholdState() {
   if (!mqttClient.connected()) return;
 
@@ -185,7 +187,6 @@ void publishThresholdState() {
   mqttClient.publish(TOPIC_NODE_THRESHOLD_STATE, buf, true);
 }
 
-/***************** MQTT 콜백 *****************/
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
   String t = String(topic);
   String msg;
@@ -221,14 +222,20 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       luxThreshold = v;
       Serial.print("[CFG] luxThreshold 업데이트: ");
       Serial.println(luxThreshold);
+      if (sensorValid) {
+        lastDoorState = (lastLuxInt <= luxThreshold) ? "CLOSE" : "OPEN";
+      }
       publishThresholdState();
+      publishCachedData(false, true, true);
     }
   }
 }
 
-/***************** MQTT 서비스 (non-blocking) *****************/
 void serviceMQTT() {
-  if (WiFi.status() != WL_CONNECTED) return;
+  if (WiFi.status() != WL_CONNECTED) {
+    mqttWasConnected = false;
+    return;
+  }
 
   if (!mqttClient.connected()) {
     unsigned long now = millis();
@@ -243,20 +250,31 @@ void serviceMQTT() {
         mqttClient.subscribe(TOPIC_NODE_RESET_CMD);
         mqttClient.subscribe(TOPIC_NODE_THRESHOLD_SET);
 
+        mqttWasConnected = true;
         mqttClient.publish(TOPIC_NODE_STATUS, "NODE_ONLINE", true);
         publishThresholdState();
+
+        // 재연결 직후 웹이 즉시 retained 값을 받도록 캐시값 즉시 publish
+        if (!sensorValid) {
+          updateSensorCache();
+        }
+        publishCachedData(false, true, true);
       } else {
         Serial.print(" 실패, rc=");
         Serial.println(mqttClient.state());
+        mqttWasConnected = false;
       }
     }
     return;
   }
 
-  mqttClient.loop();
+  unsigned long now = millis();
+  if (now - lastMqttLoopTime >= MQTT_LOOP_GAP_MS) {
+    lastMqttLoopTime = now;
+    mqttClient.loop();
+  }
 }
 
-/***************** 공용 명령 처리 *****************/
 void handleCommand(const String& cmd) {
   Serial.print("[CMD] ");
   Serial.println(cmd);
@@ -273,7 +291,6 @@ void handleCommand(const String& cmd) {
   }
 }
 
-/***************** 펄스 종료 처리 *****************/
 void servicePulse() {
   if (pulseUntil != 0 && (long)(millis() - pulseUntil) >= 0) {
     digitalWrite(LED_PIN, LOW);
@@ -282,7 +299,6 @@ void servicePulse() {
   }
 }
 
-/***************** LoRa 수신 *****************/
 void receiveLoRa() {
   int packetSize = LoRa.parsePacket();
   if (!packetSize) return;
@@ -309,42 +325,53 @@ void receiveLoRa() {
   }
 }
 
-/***************** 센서 전송 *****************/
-void sendSensorData() {
+void updateSensorCache() {
   float lux = lightMeter.readLightLevel();
   if (lux < 0.0f) {
     Serial.println("[SENSOR] BH1750 읽기 오류");
+    sensorValid = false;
     if (mqttClient.connected()) {
       mqttClient.publish(TOPIC_NODE_STATUS, "BH1750_READ_FAIL", true);
     }
     return;
   }
 
-  int luxInt = (int)(lux + 0.5f);
-  String state = (luxInt <= luxThreshold) ? "CLOSE" : "OPEN";
+  sensorValid = true;
+  lastLuxInt = (int)(lux + 0.5f);
+  lastDoorState = (lastLuxInt <= luxThreshold) ? "CLOSE" : "OPEN";
+  if (WiFi.status() == WL_CONNECTED) {
+    lastWifiRssi = WiFi.RSSI();
+  }
+}
 
-  String luxStr  = String(luxInt);
-  String payload = luxStr + "," + state;
+void publishCachedData(bool publishLoRa, bool publishMqtt, bool forceStatus) {
+  if (!sensorValid) return;
 
-  // LoRa는 WiFi/MQTT와 무관하게 항상 송신
-  LoRa.beginPacket();
-  LoRa.print(payload);
-  LoRa.endPacket();
+  String luxStr = String(lastLuxInt);
+  String payload = luxStr + "," + lastDoorState;
 
-  // MQTT는 연결된 경우에만 송신
-  if (mqttClient.connected()) {
-    mqttClient.publish(TOPIC_NODE_LUX_VALUE, luxStr.c_str(), true);
-    mqttClient.publish(TOPIC_NODE_LUX_STATE, state.c_str(), true);
-    mqttClient.publish(TOPIC_NODE_STATUS, "DATA_OK", true);
-
-    long rssi2 = WiFi.RSSI();
-    char buf[16];
-    snprintf(buf, sizeof(buf), "%ld", rssi2);
-    mqttClient.publish(TOPIC_NODE_RSSI2, buf, true);
+  if (publishLoRa) {
+    LoRa.beginPacket();
+    LoRa.print(payload);
+    LoRa.endPacket();
   }
 
-  Serial.print("[TX] LoRa");
-  if (mqttClient.connected()) Serial.print(" + MQTT");
+  if (publishMqtt && mqttClient.connected()) {
+    mqttClient.publish(TOPIC_NODE_LUX_VALUE, luxStr.c_str(), true);
+    mqttClient.publish(TOPIC_NODE_LUX_STATE, lastDoorState.c_str(), true);
+
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%ld", lastWifiRssi);
+    mqttClient.publish(TOPIC_NODE_RSSI2, buf, true);
+
+    if (forceStatus) {
+      mqttClient.publish(TOPIC_NODE_STATUS, "DATA_OK", true);
+    }
+  }
+
+  Serial.print("[TX] ");
+  if (publishLoRa) Serial.print("LoRa ");
+  if (publishMqtt && mqttClient.connected()) Serial.print("MQTT ");
   Serial.print(": ");
   Serial.print(payload);
   Serial.print(" (Threshold=");
@@ -352,12 +379,11 @@ void sendSensorData() {
   Serial.println(" lx)");
 }
 
-/***************** Setup *****************/
 void setup() {
   Serial.begin(115200);
   delay(1000);
   Serial.println("\n[Node] ESP32 + LoRa + BH1750 + WiFi(Kiet) + MQTT + Threshold CFG");
-  Serial.println("[Mode] WiFi 직결 + LoRa 독립 동작");
+  Serial.println("[Mode] WiFi 직결 + LoRa 독립 동작 / 상태 안정화 버전");
 
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
@@ -376,26 +402,20 @@ void setup() {
   mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
   mqttClient.setCallback(mqttCallback);
 
-  // 부팅을 막지 않고 WiFi 시작만 함
+  updateSensorCache();
   startWiFi();
 }
 
-/***************** Loop *****************/
 void loop() {
-  // 1. LoRa는 항상 최우선
   receiveLoRa();
-
-  // 2. 출력 펄스 종료 처리
   servicePulse();
-
-  // 3. WiFi/MQTT는 별도 서비스
   serviceWiFi();
   serviceMQTT();
 
-  // 4. 센서 주기 전송
   unsigned long now = millis();
-  if (now - lastSendTime >= SEND_INTERVAL) {
+  if (now - lastSendTime >= SEND_INTERVAL_MS) {
     lastSendTime = now;
-    sendSensorData();
+    updateSensorCache();
+    publishCachedData(true, true, true);
   }
 }
