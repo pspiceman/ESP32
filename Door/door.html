@@ -101,7 +101,6 @@
     }
     body.night-mode .subtitle { color: #9ca3af; }
 
-    /* WiFi / LoRa 모드 선택 버튼 */
     .mode-switch {
       margin-top: 6px;
       display: flex;
@@ -140,16 +139,11 @@
       box-shadow: 0 2px 8px rgba(248, 113, 113, 0.6);
     }
 
-    /* =========================================================
-       카드(3영역) 스타일 개선
-       - 주간: 뉴모피즘/입체감(양방향 그림자 + 미세 그라데이션)
-       - 야간: 구분선(그레이 윤곽선) + 입체감(미세 그라데이션+하이라이트)
-       ========================================================= */
     .card {
       border-radius: 14px;
       padding: 12px;
       margin-bottom: 8px;
-      background: linear-gradient(145deg, #f0f2f5, #d9dde4); /* 주간 입체감 */
+      background: linear-gradient(145deg, #f0f2f5, #d9dde4);
       border: 1px solid rgba(255,255,255,0.55);
       box-shadow:
         10px 10px 22px rgba(17, 24, 39, 0.18),
@@ -157,7 +151,6 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.65);
       transition: background 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
     }
-    /* ✅ 야간모드 카드: 윤곽선 유지 + 입체감 조금 올림 */
     body.night-mode .card {
       background: linear-gradient(145deg, #0f172a, #0a1222);
       border: 1px solid rgba(148, 163, 184, 0.34);
@@ -180,10 +173,9 @@
     .status-left { display: flex; align-items: center; gap: 6px; }
     .status-right { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
     .inline-value { font-size: 0.8rem; font-weight: 1000; color: #111827; }
-    
-    /* Thin value style for lux + threshold numbers (per UI request) */
+
     #lux-node, #lux-gw, #threshold-node, #threshold-gw { font-weight: 300 !important; }
-body.night-mode .inline-value { color: #e5e7eb; }
+    body.night-mode .inline-value { color: #e5e7eb; }
     .status-label { font-size: 0.8rem; color: #444; }
     body.night-mode .status-label { color: #9ca3af; }
 
@@ -397,17 +389,14 @@ body.night-mode .inline-value { color: #e5e7eb; }
       body { padding: 8px 6px; }
       .container { max-width: 100%; border-radius: 14px; }
     }
-  
-    /* Ensure Open/Close button weight */
-    .led-btn { font-weight: 400 !important; }
-</style>
 
-  <!-- PWA -->
+    .led-btn { font-weight: 400 !important; }
+  </style>
+
   <link rel="manifest" href="./manifest.webmanifest">
   <meta name="theme-color" content="#0b1020">
   <link rel="icon" href="./doorCOntrol.png" type="image/png">
   <link rel="apple-touch-icon" href="./doorCOntrol.png">
-
 </head>
 
 <body class="night-mode">
@@ -416,13 +405,13 @@ body.night-mode .inline-value { color: #e5e7eb; }
       <div class="title">Door Control</div>
       <button id="mode-toggle-btn" class="mode-toggle-btn" aria-label="Toggle day/night mode">🌙</button>
     </div>
+
     <div class="mode-switch">
       <div class="mode-switch-left">
         <button id="btn-wifi" class="mode-btn active">WiFi</button>
         <button id="btn-lora" class="mode-btn">LoRa</button>
       </div>
       <div class="mode-switch-right">
-        <!-- ✅ RESET: WiFi/LoRa 버튼 라인 우측 끝 -->
         <button id="reset-btn-node" class="reset-btn">RESET</button>
         <button id="reset-btn-gw" class="reset-btn" style="display:none;">RESET</button>
       </div>
@@ -430,11 +419,9 @@ body.night-mode .inline-value { color: #e5e7eb; }
 
     <div class="divider"></div>
 
-    <!-- WiFi 패널 -->
     <div id="wifi-panel">
       <div class="card">
         <div class="status-text-group">
-          <!-- ✅ 밝기 + lux 값: MQTT 라인 우측 끝 / MQTT와 같은 폰트 -->
           <div class="status-line">
             <div class="status-left">
               <span class="status-label">MQTT:</span>
@@ -446,7 +433,6 @@ body.night-mode .inline-value { color: #e5e7eb; }
             </div>
           </div>
 
-          <!-- ✅ Open 기준(lx): 장비상태 라인 우측 끝 / 장비상태와 같은 폰트 -->
           <div class="status-line">
             <div class="status-left">
               <span class="status-label">장비상태:</span>
@@ -461,12 +447,11 @@ body.night-mode .inline-value { color: #e5e7eb; }
       </div>
 
       <div class="card">
-        <!-- ✅ Door상태(로보토/사이즈 업): 버튼 위로 이동 -->
         <div class="door-state-window">
           <div class="door-state-row">
-          <span class="door-label">Door상태</span>
-          <span id="door-state-node" class="door-state-badge door-close">Close</span>
-        </div>
+            <span class="door-label">Door상태</span>
+            <span id="door-state-node" class="door-state-badge door-close">Close</span>
+          </div>
         </div>
         <div class="button-wrap">
           <button id="led-btn-node" class="led-btn">Open/Close</button>
@@ -485,11 +470,9 @@ body.night-mode .inline-value { color: #e5e7eb; }
       </div>
     </div>
 
-    <!-- LoRa 패널 -->
     <div id="lora-panel">
       <div class="card">
         <div class="status-text-group">
-          <!-- ✅ 밝기 + lux 값: MQTT 라인 우측 끝 / MQTT와 같은 폰트 -->
           <div class="status-line">
             <div class="status-left">
               <span class="status-label">MQTT:</span>
@@ -501,7 +484,6 @@ body.night-mode .inline-value { color: #e5e7eb; }
             </div>
           </div>
 
-          <!-- ✅ Open 기준(lx): 장비상태 라인 우측 끝 / 장비상태와 같은 폰트 -->
           <div class="status-line">
             <div class="status-left">
               <span class="status-label">장비상태:</span>
@@ -516,12 +498,11 @@ body.night-mode .inline-value { color: #e5e7eb; }
       </div>
 
       <div class="card">
-        <!-- ✅ Door상태(로보토/사이즈 업): 버튼 위로 이동 -->
         <div class="door-state-window">
           <div class="door-state-row">
-          <span class="door-label">Door상태</span>
-          <span id="door-state-gw" class="door-state-badge door-close">Close</span>
-        </div>
+            <span class="door-label">Door상태</span>
+            <span id="door-state-gw" class="door-state-badge door-close">Close</span>
+          </div>
         </div>
         <div class="button-wrap">
           <button id="led-btn-gw" class="led-btn">Open/Close</button>
@@ -562,6 +543,10 @@ body.night-mode .inline-value { color: #e5e7eb; }
 
     const TOPIC_THRESHOLD_STATE = "tswell/node1/config/threshold";
 
+    const DATA_TIMEOUT_MS = 2000;
+    const STATUS_CHECK_MS = 250;
+    const RECONNECT_DELAY_MS = 3000;
+
     const clientId = "WEB-ALL-" + Math.random().toString(16).substr(2, 8);
     const client   = new Paho.Client(MQTT_URL, clientId);
 
@@ -601,14 +586,12 @@ body.night-mode .inline-value { color: #e5e7eb; }
     let lastDataGw   = 0;
     let luxThreshold = null;
 
-    const DATA_TIMEOUT_MS = 4000;
-    const STATUS_CHECK_MS = 1000;
-
     function updateDoorNode(isOpen) {
       doorNodeBadge.textContent = isOpen ? "Open" : "Close";
       doorNodeBadge.classList.remove("door-open", "door-close");
       doorNodeBadge.classList.add(isOpen ? "door-open" : "door-close");
     }
+
     function updateDoorGw(isOpen) {
       doorGwBadge.textContent = isOpen ? "Open" : "Close";
       doorGwBadge.classList.remove("door-open", "door-close");
@@ -642,6 +625,7 @@ body.night-mode .inline-value { color: #e5e7eb; }
         deviceStatusNode.classList.add("bad");
       }
     }
+
     function updateDeviceStatusGw() {
       const now = Date.now();
       if (lastDataGw > 0 && now - lastDataGw < DATA_TIMEOUT_MS) {
@@ -664,6 +648,7 @@ body.night-mode .inline-value { color: #e5e7eb; }
         modeToggleBtn.textContent = "☀️";
       }
     }
+
     modeToggleBtn.addEventListener("click", () => {
       isNightMode = !isNightMode;
       applyMode();
@@ -674,19 +659,19 @@ body.night-mode .inline-value { color: #e5e7eb; }
       loraPanel.style.display = "none";
       btnWifi.classList.add("active");
       btnLora.classList.remove("active");
-      // ✅ RESET 버튼: WiFi/LoRa에 따라 노출
       resetBtnNode.style.display = "";
       resetBtnGw.style.display   = "none";
     }
+
     function showLora() {
       wifiPanel.style.display = "none";
       loraPanel.style.display = "block";
       btnWifi.classList.remove("active");
       btnLora.classList.add("active");
-      // ✅ RESET 버튼: WiFi/LoRa에 따라 노출
       resetBtnNode.style.display = "none";
       resetBtnGw.style.display   = "";
     }
+
     btnWifi.addEventListener("click", showWifi);
     btnLora.addEventListener("click", showLora);
 
@@ -699,7 +684,7 @@ body.night-mode .inline-value { color: #e5e7eb; }
       updateDeviceStatusNode();
       updateDeviceStatusGw();
 
-      setTimeout(connectMQTT, 3000);
+      setTimeout(connectMQTT, RECONNECT_DELAY_MS);
     };
 
     client.onMessageArrived = function (message) {
@@ -795,13 +780,22 @@ body.night-mode .inline-value { color: #e5e7eb; }
         onFailure: function (err) {
           console.error("MQTT 연결 실패:", err.errorMessage || err);
           setMqttStatus(false);
+
+          lastDataNode = 0;
+          lastDataGw = 0;
+          updateDeviceStatusNode();
+          updateDeviceStatusGw();
+
           setTimeout(connectMQTT, 4000);
         },
       });
     }
 
     ledBtnNode.addEventListener("click", function () {
-      if (!client.isConnected()) { alert("MQTT 연결이 되지 않았습니다."); return; }
+      if (!client.isConnected()) {
+        alert("MQTT 연결이 되지 않았습니다.");
+        return;
+      }
       ledBtnNode.classList.add("clicked");
       ledBtnNode.textContent = "명령 전송";
       setTimeout(() => {
@@ -815,7 +809,10 @@ body.night-mode .inline-value { color: #e5e7eb; }
     });
 
     resetBtnNode.addEventListener("click", function () {
-      if (!client.isConnected()) { alert("MQTT 연결이 되지 않았습니다."); return; }
+      if (!client.isConnected()) {
+        alert("MQTT 연결이 되지 않았습니다.");
+        return;
+      }
       const ok = confirm("Node를 소프트 리셋할까요?");
       if (!ok) return;
       const msg = new Paho.Message("RESET_NODE");
@@ -824,7 +821,10 @@ body.night-mode .inline-value { color: #e5e7eb; }
     });
 
     ledBtnGw.addEventListener("click", function () {
-      if (!client.isConnected()) { alert("MQTT 연결이 되지 않았습니다."); return; }
+      if (!client.isConnected()) {
+        alert("MQTT 연결이 되지 않았습니다.");
+        return;
+      }
       ledBtnGw.classList.add("clicked");
       ledBtnGw.textContent = "명령 전송";
       setTimeout(() => {
@@ -838,7 +838,10 @@ body.night-mode .inline-value { color: #e5e7eb; }
     });
 
     resetBtnGw.addEventListener("click", function () {
-      if (!client.isConnected()) { alert("MQTT 연결이 되지 않았습니다."); return; }
+      if (!client.isConnected()) {
+        alert("MQTT 연결이 되지 않았습니다.");
+        return;
+      }
       const ok = confirm("Gateway와 Node를 순차적으로 재시작할까요?");
       if (!ok) return;
       const msg = new Paho.Message("SOFT_RESET");
@@ -847,7 +850,7 @@ body.night-mode .inline-value { color: #e5e7eb; }
     });
 
     setInterval(updateDeviceStatusNode, STATUS_CHECK_MS);
-    setInterval(updateDeviceStatusGw,   STATUS_CHECK_MS);
+    setInterval(updateDeviceStatusGw, STATUS_CHECK_MS);
 
     applyMode();
     showWifi();
@@ -861,6 +864,5 @@ body.night-mode .inline-value { color: #e5e7eb; }
       });
     }
   </script>
-
 </body>
 </html>
