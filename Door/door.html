@@ -93,14 +93,6 @@
       box-shadow: 0 3px 10px rgba(15,23,42,0.9);
     }
 
-    .subtitle {
-      text-align: center;
-      font-size: 0.78rem;
-      color: #555;
-      margin-bottom: 4px;
-    }
-    body.night-mode .subtitle { color: #9ca3af; }
-
     .mode-switch {
       margin-top: 6px;
       display: flex;
@@ -161,19 +153,11 @@
         inset 0 -1px 0 rgba(0, 0, 0, 0.35);
     }
 
-    .status-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.8rem;
-    }
     .status-text-group { display: flex; flex-direction: column; gap: 4px; }
     .status-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .status-left { display: flex; align-items: center; gap: 6px; }
     .status-right { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
     .inline-value { font-size: 0.8rem; font-weight: 1000; color: #111827; }
-
     #lux-node, #lux-gw, #threshold-node, #threshold-gw { font-weight: 300 !important; }
     body.night-mode .inline-value { color: #e5e7eb; }
     .status-label { font-size: 0.8rem; color: #444; }
@@ -209,12 +193,7 @@
       color: #111827;
       box-shadow: 0 2px 4px rgba(0,0,0,0.12);
       white-space: nowrap;
-      transition:
-        background 0.15s ease,
-        transform 0.1s ease,
-        box-shadow 0.15s ease,
-        border-color 0.15s ease,
-        color 0.15s ease;
+      transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease, border-color 0.15s ease, color 0.15s ease;
     }
     .reset-btn:hover {
       background: #e5e7eb;
@@ -232,32 +211,6 @@
       color: #e5e7eb;
       box-shadow: 0 3px 8px rgba(15,23,42,0.9);
     }
-    body.night-mode .reset-btn:hover {
-      background: #020617;
-      border-color: #fca5a5;
-      color: #f9fafb;
-    }
-
-    .lux-label,
-    .lux-value {
-      text-align: center;
-      font-size: 1.2rem;
-      font-weight: 600;
-      color: #333333;
-    }
-    .lux-label { margin-bottom: 2px; }
-    .lux-value { margin-top: 4px; }
-    body.night-mode .lux-label,
-    body.night-mode .lux-value { color: #e5e7eb; }
-
-    .threshold-row {
-      margin-top: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      gap: 6px;
-    }
 
     .button-wrap { text-align: center; }
 
@@ -268,8 +221,6 @@
       font-family: system-ui, -apple-system, "SF Pro Display", "Apple SD Gothic Neo", "Segoe UI Variable", "Segoe UI", "Noto Sans KR", sans-serif;
       font-size: 2.30rem;
       font-weight: 400;
-      font-variation-settings: "wght" 400;
-      font-synthesis: none;
       border-radius: 24px;
       border: none;
       cursor: pointer;
@@ -278,17 +229,10 @@
       box-shadow:
         0 8px 16px rgba(15, 23, 42, 0.4),
         inset 0 2px 3px rgba(255, 255, 255, 0.2);
-      transition:
-        transform 0.1s ease,
-        box-shadow 0.1s ease,
-        opacity 0.1s ease,
-        background 0.2s ease,
-        filter 0.2s ease;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.1s ease, background 0.2s ease, filter 0.2s ease;
       letter-spacing: 0.3px;
     }
-    .led-btn:hover {
-      background: #15803d;
-    }
+    .led-btn:hover { background: #15803d; }
     .led-btn:active {
       transform: translateY(2px);
       box-shadow:
@@ -301,17 +245,6 @@
       box-shadow:
         0 0 0 4px rgba(37,99,235,0.35),
         0 12px 20px rgba(15, 23, 42, 0.6);
-    }
-    body.night-mode .led-btn {
-      background: #16a34a;
-      box-shadow:
-        0 8px 18px rgba(15, 23, 42, 0.85),
-        inset 0 2px 3px rgba(255, 255, 255, 0.08);
-    }
-    body.night-mode .led-btn.clicked {
-      box-shadow:
-        0 0 0 4px rgba(59,130,246,0.6),
-        0 12px 22px rgba(15, 23, 42, 0.95);
     }
 
     .door-state-window {
@@ -334,17 +267,15 @@
     }
 
     .door-state-row {
-      margin-top: 0;
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 10px;
       font-size: 1.14rem;
-      font-family: system-ui, -apple-system, "SF Pro Display", "Apple SD Gothic Neo", "Segoe UI Variable", "Segoe UI", "Noto Sans KR", sans-serif;
       font-weight: 300;
       letter-spacing: 0.2px;
     }
-    .door-label { font-weight: 400;}
+    .door-label { font-weight: 400; }
 
     .door-state-badge {
       min-width: 80px;
@@ -356,7 +287,6 @@
     }
     .door-state-badge.door-open { background: #2563eb; }
     .door-state-badge.door-close { background: #374151; }
-    body.night-mode .door-state-badge.door-open { background: #2563eb; }
 
     .footer {
       margin-top: 6px;
@@ -378,9 +308,7 @@
       background: #d4d4d8;
       margin: 4px 0;
     }
-    body.night-mode .divider {
-      background: #1f2937;
-    }
+    body.night-mode .divider { background: #1f2937; }
 
     #wifi-panel, #lora-panel { width: 100%; }
     #lora-panel { display: none; }
@@ -389,14 +317,7 @@
       body { padding: 8px 6px; }
       .container { max-width: 100%; border-radius: 14px; }
     }
-
-    .led-btn { font-weight: 400 !important; }
   </style>
-
-  <link rel="manifest" href="./manifest.webmanifest">
-  <meta name="theme-color" content="#0b1020">
-  <link rel="icon" href="./doorCOntrol.png" type="image/png">
-  <link rel="apple-touch-icon" href="./doorCOntrol.png">
 </head>
 
 <body class="night-mode">
@@ -546,6 +467,7 @@
     const DATA_TIMEOUT_MS = 2000;
     const STATUS_CHECK_MS = 250;
     const RECONNECT_DELAY_MS = 3000;
+    const FAILOVER_CHECK_MS = 500;
 
     const clientId = "WEB-ALL-" + Math.random().toString(16).substr(2, 8);
     const client   = new Paho.Client(MQTT_URL, clientId);
@@ -586,6 +508,17 @@
     let lastDataGw   = 0;
     let luxThreshold = null;
 
+    let currentMode = "wifi";
+    let autoSwitchedToLora = false;
+
+    function nodeAlive() {
+      return lastDataNode > 0 && (Date.now() - lastDataNode < DATA_TIMEOUT_MS);
+    }
+
+    function gwAlive() {
+      return lastDataGw > 0 && (Date.now() - lastDataGw < DATA_TIMEOUT_MS);
+    }
+
     function updateDoorNode(isOpen) {
       doorNodeBadge.textContent = isOpen ? "Open" : "Close";
       doorNodeBadge.classList.remove("door-open", "door-close");
@@ -614,8 +547,7 @@
     }
 
     function updateDeviceStatusNode() {
-      const now = Date.now();
-      if (lastDataNode > 0 && now - lastDataNode < DATA_TIMEOUT_MS) {
+      if (nodeAlive()) {
         deviceStatusNode.textContent = "데이터 수신 중";
         deviceStatusNode.classList.remove("bad");
         deviceStatusNode.classList.add("ok");
@@ -627,8 +559,7 @@
     }
 
     function updateDeviceStatusGw() {
-      const now = Date.now();
-      if (lastDataGw > 0 && now - lastDataGw < DATA_TIMEOUT_MS) {
+      if (gwAlive()) {
         deviceStatusGw.textContent = "데이터 수신 중";
         deviceStatusGw.classList.remove("bad");
         deviceStatusGw.classList.add("ok");
@@ -654,26 +585,54 @@
       applyMode();
     });
 
-    function showWifi() {
+    function showWifi(manual = false) {
       wifiPanel.style.display = "block";
       loraPanel.style.display = "none";
       btnWifi.classList.add("active");
       btnLora.classList.remove("active");
       resetBtnNode.style.display = "";
       resetBtnGw.style.display   = "none";
+      currentMode = "wifi";
+
+      if (manual) {
+        autoSwitchedToLora = false;
+      }
     }
 
-    function showLora() {
+    function showLora(auto = false) {
       wifiPanel.style.display = "none";
       loraPanel.style.display = "block";
       btnWifi.classList.remove("active");
       btnLora.classList.add("active");
       resetBtnNode.style.display = "none";
       resetBtnGw.style.display   = "";
+      currentMode = "lora";
+
+      if (auto) {
+        autoSwitchedToLora = true;
+      }
     }
 
-    btnWifi.addEventListener("click", showWifi);
-    btnLora.addEventListener("click", showLora);
+    function autoModeFailoverCheck() {
+      const nodeOk = nodeAlive();
+      const gwOk   = gwAlive();
+
+      if (!nodeOk && gwOk && currentMode !== "lora") {
+        showLora(true);
+        console.log("AUTO FAILOVER: LoRa 모드로 전환");
+      }
+    }
+
+    btnWifi.addEventListener("click", () => {
+      showWifi(true);
+      setTimeout(() => {
+        if (!nodeAlive() && gwAlive()) {
+          showLora(true);
+        }
+      }, 300);
+    });
+
+    btnLora.addEventListener("click", () => showLora(false));
 
     client.onConnectionLost = function (responseObject) {
       console.log("onConnectionLost:", responseObject.errorMessage);
@@ -751,6 +710,8 @@
           console.log("임계값 수신:", v);
         }
       }
+
+      autoModeFailoverCheck();
     };
 
     function connectMQTT() {
@@ -851,18 +812,11 @@
 
     setInterval(updateDeviceStatusNode, STATUS_CHECK_MS);
     setInterval(updateDeviceStatusGw, STATUS_CHECK_MS);
+    setInterval(autoModeFailoverCheck, FAILOVER_CHECK_MS);
 
     applyMode();
     showWifi();
     connectMQTT();
-  </script>
-
-  <script>
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw.js");
-      });
-    }
   </script>
 </body>
 </html>
