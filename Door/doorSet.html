@@ -359,7 +359,7 @@ body.night-mode .inline-value { color: #e5e7eb; }
       min-width: 80px;
       text-align: center;
       padding: 4px 14px;
-      border-radius: 12px;`0;
+      border-radius: 12px;
       color: #ffffff;
       background: #374151;
     }
@@ -646,6 +646,10 @@ body.night-mode .inline-value { color: #e5e7eb; }
 
     const TOPIC_THRESHOLD_STATE = "tswell/node1/config/threshold";
 
+    const DATA_TIMEOUT_MS = 2000;
+    const STATUS_CHECK_MS = 250;
+    const RECONNECT_DELAY_MS = 3000;
+
     const clientId = "WEB-ALL-" + Math.random().toString(16).substr(2, 8);
     const client   = new Paho.Client(MQTT_URL, clientId);
 
@@ -766,7 +770,7 @@ const originalLedLabelNode = ledBtnNode.textContent;
 
     function updateDeviceStatusNode() {
       const now = Date.now();
-      if (lastDataNode > 0 && now - lastDataNode < 15000) {
+      if (lastDataNode > 0 && now - lastDataNode < DATA_TIMEOUT_MS) {
         deviceStatusNode.textContent = "데이터 수신 중";
         deviceStatusNode.classList.remove("bad");
         deviceStatusNode.classList.add("ok");
@@ -778,7 +782,7 @@ const originalLedLabelNode = ledBtnNode.textContent;
     }
     function updateDeviceStatusGw() {
       const now = Date.now();
-      if (lastDataGw > 0 && now - lastDataGw < 15000) {
+      if (lastDataGw > 0 && now - lastDataGw < DATA_TIMEOUT_MS) {
         deviceStatusGw.textContent = "데이터 수신 중";
         deviceStatusGw.classList.remove("bad");
         deviceStatusGw.classList.add("ok");
@@ -827,7 +831,13 @@ const originalLedLabelNode = ledBtnNode.textContent;
     client.onConnectionLost = function (responseObject) {
       console.log("onConnectionLost:", responseObject.errorMessage);
       setMqttStatus(false);
-      setTimeout(connectMQTT, 3000);
+
+      lastDataNode = 0;
+      lastDataGw = 0;
+      updateDeviceStatusNode();
+      updateDeviceStatusGw();
+
+      setTimeout(connectMQTT, RECONNECT_DELAY_MS);
     };
 
     client.onMessageArrived = function (message) {
@@ -925,6 +935,12 @@ const originalLedLabelNode = ledBtnNode.textContent;
         onFailure: function (err) {
           console.error("MQTT 연결 실패:", err.errorMessage || err);
           setMqttStatus(false);
+
+          lastDataNode = 0;
+          lastDataGw = 0;
+          updateDeviceStatusNode();
+          updateDeviceStatusGw();
+
           setTimeout(connectMQTT, 4000);
         },
       });
@@ -976,8 +992,8 @@ const originalLedLabelNode = ledBtnNode.textContent;
       client.send(msg);
     });
 
-    setInterval(updateDeviceStatusNode, 5000);
-    setInterval(updateDeviceStatusGw,   5000);
+    setInterval(updateDeviceStatusNode, STATUS_CHECK_MS);
+    setInterval(updateDeviceStatusGw,   STATUS_CHECK_MS);
 
     applyMode();
     showWifi();
