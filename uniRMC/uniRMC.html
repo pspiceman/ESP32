@@ -523,12 +523,14 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
     r433Cmd: "tswell/433home/cmd",
     r433Status: "tswell/433home/status",
     r433Log: "tswell/433home/log",
+    myhomeAnnounce: "pspiceman/myhome/announce",
   };
 
   let client = null;
+  let mqttSubbed = false;
   let gw = { wifi:null, mqtt:null, rssi:null };
-  let gwLastTs = 0; // ms timestamp of last 433 status update (gateway heartbeat)
-  const GW_STALE_MS = 7000; // 7s without 433 status => gateway offline
+  let gwLastTs = 0; // ms timestamp of last gateway heartbeat (433 status OR myHome announce)
+  const GW_STALE_MS = 25000; // allow myHome announce (15s) + buffer; 433 status still works
 
   let ble = null;
   let bleLastTs = 0; // ms timestamp of last BLE status update
@@ -575,9 +577,10 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
     client.on("connect", ()=>{ mqttOk = true; 
       setPill(stMqtt, true, "MQTT: OK");
       addLog("MQTT connected");
+      mqttSubbed = false;
       client.subscribe(Object.values(TOPIC), { qos:0 }, (err)=>{
         if(err) addLog("SUB ERR: " + err.message);
-        else addLog("Subscribed topics");
+        else { mqttSubbed = true; addLog("Subscribed topics"); }
       });
     });
 
@@ -601,6 +604,10 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
       bleLastTs = 0;
       setPill(stBle, false, "BLE: --");
     });
+    client.on("offline", ()=>{
+      mqttOk = false;
+      setPill(stMqtt, false, "MQTT: --");
+    });
     client.on("error", (e)=> addLog("MQTT ERR: " + e.message));
 
     client.on("message", (topic, payload)=>{
@@ -612,6 +619,17 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
           gwLastTs = Date.now();
           const ok = (j.wifi===1 && j.mqtt===1);
           setPill(stGw, ok, "Gateway: " + (ok ? "OK":"BAD"));
+          stRssi.innerText = "RSSI: " + (j.rssi ?? "--");
+        }catch(e){}
+      }
+
+      // Fallback Gateway heartbeat: myHome announce (when merged firmware doesn't publish 433 status)
+      if(topic === TOPIC.myhomeAnnounce){
+        try{
+          const j = JSON.parse(msg);
+          // announce example: { node, ip, mdns, rssi, t }
+          gwLastTs = Date.now();
+          setPill(stGw, true, "Gateway: OK");
           stRssi.innerText = "RSSI: " + (j.rssi ?? "--");
         }catch(e){}
       }
@@ -815,7 +833,8 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
   }
 
 
-window.addEventListener('load', ()=>{ connect(); });
+window.addEventListener('load', ()=>{ $('clock').innerText=new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); connect(); });
+window.addEventListener('beforeunload', ()=>{ try{ disconnect(); }catch(e){} });
 
   // Clock
   setInterval(()=>{$("clock").innerText=new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});}, 1000);
