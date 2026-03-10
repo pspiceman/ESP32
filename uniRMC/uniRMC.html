@@ -1,11 +1,17 @@
 <!DOCTYPE html>
-
 <html lang="ko">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
 <title>Universal RMC</title>
+
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script>
+if (typeof mqtt === "undefined") {
+  document.write('<script src="https://cdn.jsdelivr.net/npm/mqtt/dist/mqtt.min.js"><\/script>');
+}
+</script>
+
 <style>
     :root { --pad: 12px; }
     body{ margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif; background:#0b0f14; color:#e6eef8; padding-top: calc(env(safe-area-inset-top) + 12px);}
@@ -27,8 +33,7 @@
     .muted{ opacity:.75; font-size:12px;}
 button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12); }
 
-
-        .logbtn-left{
+    .logbtn-left{
       width:54px; padding:6px 0; text-align:center;
       font-size:14px; line-height:1;
       border:1px solid rgba(255,255,255,.24);
@@ -37,8 +42,6 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
     }
     .logbtn-right{ width:110px; padding:6px 0; text-align:center; font-size:12px; line-height:1; letter-spacing:.3px; }
 
-
-    /* Pressed feedback */
     .btn:active, .logbtn:active{
       transform: translateY(3px) scale(0.985);
       filter: brightness(0.90);
@@ -49,14 +52,10 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
       box-shadow: inset 0 6px 14px rgba(0,0,0,.45) !important;
     }
 
-
-    /* Universal RMC depth up */
     .pill{
       box-shadow: 0 10px 22px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.18), inset 0 -4px 10px rgba(0,0,0,.35);
     }
 
-
-    /* Status pills (OK like attach) */
     .pill{
       padding:8px 14px;
       border-radius:999px;
@@ -67,7 +66,7 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
     }
     .pill.ok, .pill.good{
       background: linear-gradient(180deg,#1f262f,#151a21);
-      border:1px solid rgba(34,197,94,.85); /* green outline */
+      border:1px solid rgba(34,197,94,.85);
       box-shadow: 0 0 0 1px rgba(34,197,94,.35),
                   0 0 18px rgba(34,197,94,.22),
                   0 12px 26px rgba(0,0,0,.65),
@@ -81,8 +80,6 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
       border:1px solid rgba(255,255,255,.10);
     }
 
-
-    /* Remote vs button separation + 3D */
     .section{
       background: linear-gradient(180deg,#0c1016,#070a0f);
       border: 2px solid rgba(255,255,255,.32);
@@ -103,7 +100,6 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
       color:#f2f7ff;
     }
 
-
     .logbtn{
       border:1px solid rgba(255,255,255,.24);
       background: linear-gradient(180deg,#1f262f,#151a21);
@@ -117,8 +113,6 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
                   inset 0 1px 0 rgba(255,255,255,.12), inset 0 -5px 12px rgba(0,0,0,.38);
     }
 
-
-    /* Status row: keep EVERYTHING on ONE line in mobile portrait */
     .status-row{
       display:flex;
       flex-wrap:nowrap;
@@ -133,9 +127,6 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
       flex:0 0 auto;
     }
 
-    /* Mobile portrait: tighten pills so MQTT/Gateway/BLE/RSSI fit on a single row */
-
-    /* Clock pill height match RESET */
     #clock{ line-height:1; padding:6px 10px; }
     @media (max-width: 480px){
       .status-row{
@@ -144,8 +135,8 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
       .status-row .pill{
         padding:5px 7px;
         font-size:12px;
-        flex:1 1 0;      /* equal-width chips */
-        min-width:0;     /* allow flexbox shrink without clipping layout */
+        flex:1 1 0;
+        min-width:0;
       }
 
       #clock{ padding:6px 7px; line-height:1; }
@@ -158,8 +149,6 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
                   inset 0 1px 0 rgba(255,255,255,.14), inset 0 -6px 14px rgba(0,0,0,.40);
     }
 
-
-    /* Section tint (clearer separation among 3 remotes) */
     section:nth-of-type(1){
       background: linear-gradient(180deg, rgba(59,130,246,.18), rgba(59,130,246,.10));
     }
@@ -169,15 +158,10 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
     section:nth-of-type(3){
       background: linear-gradient(180deg, rgba(168,85,247,.18), rgba(168,85,247,.10));
     }
-    /* Log/Reset section (neutral) */
     section:nth-of-type(4){
       background: rgba(255,255,255,.07);
     }
 
-
-
-    /* === UI Tuning (2026-01): clearer remote vs button separation + stronger 3D buttons === */
-    /* Card (remote) depth + clearer border */
     main > section{
       position: relative;
       border-radius: 20px;
@@ -191,9 +175,7 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
         inset 0 1px 0 rgba(255,255,255,.10),
         inset 0 -14px 28px rgba(0,0,0,.22);
     }
-    /* Accent rail per remote */
     main > section::before{ display:none; }
-                    /* Buttons: higher contrast + stronger 3D */
     button{
       border-radius: 16px;
       border: 1px solid rgba(255,255,255,.20);
@@ -217,7 +199,6 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
         inset 0 -12px 20px rgba(0,0,0,.38);
     }
 
-    /* Per-remote button tint (keeps sections distinct even with same base) */
     main > section:nth-of-type(1) button:not(.logbtn){
       background: linear-gradient(180deg, rgba(59,130,246,.28), rgba(59,130,246,.12));
       border-color: rgba(59,130,246,.34);
@@ -246,7 +227,6 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
         inset 0 -12px 22px rgba(0,0,0,.36);
     }
 
-    /* Pressed: looks "pushed in" */
     button:active, .btn:active, .logbtn:active{
       transform: translateY(3px) scale(0.985);
       filter: brightness(0.92) saturate(1.05);
@@ -264,7 +244,6 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
         inset 0 1px 0 rgba(255,255,255,.12) !important;
     }
 
-    /* Log buttons: keep distinct (neutral metal) */
     .logbtn{
       border-color: rgba(255,255,255,.22);
       background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
@@ -274,38 +253,6 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
         inset 0 -10px 18px rgba(0,0,0,.42);
     }
 
-
-
-/* === UI tweak: hide collector(gateway) pill (visual only) === */
-/* === Title styling === */
-.brand-title{
-  background: linear-gradient(90deg, #7dd3fc 0%, #a78bfa 45%, #34d399 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 1px 0 rgba(0,0,0,.35);
-}
-
-/* If there are any collector labels/rows in future markup, hide them safely */
-.collector, .collector-row, .collector-label, [data-role="collector"]{
-  display:none !important;
-}
-
-    /* UI tweak v3: remove left vertical bar + title emboss */
-    main > section::before{ display:none; }
-    main > section:nth-of-type(1)::before,
-    main > section:nth-of-type(2)::before,
-        /* Section titles */
-    main > section h2{
-      color: rgba(220,220,220,.96) !important;
-      opacity: 1 !important;
-      text-shadow:
-        0 1px 0 rgba(255,255,255,.14),
-        0 10px 22px rgba(0,0,0,.65);
-      letter-spacing: .2px;
-    }
-
-    /* Top brand title: bright gray with depth (no gradient) */
     .brand-title{
       background: none !important;
       -webkit-background-clip: border-box !important;
@@ -316,9 +263,15 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
         0 12px 26px rgba(0,0,0,.70) !important;
     }
 
+    main > section h2{
+      color: rgba(220,220,220,.96) !important;
+      opacity: 1 !important;
+      text-shadow:
+        0 1px 0 rgba(255,255,255,.14),
+        0 10px 22px rgba(0,0,0,.65);
+      letter-spacing: .2px;
+    }
 
-
-    /* Log/Reset wrapper: remove outer outline so it fits mobile portrait */
     main > section:last-of-type{
       background: transparent !important;
       border: 0 !important;
@@ -330,123 +283,114 @@ button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.
       padding: 0 !important;
     }
 
+    main{ gap:4px; }
+    @media (max-width: 480px){
+      :root{ --pad: 10px; }
+      main{ padding-top:6px; padding-bottom:8px; gap:3px; }
+    }
 
-    /* === UI tweak v10: keep button sizes, adjust only spacing BETWEEN remotes for 800px portrait === */
-main{ gap:4px; } /* was 12px */
-@media (max-width: 480px){
-  :root{ --pad: 10px; }
-  main{ padding-top:6px; padding-bottom:8px; gap:3px; } /* tighter between remotes only */
-}
-/* restore Log/Reset button sizing (keep original feel) */
-.logbtn-left{
+    .logbtn-left{
       width:54px; padding:6px 0; text-align:center;
       font-size:14px; line-height:1;
       border:1px solid rgba(255,255,255,.24);
       box-shadow: 0 12px 22px rgba(0,0,0,.65),
                   inset 0 1px 0 rgba(255,255,255,.12), inset 0 -5px 12px rgba(0,0,0,.38);
     }
-.logbtn-right{ width:110px; padding:6px 0; text-align:center; font-size:12px; line-height:1; letter-spacing:.3px; }
+    .logbtn-right{ width:110px; padding:6px 0; text-align:center; font-size:12px; line-height:1; letter-spacing:.3px; }
 
+    .iconbtn{
+      width:34px;
+      height:34px;
+      padding:0;
+      border-radius:999px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.10);
+      color:#fff;
+      font-size:16px;
+      line-height:1;
+      box-shadow: 0 12px 22px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.16);
+    }
+    .iconbtn:active{
+      transform: translateY(2px) scale(0.985);
+      filter: brightness(0.92);
+    }
 
-
-
-/* === Day/Night theme toggle === */
-.iconbtn{
-  width:34px;
-  height:34px;
-  padding:0;
-  border-radius:999px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  border:1px solid rgba(255,255,255,.18);
-  background:rgba(255,255,255,.10);
-  color:#fff;
-  font-size:16px;
-  line-height:1;
-  box-shadow: 0 12px 22px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.16);
-}
-.iconbtn:active{
-  transform: translateY(2px) scale(0.985);
-  filter: brightness(0.92);
-}
-
-/* Day mode */
-body.day{
-  background:#f4f6fb;
-  color:#0b0f14;
-}
-body.day header{
-  background:rgba(244,246,251,.92);
-  border-bottom:1px solid rgba(0,0,0,.10);
-}
-body.day .brand-title{
-  color: rgba(18,18,18,.92) !important;
-  text-shadow: 0 1px 0 rgba(255,255,255,.75), 0 10px 22px rgba(0,0,0,.12) !important;
-}
-body.day .pill{
-  background:rgba(0,0,0,.06);
-  border:1px solid rgba(0,0,0,.10);
-  box-shadow: 0 10px 18px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.70);
-  color:#0b0f14;
-}
-body.day .pill.ok, body.day .pill.good{
-  background: linear-gradient(180deg,#ffffff,#eef3ff);
-  border:1px solid rgba(34,197,94,.85);
-  box-shadow: 0 0 0 1px rgba(34,197,94,.20), 0 0 14px rgba(34,197,94,.10), 0 10px 18px rgba(0,0,0,.10),
-              inset 0 1px 0 rgba(255,255,255,.85), inset 0 -6px 14px rgba(0,0,0,.06);
-  color:#0b0f14;
-  text-shadow:none;
-}
-body.day #st-rssi{
-  border:1px solid rgba(59,130,246,.85);
-  box-shadow: 0 0 0 1px rgba(59,130,246,.22),
-              0 0 12px rgba(59,130,246,.10),
-              0 10px 18px rgba(0,0,0,.10),
-              inset 0 1px 0 rgba(255,255,255,.85), inset 0 -6px 14px rgba(0,0,0,.06);
-}
-body.day main > section{
-  border:1px solid rgba(0,0,0,.10);
-  background: radial-gradient(1200px 420px at 18% 0%,
-              rgba(0,0,0,.03),
-              rgba(0,0,0,.02) 38%,
-              rgba(255,255,255,.60) 100%);
-  box-shadow: 0 18px 42px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.85), inset 0 -14px 28px rgba(0,0,0,.06);
-}
-body.day main > section h2{
-  color: rgba(20,20,20,.92) !important;
-  text-shadow: 0 1px 0 rgba(255,255,255,.70), 0 10px 22px rgba(0,0,0,.10);
-}
-body.day button, body.day .btn, body.day .logbtn{
-  border:1px solid rgba(0,0,0,.12);
-  background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(253,254,255,.94)); /* very subtle gradient */
-  color:#0b0f14;
-  text-shadow:none;
-  box-shadow: 0 1px 2px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.35); /* ~1/2 depth */
-  filter: saturate(0.70);
-}
-body.day button:active, body.day .btn:active, body.day .logbtn:active{
-  box-shadow: 0 1px 1px rgba(0,0,0,.05), inset 0 1px 2px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.28) !important; /* ~1/2 depth */
-  transform: translateY(1px);
-  filter: saturate(0.70) brightness(0.995);
-}
-body.day .log{
-  background:rgba(255,255,255,.70);
-  border:1px solid rgba(0,0,0,.10);
-  color:#0b0f14;
-}
-body.day .iconbtn{
-  border:1px solid rgba(0,0,0,.12);
-  background:rgba(255,255,255,.75);
-  color:#0b0f14;
-  box-shadow: 0 10px 18px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.85);
-}
-
-
-body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
-  box-shadow: 0 1px 3px rgba(0,0,0,.055), inset 0 1px 0 rgba(255,255,255,.35) !important; /* ~1/2 lift */
-  filter: saturate(0.70);
-}
+    body.day{
+      background:#f4f6fb;
+      color:#0b0f14;
+    }
+    body.day header{
+      background:rgba(244,246,251,.92);
+      border-bottom:1px solid rgba(0,0,0,.10);
+    }
+    body.day .brand-title{
+      color: rgba(18,18,18,.92) !important;
+      text-shadow: 0 1px 0 rgba(255,255,255,.75), 0 10px 22px rgba(0,0,0,.12) !important;
+    }
+    body.day .pill{
+      background:rgba(0,0,0,.06);
+      border:1px solid rgba(0,0,0,.10);
+      box-shadow: 0 10px 18px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.70);
+      color:#0b0f14;
+    }
+    body.day .pill.ok, body.day .pill.good{
+      background: linear-gradient(180deg,#ffffff,#eef3ff);
+      border:1px solid rgba(34,197,94,.85);
+      box-shadow: 0 0 0 1px rgba(34,197,94,.20), 0 0 14px rgba(34,197,94,.10), 0 10px 18px rgba(0,0,0,.10),
+                  inset 0 1px 0 rgba(255,255,255,.85), inset 0 -6px 14px rgba(0,0,0,.06);
+      color:#0b0f14;
+      text-shadow:none;
+    }
+    body.day #st-rssi{
+      border:1px solid rgba(59,130,246,.85);
+      box-shadow: 0 0 0 1px rgba(59,130,246,.22),
+                  0 0 12px rgba(59,130,246,.10),
+                  0 10px 18px rgba(0,0,0,.10),
+                  inset 0 1px 0 rgba(255,255,255,.85), inset 0 -6px 14px rgba(0,0,0,.06);
+    }
+    body.day main > section{
+      border:1px solid rgba(0,0,0,.10);
+      background: radial-gradient(1200px 420px at 18% 0%,
+                  rgba(0,0,0,.03),
+                  rgba(0,0,0,.02) 38%,
+                  rgba(255,255,255,.60) 100%);
+      box-shadow: 0 18px 42px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.85), inset 0 -14px 28px rgba(0,0,0,.06);
+    }
+    body.day main > section h2{
+      color: rgba(20,20,20,.92) !important;
+      text-shadow: 0 1px 0 rgba(255,255,255,.70), 0 10px 22px rgba(0,0,0,.10);
+    }
+    body.day button, body.day .btn, body.day .logbtn{
+      border:1px solid rgba(0,0,0,.12);
+      background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(253,254,255,.94));
+      color:#0b0f14;
+      text-shadow:none;
+      box-shadow: 0 1px 2px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.35);
+      filter: saturate(0.70);
+    }
+    body.day button:active, body.day .btn:active, body.day .logbtn:active{
+      box-shadow: 0 1px 1px rgba(0,0,0,.05), inset 0 1px 2px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.28) !important;
+      transform: translateY(1px);
+      filter: saturate(0.70) brightness(0.995);
+    }
+    body.day .log{
+      background:rgba(255,255,255,.70);
+      border:1px solid rgba(0,0,0,.10);
+      color:#0b0f14;
+    }
+    body.day .iconbtn{
+      border:1px solid rgba(0,0,0,.12);
+      background:rgba(255,255,255,.75);
+      color:#0b0f14;
+      box-shadow: 0 10px 18px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.85);
+    }
+    body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
+      box-shadow: 0 1px 3px rgba(0,0,0,.055), inset 0 1px 0 rgba(255,255,255,.35) !important;
+      filter: saturate(0.70);
+    }
 </style>
 </head>
 <body>
@@ -465,25 +409,27 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
 <div class="pill" id="st-rssi">RSSI: --</div>
 </div>
 </header>
+
 <main>
 <section>
 <h2>MiBox RMC</h2>
 <div class="grid">
-<button class="wide" onclick="sendMi('up')">▲</button>
-<button onclick="sendMi('left')">◀</button>
-<button onclick="sendMi('ok1')">OK</button>
-<button onclick="sendMi('right')">▶</button>
-<button class="wide" onclick="sendMi('down')">▼</button>
-<button onclick="sendMi('voldown')">VOL-</button>
-<button onclick="sendMi('mute')">MUTE</button>
-<button onclick="sendMi('volup')">VOL+</button>
+<button class="wide" id="btn-up">▲</button>
+<button id="btn-left">◀</button>
+<button id="btn-ok">OK</button>
+<button id="btn-right">▶</button>
+<button class="wide" id="btn-down">▼</button>
+<button id="btn-voldown">VOL-</button>
+<button id="btn-mute">MUTE</button>
+<button id="btn-volup">VOL+</button>
 </div>
 <div style="height:6px"></div>
 <div class="grid2">
-<button onclick="sendMi('MB:2000')">⟵ BACK</button>
-<button onclick="sendMi('MB:0080')">HOME</button>
+<button id="btn-back">⟵ BACK</button>
+<button id="btn-home">HOME</button>
 </div>
 </section>
+
 <section>
 <h2>433 RMC</h2>
 <div class="grid2">
@@ -493,6 +439,7 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
 <button onclick="send433('SPK2')">SPK2</button>
 </div>
 </section>
+
 <section>
 <h2>IR RMC</h2>
 <div class="grid">
@@ -504,6 +451,7 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
 <button onclick="sendIR('VOL+2')">VOL+</button>
 </div>
 </section>
+
 <section>
 <h2 style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
 <button class="logbtn logbtn-left" id="toggleLog" onclick="toggleLog()">🪲</button>
@@ -512,9 +460,8 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
 <div class="log" id="log" style="display:none"></div>
 </section>
 </main>
+
 <script>
-  // Topics (ESP32 firmware와 동일)
-  // IR: ESP32는 JSON {cmd}만 받음 (token 없음)
   const TOPIC = {
     miboxCmd: "tswell/mibox3/cmd",
     miboxStatus: "tswell/mibox3/status",
@@ -526,19 +473,19 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
     myhomeAnnounce: "pspiceman/myhome/announce",
   };
 
+  const HOLD_START_MS = 320;
+  const HOLD_REPEAT_MS = 110;
+  const GW_STALE_MS = 25000;
+  const BLE_STALE_MS = 6000;
+  const BLE_UI_OFF_CONFIRM_MS = 4000;
+
   let client = null;
-  let mqttSubbed = false;
   let gw = { wifi:null, mqtt:null, rssi:null };
-  let gwLastTs = 0; // ms timestamp of last gateway heartbeat (433 status OR myHome announce)
-  const GW_STALE_MS = 25000; // allow myHome announce (15s) + buffer; 433 status still works
-
+  let gwLastTs = 0;
   let ble = null;
-  let bleLastTs = 0; // ms timestamp of last BLE status update
-  const BLE_STALE_MS = 6000; // stable: 6s timeout
-  let bleOffStart = 0; // UI-side OFF debounce start (ms)
-  const BLE_UI_OFF_CONFIRM_MS = 4000; // require 4s continuous OFF before showing OFF
+  let bleLastTs = 0;
+  let bleOffStart = 0;
   let mqttOk = false;
-
 
   const $ = (id)=>document.getElementById(id);
   const logEl = $("log");
@@ -554,64 +501,83 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
   }
 
   function addLog(line){
+    if (!logEl) return;
     const ts = new Date().toLocaleTimeString();
     logEl.innerText = `[${ts}] ${line}\n` + logEl.innerText;
   }
 
   function setPill(el, ok, text){
+    if (!el) return;
     el.classList.remove("ok","bad");
     el.classList.add(ok ? "ok":"bad");
     el.innerText = text;
   }
 
   function connect(){
+    if (typeof mqtt === "undefined") {
+      setPill(stMqtt, false, "MQTT: LIB ERR");
+      addLog("mqtt.min.js load failed");
+      return;
+    }
+
     const url = "wss://broker.hivemq.com:8884/mqtt";
     const cid = "web_" + Math.random().toString(16).slice(2);
+
     client = mqtt.connect(url, {
       clientId: cid,
       clean: true,
       reconnectPeriod: 1500,
       keepalive: 30,
+      connectTimeout: 8000
     });
 
-    client.on("connect", ()=>{ mqttOk = true; 
+    client.on("connect", ()=>{
+      mqttOk = true;
       setPill(stMqtt, true, "MQTT: OK");
       addLog("MQTT connected");
-      mqttSubbed = false;
+
       client.subscribe(Object.values(TOPIC), { qos:0 }, (err)=>{
         if(err) addLog("SUB ERR: " + err.message);
-        else { mqttSubbed = true; addLog("Subscribed topics"); }
+        else addLog("Subscribed topics");
       });
     });
 
     client.on("reconnect", ()=>{
       mqttOk = false;
-      setPill(stMqtt, false, "MQTT: --");
-      // MQTT가 흔들릴 때 Gateway/BLE는 판정 보류
+      setPill(stMqtt, false, "MQTT: RETRY");
       gwLastTs = 0;
       setPill(stGw, false, "Gateway: --");
       stRssi.innerText = "RSSI: --";
       bleLastTs = 0;
       setPill(stBle, false, "BLE: --");
+      addLog("MQTT reconnecting");
     });
 
     client.on("close", ()=>{
       mqttOk = false;
-      setPill(stMqtt, false, "MQTT: --");
+      setPill(stMqtt, false, "MQTT: CLOSE");
       gwLastTs = 0;
       setPill(stGw, false, "Gateway: --");
       stRssi.innerText = "RSSI: --";
       bleLastTs = 0;
       setPill(stBle, false, "BLE: --");
+      addLog("MQTT closed");
     });
+
     client.on("offline", ()=>{
       mqttOk = false;
-      setPill(stMqtt, false, "MQTT: --");
+      setPill(stMqtt, false, "MQTT: OFF");
+      addLog("MQTT offline");
     });
-    client.on("error", (e)=> addLog("MQTT ERR: " + e.message));
+
+    client.on("error", (e)=>{
+      setPill(stMqtt, false, "MQTT: ERR");
+      addLog("MQTT ERR: " + (e?.message || e));
+    });
 
     client.on("message", (topic, payload)=>{
       const msg = payload.toString();
+
       if(topic === TOPIC.r433Status){
         try{
           const j = JSON.parse(msg);
@@ -620,29 +586,30 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
           const ok = (j.wifi===1 && j.mqtt===1);
           setPill(stGw, ok, "Gateway: " + (ok ? "OK":"BAD"));
           stRssi.innerText = "RSSI: " + (j.rssi ?? "--");
-        }catch(e){}
+        }catch(e){
+          addLog("433 status parse fail");
+        }
+        return;
       }
 
-      // Fallback Gateway heartbeat: myHome announce (when merged firmware doesn't publish 433 status)
       if(topic === TOPIC.myhomeAnnounce){
         try{
           const j = JSON.parse(msg);
-          // announce example: { node, ip, mdns, rssi, t }
           gwLastTs = Date.now();
           setPill(stGw, true, "Gateway: OK");
           stRssi.innerText = "RSSI: " + (j.rssi ?? "--");
-        }catch(e){}
+        }catch(e){
+          addLog("announce parse fail");
+        }
+        return;
       }
+
       if(topic === TOPIC.miboxStatus){
         try{
           const j = JSON.parse(msg);
           const now = Date.now();
 
-          // If LWT/offline marker arrives (ts==0), don't flicker OFF immediately.
-          // Reset freshness and show unknown; stale checker will turn it to OFF if no heartbeat follows.
           if(j.ts === 0){
-            // LWT/offline marker can arrive briefly during reconnect.
-            // If we recently had a fresh heartbeat, ignore this marker to prevent flicker.
             if(bleLastTs && (now - bleLastTs) <= BLE_STALE_MS){
               return;
             }
@@ -653,40 +620,42 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
             return;
           }
 
-          // Ignore stale retained snapshots (prevents OFF/OK flicker on first load)
           if(j.ts && j.ts > 1700000000){
-            const age = now - (j.ts*1000);
+            const age = now - (j.ts * 1000);
             if(age > BLE_STALE_MS){
               return;
             }
           }
 
           const cand = !!j.ble;
-          bleLastTs = now; // use receive-time
+          bleLastTs = now;
 
           if(cand){
-            // ON: clear OFF debounce and reflect immediately
             bleOffStart = 0;
             ble = true;
             setPill(stBle, true, "BLE: OK");
           }else{
-            // OFF: debounce so brief BLE hiccups don't flip the UI
             if(!bleOffStart) bleOffStart = now;
             const offLongEnough = (now - bleOffStart) >= BLE_UI_OFF_CONFIRM_MS;
             if(offLongEnough){
               ble = false;
               setPill(stBle, false, "BLE: OFF");
             }else{
-              // keep previous OK during the debounce window
               ble = true;
               setPill(stBle, true, "BLE: OK");
             }
           }
-        }catch(e){}
+        }catch(e){
+          addLog("BLE status parse fail");
+        }
+        return;
       }
+
       if(topic === TOPIC.r433Log){
         addLog(msg);
+        return;
       }
+
       if(topic === TOPIC.irStatus){
         addLog("IR: " + msg);
       }
@@ -697,6 +666,7 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
     if(client){
       client.end(true);
       client = null;
+      mqttOk = false;
       setPill(stMqtt, false, "MQTT: --");
       gwLastTs = 0;
       setPill(stGw, false, "Gateway: --");
@@ -715,10 +685,9 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
     client.publish(topic, msg, { qos:0, retain:false });
   }
 
-  // --- Commands ---
   function sendReset(){
-    send433('reset');
-    addLog('RESET requested');
+    send433("reset");
+    addLog("RESET requested");
   }
 
   function sendMi(cmd){
@@ -730,41 +699,83 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
     pub(TOPIC.miboxCmd, cmd);
     addLog("MiBox cmd: " + cmd);
   }
-  function sendMiRaw(){
-    const v = $("mbraw").value.trim();
-    if(!v) return;
-    pub(TOPIC.miboxCmd, v);
-    addLog("MiBox cmd: " + v);
-  }
+
   function sendIR(cmd){
-    // ESP32는 JSON {cmd} 형태를 기대함
     const payload = JSON.stringify({ cmd });
     pub(TOPIC.irCmd, payload);
     addLog("IR cmd: " + cmd);
   }
-  function sendIRCustom(){
-    const cmd = $("ircustom").value.trim();
-    if(!cmd) return;
-    sendIR(cmd);
+
+  function send433(cmd){
+    pub(TOPIC.r433Cmd, cmd);
+    addLog("433 cmd: " + cmd);
   }
 
-  function send433(cmd){ pub(TOPIC.r433Cmd, cmd); addLog("433 cmd: " + cmd); }
+  function bindClick(id, cmd){
+    const el = $(id);
+    if(!el) return;
+    el.addEventListener("click", () => sendMi(cmd));
+  }
 
-  // Gateway/BLE stale checker
+  function bindHoldRepeat(id, cmd, delayMs = HOLD_START_MS, repeatMs = HOLD_REPEAT_MS){
+    const el = $(id);
+    if(!el) return;
+
+    let holdTimer = null;
+    let repeatTimer = null;
+    let pressed = false;
+
+    const stop = () => {
+      pressed = false;
+      if(holdTimer){ clearTimeout(holdTimer); holdTimer = null; }
+      if(repeatTimer){ clearInterval(repeatTimer); repeatTimer = null; }
+    };
+
+    const start = (ev) => {
+      ev.preventDefault();
+      if(pressed) return;
+      pressed = true;
+
+      // 짧게 누르면 1회
+      sendMi(cmd);
+
+      // 길게 누르면 반복
+      holdTimer = setTimeout(() => {
+        if(!pressed) return;
+        repeatTimer = setInterval(() => {
+          sendMi(cmd);
+        }, repeatMs);
+      }, delayMs);
+    };
+
+    el.addEventListener("pointerdown", start);
+    el.addEventListener("pointerup", stop);
+    el.addEventListener("pointercancel", stop);
+    el.addEventListener("pointerleave", stop);
+    el.addEventListener("lostpointercapture", stop);
+
+    el.addEventListener("touchstart", start, {passive:false});
+    el.addEventListener("touchend", stop, {passive:true});
+    el.addEventListener("touchcancel", stop, {passive:true});
+
+    el.addEventListener("mousedown", start);
+    el.addEventListener("mouseup", stop);
+    el.addEventListener("mouseleave", stop);
+
+    el.addEventListener("contextmenu", (e) => e.preventDefault());
+  }
+
   setInterval(()=>{
-    // MQTT 끊김이면 전부 판정 보류
     if(!mqttOk){
       gwLastTs = 0;
       setPill(stGw, false, "Gateway: --");
       stRssi.innerText = "RSSI: --";
-
       ble = false;
       bleLastTs = 0;
       setPill(stBle, false, "BLE: --");
       return;
     }
 
-    // Gateway(433 status) freshness
     if(!gwLastTs){
       setPill(stGw, false, "Gateway: --");
       stRssi.innerText = "RSSI: --";
@@ -774,7 +785,6 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
         gwLastTs = 0;
         setPill(stGw, false, "Gateway: --");
         stRssi.innerText = "RSSI: --";
-        // Gateway 오프라인이면 BLE도 -- 로
         ble = false;
         bleLastTs = 0;
         setPill(stBle, false, "BLE: --");
@@ -782,7 +792,6 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
       }
     }
 
-    // BLE freshness (Gateway가 살아있을 때만 의미 있음)
     if(!bleLastTs){
       setPill(stBle, false, "BLE: --");
       return;
@@ -801,15 +810,13 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
     return mqttOk && !!ble && fresh;
   }
 
-  // Theme (Night default) — persisted in localStorage
-  const THEME_KEY = "urmc_theme"; // "night" | "day"
+  const THEME_KEY = "urmc_theme";
   const themeBtn = document.getElementById("themeToggle");
 
   function applyTheme(theme){
     const isDay = (theme === "day");
     document.body.classList.toggle("day", isDay);
     if(themeBtn){
-      // Show the *other* mode icon (tap to switch)
       themeBtn.textContent = isDay ? "🌙" : "☀️";
     }
     try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
@@ -820,7 +827,6 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
     applyTheme(cur === "day" ? "night" : "day");
   }
 
-  // Init theme early
   (function(){
     let saved = "night";
     try{ saved = localStorage.getItem(THEME_KEY) || "night"; }catch(e){}
@@ -832,33 +838,50 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
     themeBtn.addEventListener("click", toggleTheme);
   }
 
+  window.addEventListener("load", ()=>{
+    $("clock").innerText = new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+    connect();
 
-window.addEventListener('load', ()=>{ $('clock').innerText=new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); connect(); });
-window.addEventListener('beforeunload', ()=>{ try{ disconnect(); }catch(e){} });
+    // 방향키만 반복
+    bindHoldRepeat("btn-up", "up");
+    bindHoldRepeat("btn-down", "down");
+    bindHoldRepeat("btn-left", "left");
+    bindHoldRepeat("btn-right", "right");
 
-  // Clock
-  setInterval(()=>{$("clock").innerText=new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});}, 1000);
+    // 나머지는 원래처럼 1회
+    bindClick("btn-ok", "ok1");
+    bindClick("btn-voldown", "voldown");
+    bindClick("btn-mute", "mute");
+    bindClick("btn-volup", "volup");
+    bindClick("btn-back", "MB:2000");
+    bindClick("btn-home", "MB:0080");
+  });
+
+  window.addEventListener("beforeunload", ()=>{ try{ disconnect(); }catch(e){} });
+
+  setInterval(()=>{
+    $("clock").innerText = new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+  }, 1000);
 </script>
+
 <script>
-  // Visual pressed feedback for touch/click
   function addPressedFeedback(){
-    document.querySelectorAll('button').forEach(btn=>{
-      const down = ()=>btn.classList.add('pressed');
-      const up = ()=>btn.classList.remove('pressed');
-      btn.addEventListener('mousedown', down);
-      btn.addEventListener('touchstart', down, {passive:true});
-      btn.addEventListener('mouseup', up);
-      btn.addEventListener('mouseleave', up);
-      btn.addEventListener('touchend', up);
-      btn.addEventListener('touchcancel', up);
-      // for programmatic clicks: briefly flash
-      btn.addEventListener('click', ()=>{
-        btn.classList.add('pressed');
-        setTimeout(()=>btn.classList.remove('pressed'), 120);
+    document.querySelectorAll("button").forEach(btn=>{
+      const down = ()=>btn.classList.add("pressed");
+      const up = ()=>btn.classList.remove("pressed");
+      btn.addEventListener("mousedown", down);
+      btn.addEventListener("touchstart", down, {passive:true});
+      btn.addEventListener("mouseup", up);
+      btn.addEventListener("mouseleave", up);
+      btn.addEventListener("touchend", up);
+      btn.addEventListener("touchcancel", up);
+      btn.addEventListener("click", ()=>{
+        btn.classList.add("pressed");
+        setTimeout(()=>btn.classList.remove("pressed"), 120);
       });
     });
   }
-  window.addEventListener('DOMContentLoaded', addPressedFeedback);
+  window.addEventListener("DOMContentLoaded", addPressedFeedback);
 </script>
 </body>
 </html>
