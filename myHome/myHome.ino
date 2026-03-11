@@ -18,8 +18,8 @@ const char*    TOPIC_ROOT  = "pspiceman/myhome";
 
 // ===================== Tuya Cloud (Western America) =====================
 String TUYA_ENDPOINT  = "https://openapi.tuyaus.com";
-String TUYA_CLIENT_ID = "4q9fg8hve79wxevhgtc4";
-String TUYA_SECRET    = "32a2fc7ed7924b3ea0a1baccbdabfc64";
+String TUYA_CLIENT_ID = "s7t34utavncj9mmqhdc3"; // 새로운 Access ID로 변경
+String TUYA_SECRET    = "790ce42d601a4672b778e72004ed1752"; // 새로운 Access
 
 // ===================== mDNS =====================
 const char* MDNS_NAME = "myhome"; // myhome.local
