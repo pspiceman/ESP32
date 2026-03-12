@@ -220,8 +220,10 @@ if (typeof mqtt === "undefined") {
   }
   .iconbtn:active{ transform: translateY(2px) scale(0.985); filter: brightness(0.92); }
 
-  /* 모바일 전용 방향키 패드: button 대신 div */
+  /* 모바일 전용 방향키 패드 */
   .dir-pad{
+    appearance:none;
+    -webkit-appearance:none;
     min-height:58px;
     cursor:pointer;
     border-radius:16px;
@@ -410,11 +412,11 @@ if (typeof mqtt === "undefined") {
 <section>
   <h2>MiBox RMC</h2>
   <div class="grid">
-    <div class="wide dir-pad dir-up" id="btn-up" role="button" tabindex="0" aria-label="위" data-dir="up"></div>
-    <div class="dir-pad dir-left" id="btn-left" role="button" tabindex="0" aria-label="왼쪽" data-dir="left"></div>
+    <button class="wide dir-pad dir-up" id="btn-up" type="button" aria-label="위" data-dir="up"></button>
+    <button class="dir-pad dir-left" id="btn-left" type="button" aria-label="왼쪽" data-dir="left"></button>
     <button id="btn-ok" type="button">OK</button>
-    <div class="dir-pad dir-right" id="btn-right" role="button" tabindex="0" aria-label="오른쪽" data-dir="right"></div>
-    <div class="wide dir-pad dir-down" id="btn-down" role="button" tabindex="0" aria-label="아래" data-dir="down"></div>
+    <button class="dir-pad dir-right" id="btn-right" type="button" aria-label="오른쪽" data-dir="right"></button>
+    <button class="wide dir-pad dir-down" id="btn-down" type="button" aria-label="아래" data-dir="down"></button>
 
     <button id="btn-voldown" type="button">VOL-</button>
     <button id="btn-mute" type="button">MUTE</button>
@@ -735,24 +737,31 @@ if (typeof mqtt === "undefined") {
       }
     };
 
+    const clearTimers = () => {
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      if (repeatTimer) { clearTimeout(repeatTimer); repeatTimer = null; }
+    };
+
     const clearAll = () => {
       active = false;
       activePointerId = null;
-      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
-      if (repeatTimer) { clearTimeout(repeatTimer); repeatTimer = null; }
+      clearTimers();
       el.classList.remove("pressed");
     };
 
-    const tickRepeat = () => {
-      if (!active) return;
-      sendMi(cmd);
-      repeatTimer = setTimeout(tickRepeat, HOLD_REPEAT_MS);
+    const queueRepeat = () => {
+      repeatTimer = setTimeout(() => {
+        if (!active) return;
+        sendMi(cmd);
+        queueRepeat();
+      }, HOLD_REPEAT_MS);
     };
 
     const startRepeat = () => {
       holdTimer = setTimeout(() => {
         if (!active) return;
-        tickRepeat();
+        sendMi(cmd);
+        queueRepeat();
       }, HOLD_START_MS);
     };
 
@@ -766,9 +775,10 @@ if (typeof mqtt === "undefined") {
     const start = (ev) => {
       block(ev);
       if (active) return false;
+      if (ev.button != null && ev.button !== 0) return false;
 
       active = true;
-      activePointerId = ev?.pointerId ?? "mouse-touch";
+      activePointerId = ev?.pointerId ?? "keyboard";
       el.classList.add("pressed");
 
       if (document.activeElement && document.activeElement.blur) {
@@ -785,10 +795,9 @@ if (typeof mqtt === "undefined") {
     };
 
     const stop = (ev) => {
-      if (ev) block(ev);
       if (!active) return false;
-
       if (ev?.pointerId != null && activePointerId != null && ev.pointerId !== activePointerId) return false;
+      if (ev) block(ev);
       clearAll();
       return false;
     };
@@ -800,16 +809,13 @@ if (typeof mqtt === "undefined") {
     el.addEventListener("pointerleave", (e) => {
       if (e.pointerType === "mouse") stop(e);
     }, {passive:false});
+    document.addEventListener("pointerup", stop, {passive:false, capture:true});
+    document.addEventListener("pointercancel", stop, {passive:false, capture:true});
 
-    el.addEventListener("touchstart", start, {passive:false});
-    el.addEventListener("touchend", stop, {passive:false});
-    el.addEventListener("touchcancel", stop, {passive:false});
-    document.addEventListener("touchend", stop, {passive:false, capture:true});
-    document.addEventListener("touchcancel", stop, {passive:false, capture:true});
-
-    el.addEventListener("mousedown", start, {passive:false});
-    el.addEventListener("mouseup", stop, {passive:false});
-    document.addEventListener("mouseup", stop, {passive:false, capture:true});
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, {passive:false});
 
     el.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") start(e);
@@ -818,7 +824,7 @@ if (typeof mqtt === "undefined") {
       if (e.key === "Enter" || e.key === " ") stop(e);
     });
 
-    ["contextmenu","selectstart","dragstart","gesturestart","gesturechange","gestureend","touchmove","beforeinput","copy","cut"].forEach((name) => {
+    ["contextmenu","selectstart","dragstart","gesturestart","gesturechange","gestureend","touchstart","touchmove","touchend","beforeinput","copy","cut"].forEach((name) => {
       el.addEventListener(name, block, {passive:false});
     });
 
@@ -845,7 +851,7 @@ if (typeof mqtt === "undefined") {
       return false;
     };
 
-    ["contextmenu","selectstart","dragstart","beforeinput","copy","cut"].forEach((name) => {
+    ["contextmenu","selectstart","dragstart","beforeinput","copy","cut","auxclick"].forEach((name) => {
       document.addEventListener(name, guard, {passive:false, capture:true});
     });
 
