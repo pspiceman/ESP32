@@ -20,14 +20,6 @@ if (typeof mqtt === "undefined") {
     user-select:none;
     -webkit-touch-callout:none;
     -webkit-tap-highlight-color: transparent;
-    -webkit-text-size-adjust:100%;
-    touch-action:manipulation;
-  }
-
-  *{
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout:none;
-    box-sizing:border-box;
   }
 
   body{
@@ -134,7 +126,6 @@ if (typeof mqtt === "undefined") {
     user-select:none;
     -webkit-touch-callout:none;
     -webkit-tap-highlight-color: transparent;
-    -webkit-user-drag:none;
   }
 
   main > section:nth-of-type(1) button:not(.logbtn){
@@ -164,6 +155,37 @@ if (typeof mqtt === "undefined") {
     transform: translateY(3px) scale(0.985);
     filter: brightness(0.92) saturate(1.05);
     box-shadow: 0 10px 22px rgba(0,0,0,.55), inset 0 8px 18px rgba(0,0,0,.58), inset 0 1px 0 rgba(255,255,255,.12) !important;
+  }
+
+
+  body.holding-dir,
+  body.holding-dir *,
+  body.holding-dir *::before,
+  body.holding-dir *::after{
+    -webkit-user-select:none !important;
+    user-select:none !important;
+    -webkit-touch-callout:none !important;
+    -webkit-user-drag:none !important;
+    touch-action:none !important;
+  }
+
+  #press-shield{
+    position:fixed;
+    inset:0;
+    z-index:2147483646;
+    background:transparent;
+    pointer-events:auto;
+    touch-action:none;
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+    -webkit-user-drag:none;
+  }
+
+  html, body, button, .iconbtn, .logbtn, .dir-pad, .dir-pad::before{
+    -webkit-touch-callout:none !important;
+    -webkit-user-select:none !important;
+    user-select:none !important;
   }
 
   .wide{ grid-column: span 3; }
@@ -220,14 +242,9 @@ if (typeof mqtt === "undefined") {
   }
   .iconbtn:active{ transform: translateY(2px) scale(0.985); filter: brightness(0.92); }
 
-  /* 모바일 전용 방향키 패드 */
+  /* 모바일 전용 방향키 패드: button 대신 div */
   .dir-pad{
-    font-size:0;
-    line-height:0;
-    appearance:none;
-    -webkit-appearance:none;
     min-height:58px;
-    cursor:pointer;
     border-radius:16px;
     border:1px solid rgba(255,255,255,.20);
     background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
@@ -239,17 +256,8 @@ if (typeof mqtt === "undefined") {
     user-select:none !important;
     -webkit-touch-callout:none !important;
     -webkit-tap-highlight-color:transparent !important;
-    -webkit-user-drag:none !important;
-    -webkit-context-menu:none !important;
+    -webkit-touch-action:none !important;
     overflow:hidden;
-  }
-
-  .dir-pad, .dir-pad::before, .dir-pad *, button, .iconbtn, .logbtn{
-    -webkit-user-select:none !important;
-    user-select:none !important;
-    -webkit-touch-callout:none !important;
-    -webkit-user-drag:none !important;
-    -webkit-tap-highlight-color:transparent !important;
   }
 
   main > section:nth-of-type(1) .dir-pad{
@@ -385,12 +393,6 @@ if (typeof mqtt === "undefined") {
     }
     #clock{ padding:6px 7px; line-height:1; }
   }
-
-  html, body, button, .iconbtn, .logbtn, .dir-pad, .dir-pad::before{
-    -webkit-touch-callout:none !important;
-    -webkit-user-select:none !important;
-    user-select:none !important;
-  }
 </style>
 </head>
 <body>
@@ -414,11 +416,11 @@ if (typeof mqtt === "undefined") {
 <section>
   <h2>MiBox RMC</h2>
   <div class="grid">
-    <button class="wide dir-pad dir-up" id="btn-up" type="button" aria-label="위" data-dir="up"></button>
-    <button class="dir-pad dir-left" id="btn-left" type="button" aria-label="왼쪽" data-dir="left"></button>
+    <div class="wide dir-pad dir-up" id="btn-up" role="button" tabindex="0" aria-label="위" data-dir="up"></div>
+    <div class="dir-pad dir-left" id="btn-left" role="button" tabindex="0" aria-label="왼쪽" data-dir="left"></div>
     <button id="btn-ok" type="button">OK</button>
-    <button class="dir-pad dir-right" id="btn-right" type="button" aria-label="오른쪽" data-dir="right"></button>
-    <button class="wide dir-pad dir-down" id="btn-down" type="button" aria-label="아래" data-dir="down"></button>
+    <div class="dir-pad dir-right" id="btn-right" role="button" tabindex="0" aria-label="오른쪽" data-dir="right"></div>
+    <div class="wide dir-pad dir-down" id="btn-down" role="button" tabindex="0" aria-label="아래" data-dir="down"></div>
 
     <button id="btn-voldown" type="button">VOL-</button>
     <button id="btn-mute" type="button">MUTE</button>
@@ -723,151 +725,237 @@ if (typeof mqtt === "undefined") {
     el.addEventListener("selectstart", (e) => e.preventDefault(), {passive:false});
   }
 
+
+  const dirHold = {
+    active: false,
+    el: null,
+    cmd: null,
+    pointerId: null,
+    touchId: null,
+    holdTimer: null,
+    repeatTimer: null,
+    shield: null
+  };
+
+  function clearDirSelection(){
+    const sel = window.getSelection && window.getSelection();
+    if (sel && sel.removeAllRanges) {
+      try { sel.removeAllRanges(); } catch(_) {}
+    }
+    try {
+      const activeEl = document.activeElement;
+      if (activeEl && activeEl !== document.body && activeEl.blur) activeEl.blur();
+    } catch(_) {}
+  }
+
+  function suppressDirEvent(e, stop = true){
+    if (!e) return false;
+    if (e.cancelable) e.preventDefault();
+    if (stop) {
+      if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+      else if (e.stopPropagation) e.stopPropagation();
+    }
+    clearDirSelection();
+    return false;
+  }
+
+  function clearDirTimers(){
+    if (dirHold.holdTimer) {
+      clearTimeout(dirHold.holdTimer);
+      dirHold.holdTimer = null;
+    }
+    if (dirHold.repeatTimer) {
+      clearTimeout(dirHold.repeatTimer);
+      dirHold.repeatTimer = null;
+    }
+  }
+
+  function destroyPressShield(){
+    if (dirHold.shield && dirHold.shield.parentNode) {
+      dirHold.shield.parentNode.removeChild(dirHold.shield);
+    }
+    dirHold.shield = null;
+  }
+
+  function stopDirHold(e){
+    if (e && e.type && e.type.startsWith("pointer") && dirHold.pointerId != null && e.pointerId != null && e.pointerId !== dirHold.pointerId) {
+      return false;
+    }
+
+    if (e && e.changedTouches && dirHold.touchId != null) {
+      let matched = false;
+      for (const t of e.changedTouches) {
+        if (t.identifier === dirHold.touchId) {
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) return false;
+    }
+
+    if (e) suppressDirEvent(e);
+
+    clearDirTimers();
+
+    if (dirHold.el) {
+      dirHold.el.classList.remove("pressed");
+      if (dirHold.pointerId != null && dirHold.el.releasePointerCapture) {
+        try { dirHold.el.releasePointerCapture(dirHold.pointerId); } catch(_) {}
+      }
+    }
+
+    dirHold.active = false;
+    dirHold.el = null;
+    dirHold.cmd = null;
+    dirHold.pointerId = null;
+    dirHold.touchId = null;
+
+    destroyPressShield();
+    document.body.classList.remove("holding-dir");
+    clearDirSelection();
+    return false;
+  }
+
+  function ensurePressShield(){
+    if (dirHold.shield) return dirHold.shield;
+
+    const shield = document.createElement("div");
+    shield.id = "press-shield";
+    shield.setAttribute("aria-hidden", "true");
+    shield.tabIndex = -1;
+
+    const eat = (e) => suppressDirEvent(e);
+
+    ["contextmenu","selectstart","dragstart","beforeinput","copy","cut","auxclick"].forEach((name) => {
+      shield.addEventListener(name, eat, {passive:false});
+    });
+
+    shield.addEventListener("touchend", stopDirHold, {passive:false});
+    shield.addEventListener("touchcancel", stopDirHold, {passive:false});
+    shield.addEventListener("touchmove", eat, {passive:false});
+    shield.addEventListener("pointerup", stopDirHold, {passive:false});
+    shield.addEventListener("pointercancel", stopDirHold, {passive:false});
+    shield.addEventListener("pointermove", eat, {passive:false});
+    shield.addEventListener("mouseup", stopDirHold, {passive:false});
+
+    document.body.appendChild(shield);
+    dirHold.shield = shield;
+    return shield;
+  }
+
+  function queueDirRepeat(){
+    if (!dirHold.active || !dirHold.cmd) return;
+    sendMi(dirHold.cmd);
+    dirHold.repeatTimer = window.setTimeout(queueDirRepeat, HOLD_REPEAT_MS);
+  }
+
+  function startDirHold(el, cmd, meta = {}){
+    stopDirHold();
+    clearDirSelection();
+
+    dirHold.active = true;
+    dirHold.el = el;
+    dirHold.cmd = cmd;
+    dirHold.pointerId = (meta.pointerId != null) ? meta.pointerId : null;
+    dirHold.touchId = (meta.touchId != null) ? meta.touchId : null;
+
+    document.body.classList.add("holding-dir");
+    ensurePressShield();
+    el.classList.add("pressed");
+
+    if (dirHold.pointerId != null && el.setPointerCapture) {
+      try { el.setPointerCapture(dirHold.pointerId); } catch(_) {}
+    }
+
+    sendMi(cmd);
+    dirHold.holdTimer = window.setTimeout(() => {
+      if (!dirHold.active) return;
+      queueDirRepeat();
+    }, HOLD_START_MS);
+  }
+
   function installDirPad(id, cmd){
     const el = $(id);
     if(!el) return;
 
-    let holdTimer = null;
-    let repeatTimer = null;
-    let active = false;
-    let activePointerId = null;
-    let activeTouchId = null;
+    const swallow = (e) => suppressDirEvent(e);
+    let lastTouchStartAt = 0;
+    let touchFallbackTimer = null;
 
-    const clearSelection = () => {
-      const sel = window.getSelection && window.getSelection();
-      if (sel && sel.removeAllRanges) {
-        try { sel.removeAllRanges(); } catch(_) {}
+    const cancelTouchFallback = () => {
+      if (touchFallbackTimer) {
+        clearTimeout(touchFallbackTimer);
+        touchFallbackTimer = null;
       }
     };
 
-    const clearTimers = () => {
-      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
-      if (repeatTimer) { clearTimeout(repeatTimer); repeatTimer = null; }
-    };
-
-    const clearAll = () => {
-      active = false;
-      activePointerId = null;
-      clearTimers();
-      el.classList.remove("pressed");
-    };
-
-    const queueRepeat = () => {
-      repeatTimer = setTimeout(() => {
-        if (!active) return;
-        sendMi(cmd);
-        queueRepeat();
-      }, HOLD_REPEAT_MS);
-    };
-
-    const startRepeat = () => {
-      holdTimer = setTimeout(() => {
-        if (!active) return;
-        sendMi(cmd);
-        queueRepeat();
-      }, 260);
-    };
-
-    const block = (e) => {
-      if (e && e.cancelable) e.preventDefault();
-      if (e) e.stopPropagation();
-      clearSelection();
-      return false;
-    };
-
-    const start = (ev) => {
-      block(ev);
-      if (active) return false;
-      if (ev.button != null && ev.button !== 0) return false;
-
-      active = true;
-      activePointerId = ev?.pointerId ?? null;
-      activeTouchId = null;
-      el.classList.add("pressed");
-
-      if (document.activeElement && document.activeElement.blur) {
-        try { document.activeElement.blur(); } catch(_) {}
+    const onPointerDown = (e) => {
+      if (e.pointerType === "touch") {
+        suppressDirEvent(e);
+        cancelTouchFallback();
+        const pointerId = e.pointerId;
+        touchFallbackTimer = window.setTimeout(() => {
+          touchFallbackTimer = null;
+          if ((Date.now() - lastTouchStartAt) <= 80) return;
+          startDirHold(el, cmd, { pointerId });
+        }, 30);
+        return false;
       }
 
-      if (ev?.pointerId != null && el.setPointerCapture) {
-        try { el.setPointerCapture(ev.pointerId); } catch(_) {}
-      }
-
-      sendMi(cmd);
-      startRepeat();
+      if (e.pointerType === "mouse" && e.button !== 0) return false;
+      suppressDirEvent(e);
+      cancelTouchFallback();
+      startDirHold(el, cmd, { pointerId: e.pointerId });
       return false;
     };
 
-    const stop = (ev) => {
-      if (!active) return false;
-      if (ev?.pointerId != null && activePointerId != null && ev.pointerId !== activePointerId) return false;
-      if (ev) block(ev);
-      clearAll();
+    const onTouchStart = (e) => {
+      const t = e.changedTouches && e.changedTouches[0];
+      lastTouchStartAt = Date.now();
+      cancelTouchFallback();
+      suppressDirEvent(e);
+      startDirHold(el, cmd, { touchId: t ? t.identifier : null });
       return false;
     };
 
-    const touchStart = (ev) => {
-      block(ev);
-      if (active) return false;
-      const t = ev.changedTouches && ev.changedTouches[0];
-      active = true;
-      activePointerId = null;
-      activeTouchId = t ? t.identifier : 0;
-      el.classList.add("pressed");
-      sendMi(cmd);
-      startRepeat();
+    const onMouseDown = (e) => {
+      if (e.button !== 0) return false;
+      suppressDirEvent(e);
+      cancelTouchFallback();
+      startDirHold(el, cmd, {});
       return false;
     };
 
-    const touchStop = (ev) => {
-      if (!active) return false;
-      if (ev && ev.changedTouches && activeTouchId != null) {
-        let found = false;
-        for (const t of ev.changedTouches) {
-          if (t.identifier === activeTouchId) { found = true; break; }
-        }
-        if (!found) return false;
-      }
-      block(ev);
-      clearAll();
-      activeTouchId = null;
-      return false;
-    };
+    el.addEventListener("touchstart", onTouchStart, {passive:false});
 
     if (window.PointerEvent) {
-      el.addEventListener("pointerdown", start, {passive:false});
-      el.addEventListener("pointerup", stop, {passive:false});
-      el.addEventListener("pointercancel", stop, {passive:false});
-      el.addEventListener("lostpointercapture", clearAll, {passive:true});
-      el.addEventListener("pointerleave", (e) => {
-        if (e.pointerType === "mouse") stop(e);
-      }, {passive:false});
-      el.addEventListener("pointermove", block, {passive:false});
-      document.addEventListener("pointerup", stop, {passive:false, capture:true});
-      document.addEventListener("pointercancel", stop, {passive:false, capture:true});
+      el.addEventListener("pointerdown", onPointerDown, {passive:false});
+    } else {
+      el.addEventListener("mousedown", onMouseDown, {passive:false});
     }
 
-    el.addEventListener("touchstart", touchStart, {passive:false});
-    el.addEventListener("touchend", touchStop, {passive:false});
-    el.addEventListener("touchcancel", touchStop, {passive:false});
-    document.addEventListener("touchend", touchStop, {passive:false, capture:true});
-    document.addEventListener("touchcancel", touchStop, {passive:false, capture:true});
-
-    el.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-    }, {passive:false});
+    ["click","dblclick","contextmenu","selectstart","dragstart","beforeinput","copy","cut","auxclick"].forEach((name) => {
+      el.addEventListener(name, swallow, {passive:false});
+    });
 
     el.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") start(e);
-    });
-    el.addEventListener("keyup", (e) => {
-      if (e.key === "Enter" || e.key === " ") stop(e);
+      if (e.key !== "Enter" && e.key !== " ") return;
+      suppressDirEvent(e);
+      cancelTouchFallback();
+      startDirHold(el, cmd, {});
     });
 
-    ["contextmenu","selectstart","dragstart","gesturestart","gesturechange","gestureend","beforeinput","copy","cut"].forEach((name) => {
-      el.addEventListener(name, block, {passive:false});
+    el.addEventListener("keyup", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      cancelTouchFallback();
+      stopDirHold(e);
     });
+
+    window.addEventListener("blur", cancelTouchFallback, {passive:true});
+    window.addEventListener("pagehide", cancelTouchFallback, {passive:true});
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) cancelTouchFallback();
+    }, {passive:true});
 
     el.oncontextmenu = () => false;
     el.onselectstart = () => false;
@@ -875,20 +963,15 @@ if (typeof mqtt === "undefined") {
   }
 
   function installDirectionGuards(){
-    const shouldBlock = (target) => !!target && !!target.closest(".dir-pad, button, .iconbtn, .logbtn");
-
-    const clearSelection = () => {
-      const sel = window.getSelection && window.getSelection();
-      if (sel && sel.removeAllRanges) {
-        try { sel.removeAllRanges(); } catch(_) {}
-      }
+    const shouldBlock = (target) => {
+      if (document.body.classList.contains("holding-dir")) return true;
+      return !!(target && target.closest(".dir-pad"));
     };
 
     const guard = (e) => {
       if (!shouldBlock(e.target)) return;
       if (e.cancelable) e.preventDefault();
-      e.stopPropagation();
-      clearSelection();
+      clearDirSelection();
       return false;
     };
 
@@ -896,32 +979,59 @@ if (typeof mqtt === "undefined") {
       document.addEventListener(name, guard, {passive:false, capture:true});
     });
 
-    ["touchstart","touchmove","pointerdown","pointermove"].forEach((name) => {
+    ["touchstart","touchmove","touchend","touchcancel"].forEach((name) => {
       document.addEventListener(name, (e) => {
         if (!shouldBlock(e.target)) return;
-        clearSelection();
-        if (name === "touchmove" || name === "pointermove") {
-          if (e.cancelable) e.preventDefault();
-        }
+        if (e.cancelable) e.preventDefault();
+        clearDirSelection();
       }, {passive:false, capture:true});
     });
 
-    document.addEventListener("selectionchange", clearSelection, {passive:true});
+    document.addEventListener("selectionchange", clearDirSelection, {passive:true});
 
-    window.addEventListener("blur", () => {
-      clearSelection();
-      document.querySelectorAll(".dir-pad.pressed, button.pressed").forEach((el) => el.classList.remove("pressed"));
-    });
-    window.addEventListener("pagehide", () => {
-      clearSelection();
-      document.querySelectorAll(".dir-pad.pressed, button.pressed").forEach((el) => el.classList.remove("pressed"));
-    });
+    document.addEventListener("pointermove", (e) => {
+      if (!dirHold.active) return;
+      if (dirHold.pointerId != null && e.pointerId != null && e.pointerId !== dirHold.pointerId) return;
+      if (e.cancelable) e.preventDefault();
+      clearDirSelection();
+    }, {passive:false, capture:true});
+
+    document.addEventListener("pointerup", (e) => {
+      if (!dirHold.active) return;
+      stopDirHold(e);
+    }, {passive:false, capture:true});
+
+    document.addEventListener("pointercancel", (e) => {
+      if (!dirHold.active) return;
+      stopDirHold(e);
+    }, {passive:false, capture:true});
+
+    document.addEventListener("touchend", (e) => {
+      if (!dirHold.active) return;
+      stopDirHold(e);
+    }, {passive:false, capture:true});
+
+    document.addEventListener("touchcancel", (e) => {
+      if (!dirHold.active) return;
+      stopDirHold(e);
+    }, {passive:false, capture:true});
+
+    document.addEventListener("mouseup", (e) => {
+      if (!dirHold.active) return;
+      stopDirHold(e);
+    }, {passive:false, capture:true});
+
+    const resetPressed = () => {
+      stopDirHold();
+      document.querySelectorAll(".dir-pad.pressed").forEach((el) => el.classList.remove("pressed"));
+      clearDirSelection();
+    };
+
+    window.addEventListener("blur", resetPressed, {passive:true});
+    window.addEventListener("pagehide", resetPressed, {passive:true});
     document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        clearSelection();
-        document.querySelectorAll(".dir-pad.pressed, button.pressed").forEach((el) => el.classList.remove("pressed"));
-      }
-    });
+      if (document.hidden) resetPressed();
+    }, {passive:true});
   }
 
   setInterval(()=>{
@@ -1024,12 +1134,13 @@ if (typeof mqtt === "undefined") {
 
 <script>
   function addPressedFeedback(){
-    document.querySelectorAll("button").forEach(btn=>{
+    document.querySelectorAll("button:not(.dir-pad)").forEach(btn=>{
       const down = ()=>btn.classList.add("pressed");
       const up = ()=>btn.classList.remove("pressed");
       btn.addEventListener("mousedown", down);
       btn.addEventListener("mouseup", up);
       btn.addEventListener("mouseleave", up);
+      btn.addEventListener("touchstart", down, {passive:true});
       btn.addEventListener("touchend", up, {passive:true});
       btn.addEventListener("touchcancel", up, {passive:true});
       btn.addEventListener("selectstart", (e)=>e.preventDefault(), {passive:false});
