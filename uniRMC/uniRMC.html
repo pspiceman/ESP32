@@ -20,23 +20,8 @@ if (typeof mqtt === "undefined") {
       -webkit-touch-callout:none;
       -webkit-tap-highlight-color: transparent;
     }
-    body{
-      margin:0;
-      font-family: system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif;
-      background:#0b0f14;
-      color:#e6eef8;
-      padding-top: calc(env(safe-area-inset-top) + 12px);
-      overscroll-behavior: contain;
-    }
-    header{
-      position:sticky;
-      top:0;
-      z-index:10;
-      background:rgba(11,15,20,.92);
-      backdrop-filter: blur(8px);
-      padding: var(--pad);
-      border-bottom:1px solid rgba(255,255,255,.08);
-    }
+    body{ margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif; background:#0b0f14; color:#e6eef8; padding-top: calc(env(safe-area-inset-top) + 12px);}
+    header{ position:sticky; top:0; z-index:10; background:rgba(11,15,20,.92); backdrop-filter: blur(8px); padding: var(--pad); border-bottom:1px solid rgba(255,255,255,.08);}
     .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
     .pill{ padding:6px 10px; border-radius:999px; font-size:12px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.10);}
     .ok{ background:rgba(52,211,153,.15); border-color:rgba(52,211,153,.35);}
@@ -45,28 +30,14 @@ if (typeof mqtt === "undefined") {
     section{ background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10); border-radius:18px; padding:12px;}
     h2{ margin:0 0 10px; font-size:14px; opacity:.9; display:flex; justify-content:space-between; align-items:center; gap:10px;}
     .grid{ display:grid; grid-template-columns: repeat(3,1fr); gap:10px;}
-    button{
-      width:100%;
-      padding:14px 10px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.08);
-      color:#fff;
-      font-size:14px;
-      font-weight:600;
-      touch-action: manipulation;
-      -webkit-user-select:none;
-      user-select:none;
-      -webkit-touch-callout:none;
-      -webkit-tap-highlight-color: transparent;
-    }
+    button{ width:100%; padding:14px 10px; border-radius:14px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.08); color:#fff; font-size:14px; font-weight:600;}
     button:active{ transform: translateY(1px); }
     .wide{ grid-column: span 3; }
     .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
     input{ width:100%; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.24); background:rgba(0,0,0,.25); color:#fff; font-size:14px;}
     .log{ max-height:170px; overflow:auto; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; line-height:1.35; padding:10px; background:rgba(0,0,0,.30); border-radius:12px; border:1px solid rgba(255,255,255,.10);}
     .muted{ opacity:.75; font-size:12px;}
-    button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12); }
+button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12); }
 
     .logbtn-left{
       width:54px; padding:6px 0; text-align:center;
@@ -426,7 +397,7 @@ if (typeof mqtt === "undefined") {
       filter: saturate(0.70);
     }
 
-    /* 모바일 방향키 길게누름/텍스트선택 방지 핵심 */
+    /* 모바일 선택 메뉴 방지 + 연속키 대상 */
     #btn-up, #btn-down, #btn-left, #btn-right{
       touch-action:none !important;
       -webkit-user-select:none !important;
@@ -769,64 +740,83 @@ if (typeof mqtt === "undefined") {
 
     let holdTimer = null;
     let repeatTimer = null;
-    let pressed = false;
-    let activePointerId = null;
+    let active = false;
+    let source = "";
 
-    const stop = (ev) => {
-      if (ev && activePointerId !== null && ev.pointerId !== undefined && ev.pointerId !== activePointerId) return;
-      pressed = false;
-      activePointerId = null;
-      if(holdTimer){ clearTimeout(holdTimer); holdTimer = null; }
-      if(repeatTimer){ clearInterval(repeatTimer); repeatTimer = null; }
+    const clearAll = () => {
+      active = false;
+      source = "";
+      if (holdTimer) {
+        clearTimeout(holdTimer);
+        holdTimer = null;
+      }
+      if (repeatTimer) {
+        clearInterval(repeatTimer);
+        repeatTimer = null;
+      }
       el.classList.remove("pressed");
     };
 
-    const start = (ev) => {
-      ev.preventDefault();
-      ev.stopPropagation();
+    const startRepeat = (ev, src) => {
+      if (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+      }
 
-      if(pressed) return;
-      pressed = true;
-      activePointerId = (ev.pointerId !== undefined) ? ev.pointerId : 1;
+      if (active) return;
 
-      try {
-        if (el.setPointerCapture && ev.pointerId !== undefined) {
-          el.setPointerCapture(ev.pointerId);
-        }
-      } catch(_) {}
-
+      active = true;
+      source = src;
       el.classList.add("pressed");
 
       sendMi(cmd);
 
       holdTimer = setTimeout(() => {
-        if(!pressed) return;
+        if (!active) return;
         repeatTimer = setInterval(() => {
           sendMi(cmd);
         }, repeatMs);
       }, delayMs);
     };
 
-    el.addEventListener("pointerdown", start, {passive:false});
-    el.addEventListener("pointerup", stop, {passive:false});
-    el.addEventListener("pointercancel", stop, {passive:false});
-    el.addEventListener("lostpointercapture", stop, {passive:false});
-    el.addEventListener("contextmenu", (e) => e.preventDefault(), {passive:false});
+    const stopRepeat = (ev, src) => {
+      if (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+      }
 
-    // selection / long-press menu 방지
-    el.addEventListener("selectstart", (e) => e.preventDefault(), {passive:false});
-    el.addEventListener("dragstart", (e) => e.preventDefault(), {passive:false});
+      if (!active) return;
+      if (source && src && source !== src) return;
 
-    // 일부 모바일 브라우저 보강
-    el.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-    }, {passive:false});
-    el.addEventListener("touchend", (e) => {
-      e.preventDefault();
-    }, {passive:false});
-    el.addEventListener("touchcancel", (e) => {
-      e.preventDefault();
-    }, {passive:false});
+      clearAll();
+    };
+
+    el.addEventListener("touchstart", (e) => startRepeat(e, "touch"), { passive:false });
+    el.addEventListener("touchend",   (e) => stopRepeat(e, "touch"),  { passive:false });
+    el.addEventListener("touchcancel",(e) => stopRepeat(e, "touch"),  { passive:false });
+
+    el.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "touch") return;
+      startRepeat(e, "pointer");
+    }, { passive:false });
+
+    el.addEventListener("pointerup", (e) => {
+      if (e.pointerType === "touch") return;
+      stopRepeat(e, "pointer");
+    }, { passive:false });
+
+    el.addEventListener("pointercancel", (e) => {
+      if (e.pointerType === "touch") return;
+      stopRepeat(e, "pointer");
+    }, { passive:false });
+
+    el.addEventListener("mousedown", (e) => startRepeat(e, "mouse"));
+    el.addEventListener("mouseup",   (e) => stopRepeat(e, "mouse"));
+    el.addEventListener("mouseleave",(e) => stopRepeat(e, "mouse"));
+
+    el.addEventListener("contextmenu", (e) => e.preventDefault(), { passive:false });
+    el.addEventListener("selectstart", (e) => e.preventDefault(), { passive:false });
+    el.addEventListener("dragstart", (e) => e.preventDefault(), { passive:false });
   }
 
   setInterval(()=>{
