@@ -248,6 +248,24 @@ if (typeof mqtt === "undefined") {
     border-left:20px solid currentColor;
   }
 
+
+  .dir-btn,
+  .dir-btn::before,
+  .dir-btn::after,
+  .dir-btn *{
+    -webkit-user-select:none !important;
+    user-select:none !important;
+    -webkit-touch-callout:none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  .dir-btn{
+    font-size:0 !important;
+    line-height:0 !important;
+    color:#f6fbff;
+    overflow:hidden;
+  }
+
   body.day{
     background:#f4f6fb; color:#0b0f14;
   }
@@ -336,11 +354,11 @@ if (typeof mqtt === "undefined") {
 <section>
   <h2>MiBox RMC</h2>
   <div class="grid">
-    <button class="wide dir-btn dir-up" id="btn-up" aria-label="위"></button>
-    <button class="dir-btn dir-left" id="btn-left" aria-label="왼쪽"></button>
-    <button id="btn-ok">OK</button>
-    <button class="dir-btn dir-right" id="btn-right" aria-label="오른쪽"></button>
-    <button class="wide dir-btn dir-down" id="btn-down" aria-label="아래"></button>
+    <button class="wide dir-btn dir-up" id="btn-up" type="button" aria-label="위" data-dir="up"></button>
+    <button class="dir-btn dir-left" id="btn-left" type="button" aria-label="왼쪽" data-dir="left"></button>
+    <button id="btn-ok" type="button">OK</button>
+    <button class="dir-btn dir-right" id="btn-right" type="button" aria-label="오른쪽" data-dir="right"></button>
+    <button class="wide dir-btn dir-down" id="btn-down" type="button" aria-label="아래" data-dir="down"></button>
 
     <button id="btn-voldown">VOL-</button>
     <button id="btn-mute">MUTE</button>
@@ -652,11 +670,9 @@ if (typeof mqtt === "undefined") {
     let holdTimer = null;
     let repeatTimer = null;
     let active = false;
-    let source = "";
 
     const clearAll = () => {
       active = false;
-      source = "";
       if (holdTimer) {
         clearTimeout(holdTimer);
         holdTimer = null;
@@ -668,15 +684,14 @@ if (typeof mqtt === "undefined") {
       el.classList.remove("pressed");
     };
 
-    const startRepeat = (ev, src) => {
+    const startRepeat = (ev) => {
       if (ev) {
-        ev.preventDefault();
+        if (ev.cancelable) ev.preventDefault();
         ev.stopPropagation();
       }
       if (active) return;
 
       active = true;
-      source = src;
       el.classList.add("pressed");
 
       sendMi(cmd);
@@ -689,94 +704,69 @@ if (typeof mqtt === "undefined") {
       }, delayMs);
     };
 
-    const stopRepeat = (ev, src) => {
+    const stopRepeat = (ev) => {
       if (ev) {
-        ev.preventDefault();
+        if (ev.cancelable) ev.preventDefault();
         ev.stopPropagation();
       }
       if (!active) return;
-      if (source && src && source !== src) return;
       clearAll();
     };
 
-    // 모바일은 버튼 시작 + 문서 전체 종료로 끊김 방지
-    el.addEventListener("touchstart", (e) => startRepeat(e, "touch"), { passive:false });
-    document.addEventListener("touchend", (e) => stopRepeat(e, "touch"), { passive:false });
-    document.addEventListener("touchcancel", (e) => stopRepeat(e, "touch"), { passive:false });
+    // 모바일 우선
+    el.addEventListener("touchstart", startRepeat, { passive:false });
+    document.addEventListener("touchend", stopRepeat, { passive:false });
+    document.addEventListener("touchcancel", stopRepeat, { passive:false });
+
+    // 일부 브라우저에서 손가락 이동/스크롤로 끊기는 것 방지
+    document.addEventListener("visibilitychange", () => { if (document.hidden) clearAll(); });
+    window.addEventListener("blur", clearAll);
+    window.addEventListener("pagehide", clearAll);
+
+    // PC
+    el.addEventListener("mousedown", startRepeat);
+    document.addEventListener("mouseup", stopRepeat);
 
     el.addEventListener("pointerdown", (e) => {
       if (e.pointerType === "touch") return;
-      startRepeat(e, "pointer");
+      startRepeat(e);
     }, { passive:false });
-
     document.addEventListener("pointerup", (e) => {
       if (e.pointerType === "touch") return;
-      stopRepeat(e, "pointer");
+      stopRepeat(e);
     }, { passive:false });
-
     document.addEventListener("pointercancel", (e) => {
       if (e.pointerType === "touch") return;
-      stopRepeat(e, "pointer");
+      stopRepeat(e);
     }, { passive:false });
 
-    el.addEventListener("mousedown", (e) => startRepeat(e, "mouse"));
-    document.addEventListener("mouseup", (e) => stopRepeat(e, "mouse"));
-    el.addEventListener("mouseleave", () => {});
-
+    // 길게 누름 메뉴 완전 차단
     el.addEventListener("contextmenu", (e) => e.preventDefault(), { passive:false });
     el.addEventListener("selectstart", (e) => e.preventDefault(), { passive:false });
-    el.addEventListener("dragstart",   (e) => e.preventDefault(), { passive:false });
+    el.addEventListener("dragstart", (e) => e.preventDefault(), { passive:false });
   }
 
-  // 방향키 장시간 터치 시 메뉴/선택 완전 방지
-  window.addEventListener("contextmenu", (e) => {
-    if (e.target.closest(".dir-btn")) e.preventDefault();
-  }, {passive:false});
+  function installDirectionGuards(){
+    document.querySelectorAll(".dir-btn").forEach((el) => {
+      const block = (e) => {
+        if (e.cancelable) e.preventDefault();
+        e.stopPropagation();
+      };
+      ["contextmenu","selectstart","dragstart","gesturestart","gesturechange","gestureend"].forEach((name) => {
+        el.addEventListener(name, block, { passive:false });
+      });
+      el.addEventListener("touchmove", block, { passive:false });
+    });
 
-  document.addEventListener("selectionchange", () => {
-    const sel = window.getSelection && window.getSelection();
-    if (sel && sel.removeAllRanges) sel.removeAllRanges();
-  });
+    document.addEventListener("contextmenu", (e) => {
+      if (e.target.closest(".dir-btn")) e.preventDefault();
+    }, { passive:false });
 
-  setInterval(()=>{
-    if(!mqttOk){
-      gwLastTs = 0;
-      setPill(stGw, false, "Gateway: --");
-      stRssi.innerText = "RSSI: --";
-      ble = false;
-      bleLastTs = 0;
-      setPill(stBle, false, "BLE: --");
-      return;
-    }
-
-    if(!gwLastTs){
-      setPill(stGw, false, "Gateway: --");
-      stRssi.innerText = "RSSI: --";
-    }else{
-      const gwStale = (Date.now() - gwLastTs) > GW_STALE_MS;
-      if(gwStale){
-        gwLastTs = 0;
-        setPill(stGw, false, "Gateway: --");
-        stRssi.innerText = "RSSI: --";
-        ble = false;
-        bleLastTs = 0;
-        setPill(stBle, false, "BLE: --");
-        return;
-      }
-    }
-
-    if(!bleLastTs){
-      setPill(stBle, false, "BLE: --");
-      return;
-    }
-
-    const bleStale = (Date.now() - bleLastTs) > BLE_STALE_MS;
-    if(bleStale){
-      ble = false;
-      bleLastTs = 0;
-      setPill(stBle, false, "BLE: --");
-    }
-  }, 1000);
+    document.addEventListener("selectionchange", () => {
+      const sel = window.getSelection && window.getSelection();
+      if (sel && sel.removeAllRanges) sel.removeAllRanges();
+    });
+  }
 
   function canBleControl(){
     const fresh = bleLastTs && (Date.now() - bleLastTs) <= BLE_STALE_MS;
@@ -814,11 +804,12 @@ if (typeof mqtt === "undefined") {
   window.addEventListener("load", ()=>{
     $("clock").innerText = new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
     connect();
+    installDirectionGuards();
 
-    bindHoldRepeat("btn-up", "up");
-    bindHoldRepeat("btn-down", "down");
-    bindHoldRepeat("btn-left", "left");
-    bindHoldRepeat("btn-right", "right");
+    bindHoldRepeat("btn-up", "up", 260, 95);
+    bindHoldRepeat("btn-down", "down", 260, 95);
+    bindHoldRepeat("btn-left", "left", 260, 95);
+    bindHoldRepeat("btn-right", "right", 260, 95);
 
     bindClick("btn-ok", "ok1");
     bindClick("btn-voldown", "voldown");
