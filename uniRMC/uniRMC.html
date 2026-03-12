@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8"/>
-<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>Universal RMC</title>
 
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -74,7 +74,11 @@ if (typeof mqtt === "undefined") {
     border:1px solid rgba(255,255,255,.10);
   }
 
-  main{ padding: var(--pad); display:grid; gap:4px; }
+  main{
+    padding: var(--pad);
+    display:grid;
+    gap:4px;
+  }
 
   section{
     position: relative;
@@ -129,21 +133,22 @@ if (typeof mqtt === "undefined") {
     border-color: rgba(59,130,246,.34);
     box-shadow: 0 18px 38px rgba(0,0,0,.64), 0 10px 22px rgba(59,130,246,.10), inset 0 1px 0 rgba(255,255,255,.26), inset 0 -12px 22px rgba(0,0,0,.36);
   }
+
   main > section:nth-of-type(2) button:not(.logbtn){
     background: linear-gradient(180deg, rgba(34,197,94,.26), rgba(34,197,94,.10));
     border-color: rgba(34,197,94,.32);
     box-shadow: 0 18px 38px rgba(0,0,0,.64), 0 10px 22px rgba(34,197,94,.10), inset 0 1px 0 rgba(255,255,255,.26), inset 0 -12px 22px rgba(0,0,0,.36);
   }
+
   main > section:nth-of-type(3) button:not(.logbtn){
     background: linear-gradient(180deg, rgba(168,85,247,.26), rgba(168,85,247,.10));
     border-color: rgba(168,85,247,.32);
     box-shadow: 0 18px 38px rgba(0,0,0,.64), 0 10px 22px rgba(168,85,247,.10), inset 0 1px 0 rgba(255,255,255,.26), inset 0 -12px 22px rgba(0,0,0,.36);
   }
 
-  button:active, .logbtn:active{
+  button:active, .logbtn:active, .dir-pad:active{
     transform: translateY(3px) scale(0.985);
     filter: brightness(0.92) saturate(1.05);
-    box-shadow: 0 10px 22px rgba(0,0,0,.55), inset 0 8px 18px rgba(0,0,0,.58), inset 0 1px 0 rgba(255,255,255,.12) !important;
   }
 
   .pressed{
@@ -195,6 +200,7 @@ if (typeof mqtt === "undefined") {
     background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
     box-shadow: 0 18px 36px rgba(0,0,0,.72), inset 0 1px 0 rgba(255,255,255,.18), inset 0 -10px 18px rgba(0,0,0,.42);
   }
+
   .logbtn-left{ width:54px; padding:6px 0; text-align:center; font-size:14px; line-height:1; }
   .logbtn-right{ width:110px; padding:6px 0; text-align:center; font-size:12px; line-height:1; letter-spacing:.3px; }
 
@@ -205,24 +211,38 @@ if (typeof mqtt === "undefined") {
   }
   .iconbtn:active{ transform: translateY(2px) scale(0.985); filter: brightness(0.92); }
 
-  /* CSS 그래픽 방향키: 텍스트/SVG 없음 */
-  .dir-btn{
+  /* 모바일 전용 방향키 패드: button 대신 div */
+  .dir-pad{
+    min-height:58px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,.20);
+    background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
+    color:#f6fbff;
+    box-shadow: 0 16px 34px rgba(0,0,0,.62), 0 6px 14px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.28), inset 0 -12px 20px rgba(0,0,0,.35);
+    position:relative;
     touch-action:none !important;
     -webkit-user-select:none !important;
     user-select:none !important;
     -webkit-touch-callout:none !important;
-    -webkit-tap-highlight-color: transparent !important;
-    position:relative;
-    min-height:58px;
+    -webkit-tap-highlight-color:transparent !important;
+    -webkit-touch-action:none !important;
+    overflow:hidden;
   }
 
-  .dir-btn::before{
+  main > section:nth-of-type(1) .dir-pad{
+    background: linear-gradient(180deg, rgba(59,130,246,.28), rgba(59,130,246,.12));
+    border-color: rgba(59,130,246,.34);
+    box-shadow: 0 18px 38px rgba(0,0,0,.64), 0 10px 22px rgba(59,130,246,.10), inset 0 1px 0 rgba(255,255,255,.26), inset 0 -12px 22px rgba(0,0,0,.36);
+  }
+
+  .dir-pad::before{
     content:"";
     position:absolute;
     left:50%;
     top:50%;
     transform:translate(-50%,-50%);
-    width:0; height:0;
+    width:0;
+    height:0;
     pointer-events:none;
     filter:drop-shadow(0 1px 0 rgba(0,0,0,.45));
   }
@@ -248,74 +268,85 @@ if (typeof mqtt === "undefined") {
     border-left:20px solid currentColor;
   }
 
-
-  .dir-btn,
-  .dir-btn::before,
-  .dir-btn::after,
-  .dir-btn *{
-    -webkit-user-select:none !important;
-    user-select:none !important;
-    -webkit-touch-callout:none !important;
-    -webkit-tap-highlight-color: transparent !important;
-  }
-
-  .dir-btn{
-    font-size:0 !important;
-    line-height:0 !important;
-    color:#f6fbff;
-    overflow:hidden;
-  }
-
   body.day{
-    background:#f4f6fb; color:#0b0f14;
+    background:#f4f6fb;
+    color:#0b0f14;
   }
+
   body.day header{
-    background:rgba(244,246,251,.92); border-bottom:1px solid rgba(0,0,0,.10);
+    background:rgba(244,246,251,.92);
+    border-bottom:1px solid rgba(0,0,0,.10);
   }
+
   body.day .brand-title{
     color: rgba(18,18,18,.92) !important;
     text-shadow: 0 1px 0 rgba(255,255,255,.75), 0 10px 22px rgba(0,0,0,.12) !important;
   }
+
   body.day .pill{
-    background:rgba(0,0,0,.06); border:1px solid rgba(0,0,0,.10);
+    background:rgba(0,0,0,.06);
+    border:1px solid rgba(0,0,0,.10);
     box-shadow: 0 10px 18px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.70);
     color:#0b0f14;
   }
+
   body.day .pill.ok, body.day .pill.good{
     background: linear-gradient(180deg,#ffffff,#eef3ff);
     border:1px solid rgba(34,197,94,.85);
-    box-shadow: 0 0 0 1px rgba(34,197,94,.20), 0 0 14px rgba(34,197,94,.10), 0 10px 18px rgba(0,0,0,.10),
-                inset 0 1px 0 rgba(255,255,255,.85), inset 0 -6px 14px rgba(0,0,0,.06);
-    color:#0b0f14; text-shadow:none;
+    box-shadow: 0 0 0 1px rgba(34,197,94,.20), 0 0 14px rgba(34,197,94,.10), 0 10px 18px rgba(0,0,0,.10), inset 0 1px 0 rgba(255,255,255,.85), inset 0 -6px 14px rgba(0,0,0,.06);
+    color:#0b0f14;
+    text-shadow:none;
   }
+
   body.day #st-rssi{
     border:1px solid rgba(59,130,246,.85);
-    box-shadow: 0 0 0 1px rgba(59,130,246,.22), 0 0 12px rgba(59,130,246,.10), 0 10px 18px rgba(0,0,0,.10),
-                inset 0 1px 0 rgba(255,255,255,.85), inset 0 -6px 14px rgba(0,0,0,.06);
+    box-shadow: 0 0 0 1px rgba(59,130,246,.22), 0 0 12px rgba(59,130,246,.10), 0 10px 18px rgba(0,0,0,.10), inset 0 1px 0 rgba(255,255,255,.85), inset 0 -6px 14px rgba(0,0,0,.06);
   }
+
   body.day section{
     border:1px solid rgba(0,0,0,.10);
     background: radial-gradient(1200px 420px at 18% 0%, rgba(0,0,0,.03), rgba(0,0,0,.02) 38%, rgba(255,255,255,.60) 100%);
     box-shadow: 0 18px 42px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.85), inset 0 -14px 28px rgba(0,0,0,.06);
   }
+
   body.day h2{
     color: rgba(20,20,20,.92) !important;
     text-shadow: 0 1px 0 rgba(255,255,255,.70), 0 10px 22px rgba(0,0,0,.10);
   }
+
   body.day button, body.day .logbtn{
     border:1px solid rgba(0,0,0,.12);
     background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(253,254,255,.94));
-    color:#0b0f14; text-shadow:none;
+    color:#0b0f14;
+    text-shadow:none;
     box-shadow: 0 1px 2px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.35);
     filter: saturate(0.70);
   }
-  body.day button:active, body.day .logbtn:active{
-    box-shadow: 0 1px 1px rgba(0,0,0,.05), inset 0 1px 2px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.28) !important;
-    transform: translateY(1px); filter: saturate(0.70) brightness(0.995);
+
+  body.day .dir-pad{
+    border:1px solid rgba(0,0,0,.12);
+    background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(253,254,255,.94));
+    color:#0b0f14;
+    box-shadow: 0 1px 2px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.35);
+    filter: saturate(0.70);
   }
-  body.day .log{ background:rgba(255,255,255,.70); border:1px solid rgba(0,0,0,.10); color:#0b0f14; }
+
+  body.day button:active, body.day .logbtn:active, body.day .dir-pad:active{
+    box-shadow: 0 1px 1px rgba(0,0,0,.05), inset 0 1px 2px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.28) !important;
+    transform: translateY(1px);
+    filter: saturate(0.70) brightness(0.995);
+  }
+
+  body.day .log{
+    background:rgba(255,255,255,.70);
+    border:1px solid rgba(0,0,0,.10);
+    color:#0b0f14;
+  }
+
   body.day .iconbtn{
-    border:1px solid rgba(0,0,0,.12); background:rgba(255,255,255,.75); color:#0b0f14;
+    border:1px solid rgba(0,0,0,.12);
+    background:rgba(255,255,255,.75);
+    color:#0b0f14;
     box-shadow: 0 10px 18px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.85);
   }
 
@@ -354,49 +385,49 @@ if (typeof mqtt === "undefined") {
 <section>
   <h2>MiBox RMC</h2>
   <div class="grid">
-    <button class="wide dir-btn dir-up" id="btn-up" type="button" aria-label="위" data-dir="up"></button>
-    <button class="dir-btn dir-left" id="btn-left" type="button" aria-label="왼쪽" data-dir="left"></button>
+    <div class="wide dir-pad dir-up" id="btn-up" role="button" tabindex="0" aria-label="위" data-dir="up"></div>
+    <div class="dir-pad dir-left" id="btn-left" role="button" tabindex="0" aria-label="왼쪽" data-dir="left"></div>
     <button id="btn-ok" type="button">OK</button>
-    <button class="dir-btn dir-right" id="btn-right" type="button" aria-label="오른쪽" data-dir="right"></button>
-    <button class="wide dir-btn dir-down" id="btn-down" type="button" aria-label="아래" data-dir="down"></button>
+    <div class="dir-pad dir-right" id="btn-right" role="button" tabindex="0" aria-label="오른쪽" data-dir="right"></div>
+    <div class="wide dir-pad dir-down" id="btn-down" role="button" tabindex="0" aria-label="아래" data-dir="down"></div>
 
-    <button id="btn-voldown">VOL-</button>
-    <button id="btn-mute">MUTE</button>
-    <button id="btn-volup">VOL+</button>
+    <button id="btn-voldown" type="button">VOL-</button>
+    <button id="btn-mute" type="button">MUTE</button>
+    <button id="btn-volup" type="button">VOL+</button>
   </div>
   <div style="height:6px"></div>
   <div class="grid2">
-    <button id="btn-back">⟵ BACK</button>
-    <button id="btn-home">HOME</button>
+    <button id="btn-back" type="button">⟵ BACK</button>
+    <button id="btn-home" type="button">HOME</button>
   </div>
 </section>
 
 <section>
   <h2>433 RMC</h2>
   <div class="grid2">
-    <button onclick="send433('LIGHT')">LIGHT</button>
-    <button onclick="send433('DOOR')">DOOR</button>
-    <button onclick="send433('SPK1')">SPK1</button>
-    <button onclick="send433('SPK2')">SPK2</button>
+    <button onclick="send433('LIGHT')" type="button">LIGHT</button>
+    <button onclick="send433('DOOR')" type="button">DOOR</button>
+    <button onclick="send433('SPK1')" type="button">SPK1</button>
+    <button onclick="send433('SPK2')" type="button">SPK2</button>
   </div>
 </section>
 
 <section>
   <h2>IR RMC</h2>
   <div class="grid">
-    <button onclick="sendIR('POWER1')">POWER1</button>
-    <button onclick="sendIR('VOL-1')">VOL-</button>
-    <button onclick="sendIR('VOL+1')">VOL+</button>
-    <button onclick="sendIR('POWER2')">POWER2</button>
-    <button onclick="sendIR('VOL-2')">VOL-</button>
-    <button onclick="sendIR('VOL+2')">VOL+</button>
+    <button onclick="sendIR('POWER1')" type="button">POWER1</button>
+    <button onclick="sendIR('VOL-1')" type="button">VOL-</button>
+    <button onclick="sendIR('VOL+1')" type="button">VOL+</button>
+    <button onclick="sendIR('POWER2')" type="button">POWER2</button>
+    <button onclick="sendIR('VOL-2')" type="button">VOL-</button>
+    <button onclick="sendIR('VOL+2')" type="button">VOL+</button>
   </div>
 </section>
 
 <section>
   <h2 style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-    <button class="logbtn logbtn-left" id="toggleLog" onclick="toggleLog()">🪲</button>
-    <button class="logbtn logbtn-right" onclick="sendReset()">RESET</button>
+    <button class="logbtn logbtn-left" id="toggleLog" onclick="toggleLog()" type="button">🪲</button>
+    <button class="logbtn logbtn-right" onclick="sendReset()" type="button">RESET</button>
   </h2>
   <div class="log" id="log" style="display:none"></div>
 </section>
@@ -414,8 +445,8 @@ if (typeof mqtt === "undefined") {
     myhomeAnnounce: "pspiceman/myhome/announce",
   };
 
-  const HOLD_START_MS = 320;
-  const HOLD_REPEAT_MS = 110;
+  const HOLD_START_MS = 260;
+  const HOLD_REPEAT_MS = 95;
   const GW_STALE_MS = 25000;
   const BLE_STALE_MS = 6000;
   const BLE_UI_OFF_CONFIRM_MS = 4000;
@@ -663,7 +694,7 @@ if (typeof mqtt === "undefined") {
     el.addEventListener("selectstart", (e) => e.preventDefault(), {passive:false});
   }
 
-  function bindHoldRepeat(id, cmd, delayMs = HOLD_START_MS, repeatMs = HOLD_REPEAT_MS){
+  function installDirPad(id, cmd){
     const el = $(id);
     if(!el) return;
 
@@ -673,22 +704,14 @@ if (typeof mqtt === "undefined") {
 
     const clearAll = () => {
       active = false;
-      if (holdTimer) {
-        clearTimeout(holdTimer);
-        holdTimer = null;
-      }
-      if (repeatTimer) {
-        clearInterval(repeatTimer);
-        repeatTimer = null;
-      }
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      if (repeatTimer) { clearInterval(repeatTimer); repeatTimer = null; }
       el.classList.remove("pressed");
     };
 
-    const startRepeat = (ev) => {
-      if (ev) {
-        if (ev.cancelable) ev.preventDefault();
-        ev.stopPropagation();
-      }
+    const start = (ev) => {
+      if (ev && ev.cancelable) ev.preventDefault();
+      if (ev) ev.stopPropagation();
       if (active) return;
 
       active = true;
@@ -700,73 +723,110 @@ if (typeof mqtt === "undefined") {
         if (!active) return;
         repeatTimer = setInterval(() => {
           sendMi(cmd);
-        }, repeatMs);
-      }, delayMs);
+        }, HOLD_REPEAT_MS);
+      }, HOLD_START_MS);
     };
 
-    const stopRepeat = (ev) => {
-      if (ev) {
-        if (ev.cancelable) ev.preventDefault();
-        ev.stopPropagation();
-      }
+    const stop = (ev) => {
+      if (ev && ev.cancelable) ev.preventDefault();
+      if (ev) ev.stopPropagation();
       if (!active) return;
       clearAll();
     };
 
-    // 모바일 우선
-    el.addEventListener("touchstart", startRepeat, { passive:false });
-    document.addEventListener("touchend", stopRepeat, { passive:false });
-    document.addEventListener("touchcancel", stopRepeat, { passive:false });
-
-    // 일부 브라우저에서 손가락 이동/스크롤로 끊기는 것 방지
-    document.addEventListener("visibilitychange", () => { if (document.hidden) clearAll(); });
-    window.addEventListener("blur", clearAll);
-    window.addEventListener("pagehide", clearAll);
+    // 모바일 핵심
+    el.addEventListener("touchstart", start, {passive:false});
+    document.addEventListener("touchend", stop, {passive:false});
+    document.addEventListener("touchcancel", stop, {passive:false});
 
     // PC
-    el.addEventListener("mousedown", startRepeat);
-    document.addEventListener("mouseup", stopRepeat);
+    el.addEventListener("mousedown", start);
+    document.addEventListener("mouseup", stop);
 
-    el.addEventListener("pointerdown", (e) => {
-      if (e.pointerType === "touch") return;
-      startRepeat(e);
-    }, { passive:false });
-    document.addEventListener("pointerup", (e) => {
-      if (e.pointerType === "touch") return;
-      stopRepeat(e);
-    }, { passive:false });
-    document.addEventListener("pointercancel", (e) => {
-      if (e.pointerType === "touch") return;
-      stopRepeat(e);
-    }, { passive:false });
+    // 키보드 접근성
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") start(e);
+    });
+    el.addEventListener("keyup", (e) => {
+      if (e.key === "Enter" || e.key === " ") stop(e);
+    });
 
-    // 길게 누름 메뉴 완전 차단
-    el.addEventListener("contextmenu", (e) => e.preventDefault(), { passive:false });
-    el.addEventListener("selectstart", (e) => e.preventDefault(), { passive:false });
-    el.addEventListener("dragstart", (e) => e.preventDefault(), { passive:false });
+    // 모바일 브라우저 메뉴 차단
+    const block = (e) => {
+      if (e.cancelable) e.preventDefault();
+      e.stopPropagation();
+      return false;
+    };
+
+    ["contextmenu","selectstart","dragstart","gesturestart","gesturechange","gestureend","touchmove"].forEach((name) => {
+      el.addEventListener(name, block, {passive:false});
+    });
+
+    el.oncontextmenu = () => false;
+    el.onselectstart = () => false;
+    el.ondragstart = () => false;
   }
 
   function installDirectionGuards(){
-    document.querySelectorAll(".dir-btn").forEach((el) => {
-      const block = (e) => {
-        if (e.cancelable) e.preventDefault();
-        e.stopPropagation();
-      };
-      ["contextmenu","selectstart","dragstart","gesturestart","gesturechange","gestureend"].forEach((name) => {
-        el.addEventListener(name, block, { passive:false });
-      });
-      el.addEventListener("touchmove", block, { passive:false });
-    });
-
     document.addEventListener("contextmenu", (e) => {
-      if (e.target.closest(".dir-btn")) e.preventDefault();
-    }, { passive:false });
+      if (e.target.closest(".dir-pad")) {
+        e.preventDefault();
+        return false;
+      }
+    }, {passive:false});
 
     document.addEventListener("selectionchange", () => {
       const sel = window.getSelection && window.getSelection();
       if (sel && sel.removeAllRanges) sel.removeAllRanges();
     });
+
+    window.addEventListener("blur", () => {
+      document.querySelectorAll(".dir-pad.pressed").forEach((el) => el.classList.remove("pressed"));
+    });
+    window.addEventListener("pagehide", () => {
+      document.querySelectorAll(".dir-pad.pressed").forEach((el) => el.classList.remove("pressed"));
+    });
   }
+
+  setInterval(()=>{
+    if(!mqttOk){
+      gwLastTs = 0;
+      setPill(stGw, false, "Gateway: --");
+      stRssi.innerText = "RSSI: --";
+      ble = false;
+      bleLastTs = 0;
+      setPill(stBle, false, "BLE: --");
+      return;
+    }
+
+    if(!gwLastTs){
+      setPill(stGw, false, "Gateway: --");
+      stRssi.innerText = "RSSI: --";
+    }else{
+      const gwStale = (Date.now() - gwLastTs) > GW_STALE_MS;
+      if(gwStale){
+        gwLastTs = 0;
+        setPill(stGw, false, "Gateway: --");
+        stRssi.innerText = "RSSI: --";
+        ble = false;
+        bleLastTs = 0;
+        setPill(stBle, false, "BLE: --");
+        return;
+      }
+    }
+
+    if(!bleLastTs){
+      setPill(stBle, false, "BLE: --");
+      return;
+    }
+
+    const bleStale = (Date.now() - bleLastTs) > BLE_STALE_MS;
+    if(bleStale){
+      ble = false;
+      bleLastTs = 0;
+      setPill(stBle, false, "BLE: --");
+    }
+  }, 1000);
 
   function canBleControl(){
     const fresh = bleLastTs && (Date.now() - bleLastTs) <= BLE_STALE_MS;
@@ -806,10 +866,10 @@ if (typeof mqtt === "undefined") {
     connect();
     installDirectionGuards();
 
-    bindHoldRepeat("btn-up", "up", 260, 95);
-    bindHoldRepeat("btn-down", "down", 260, 95);
-    bindHoldRepeat("btn-left", "left", 260, 95);
-    bindHoldRepeat("btn-right", "right", 260, 95);
+    installDirPad("btn-up", "up");
+    installDirPad("btn-down", "down");
+    installDirPad("btn-left", "left");
+    installDirPad("btn-right", "right");
 
     bindClick("btn-ok", "ok1");
     bindClick("btn-voldown", "voldown");
