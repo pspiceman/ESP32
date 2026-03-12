@@ -20,6 +20,14 @@ if (typeof mqtt === "undefined") {
     user-select:none;
     -webkit-touch-callout:none;
     -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust:100%;
+    touch-action:manipulation;
+  }
+
+  *{
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout:none;
+    box-sizing:border-box;
   }
 
   body{
@@ -126,6 +134,7 @@ if (typeof mqtt === "undefined") {
     user-select:none;
     -webkit-touch-callout:none;
     -webkit-tap-highlight-color: transparent;
+    -webkit-user-drag:none;
   }
 
   main > section:nth-of-type(1) button:not(.logbtn){
@@ -225,7 +234,7 @@ if (typeof mqtt === "undefined") {
     user-select:none !important;
     -webkit-touch-callout:none !important;
     -webkit-tap-highlight-color:transparent !important;
-    -webkit-touch-action:none !important;
+    -webkit-user-drag:none !important;
     overflow:hidden;
   }
 
@@ -701,24 +710,17 @@ if (typeof mqtt === "undefined") {
     let holdTimer = null;
     let repeatTimer = null;
     let active = false;
+    let activePointerId = null;
 
     const clearAll = () => {
       active = false;
+      activePointerId = null;
       if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
       if (repeatTimer) { clearInterval(repeatTimer); repeatTimer = null; }
       el.classList.remove("pressed");
     };
 
-    const start = (ev) => {
-      if (ev && ev.cancelable) ev.preventDefault();
-      if (ev) ev.stopPropagation();
-      if (active) return;
-
-      active = true;
-      el.classList.add("pressed");
-
-      sendMi(cmd);
-
+    const startRepeat = () => {
       holdTimer = setTimeout(() => {
         if (!active) return;
         repeatTimer = setInterval(() => {
@@ -727,19 +729,45 @@ if (typeof mqtt === "undefined") {
       }, HOLD_START_MS);
     };
 
+    const start = (ev) => {
+      if (ev && ev.cancelable) ev.preventDefault();
+      if (ev) ev.stopPropagation();
+      if (active) return;
+
+      active = true;
+      activePointerId = ev?.pointerId ?? "mouse-touch";
+      el.classList.add("pressed");
+
+      if (ev?.pointerId != null && el.setPointerCapture) {
+        try { el.setPointerCapture(ev.pointerId); } catch(_) {}
+      }
+
+      sendMi(cmd);
+      startRepeat();
+    };
+
     const stop = (ev) => {
       if (ev && ev.cancelable) ev.preventDefault();
       if (ev) ev.stopPropagation();
       if (!active) return;
+
+      if (ev?.pointerId != null && activePointerId != null && ev.pointerId !== activePointerId) return;
       clearAll();
     };
 
-    // 모바일 핵심
+    // Pointer Events: 모바일/PC 공통
+    el.addEventListener("pointerdown", start, {passive:false});
+    el.addEventListener("pointerup", stop, {passive:false});
+    el.addEventListener("pointercancel", stop, {passive:false});
+    el.addEventListener("lostpointercapture", clearAll, {passive:true});
+    el.addEventListener("pointerleave", (e) => {
+      if (e.pointerType === "mouse") stop(e);
+    }, {passive:false});
+
+    // 구형 브라우저 대비
     el.addEventListener("touchstart", start, {passive:false});
     document.addEventListener("touchend", stop, {passive:false});
     document.addEventListener("touchcancel", stop, {passive:false});
-
-    // PC
     el.addEventListener("mousedown", start);
     document.addEventListener("mouseup", stop);
 
@@ -751,14 +779,13 @@ if (typeof mqtt === "undefined") {
       if (e.key === "Enter" || e.key === " ") stop(e);
     });
 
-    // 모바일 브라우저 메뉴 차단
     const block = (e) => {
       if (e.cancelable) e.preventDefault();
       e.stopPropagation();
       return false;
     };
 
-    ["contextmenu","selectstart","dragstart","gesturestart","gesturechange","gestureend","touchmove"].forEach((name) => {
+    ["contextmenu","selectstart","dragstart","gesturestart","gesturechange","gestureend","touchmove","beforeinput"].forEach((name) => {
       el.addEventListener(name, block, {passive:false});
     });
 
@@ -768,8 +795,17 @@ if (typeof mqtt === "undefined") {
   }
 
   function installDirectionGuards(){
+    const shouldBlock = (target) => !!target.closest(".dir-pad, button, .iconbtn, .logbtn");
+
     document.addEventListener("contextmenu", (e) => {
-      if (e.target.closest(".dir-pad")) {
+      if (shouldBlock(e.target)) {
+        e.preventDefault();
+        return false;
+      }
+    }, {passive:false});
+
+    document.addEventListener("selectstart", (e) => {
+      if (shouldBlock(e.target)) {
         e.preventDefault();
         return false;
       }
@@ -780,11 +816,20 @@ if (typeof mqtt === "undefined") {
       if (sel && sel.removeAllRanges) sel.removeAllRanges();
     });
 
+    ["touchstart","touchend","touchmove"].forEach((name) => {
+      document.addEventListener(name, (e) => {
+        if (shouldBlock(e.target)) {
+          const sel = window.getSelection && window.getSelection();
+          if (sel && sel.removeAllRanges) sel.removeAllRanges();
+        }
+      }, {passive:false});
+    });
+
     window.addEventListener("blur", () => {
-      document.querySelectorAll(".dir-pad.pressed").forEach((el) => el.classList.remove("pressed"));
+      document.querySelectorAll(".dir-pad.pressed, button.pressed").forEach((el) => el.classList.remove("pressed"));
     });
     window.addEventListener("pagehide", () => {
-      document.querySelectorAll(".dir-pad.pressed").forEach((el) => el.classList.remove("pressed"));
+      document.querySelectorAll(".dir-pad.pressed, button.pressed").forEach((el) => el.classList.remove("pressed"));
     });
   }
 
