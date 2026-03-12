@@ -222,6 +222,8 @@ if (typeof mqtt === "undefined") {
 
   /* 모바일 전용 방향키 패드 */
   .dir-pad{
+    font-size:0;
+    line-height:0;
     appearance:none;
     -webkit-appearance:none;
     min-height:58px;
@@ -384,7 +386,7 @@ if (typeof mqtt === "undefined") {
     #clock{ padding:6px 7px; line-height:1; }
   }
 
-  html, body, button, .iconbtn, .logbtn, .dir-pad{
+  html, body, button, .iconbtn, .logbtn, .dir-pad, .dir-pad::before{
     -webkit-touch-callout:none !important;
     -webkit-user-select:none !important;
     user-select:none !important;
@@ -729,6 +731,7 @@ if (typeof mqtt === "undefined") {
     let repeatTimer = null;
     let active = false;
     let activePointerId = null;
+    let activeTouchId = null;
 
     const clearSelection = () => {
       const sel = window.getSelection && window.getSelection();
@@ -762,7 +765,7 @@ if (typeof mqtt === "undefined") {
         if (!active) return;
         sendMi(cmd);
         queueRepeat();
-      }, HOLD_START_MS);
+      }, 260);
     };
 
     const block = (e) => {
@@ -778,7 +781,8 @@ if (typeof mqtt === "undefined") {
       if (ev.button != null && ev.button !== 0) return false;
 
       active = true;
-      activePointerId = ev?.pointerId ?? "keyboard";
+      activePointerId = ev?.pointerId ?? null;
+      activeTouchId = null;
       el.classList.add("pressed");
 
       if (document.activeElement && document.activeElement.blur) {
@@ -802,15 +806,52 @@ if (typeof mqtt === "undefined") {
       return false;
     };
 
-    el.addEventListener("pointerdown", start, {passive:false});
-    el.addEventListener("pointerup", stop, {passive:false});
-    el.addEventListener("pointercancel", stop, {passive:false});
-    el.addEventListener("lostpointercapture", clearAll, {passive:true});
-    el.addEventListener("pointerleave", (e) => {
-      if (e.pointerType === "mouse") stop(e);
-    }, {passive:false});
-    document.addEventListener("pointerup", stop, {passive:false, capture:true});
-    document.addEventListener("pointercancel", stop, {passive:false, capture:true});
+    const touchStart = (ev) => {
+      block(ev);
+      if (active) return false;
+      const t = ev.changedTouches && ev.changedTouches[0];
+      active = true;
+      activePointerId = null;
+      activeTouchId = t ? t.identifier : 0;
+      el.classList.add("pressed");
+      sendMi(cmd);
+      startRepeat();
+      return false;
+    };
+
+    const touchStop = (ev) => {
+      if (!active) return false;
+      if (ev && ev.changedTouches && activeTouchId != null) {
+        let found = false;
+        for (const t of ev.changedTouches) {
+          if (t.identifier === activeTouchId) { found = true; break; }
+        }
+        if (!found) return false;
+      }
+      block(ev);
+      clearAll();
+      activeTouchId = null;
+      return false;
+    };
+
+    if (window.PointerEvent) {
+      el.addEventListener("pointerdown", start, {passive:false});
+      el.addEventListener("pointerup", stop, {passive:false});
+      el.addEventListener("pointercancel", stop, {passive:false});
+      el.addEventListener("lostpointercapture", clearAll, {passive:true});
+      el.addEventListener("pointerleave", (e) => {
+        if (e.pointerType === "mouse") stop(e);
+      }, {passive:false});
+      el.addEventListener("pointermove", block, {passive:false});
+      document.addEventListener("pointerup", stop, {passive:false, capture:true});
+      document.addEventListener("pointercancel", stop, {passive:false, capture:true});
+    }
+
+    el.addEventListener("touchstart", touchStart, {passive:false});
+    el.addEventListener("touchend", touchStop, {passive:false});
+    el.addEventListener("touchcancel", touchStop, {passive:false});
+    document.addEventListener("touchend", touchStop, {passive:false, capture:true});
+    document.addEventListener("touchcancel", touchStop, {passive:false, capture:true});
 
     el.addEventListener("click", (e) => {
       e.preventDefault();
@@ -824,7 +865,7 @@ if (typeof mqtt === "undefined") {
       if (e.key === "Enter" || e.key === " ") stop(e);
     });
 
-    ["contextmenu","selectstart","dragstart","gesturestart","gesturechange","gestureend","touchstart","touchmove","touchend","beforeinput","copy","cut"].forEach((name) => {
+    ["contextmenu","selectstart","dragstart","gesturestart","gesturechange","gestureend","beforeinput","copy","cut"].forEach((name) => {
       el.addEventListener(name, block, {passive:false});
     });
 
@@ -855,11 +896,11 @@ if (typeof mqtt === "undefined") {
       document.addEventListener(name, guard, {passive:false, capture:true});
     });
 
-    ["touchstart","touchmove","touchend","pointerdown","pointermove","pointerup"].forEach((name) => {
+    ["touchstart","touchmove","pointerdown","pointermove"].forEach((name) => {
       document.addEventListener(name, (e) => {
         if (!shouldBlock(e.target)) return;
         clearSelection();
-        if (name === "touchstart" || name === "touchmove" || name === "pointerdown") {
+        if (name === "touchmove" || name === "pointermove") {
           if (e.cancelable) e.preventDefault();
         }
       }, {passive:false, capture:true});
