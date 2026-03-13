@@ -1,520 +1,470 @@
 <!DOCTYPE html>
-
 <html lang="ko">
 <head>
 <meta charset="utf-8"/>
-<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>Universal RMC</title>
+
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script>
+if (typeof mqtt === "undefined") {
+  document.write('<script src="https://cdn.jsdelivr.net/npm/mqtt/dist/mqtt.min.js"><\/script>');
+}
+</script>
+
 <style>
-    :root { --pad: 12px; }
-    body{ margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif; background:#0b0f14; color:#e6eef8; padding-top: calc(env(safe-area-inset-top) + 12px);}
-    header{ position:sticky; top:0; z-index:10; background:rgba(11,15,20,.92); backdrop-filter: blur(8px); padding: var(--pad); border-bottom:1px solid rgba(255,255,255,.08);}
-    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
-    .pill{ padding:6px 10px; border-radius:999px; font-size:12px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.10);}
-    .ok{ background:rgba(52,211,153,.15); border-color:rgba(52,211,153,.35);}
-    .bad{ background:rgba(248,113,113,.15); border-color:rgba(248,113,113,.35);}
-    main{ padding: var(--pad); display:grid; gap:12px;}
-    section{ background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10); border-radius:18px; padding:12px;}
-    h2{ margin:0 0 10px; font-size:14px; opacity:.9; display:flex; justify-content:space-between; align-items:center; gap:10px;}
-    .grid{ display:grid; grid-template-columns: repeat(3,1fr); gap:10px;}
-    button{ width:100%; padding:14px 10px; border-radius:14px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.08); color:#fff; font-size:14px; font-weight:600;}
-    button:active{ transform: translateY(1px); }
-    .wide{ grid-column: span 3; }
-    .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
-    input{ width:100%; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.24); background:rgba(0,0,0,.25); color:#fff; font-size:14px;}
-    .log{ max-height:170px; overflow:auto; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; line-height:1.35; padding:10px; background:rgba(0,0,0,.30); border-radius:12px; border:1px solid rgba(255,255,255,.10);}
-    .muted{ opacity:.75; font-size:12px;}
-button{ box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12); }
+  :root { --pad: 12px; }
+
+  html, body{
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body{
+    margin:0;
+    font-family: system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif;
+    background:#0b0f14;
+    color:#e6eef8;
+    padding-top: calc(env(safe-area-inset-top) + 12px);
+    overscroll-behavior: contain;
+  }
+
+  header{
+    position:sticky;
+    top:0;
+    z-index:10;
+    background:rgba(11,15,20,.92);
+    backdrop-filter: blur(8px);
+    padding: var(--pad);
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+
+  .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+  .pill{
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:12px;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.10);
+    box-shadow: 0 10px 22px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.18), inset 0 -4px 10px rgba(0,0,0,.35);
+  }
+
+  .ok{ background:rgba(52,211,153,.15); border-color:rgba(52,211,153,.35); }
+  .bad{ background:rgba(248,113,113,.15); border-color:rgba(248,113,113,.35); }
+
+  .pill.ok, .pill.good{
+    background: linear-gradient(180deg,#1f262f,#151a21);
+    border:1px solid rgba(34,197,94,.85);
+    box-shadow:
+      0 0 0 1px rgba(34,197,94,.35),
+      0 0 18px rgba(34,197,94,.22),
+      0 12px 26px rgba(0,0,0,.65),
+      inset 0 1px 0 rgba(255,255,255,.14),
+      inset 0 -6px 14px rgba(0,0,0,.40);
+    color:#eafff1;
+    text-shadow:0 1px 0 rgba(0,0,0,.55);
+  }
+
+  .pill.bad{
+    background: linear-gradient(180deg,#2a313b,#1a2028);
+    color:#e6eef8;
+    border:1px solid rgba(255,255,255,.10);
+  }
+
+  main{
+    padding: var(--pad);
+    display:grid;
+    gap:4px;
+  }
+
+  section{
+    position: relative;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: radial-gradient(1200px 420px at 18% 0%, rgba(255,255,255,.10), rgba(255,255,255,.05) 38%, rgba(0,0,0,.08) 100%);
+    box-shadow: 0 26px 60px rgba(0,0,0,.78), inset 0 1px 0 rgba(255,255,255,.10), inset 0 -14px 28px rgba(0,0,0,.22);
+    padding:12px;
+  }
+
+  section:nth-of-type(1){ background: linear-gradient(180deg, rgba(59,130,246,.18), rgba(59,130,246,.10)); }
+  section:nth-of-type(2){ background: linear-gradient(180deg, rgba(34,197,94,.18), rgba(34,197,94,.10)); }
+  section:nth-of-type(3){ background: linear-gradient(180deg, rgba(168,85,247,.18), rgba(168,85,247,.10)); }
+  section:nth-of-type(4){ background: rgba(255,255,255,.07); }
+
+  h2{
+    margin:0 0 10px;
+    font-size:14px;
+    opacity:1;
+    color: rgba(220,220,220,.96);
+    text-shadow: 0 1px 0 rgba(255,255,255,.14), 0 10px 22px rgba(0,0,0,.65);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+  }
+
+  .grid{ display:grid; grid-template-columns: repeat(3,1fr); gap:10px; }
+  .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+
+  button{
+    width:100%;
+    padding:14px 10px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,.20);
+    background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
+    color:#f6fbff;
+    font-size:14px;
+    font-weight:600;
+    text-shadow:0 1px 0 rgba(0,0,0,.55);
+    box-shadow: 0 16px 34px rgba(0,0,0,.62), 0 6px 14px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.28), inset 0 -12px 20px rgba(0,0,0,.35);
+    transition:transform .08s ease, filter .08s ease, box-shadow .12s ease, border-color .12s ease;
+    touch-action:manipulation;
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  main > section:nth-of-type(1) button:not(.logbtn){
+    background: linear-gradient(180deg, rgba(59,130,246,.28), rgba(59,130,246,.12));
+    border-color: rgba(59,130,246,.34);
+    box-shadow: 0 18px 38px rgba(0,0,0,.64), 0 10px 22px rgba(59,130,246,.10), inset 0 1px 0 rgba(255,255,255,.26), inset 0 -12px 22px rgba(0,0,0,.36);
+  }
+
+  main > section:nth-of-type(2) button:not(.logbtn){
+    background: linear-gradient(180deg, rgba(34,197,94,.26), rgba(34,197,94,.10));
+    border-color: rgba(34,197,94,.32);
+    box-shadow: 0 18px 38px rgba(0,0,0,.64), 0 10px 22px rgba(34,197,94,.10), inset 0 1px 0 rgba(255,255,255,.26), inset 0 -12px 22px rgba(0,0,0,.36);
+  }
+
+  main > section:nth-of-type(3) button:not(.logbtn){
+    background: linear-gradient(180deg, rgba(168,85,247,.26), rgba(168,85,247,.10));
+    border-color: rgba(168,85,247,.32);
+    box-shadow: 0 18px 38px rgba(0,0,0,.64), 0 10px 22px rgba(168,85,247,.10), inset 0 1px 0 rgba(255,255,255,.26), inset 0 -12px 22px rgba(0,0,0,.36);
+  }
+
+  button:active, .logbtn:active, .dir-pad:active{
+    transform: translateY(3px) scale(0.985);
+    filter: brightness(0.92) saturate(1.05);
+  }
+
+  .pressed{
+    transform: translateY(3px) scale(0.985);
+    filter: brightness(0.92) saturate(1.05);
+    box-shadow: 0 10px 22px rgba(0,0,0,.55), inset 0 8px 18px rgba(0,0,0,.58), inset 0 1px 0 rgba(255,255,255,.12) !important;
+  }
 
 
-        .logbtn-left{
-      width:54px; padding:6px 0; text-align:center;
-      font-size:14px; line-height:1;
-      border:1px solid rgba(255,255,255,.24);
-      box-shadow: 0 12px 22px rgba(0,0,0,.65),
-                  inset 0 1px 0 rgba(255,255,255,.12), inset 0 -5px 12px rgba(0,0,0,.38);
-    }
-    .logbtn-right{ width:110px; padding:6px 0; text-align:center; font-size:12px; line-height:1; letter-spacing:.3px; }
+  body.holding-dir,
+  body.holding-dir *,
+  body.holding-dir *::before,
+  body.holding-dir *::after{
+    -webkit-user-select:none !important;
+    user-select:none !important;
+    -webkit-touch-callout:none !important;
+    -webkit-user-drag:none !important;
+    touch-action:none !important;
+  }
 
+  #press-shield{
+    position:fixed;
+    inset:0;
+    z-index:2147483646;
+    background:transparent;
+    pointer-events:auto;
+    touch-action:none;
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+    -webkit-user-drag:none;
+  }
 
-    /* Pressed feedback */
-    .btn:active, .logbtn:active{
-      transform: translateY(3px) scale(0.985);
-      filter: brightness(0.90);
-    }
-    .pressed{
-      transform: translateY(3px) scale(0.985);
-      filter: brightness(0.90);
-      box-shadow: inset 0 6px 14px rgba(0,0,0,.45) !important;
-    }
+  html, body, button, .iconbtn, .logbtn, .dir-pad, .dir-pad::before{
+    -webkit-touch-callout:none !important;
+    -webkit-user-select:none !important;
+    user-select:none !important;
+  }
 
+  .wide{ grid-column: span 3; }
 
-    /* Universal RMC depth up */
-    .pill{
-      box-shadow: 0 10px 22px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.18), inset 0 -4px 10px rgba(0,0,0,.35);
-    }
+  .log{
+    max-height:170px;
+    overflow:auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size:12px;
+    line-height:1.35;
+    padding:10px;
+    background:rgba(0,0,0,.30);
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,.10);
+  }
 
+  .status-row{ display:flex; flex-wrap:nowrap; gap:8px; align-items:center; }
+  .status-row .pill{
+    padding:6px 10px;
+    font-size:13px;
+    white-space:nowrap;
+    text-align:center;
+    flex:0 0 auto;
+  }
 
-    /* Status pills (OK like attach) */
-    .pill{
-      padding:8px 14px;
-      border-radius:999px;
-      font-weight:800;
-      letter-spacing:.2px;
-      border:1px solid rgba(255,255,255,.12);
-      box-shadow: 0 10px 22px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.10);
-    }
-    .pill.ok, .pill.good{
-      background: linear-gradient(180deg,#1f262f,#151a21);
-      border:1px solid rgba(34,197,94,.85); /* green outline */
-      box-shadow: 0 0 0 1px rgba(34,197,94,.35),
-                  0 0 18px rgba(34,197,94,.22),
-                  0 12px 26px rgba(0,0,0,.65),
-                  inset 0 1px 0 rgba(255,255,255,.14), inset 0 -6px 14px rgba(0,0,0,.40);
-      color:#eafff1;
-      text-shadow: 0 1px 0 rgba(0,0,0,.55);
-    }
-    .pill.bad{
-      background: linear-gradient(180deg,#2a313b,#1a2028);
-      color:#e6eef8;
-      border:1px solid rgba(255,255,255,.10);
-    }
+  .brand-title{
+    color: rgba(225,225,225,.96) !important;
+    text-shadow: 0 1px 0 rgba(255,255,255,.16), 0 12px 26px rgba(0,0,0,.70) !important;
+    font-weight:800;
+    letter-spacing:.2px;
+    font-size:24px;
+  }
 
+  #clock{ line-height:1; padding:6px 10px; }
 
-    /* Remote vs button separation + 3D */
-    .section{
-      background: linear-gradient(180deg,#0c1016,#070a0f);
-      border: 2px solid rgba(255,255,255,.32);
-      box-shadow: 0 26px 52px rgba(0,0,0,.80), inset 0 1px 0 rgba(255,255,255,.05);
-    }
-    .btn{
-      background: linear-gradient(180deg,#465566,#2f3a48);
-      border:1px solid rgba(255,255,255,.32);
-      box-shadow: 0 22px 44px rgba(0,0,0,.85), 0 8px 18px rgba(0,0,0,.60),
-                  inset 0 1px 0 rgba(255,255,255,.24), inset 0 -10px 18px rgba(0,0,0,.38);
-      color:#f2f7ff;
-    }
-    .btn.ok{
-      background: linear-gradient(180deg,#465566,#2f3a48);
-      border:1px solid rgba(255,255,255,.32);
-      box-shadow: 0 22px 44px rgba(0,0,0,.85), 0 8px 18px rgba(0,0,0,.60),
-                  inset 0 1px 0 rgba(255,255,255,.24), inset 0 -10px 18px rgba(0,0,0,.38);
-      color:#f2f7ff;
-    }
+  #st-rssi{
+    border:1px solid rgba(59,130,246,.85);
+    box-shadow: 0 0 0 1px rgba(59,130,246,.30), 0 0 16px rgba(59,130,246,.18), 0 10px 22px rgba(0,0,0,.60), inset 0 1px 0 rgba(255,255,255,.14), inset 0 -6px 14px rgba(0,0,0,.40);
+  }
 
+  .logbtn{
+    border-color: rgba(255,255,255,.22);
+    background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+    box-shadow: 0 18px 36px rgba(0,0,0,.72), inset 0 1px 0 rgba(255,255,255,.18), inset 0 -10px 18px rgba(0,0,0,.42);
+  }
 
-    .logbtn{
-      border:1px solid rgba(255,255,255,.24);
-      background: linear-gradient(180deg,#1f262f,#151a21);
-      box-shadow: 0 14px 26px rgba(0,0,0,.70), inset 0 1px 0 rgba(255,255,255,.12), inset 0 -6px 14px rgba(0,0,0,.40);
-    }
-    .logbtn-left{
-      width:54px; padding:6px 0; text-align:center;
-      font-size:14px; line-height:1;
-      border:1px solid rgba(255,255,255,.24);
-      box-shadow: 0 12px 22px rgba(0,0,0,.65),
-                  inset 0 1px 0 rgba(255,255,255,.12), inset 0 -5px 12px rgba(0,0,0,.38);
-    }
+  .logbtn-left{ width:54px; padding:6px 0; text-align:center; font-size:14px; line-height:1; }
+  .logbtn-right{ width:110px; padding:6px 0; text-align:center; font-size:12px; line-height:1; letter-spacing:.3px; }
 
+  .iconbtn{
+    width:34px; height:34px; padding:0; border-radius:999px; display:inline-flex; align-items:center; justify-content:center;
+    border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.10); color:#fff; font-size:16px; line-height:1;
+    box-shadow: 0 12px 22px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.16);
+  }
+  .iconbtn:active{ transform: translateY(2px) scale(0.985); filter: brightness(0.92); }
 
-    /* Status row: keep EVERYTHING on ONE line in mobile portrait */
-    .status-row{
-      display:flex;
-      flex-wrap:nowrap;
-      gap:8px;
-      align-items:center;
-    }
+  /* 모바일 전용 방향키 패드: button 대신 div */
+  .dir-pad{
+    min-height:46px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,.20);
+    background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
+    color:#f6fbff;
+    box-shadow: 0 16px 34px rgba(0,0,0,.62), 0 6px 14px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.28), inset 0 -12px 20px rgba(0,0,0,.35);
+    position:relative;
+    touch-action:none !important;
+    -webkit-user-select:none !important;
+    user-select:none !important;
+    -webkit-touch-callout:none !important;
+    -webkit-tap-highlight-color:transparent !important;
+    -webkit-touch-action:none !important;
+    overflow:hidden;
+  }
+
+  main > section:nth-of-type(1) .dir-pad{
+    background: linear-gradient(180deg, rgba(59,130,246,.28), rgba(59,130,246,.12));
+    border-color: rgba(59,130,246,.34);
+    box-shadow: 0 18px 38px rgba(0,0,0,.64), 0 10px 22px rgba(59,130,246,.10), inset 0 1px 0 rgba(255,255,255,.26), inset 0 -12px 22px rgba(0,0,0,.36);
+  }
+
+  .dir-pad::before{
+    content:"";
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    width:0;
+    height:0;
+    pointer-events:none;
+    filter:drop-shadow(0 1px 0 rgba(0,0,0,.45));
+  }
+
+  .dir-up::before{
+    border-left:10px solid transparent;
+    border-right:10px solid transparent;
+    border-bottom:14px solid currentColor;
+  }
+  .dir-down::before{
+    border-left:10px solid transparent;
+    border-right:10px solid transparent;
+    border-top:14px solid currentColor;
+  }
+  .dir-left::before{
+    border-top:10px solid transparent;
+    border-bottom:10px solid transparent;
+    border-right:14px solid currentColor;
+  }
+  .dir-right::before{
+    border-top:10px solid transparent;
+    border-bottom:10px solid transparent;
+    border-left:14px solid currentColor;
+  }
+
+  body.day{
+    background:#f4f6fb;
+    color:#0b0f14;
+  }
+
+  body.day header{
+    background:rgba(244,246,251,.92);
+    border-bottom:1px solid rgba(0,0,0,.10);
+  }
+
+  body.day .brand-title{
+    color: rgba(18,18,18,.92) !important;
+    text-shadow: 0 1px 0 rgba(255,255,255,.75), 0 10px 22px rgba(0,0,0,.12) !important;
+  }
+
+  body.day .pill{
+    background:rgba(0,0,0,.06);
+    border:1px solid rgba(0,0,0,.10);
+    box-shadow: 0 10px 18px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.70);
+    color:#0b0f14;
+  }
+
+  body.day .pill.ok, body.day .pill.good{
+    background: linear-gradient(180deg,#ffffff,#eef3ff);
+    border:1px solid rgba(34,197,94,.85);
+    box-shadow: 0 0 0 1px rgba(34,197,94,.20), 0 0 14px rgba(34,197,94,.10), 0 10px 18px rgba(0,0,0,.10), inset 0 1px 0 rgba(255,255,255,.85), inset 0 -6px 14px rgba(0,0,0,.06);
+    color:#0b0f14;
+    text-shadow:none;
+  }
+
+  body.day #st-rssi{
+    border:1px solid rgba(59,130,246,.85);
+    box-shadow: 0 0 0 1px rgba(59,130,246,.22), 0 0 12px rgba(59,130,246,.10), 0 10px 18px rgba(0,0,0,.10), inset 0 1px 0 rgba(255,255,255,.85), inset 0 -6px 14px rgba(0,0,0,.06);
+  }
+
+  body.day section{
+    border:1px solid rgba(0,0,0,.10);
+    background: radial-gradient(1200px 420px at 18% 0%, rgba(0,0,0,.03), rgba(0,0,0,.02) 38%, rgba(255,255,255,.60) 100%);
+    box-shadow: 0 18px 42px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.85), inset 0 -14px 28px rgba(0,0,0,.06);
+  }
+
+  body.day h2{
+    color: rgba(20,20,20,.92) !important;
+    text-shadow: 0 1px 0 rgba(255,255,255,.70), 0 10px 22px rgba(0,0,0,.10);
+  }
+
+  body.day button, body.day .logbtn{
+    border:1px solid rgba(0,0,0,.12);
+    background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(253,254,255,.94));
+    color:#0b0f14;
+    text-shadow:none;
+    box-shadow: 0 1px 2px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.35);
+    filter: saturate(0.70);
+  }
+
+  body.day .dir-pad{
+    border:1px solid rgba(0,0,0,.12);
+    background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(253,254,255,.94));
+    color:#0b0f14;
+    box-shadow: 0 1px 2px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.35);
+    filter: saturate(0.70);
+  }
+
+  body.day button:active, body.day .logbtn:active, body.day .dir-pad:active{
+    box-shadow: 0 1px 1px rgba(0,0,0,.05), inset 0 1px 2px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.28) !important;
+    transform: translateY(1px);
+    filter: saturate(0.70) brightness(0.995);
+  }
+
+  body.day .log{
+    background:rgba(255,255,255,.70);
+    border:1px solid rgba(0,0,0,.10);
+    color:#0b0f14;
+  }
+
+  body.day .iconbtn{
+    border:1px solid rgba(0,0,0,.12);
+    background:rgba(255,255,255,.75);
+    color:#0b0f14;
+    box-shadow: 0 10px 18px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.85);
+  }
+
+  @media (max-width: 480px){
+    :root{ --pad: 10px; }
+    main{ padding-top:6px; padding-bottom:8px; gap:3px; }
+    .status-row{ gap:6px; }
     .status-row .pill{
-      padding:6px 10px;
-      font-size:13px;
-      white-space:nowrap;
-      text-align:center;
-      flex:0 0 auto;
+      padding:5px 7px;
+      font-size:12px;
+      flex:1 1 0;
+      min-width:0;
     }
-
-    /* Mobile portrait: tighten pills so MQTT/Gateway/BLE/RSSI fit on a single row */
-
-    /* Clock pill height match RESET */
-    #clock{ line-height:1; padding:6px 10px; }
-    @media (max-width: 480px){
-      .status-row{
-        gap:6px;
-      }
-      .status-row .pill{
-        padding:5px 7px;
-        font-size:12px;
-        flex:1 1 0;      /* equal-width chips */
-        min-width:0;     /* allow flexbox shrink without clipping layout */
-      }
-
-      #clock{ padding:6px 7px; line-height:1; }
-    }
-    #st-rssi{
-      border:1px solid rgba(59,130,246,.85);
-      box-shadow: 0 0 0 1px rgba(59,130,246,.30),
-                  0 0 16px rgba(59,130,246,.18),
-                  0 10px 22px rgba(0,0,0,.60),
-                  inset 0 1px 0 rgba(255,255,255,.14), inset 0 -6px 14px rgba(0,0,0,.40);
-    }
-
-
-    /* Section tint (clearer separation among 3 remotes) */
-    section:nth-of-type(1){
-      background: linear-gradient(180deg, rgba(59,130,246,.18), rgba(59,130,246,.10));
-    }
-    section:nth-of-type(2){
-      background: linear-gradient(180deg, rgba(34,197,94,.18), rgba(34,197,94,.10));
-    }
-    section:nth-of-type(3){
-      background: linear-gradient(180deg, rgba(168,85,247,.18), rgba(168,85,247,.10));
-    }
-    /* Log/Reset section (neutral) */
-    section:nth-of-type(4){
-      background: rgba(255,255,255,.07);
-    }
-
-
-
-    /* === UI Tuning (2026-01): clearer remote vs button separation + stronger 3D buttons === */
-    /* Card (remote) depth + clearer border */
-    main > section{
-      position: relative;
-      border-radius: 20px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: radial-gradient(1200px 420px at 18% 0%,
-                  rgba(255,255,255,.10),
-                  rgba(255,255,255,.05) 38%,
-                  rgba(0,0,0,.08) 100%);
-      box-shadow:
-        0 26px 60px rgba(0,0,0,.78),
-        inset 0 1px 0 rgba(255,255,255,.10),
-        inset 0 -14px 28px rgba(0,0,0,.22);
-    }
-    /* Accent rail per remote */
-    main > section::before{ display:none; }
-                    /* Buttons: higher contrast + stronger 3D */
-    button{
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,.20);
-      background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
-      color: #f6fbff;
-      text-shadow: 0 1px 0 rgba(0,0,0,.55);
-      box-shadow:
-        0 16px 34px rgba(0,0,0,.62),
-        0 6px 14px rgba(0,0,0,.38),
-        inset 0 1px 0 rgba(255,255,255,.28),
-        inset 0 -12px 20px rgba(0,0,0,.35);
-      transition: transform .08s ease, filter .08s ease, box-shadow .12s ease, border-color .12s ease;
-    }
-    button:focus-visible{
-      outline:none;
-      border-color: rgba(255,255,255,.42);
-      box-shadow:
-        0 18px 40px rgba(0,0,0,.66),
-        0 0 0 2px rgba(255,255,255,.14),
-        inset 0 1px 0 rgba(255,255,255,.30),
-        inset 0 -12px 20px rgba(0,0,0,.38);
-    }
-
-    /* Per-remote button tint (keeps sections distinct even with same base) */
-    main > section:nth-of-type(1) button:not(.logbtn){
-      background: linear-gradient(180deg, rgba(59,130,246,.28), rgba(59,130,246,.12));
-      border-color: rgba(59,130,246,.34);
-      box-shadow:
-        0 18px 38px rgba(0,0,0,.64),
-        0 10px 22px rgba(59,130,246,.10),
-        inset 0 1px 0 rgba(255,255,255,.26),
-        inset 0 -12px 22px rgba(0,0,0,.36);
-    }
-    main > section:nth-of-type(2) button:not(.logbtn){
-      background: linear-gradient(180deg, rgba(34,197,94,.26), rgba(34,197,94,.10));
-      border-color: rgba(34,197,94,.32);
-      box-shadow:
-        0 18px 38px rgba(0,0,0,.64),
-        0 10px 22px rgba(34,197,94,.10),
-        inset 0 1px 0 rgba(255,255,255,.26),
-        inset 0 -12px 22px rgba(0,0,0,.36);
-    }
-    main > section:nth-of-type(3) button:not(.logbtn){
-      background: linear-gradient(180deg, rgba(168,85,247,.26), rgba(168,85,247,.10));
-      border-color: rgba(168,85,247,.32);
-      box-shadow:
-        0 18px 38px rgba(0,0,0,.64),
-        0 10px 22px rgba(168,85,247,.10),
-        inset 0 1px 0 rgba(255,255,255,.26),
-        inset 0 -12px 22px rgba(0,0,0,.36);
-    }
-
-    /* Pressed: looks "pushed in" */
-    button:active, .btn:active, .logbtn:active{
-      transform: translateY(3px) scale(0.985);
-      filter: brightness(0.92) saturate(1.05);
-      box-shadow:
-        0 10px 22px rgba(0,0,0,.55),
-        inset 0 8px 18px rgba(0,0,0,.58),
-        inset 0 1px 0 rgba(255,255,255,.12) !important;
-    }
-    .pressed{
-      transform: translateY(3px) scale(0.985);
-      filter: brightness(0.92) saturate(1.05);
-      box-shadow:
-        0 10px 22px rgba(0,0,0,.55),
-        inset 0 8px 18px rgba(0,0,0,.58),
-        inset 0 1px 0 rgba(255,255,255,.12) !important;
-    }
-
-    /* Log buttons: keep distinct (neutral metal) */
-    .logbtn{
-      border-color: rgba(255,255,255,.22);
-      background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
-      box-shadow:
-        0 18px 36px rgba(0,0,0,.72),
-        inset 0 1px 0 rgba(255,255,255,.18),
-        inset 0 -10px 18px rgba(0,0,0,.42);
-    }
-
-
-
-/* === UI tweak: hide collector(gateway) pill (visual only) === */
-/* === Title styling === */
-.brand-title{
-  background: linear-gradient(90deg, #7dd3fc 0%, #a78bfa 45%, #34d399 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 1px 0 rgba(0,0,0,.35);
-}
-
-/* If there are any collector labels/rows in future markup, hide them safely */
-.collector, .collector-row, .collector-label, [data-role="collector"]{
-  display:none !important;
-}
-
-    /* UI tweak v3: remove left vertical bar + title emboss */
-    main > section::before{ display:none; }
-    main > section:nth-of-type(1)::before,
-    main > section:nth-of-type(2)::before,
-        /* Section titles */
-    main > section h2{
-      color: rgba(220,220,220,.96) !important;
-      opacity: 1 !important;
-      text-shadow:
-        0 1px 0 rgba(255,255,255,.14),
-        0 10px 22px rgba(0,0,0,.65);
-      letter-spacing: .2px;
-    }
-
-    /* Top brand title: bright gray with depth (no gradient) */
-    .brand-title{
-      background: none !important;
-      -webkit-background-clip: border-box !important;
-      background-clip: border-box !important;
-      color: rgba(225,225,225,.96) !important;
-      text-shadow:
-        0 1px 0 rgba(255,255,255,.16),
-        0 12px 26px rgba(0,0,0,.70) !important;
-    }
-
-
-
-    /* Log/Reset wrapper: remove outer outline so it fits mobile portrait */
-    main > section:last-of-type{
-      background: transparent !important;
-      border: 0 !important;
-      box-shadow: none !important;
-      padding: 0 !important;
-    }
-    main > section:last-of-type > h2{
-      margin: 0 0 10px !important;
-      padding: 0 !important;
-    }
-
-
-    /* === UI tweak v10: keep button sizes, adjust only spacing BETWEEN remotes for 800px portrait === */
-main{ gap:4px; } /* was 12px */
-@media (max-width: 480px){
-  :root{ --pad: 10px; }
-  main{ padding-top:6px; padding-bottom:8px; gap:3px; } /* tighter between remotes only */
-}
-/* restore Log/Reset button sizing (keep original feel) */
-.logbtn-left{
-      width:54px; padding:6px 0; text-align:center;
-      font-size:14px; line-height:1;
-      border:1px solid rgba(255,255,255,.24);
-      box-shadow: 0 12px 22px rgba(0,0,0,.65),
-                  inset 0 1px 0 rgba(255,255,255,.12), inset 0 -5px 12px rgba(0,0,0,.38);
-    }
-.logbtn-right{ width:110px; padding:6px 0; text-align:center; font-size:12px; line-height:1; letter-spacing:.3px; }
-
-
-
-
-/* === Day/Night theme toggle === */
-.iconbtn{
-  width:34px;
-  height:34px;
-  padding:0;
-  border-radius:999px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  border:1px solid rgba(255,255,255,.18);
-  background:rgba(255,255,255,.10);
-  color:#fff;
-  font-size:16px;
-  line-height:1;
-  box-shadow: 0 12px 22px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.16);
-}
-.iconbtn:active{
-  transform: translateY(2px) scale(0.985);
-  filter: brightness(0.92);
-}
-
-/* Day mode */
-body.day{
-  background:#f4f6fb;
-  color:#0b0f14;
-}
-body.day header{
-  background:rgba(244,246,251,.92);
-  border-bottom:1px solid rgba(0,0,0,.10);
-}
-body.day .brand-title{
-  color: rgba(18,18,18,.92) !important;
-  text-shadow: 0 1px 0 rgba(255,255,255,.75), 0 10px 22px rgba(0,0,0,.12) !important;
-}
-body.day .pill{
-  background:rgba(0,0,0,.06);
-  border:1px solid rgba(0,0,0,.10);
-  box-shadow: 0 10px 18px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.70);
-  color:#0b0f14;
-}
-body.day .pill.ok, body.day .pill.good{
-  background: linear-gradient(180deg,#ffffff,#eef3ff);
-  border:1px solid rgba(34,197,94,.85);
-  box-shadow: 0 0 0 1px rgba(34,197,94,.20), 0 0 14px rgba(34,197,94,.10), 0 10px 18px rgba(0,0,0,.10),
-              inset 0 1px 0 rgba(255,255,255,.85), inset 0 -6px 14px rgba(0,0,0,.06);
-  color:#0b0f14;
-  text-shadow:none;
-}
-body.day #st-rssi{
-  border:1px solid rgba(59,130,246,.85);
-  box-shadow: 0 0 0 1px rgba(59,130,246,.22),
-              0 0 12px rgba(59,130,246,.10),
-              0 10px 18px rgba(0,0,0,.10),
-              inset 0 1px 0 rgba(255,255,255,.85), inset 0 -6px 14px rgba(0,0,0,.06);
-}
-body.day main > section{
-  border:1px solid rgba(0,0,0,.10);
-  background: radial-gradient(1200px 420px at 18% 0%,
-              rgba(0,0,0,.03),
-              rgba(0,0,0,.02) 38%,
-              rgba(255,255,255,.60) 100%);
-  box-shadow: 0 18px 42px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.85), inset 0 -14px 28px rgba(0,0,0,.06);
-}
-body.day main > section h2{
-  color: rgba(20,20,20,.92) !important;
-  text-shadow: 0 1px 0 rgba(255,255,255,.70), 0 10px 22px rgba(0,0,0,.10);
-}
-body.day button, body.day .btn, body.day .logbtn{
-  border:1px solid rgba(0,0,0,.12);
-  background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(253,254,255,.94)); /* very subtle gradient */
-  color:#0b0f14;
-  text-shadow:none;
-  box-shadow: 0 1px 2px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.35); /* ~1/2 depth */
-  filter: saturate(0.70);
-}
-body.day button:active, body.day .btn:active, body.day .logbtn:active{
-  box-shadow: 0 1px 1px rgba(0,0,0,.05), inset 0 1px 2px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.28) !important; /* ~1/2 depth */
-  transform: translateY(1px);
-  filter: saturate(0.70) brightness(0.995);
-}
-body.day .log{
-  background:rgba(255,255,255,.70);
-  border:1px solid rgba(0,0,0,.10);
-  color:#0b0f14;
-}
-body.day .iconbtn{
-  border:1px solid rgba(0,0,0,.12);
-  background:rgba(255,255,255,.75);
-  color:#0b0f14;
-  box-shadow: 0 10px 18px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.85);
-}
-
-
-body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
-  box-shadow: 0 1px 3px rgba(0,0,0,.055), inset 0 1px 0 rgba(255,255,255,.35) !important; /* ~1/2 lift */
-  filter: saturate(0.70);
-}
+    #clock{ padding:6px 7px; line-height:1; }
+  }
 </style>
 </head>
 <body>
 <header>
-<div class="row" style="justify-content:space-between">
-<div class="brand-title" style="font-weight:800; letter-spacing:.2px; font-size:24px;">Universal RMC</div>
-<div class="row" style="gap:8px; align-items:center; justify-content:flex-end;">
-  <div class="pill" id="clock">--:--</div>
-  <button id="themeToggle" class="iconbtn" type="button" aria-label="주/야간 전환" title="주/야간 전환">☀️</button>
-</div>
-</div>
-<div class="row status-row" style="margin-top:6px">
-<div class="pill bad" id="st-mqtt">MQTT: --</div>
-<div class="pill bad" id="st-gw">Gateway: --</div>
-<div class="pill bad" id="st-ble">BLE: --</div>
-<div class="pill" id="st-rssi">RSSI: --</div>
-</div>
+  <div class="row" style="justify-content:space-between">
+    <div class="brand-title">Universal RMC</div>
+    <div class="row" style="gap:8px; align-items:center; justify-content:flex-end;">
+      <div class="pill" id="clock">--:--</div>
+      <button id="themeToggle" class="iconbtn" type="button" aria-label="주/야간 전환" title="주/야간 전환">☀️</button>
+    </div>
+  </div>
+  <div class="row status-row" style="margin-top:6px">
+    <div class="pill bad" id="st-mqtt">MQTT: --</div>
+    <div class="pill bad" id="st-gw">Gateway: --</div>
+    <div class="pill bad" id="st-ble">BLE: --</div>
+    <div class="pill" id="st-rssi">RSSI: --</div>
+  </div>
 </header>
+
 <main>
 <section>
-<h2>MiBox RMC</h2>
-<div class="grid">
-<button class="wide" onclick="sendMi('up')">▲</button>
-<button onclick="sendMi('left')">◀</button>
-<button onclick="sendMi('ok1')">OK</button>
-<button onclick="sendMi('right')">▶</button>
-<button class="wide" onclick="sendMi('down')">▼</button>
-<button onclick="sendMi('voldown')">VOL-</button>
-<button onclick="sendMi('mute')">MUTE</button>
-<button onclick="sendMi('volup')">VOL+</button>
-</div>
-<div style="height:6px"></div>
-<div class="grid2">
-<button onclick="sendMi('MB:2000')">⟵ BACK</button>
-<button onclick="sendMi('MB:0080')">HOME</button>
-</div>
+  <h2>MiBox RMC</h2>
+  <div class="grid">
+    <div class="wide dir-pad dir-up" id="btn-up" role="button" tabindex="0" aria-label="위" data-dir="up"></div>
+    <div class="dir-pad dir-left" id="btn-left" role="button" tabindex="0" aria-label="왼쪽" data-dir="left"></div>
+    <button id="btn-ok" type="button">OK</button>
+    <div class="dir-pad dir-right" id="btn-right" role="button" tabindex="0" aria-label="오른쪽" data-dir="right"></div>
+    <div class="wide dir-pad dir-down" id="btn-down" role="button" tabindex="0" aria-label="아래" data-dir="down"></div>
+
+    <button id="btn-voldown" type="button">VOL-</button>
+    <button id="btn-mute" type="button">MUTE</button>
+    <button id="btn-volup" type="button">VOL+</button>
+  </div>
+  <div style="height:6px"></div>
+  <div class="grid2">
+    <button id="btn-back" type="button">⟵ BACK</button>
+    <button id="btn-home" type="button">HOME</button>
+  </div>
 </section>
+
 <section>
-<h2>433 RMC</h2>
-<div class="grid2">
-<button onclick="send433('LIGHT')">LIGHT</button>
-<button onclick="send433('DOOR')">DOOR</button>
-<button onclick="send433('SPK1')">SPK1</button>
-<button onclick="send433('SPK2')">SPK2</button>
-</div>
+  <h2>433 RMC</h2>
+  <div class="grid2">
+    <button onclick="send433('LIGHT')" type="button">LIGHT</button>
+    <button onclick="send433('DOOR')" type="button">DOOR</button>
+    <button onclick="send433('SPK1')" type="button">SPK1</button>
+    <button onclick="send433('SPK2')" type="button">SPK2</button>
+  </div>
 </section>
+
 <section>
-<h2>IR RMC</h2>
-<div class="grid">
-<button onclick="sendIR('POWER1')">POWER1</button>
-<button onclick="sendIR('VOL-1')">VOL-</button>
-<button onclick="sendIR('VOL+1')">VOL+</button>
-<button onclick="sendIR('POWER2')">POWER2</button>
-<button onclick="sendIR('VOL-2')">VOL-</button>
-<button onclick="sendIR('VOL+2')">VOL+</button>
-</div>
+  <h2>IR RMC</h2>
+  <div class="grid">
+    <button onclick="sendIR('POWER1')" type="button">POWER1</button>
+    <button onclick="sendIR('VOL-1')" type="button">VOL-</button>
+    <button onclick="sendIR('VOL+1')" type="button">VOL+</button>
+    <button onclick="sendIR('POWER2')" type="button">POWER2</button>
+    <button onclick="sendIR('VOL-2')" type="button">VOL-</button>
+    <button onclick="sendIR('VOL+2')" type="button">VOL+</button>
+  </div>
 </section>
+
 <section>
-<h2 style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-<button class="logbtn logbtn-left" id="toggleLog" onclick="toggleLog()">🪲</button>
-<button class="logbtn logbtn-right" onclick="sendReset()">RESET</button>
-</h2>
-<div class="log" id="log" style="display:none"></div>
+  <h2 style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+    <button class="logbtn logbtn-left" id="toggleLog" onclick="toggleLog()" type="button">🪲</button>
+    <button class="logbtn logbtn-right" onclick="sendReset()" type="button">RESET</button>
+  </h2>
+  <div class="log" id="log" style="display:none"></div>
 </section>
 </main>
+
 <script>
-  // Topics (ESP32 firmware와 동일)
-  // IR: ESP32는 JSON {cmd}만 받음 (token 없음)
   const TOPIC = {
     miboxCmd: "tswell/mibox3/cmd",
     miboxStatus: "tswell/mibox3/status",
@@ -523,20 +473,22 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
     r433Cmd: "tswell/433home/cmd",
     r433Status: "tswell/433home/status",
     r433Log: "tswell/433home/log",
+    myhomeAnnounce: "pspiceman/myhome/announce",
   };
+
+  const HOLD_START_MS = 260;
+  const HOLD_REPEAT_MS = 100;
+  const GW_STALE_MS = 25000;
+  const BLE_STALE_MS = 6000;
+  const BLE_UI_OFF_CONFIRM_MS = 4000;
 
   let client = null;
   let gw = { wifi:null, mqtt:null, rssi:null };
-  let gwLastTs = 0; // ms timestamp of last 433 status update (gateway heartbeat)
-  const GW_STALE_MS = 7000; // 7s without 433 status => gateway offline
-
+  let gwLastTs = 0;
   let ble = null;
-  let bleLastTs = 0; // ms timestamp of last BLE status update
-  const BLE_STALE_MS = 6000; // stable: 6s timeout
-  let bleOffStart = 0; // UI-side OFF debounce start (ms)
-  const BLE_UI_OFF_CONFIRM_MS = 4000; // require 4s continuous OFF before showing OFF
+  let bleLastTs = 0;
+  let bleOffStart = 0;
   let mqttOk = false;
-
 
   const $ = (id)=>document.getElementById(id);
   const logEl = $("log");
@@ -552,29 +504,41 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
   }
 
   function addLog(line){
+    if (!logEl) return;
     const ts = new Date().toLocaleTimeString();
     logEl.innerText = `[${ts}] ${line}\n` + logEl.innerText;
   }
 
   function setPill(el, ok, text){
+    if (!el) return;
     el.classList.remove("ok","bad");
     el.classList.add(ok ? "ok":"bad");
     el.innerText = text;
   }
 
   function connect(){
+    if (typeof mqtt === "undefined") {
+      setPill(stMqtt, false, "MQTT: LIB ERR");
+      addLog("mqtt.min.js load failed");
+      return;
+    }
+
     const url = "wss://broker.hivemq.com:8884/mqtt";
     const cid = "web_" + Math.random().toString(16).slice(2);
+
     client = mqtt.connect(url, {
       clientId: cid,
       clean: true,
       reconnectPeriod: 1500,
       keepalive: 30,
+      connectTimeout: 8000
     });
 
-    client.on("connect", ()=>{ mqttOk = true; 
+    client.on("connect", ()=>{
+      mqttOk = true;
       setPill(stMqtt, true, "MQTT: OK");
       addLog("MQTT connected");
+
       client.subscribe(Object.values(TOPIC), { qos:0 }, (err)=>{
         if(err) addLog("SUB ERR: " + err.message);
         else addLog("Subscribed topics");
@@ -583,28 +547,40 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
 
     client.on("reconnect", ()=>{
       mqttOk = false;
-      setPill(stMqtt, false, "MQTT: --");
-      // MQTT가 흔들릴 때 Gateway/BLE는 판정 보류
+      setPill(stMqtt, false, "MQTT: RETRY");
       gwLastTs = 0;
       setPill(stGw, false, "Gateway: --");
       stRssi.innerText = "RSSI: --";
       bleLastTs = 0;
       setPill(stBle, false, "BLE: --");
+      addLog("MQTT reconnecting");
     });
 
     client.on("close", ()=>{
       mqttOk = false;
-      setPill(stMqtt, false, "MQTT: --");
+      setPill(stMqtt, false, "MQTT: CLOSE");
       gwLastTs = 0;
       setPill(stGw, false, "Gateway: --");
       stRssi.innerText = "RSSI: --";
       bleLastTs = 0;
       setPill(stBle, false, "BLE: --");
+      addLog("MQTT closed");
     });
-    client.on("error", (e)=> addLog("MQTT ERR: " + e.message));
+
+    client.on("offline", ()=>{
+      mqttOk = false;
+      setPill(stMqtt, false, "MQTT: OFF");
+      addLog("MQTT offline");
+    });
+
+    client.on("error", (e)=>{
+      setPill(stMqtt, false, "MQTT: ERR");
+      addLog("MQTT ERR: " + (e?.message || e));
+    });
 
     client.on("message", (topic, payload)=>{
       const msg = payload.toString();
+
       if(topic === TOPIC.r433Status){
         try{
           const j = JSON.parse(msg);
@@ -613,18 +589,30 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
           const ok = (j.wifi===1 && j.mqtt===1);
           setPill(stGw, ok, "Gateway: " + (ok ? "OK":"BAD"));
           stRssi.innerText = "RSSI: " + (j.rssi ?? "--");
-        }catch(e){}
+        }catch(e){
+          addLog("433 status parse fail");
+        }
+        return;
       }
+
+      if(topic === TOPIC.myhomeAnnounce){
+        try{
+          const j = JSON.parse(msg);
+          gwLastTs = Date.now();
+          setPill(stGw, true, "Gateway: OK");
+          stRssi.innerText = "RSSI: " + (j.rssi ?? "--");
+        }catch(e){
+          addLog("announce parse fail");
+        }
+        return;
+      }
+
       if(topic === TOPIC.miboxStatus){
         try{
           const j = JSON.parse(msg);
           const now = Date.now();
 
-          // If LWT/offline marker arrives (ts==0), don't flicker OFF immediately.
-          // Reset freshness and show unknown; stale checker will turn it to OFF if no heartbeat follows.
           if(j.ts === 0){
-            // LWT/offline marker can arrive briefly during reconnect.
-            // If we recently had a fresh heartbeat, ignore this marker to prevent flicker.
             if(bleLastTs && (now - bleLastTs) <= BLE_STALE_MS){
               return;
             }
@@ -635,40 +623,42 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
             return;
           }
 
-          // Ignore stale retained snapshots (prevents OFF/OK flicker on first load)
           if(j.ts && j.ts > 1700000000){
-            const age = now - (j.ts*1000);
+            const age = now - (j.ts * 1000);
             if(age > BLE_STALE_MS){
               return;
             }
           }
 
           const cand = !!j.ble;
-          bleLastTs = now; // use receive-time
+          bleLastTs = now;
 
           if(cand){
-            // ON: clear OFF debounce and reflect immediately
             bleOffStart = 0;
             ble = true;
             setPill(stBle, true, "BLE: OK");
           }else{
-            // OFF: debounce so brief BLE hiccups don't flip the UI
             if(!bleOffStart) bleOffStart = now;
             const offLongEnough = (now - bleOffStart) >= BLE_UI_OFF_CONFIRM_MS;
             if(offLongEnough){
               ble = false;
               setPill(stBle, false, "BLE: OFF");
             }else{
-              // keep previous OK during the debounce window
               ble = true;
               setPill(stBle, true, "BLE: OK");
             }
           }
-        }catch(e){}
+        }catch(e){
+          addLog("BLE status parse fail");
+        }
+        return;
       }
+
       if(topic === TOPIC.r433Log){
         addLog(msg);
+        return;
       }
+
       if(topic === TOPIC.irStatus){
         addLog("IR: " + msg);
       }
@@ -679,6 +669,7 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
     if(client){
       client.end(true);
       client = null;
+      mqttOk = false;
       setPill(stMqtt, false, "MQTT: --");
       gwLastTs = 0;
       setPill(stGw, false, "Gateway: --");
@@ -697,10 +688,9 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
     client.publish(topic, msg, { qos:0, retain:false });
   }
 
-  // --- Commands ---
   function sendReset(){
-    send433('reset');
-    addLog('RESET requested');
+    send433("reset");
+    addLog("RESET requested");
   }
 
   function sendMi(cmd){
@@ -712,41 +702,98 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
     pub(TOPIC.miboxCmd, cmd);
     addLog("MiBox cmd: " + cmd);
   }
-  function sendMiRaw(){
-    const v = $("mbraw").value.trim();
-    if(!v) return;
-    pub(TOPIC.miboxCmd, v);
-    addLog("MiBox cmd: " + v);
-  }
+
   function sendIR(cmd){
-    // ESP32는 JSON {cmd} 형태를 기대함
     const payload = JSON.stringify({ cmd });
     pub(TOPIC.irCmd, payload);
     addLog("IR cmd: " + cmd);
   }
-  function sendIRCustom(){
-    const cmd = $("ircustom").value.trim();
-    if(!cmd) return;
-    sendIR(cmd);
+
+  function send433(cmd){
+    pub(TOPIC.r433Cmd, cmd);
+    addLog("433 cmd: " + cmd);
   }
 
-  function send433(cmd){ pub(TOPIC.r433Cmd, cmd); addLog("433 cmd: " + cmd); }
+  function bindClick(id, cmd){
+    const el = $(id);
+    if(!el) return;
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      sendMi(cmd);
+    });
+    el.addEventListener("contextmenu", (e) => e.preventDefault(), {passive:false});
+    el.addEventListener("selectstart", (e) => e.preventDefault(), {passive:false});
+  }
 
-  // Gateway/BLE stale checker
+
+  // 방향키 연속 입력 로직 수정본
+  const dirHold = { active: false, el: null, cmd: null, touchId: null, holdTimer: null, repeatTimer: null };
+
+  function stopDirHold(e){
+    if(e && e.changedTouches && dirHold.touchId !== null){
+      let match = false; for(let t of e.changedTouches) if(t.identifier === dirHold.touchId) match = true;
+      if(!match) return;
+    }
+    clearTimeout(dirHold.holdTimer); clearTimeout(dirHold.repeatTimer);
+    if(dirHold.el) dirHold.el.classList.remove("pressed");
+    dirHold.active = false; dirHold.el = null; dirHold.cmd = null; dirHold.touchId = null;
+    document.body.style.overflow = ""; // 스크롤 잠금 해제
+  }
+
+  function startDirHold(el, cmd, meta){
+    stopDirHold();
+    dirHold.active = true; dirHold.el = el; dirHold.cmd = cmd;
+    dirHold.touchId = meta.touchId ?? null;
+    el.classList.add("pressed");
+    document.body.style.overflow = "hidden"; // 입력 중 스크롤 방지
+
+    sendMi(cmd);
+    dirHold.holdTimer = setTimeout(() => {
+      if(!dirHold.active) return;
+      (function repeat(){
+        if(!dirHold.active) return;
+        sendMi(cmd);
+        dirHold.repeatTimer = setTimeout(repeat, HOLD_REPEAT_MS);
+      })();
+    }, HOLD_START_MS);
+  }
+
+  function installDirPad(id, cmd){
+    const el = $(id); if(!el) return;
+    
+    el.addEventListener("touchstart", (e)=>{
+      if(e.cancelable) e.preventDefault();
+      startDirHold(el, cmd, { touchId: e.changedTouches[0].identifier });
+    }, {passive:false});
+
+    el.addEventListener("mousedown", (e)=>{
+      if(e.button !== 0 || (dirHold.active && dirHold.touchId !== null)) return;
+      startDirHold(el, cmd, {});
+    });
+    
+    el.oncontextmenu = (e)=>e.preventDefault();
+  }
+
+  function installDirectionGuards(){
+    document.addEventListener("touchmove", (e)=>{
+      if(dirHold.active && e.cancelable) e.preventDefault();
+    }, {passive:false});
+    document.addEventListener("touchend", stopDirHold);
+    document.addEventListener("touchcancel", stopDirHold);
+    document.addEventListener("mouseup", stopDirHold);
+  }
+
   setInterval(()=>{
-    // MQTT 끊김이면 전부 판정 보류
     if(!mqttOk){
       gwLastTs = 0;
       setPill(stGw, false, "Gateway: --");
       stRssi.innerText = "RSSI: --";
-
       ble = false;
       bleLastTs = 0;
       setPill(stBle, false, "BLE: --");
       return;
     }
 
-    // Gateway(433 status) freshness
     if(!gwLastTs){
       setPill(stGw, false, "Gateway: --");
       stRssi.innerText = "RSSI: --";
@@ -756,7 +803,6 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
         gwLastTs = 0;
         setPill(stGw, false, "Gateway: --");
         stRssi.innerText = "RSSI: --";
-        // Gateway 오프라인이면 BLE도 -- 로
         ble = false;
         bleLastTs = 0;
         setPill(stBle, false, "BLE: --");
@@ -764,7 +810,6 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
       }
     }
 
-    // BLE freshness (Gateway가 살아있을 때만 의미 있음)
     if(!bleLastTs){
       setPill(stBle, false, "BLE: --");
       return;
@@ -783,15 +828,13 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
     return mqttOk && !!ble && fresh;
   }
 
-  // Theme (Night default) — persisted in localStorage
-  const THEME_KEY = "urmc_theme"; // "night" | "day"
+  const THEME_KEY = "urmc_theme";
   const themeBtn = document.getElementById("themeToggle");
 
   function applyTheme(theme){
     const isDay = (theme === "day");
     document.body.classList.toggle("day", isDay);
     if(themeBtn){
-      // Show the *other* mode icon (tap to switch)
       themeBtn.textContent = isDay ? "🌙" : "☀️";
     }
     try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
@@ -802,7 +845,6 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
     applyTheme(cur === "day" ? "night" : "day");
   }
 
-  // Init theme early
   (function(){
     let saved = "night";
     try{ saved = localStorage.getItem(THEME_KEY) || "night"; }catch(e){}
@@ -814,32 +856,48 @@ body.day button:hover, body.day .btn:hover, body.day .logbtn:hover{
     themeBtn.addEventListener("click", toggleTheme);
   }
 
+  window.addEventListener("load", ()=>{
+    $("clock").innerText = new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+    connect();
+    installDirectionGuards();
 
-window.addEventListener('load', ()=>{ connect(); });
+    installDirPad("btn-up", "up");
+    installDirPad("btn-down", "down");
+    installDirPad("btn-left", "left");
+    installDirPad("btn-right", "right");
 
-  // Clock
-  setInterval(()=>{$("clock").innerText=new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});}, 1000);
+    bindClick("btn-ok", "ok1");
+    bindClick("btn-voldown", "voldown");
+    bindClick("btn-mute", "mute");
+    bindClick("btn-volup", "volup");
+    bindClick("btn-back", "MB:2000");
+    bindClick("btn-home", "MB:0080");
+  });
+
+  window.addEventListener("beforeunload", ()=>{ try{ disconnect(); }catch(e){} });
+
+  setInterval(()=>{
+    $("clock").innerText = new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+  }, 1000);
 </script>
+
 <script>
-  // Visual pressed feedback for touch/click
   function addPressedFeedback(){
-    document.querySelectorAll('button').forEach(btn=>{
-      const down = ()=>btn.classList.add('pressed');
-      const up = ()=>btn.classList.remove('pressed');
-      btn.addEventListener('mousedown', down);
-      btn.addEventListener('touchstart', down, {passive:true});
-      btn.addEventListener('mouseup', up);
-      btn.addEventListener('mouseleave', up);
-      btn.addEventListener('touchend', up);
-      btn.addEventListener('touchcancel', up);
-      // for programmatic clicks: briefly flash
-      btn.addEventListener('click', ()=>{
-        btn.classList.add('pressed');
-        setTimeout(()=>btn.classList.remove('pressed'), 120);
-      });
+    document.querySelectorAll("button:not(.dir-pad)").forEach(btn=>{
+      const down = ()=>btn.classList.add("pressed");
+      const up = ()=>btn.classList.remove("pressed");
+      btn.addEventListener("mousedown", down);
+      btn.addEventListener("mouseup", up);
+      btn.addEventListener("mouseleave", up);
+      btn.addEventListener("touchstart", down, {passive:true});
+      btn.addEventListener("touchend", up, {passive:true});
+      btn.addEventListener("touchcancel", up, {passive:true});
+      btn.addEventListener("selectstart", (e)=>e.preventDefault(), {passive:false});
+      btn.addEventListener("dragstart", (e)=>e.preventDefault(), {passive:false});
+      btn.addEventListener("contextmenu", (e)=>e.preventDefault(), {passive:false});
     });
   }
-  window.addEventListener('DOMContentLoaded', addPressedFeedback);
+  window.addEventListener("DOMContentLoaded", addPressedFeedback);
 </script>
 </body>
 </html>
