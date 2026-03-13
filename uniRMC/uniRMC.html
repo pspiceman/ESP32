@@ -244,7 +244,7 @@ if (typeof mqtt === "undefined") {
 
   /* 모바일 전용 방향키 패드: button 대신 div */
   .dir-pad{
-    min-height:58px;
+    min-height:46px;
     border-radius:16px;
     border:1px solid rgba(255,255,255,.20);
     background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
@@ -279,24 +279,24 @@ if (typeof mqtt === "undefined") {
   }
 
   .dir-up::before{
-    border-left:14px solid transparent;
-    border-right:14px solid transparent;
-    border-bottom:20px solid currentColor;
+    border-left:10px solid transparent;
+    border-right:10px solid transparent;
+    border-bottom:14px solid currentColor;
   }
   .dir-down::before{
-    border-left:14px solid transparent;
-    border-right:14px solid transparent;
-    border-top:20px solid currentColor;
+    border-left:10px solid transparent;
+    border-right:10px solid transparent;
+    border-top:14px solid currentColor;
   }
   .dir-left::before{
-    border-top:14px solid transparent;
-    border-bottom:14px solid transparent;
-    border-right:20px solid currentColor;
+    border-top:10px solid transparent;
+    border-bottom:10px solid transparent;
+    border-right:14px solid currentColor;
   }
   .dir-right::before{
-    border-top:14px solid transparent;
-    border-bottom:14px solid transparent;
-    border-left:20px solid currentColor;
+    border-top:10px solid transparent;
+    border-bottom:10px solid transparent;
+    border-left:14px solid currentColor;
   }
 
   body.day{
@@ -477,7 +477,7 @@ if (typeof mqtt === "undefined") {
   };
 
   const HOLD_START_MS = 260;
-  const HOLD_REPEAT_MS = 95;
+  const HOLD_REPEAT_MS = 100;
   const GW_STALE_MS = 25000;
   const BLE_STALE_MS = 6000;
   const BLE_UI_OFF_CONFIRM_MS = 4000;
@@ -726,312 +726,61 @@ if (typeof mqtt === "undefined") {
   }
 
 
-  const dirHold = {
-    active: false,
-    el: null,
-    cmd: null,
-    pointerId: null,
-    touchId: null,
-    holdTimer: null,
-    repeatTimer: null,
-    shield: null
-  };
-
-  function clearDirSelection(){
-    const sel = window.getSelection && window.getSelection();
-    if (sel && sel.removeAllRanges) {
-      try { sel.removeAllRanges(); } catch(_) {}
-    }
-    try {
-      const activeEl = document.activeElement;
-      if (activeEl && activeEl !== document.body && activeEl.blur) activeEl.blur();
-    } catch(_) {}
-  }
-
-  function suppressDirEvent(e, stop = true){
-    if (!e) return false;
-    if (e.cancelable) e.preventDefault();
-    if (stop) {
-      if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-      else if (e.stopPropagation) e.stopPropagation();
-    }
-    clearDirSelection();
-    return false;
-  }
-
-  function clearDirTimers(){
-    if (dirHold.holdTimer) {
-      clearTimeout(dirHold.holdTimer);
-      dirHold.holdTimer = null;
-    }
-    if (dirHold.repeatTimer) {
-      clearTimeout(dirHold.repeatTimer);
-      dirHold.repeatTimer = null;
-    }
-  }
-
-  function destroyPressShield(){
-    if (dirHold.shield && dirHold.shield.parentNode) {
-      dirHold.shield.parentNode.removeChild(dirHold.shield);
-    }
-    dirHold.shield = null;
-  }
+  // 방향키 연속 입력 로직 수정본
+  const dirHold = { active: false, el: null, cmd: null, touchId: null, holdTimer: null, repeatTimer: null };
 
   function stopDirHold(e){
-    if (e && e.type && e.type.startsWith("pointer") && dirHold.pointerId != null && e.pointerId != null && e.pointerId !== dirHold.pointerId) {
-      return false;
+    if(e && e.changedTouches && dirHold.touchId !== null){
+      let match = false; for(let t of e.changedTouches) if(t.identifier === dirHold.touchId) match = true;
+      if(!match) return;
     }
-
-    if (e && e.changedTouches && dirHold.touchId != null) {
-      let matched = false;
-      for (const t of e.changedTouches) {
-        if (t.identifier === dirHold.touchId) {
-          matched = true;
-          break;
-        }
-      }
-      if (!matched) return false;
-    }
-
-    if (e) suppressDirEvent(e);
-
-    clearDirTimers();
-
-    if (dirHold.el) {
-      dirHold.el.classList.remove("pressed");
-      if (dirHold.pointerId != null && dirHold.el.releasePointerCapture) {
-        try { dirHold.el.releasePointerCapture(dirHold.pointerId); } catch(_) {}
-      }
-    }
-
-    dirHold.active = false;
-    dirHold.el = null;
-    dirHold.cmd = null;
-    dirHold.pointerId = null;
-    dirHold.touchId = null;
-
-    destroyPressShield();
-    document.body.classList.remove("holding-dir");
-    clearDirSelection();
-    return false;
+    clearTimeout(dirHold.holdTimer); clearTimeout(dirHold.repeatTimer);
+    if(dirHold.el) dirHold.el.classList.remove("pressed");
+    dirHold.active = false; dirHold.el = null; dirHold.cmd = null; dirHold.touchId = null;
+    document.body.style.overflow = ""; // 스크롤 잠금 해제
   }
 
-  function ensurePressShield(){
-    if (dirHold.shield) return dirHold.shield;
-
-    const shield = document.createElement("div");
-    shield.id = "press-shield";
-    shield.setAttribute("aria-hidden", "true");
-    shield.tabIndex = -1;
-
-    const eat = (e) => suppressDirEvent(e);
-
-    ["contextmenu","selectstart","dragstart","beforeinput","copy","cut","auxclick"].forEach((name) => {
-      shield.addEventListener(name, eat, {passive:false});
-    });
-
-    shield.addEventListener("touchend", stopDirHold, {passive:false});
-    shield.addEventListener("touchcancel", stopDirHold, {passive:false});
-    shield.addEventListener("touchmove", eat, {passive:false});
-    shield.addEventListener("pointerup", stopDirHold, {passive:false});
-    shield.addEventListener("pointercancel", stopDirHold, {passive:false});
-    shield.addEventListener("pointermove", eat, {passive:false});
-    shield.addEventListener("mouseup", stopDirHold, {passive:false});
-
-    document.body.appendChild(shield);
-    dirHold.shield = shield;
-    return shield;
-  }
-
-  function queueDirRepeat(){
-    if (!dirHold.active || !dirHold.cmd) return;
-    sendMi(dirHold.cmd);
-    dirHold.repeatTimer = window.setTimeout(queueDirRepeat, HOLD_REPEAT_MS);
-  }
-
-  function startDirHold(el, cmd, meta = {}){
+  function startDirHold(el, cmd, meta){
     stopDirHold();
-    clearDirSelection();
-
-    dirHold.active = true;
-    dirHold.el = el;
-    dirHold.cmd = cmd;
-    dirHold.pointerId = (meta.pointerId != null) ? meta.pointerId : null;
-    dirHold.touchId = (meta.touchId != null) ? meta.touchId : null;
-
-    document.body.classList.add("holding-dir");
-    ensurePressShield();
+    dirHold.active = true; dirHold.el = el; dirHold.cmd = cmd;
+    dirHold.touchId = meta.touchId ?? null;
     el.classList.add("pressed");
-
-    if (dirHold.pointerId != null && el.setPointerCapture) {
-      try { el.setPointerCapture(dirHold.pointerId); } catch(_) {}
-    }
+    document.body.style.overflow = "hidden"; // 입력 중 스크롤 방지
 
     sendMi(cmd);
-    dirHold.holdTimer = window.setTimeout(() => {
-      if (!dirHold.active) return;
-      queueDirRepeat();
+    dirHold.holdTimer = setTimeout(() => {
+      if(!dirHold.active) return;
+      (function repeat(){
+        if(!dirHold.active) return;
+        sendMi(cmd);
+        dirHold.repeatTimer = setTimeout(repeat, HOLD_REPEAT_MS);
+      })();
     }, HOLD_START_MS);
   }
 
   function installDirPad(id, cmd){
-    const el = $(id);
-    if(!el) return;
+    const el = $(id); if(!el) return;
+    
+    el.addEventListener("touchstart", (e)=>{
+      if(e.cancelable) e.preventDefault();
+      startDirHold(el, cmd, { touchId: e.changedTouches[0].identifier });
+    }, {passive:false});
 
-    const swallow = (e) => suppressDirEvent(e);
-    let lastTouchStartAt = 0;
-    let touchFallbackTimer = null;
-
-    const cancelTouchFallback = () => {
-      if (touchFallbackTimer) {
-        clearTimeout(touchFallbackTimer);
-        touchFallbackTimer = null;
-      }
-    };
-
-    const onPointerDown = (e) => {
-      if (e.pointerType === "touch") {
-        suppressDirEvent(e);
-        cancelTouchFallback();
-        const pointerId = e.pointerId;
-        touchFallbackTimer = window.setTimeout(() => {
-          touchFallbackTimer = null;
-          if ((Date.now() - lastTouchStartAt) <= 80) return;
-          startDirHold(el, cmd, { pointerId });
-        }, 30);
-        return false;
-      }
-
-      if (e.pointerType === "mouse" && e.button !== 0) return false;
-      suppressDirEvent(e);
-      cancelTouchFallback();
-      startDirHold(el, cmd, { pointerId: e.pointerId });
-      return false;
-    };
-
-    const onTouchStart = (e) => {
-      const t = e.changedTouches && e.changedTouches[0];
-      lastTouchStartAt = Date.now();
-      cancelTouchFallback();
-      suppressDirEvent(e);
-      startDirHold(el, cmd, { touchId: t ? t.identifier : null });
-      return false;
-    };
-
-    const onMouseDown = (e) => {
-      if (e.button !== 0) return false;
-      suppressDirEvent(e);
-      cancelTouchFallback();
-      startDirHold(el, cmd, {});
-      return false;
-    };
-
-    el.addEventListener("touchstart", onTouchStart, {passive:false});
-
-    if (window.PointerEvent) {
-      el.addEventListener("pointerdown", onPointerDown, {passive:false});
-    } else {
-      el.addEventListener("mousedown", onMouseDown, {passive:false});
-    }
-
-    ["click","dblclick","contextmenu","selectstart","dragstart","beforeinput","copy","cut","auxclick"].forEach((name) => {
-      el.addEventListener(name, swallow, {passive:false});
-    });
-
-    el.addEventListener("keydown", (e) => {
-      if (e.key !== "Enter" && e.key !== " ") return;
-      suppressDirEvent(e);
-      cancelTouchFallback();
+    el.addEventListener("mousedown", (e)=>{
+      if(e.button !== 0 || (dirHold.active && dirHold.touchId !== null)) return;
       startDirHold(el, cmd, {});
     });
-
-    el.addEventListener("keyup", (e) => {
-      if (e.key !== "Enter" && e.key !== " ") return;
-      cancelTouchFallback();
-      stopDirHold(e);
-    });
-
-    window.addEventListener("blur", cancelTouchFallback, {passive:true});
-    window.addEventListener("pagehide", cancelTouchFallback, {passive:true});
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) cancelTouchFallback();
-    }, {passive:true});
-
-    el.oncontextmenu = () => false;
-    el.onselectstart = () => false;
-    el.ondragstart = () => false;
+    
+    el.oncontextmenu = (e)=>e.preventDefault();
   }
 
   function installDirectionGuards(){
-    const shouldBlock = (target) => {
-      if (document.body.classList.contains("holding-dir")) return true;
-      return !!(target && target.closest(".dir-pad"));
-    };
-
-    const guard = (e) => {
-      if (!shouldBlock(e.target)) return;
-      if (e.cancelable) e.preventDefault();
-      clearDirSelection();
-      return false;
-    };
-
-    ["contextmenu","selectstart","dragstart","beforeinput","copy","cut","auxclick"].forEach((name) => {
-      document.addEventListener(name, guard, {passive:false, capture:true});
-    });
-
-    ["touchstart","touchmove","touchend","touchcancel"].forEach((name) => {
-      document.addEventListener(name, (e) => {
-        if (!shouldBlock(e.target)) return;
-        if (e.cancelable) e.preventDefault();
-        clearDirSelection();
-      }, {passive:false, capture:true});
-    });
-
-    document.addEventListener("selectionchange", clearDirSelection, {passive:true});
-
-    document.addEventListener("pointermove", (e) => {
-      if (!dirHold.active) return;
-      if (dirHold.pointerId != null && e.pointerId != null && e.pointerId !== dirHold.pointerId) return;
-      if (e.cancelable) e.preventDefault();
-      clearDirSelection();
-    }, {passive:false, capture:true});
-
-    document.addEventListener("pointerup", (e) => {
-      if (!dirHold.active) return;
-      stopDirHold(e);
-    }, {passive:false, capture:true});
-
-    document.addEventListener("pointercancel", (e) => {
-      if (!dirHold.active) return;
-      stopDirHold(e);
-    }, {passive:false, capture:true});
-
-    document.addEventListener("touchend", (e) => {
-      if (!dirHold.active) return;
-      stopDirHold(e);
-    }, {passive:false, capture:true});
-
-    document.addEventListener("touchcancel", (e) => {
-      if (!dirHold.active) return;
-      stopDirHold(e);
-    }, {passive:false, capture:true});
-
-    document.addEventListener("mouseup", (e) => {
-      if (!dirHold.active) return;
-      stopDirHold(e);
-    }, {passive:false, capture:true});
-
-    const resetPressed = () => {
-      stopDirHold();
-      document.querySelectorAll(".dir-pad.pressed").forEach((el) => el.classList.remove("pressed"));
-      clearDirSelection();
-    };
-
-    window.addEventListener("blur", resetPressed, {passive:true});
-    window.addEventListener("pagehide", resetPressed, {passive:true});
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) resetPressed();
-    }, {passive:true});
+    document.addEventListener("touchmove", (e)=>{
+      if(dirHold.active && e.cancelable) e.preventDefault();
+    }, {passive:false});
+    document.addEventListener("touchend", stopDirHold);
+    document.addEventListener("touchcancel", stopDirHold);
+    document.addEventListener("mouseup", stopDirHold);
   }
 
   setInterval(()=>{
