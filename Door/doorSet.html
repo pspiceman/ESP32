@@ -471,10 +471,14 @@ body.night-mode .inline-value { color: #e5e7eb; }
   </style>
 
   <!-- PWA -->
-  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="manifest" href="./manifest_fixed.webmanifest">
   <meta name="theme-color" content="#0b1020">
-  <link rel="icon" href="./doorCOntrol.png" type="image/png">
-  <link rel="apple-touch-icon" href="./doorCOntrol.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Door Control">
+  <link rel="icon" sizes="192x192" href="./door-icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
 
 </head>
 
@@ -1002,8 +1006,13 @@ const originalLedLabelNode = ledBtnNode.textContent;
 
   <script>
     if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw.js");
+      window.addEventListener("load", async () => {
+        try {
+          await navigator.serviceWorker.register("./sw_fixed.js");
+          console.log("Service worker registered");
+        } catch (err) {
+          console.warn("Service worker registration failed", err);
+        }
       });
     }
   </script>

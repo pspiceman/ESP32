@@ -1,9 +1,11 @@
-const CACHE_NAME = "door-control-pwa-v1";
+const CACHE_NAME = "door-control-pwa-v2";
 const ASSETS = [
   "./",
-  "./door.html",
-  "./manifest.webmanifest",
-  "./doorCOntrol.png"
+  "./doorSet_pwa_fixed.html",
+  "./manifest_fixed.webmanifest",
+  "./door-icon-192.png",
+  "./door-icon-512.png",
+  "./apple-touch-icon.png"
 ];
 
 self.addEventListener("install", (event) => {
