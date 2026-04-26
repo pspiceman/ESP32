@@ -1,11 +1,36 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
-#include "esp_wifi.h"
-#include <esp_bt.h>
-#include <esp_gap_ble_api.h>
+
+// ESP32 family compatibility:
+// Some ESP32 variants/cores, especially BLE-only targets such as ESP32-C3/S3/C6,
+// do not expose esp_bt.h or Classic-BT memory-release APIs. Guard these includes
+// so the sketch still compiles when BLEKeyboard is supported.
+#if defined(ESP32) && __has_include("esp_wifi.h")
+  #include "esp_wifi.h"
+  #define HAS_ESP_WIFI_H 1
+#endif
+
+#if defined(ESP32) && __has_include(<esp_bt.h>)
+  #include <esp_bt.h>
+  #define HAS_ESP_BT_H 1
+#endif
+
+#if defined(ESP32) && __has_include(<esp_gap_ble_api.h>)
+  #include <esp_gap_ble_api.h>
+  #define HAS_ESP_GAP_BLE_API_H 1
+#endif
 
 #include <BleKeyboard.h>
+
+// Fallback USB HID key codes used by BleKeyboard/Keyboard-style libraries.
+// Some library/core combinations do not expose KEY_ESC or KEY_HOME names.
+#ifndef KEY_ESC
+  #define KEY_ESC 0xB1
+#endif
+#ifndef KEY_HOME
+  #define KEY_HOME 0xD2
+#endif
 
 #include <IRremoteESP8266.h>
 #include <IRrecv.h>
@@ -55,8 +80,12 @@ RCSwitch rf = RCSwitch();
 // ===================== Timing / intervals =====================
 static const uint32_t WIFI_RETRY_INTERVAL_MS = 5000;
 static const uint32_t MQTT_RETRY_INTERVAL_MS = 3000;
-static const uint32_t BLE_DISCONNECT_GRACE_MS = 3500;
-static const uint32_t BLE_HARD_RECOVER_MS = 300000UL; // 5 min hard-recover guard
+static const uint32_t BLE_STATUS_INTERVAL_MS = 1000;
+static const uint32_t BLE_HEARTBEAT_INTERVAL_MS = 2000;
+static const uint32_t BLE_FIRST_RECOVER_MS = 45000UL;   // no first connection for 45s -> soft recover
+static const uint32_t BLE_HARD_RECOVER_MS = 300000UL;   // 5 min disconnected after a real link -> soft recover
+static const uint32_t RESET_SETTLE_MS = 700;
+static const uint32_t RESET_GUARD_MS  = 3000;
 
 uint32_t nextWiFiTryMs = 0;
 uint32_t nextMQTTTryMs = 0;
@@ -64,8 +93,12 @@ uint32_t last433StatusMs = 0;
 uint32_t lastBleStatusMs = 0;
 uint32_t lastBleHeartbeatMs = 0;
 bool bleStableState = false;
-uint32_t bleLastOkMs = 0;
+uint32_t bleBootMs = 0;
 uint32_t bleLastRealConnMs = 0;
+bool resetPending = false;
+uint32_t resetAtMs = 0;
+uint32_t lastResetRequestMs = 0;
+String resetReason = "";
 
 // Notify LED timer
 bool notifyActive = false;
@@ -199,37 +232,74 @@ void publish433Log(const String& msg){
   if(mqtt.connected()) mqtt.publish(TOPIC_433_LOG, msg.c_str(), false);
 }
 
+void publishBleSnapshot(bool connected){
+  bleStableState = connected;
+  // Always publish the current uptime timestamp, even when BLE is disconnected.
+  // This makes both connect and disconnect events traceable in MQTT logs.
+  uint32_t ts = (uint32_t)(millis() / 1000UL);
+  String payload = String("{\"ble\":") + (connected ? "true" : "false") +
+                   ",\"ts\":" + ts + "}";
+  if(mqtt.connected()) mqtt.publish(TOPIC_MIBOX_STATUS, payload.c_str(), true);
+}
+
+void requestReset(const String& reason){
+  uint32_t now = millis();
+  if(resetPending){
+    publish433Log("RESET already pending");
+    return;
+  }
+  if((now - lastResetRequestMs) < RESET_GUARD_MS){
+    publish433Log("RESET ignored (guard window)");
+    return;
+  }
+  lastResetRequestMs = now;
+  resetPending = true;
+  resetAtMs = now + RESET_SETTLE_MS;
+  resetReason = reason;
+
+  publish433Log("RESET scheduled: " + reason);
+  publishBleSnapshot(false);
+  publish433Status();
+  if(mqtt.connected()) mqtt.loop();
+}
+
+void serviceResetIfPending(){
+  if(!resetPending) return;
+  if((int32_t)(millis() - resetAtMs) < 0) return;
+
+  publish433Log("RESET now: " + resetReason);
+  publishBleSnapshot(false);
+  publish433Status();
+
+  uint32_t flushUntil = millis() + 120;
+  while(mqtt.connected() && (int32_t)(millis() - flushUntil) < 0){
+    mqtt.loop();
+    delay(2);
+  }
+
+  if(mqtt.connected()) mqtt.disconnect();
+  delay(40);
+  ESP.restart();
+}
+
 void publishBleStatus(){
-  if(millis() - lastBleStatusMs < 1000) return;
-  lastBleStatusMs = millis();
-
-  const unsigned long nowMs = millis();
+  const uint32_t now = millis();
   bool real = bleKeyboard.isConnected();
-  if(real) bleLastOkMs = nowMs;
 
-  bool eff = real;
-  if(!eff && bleLastOkMs > 0 && (nowMs - bleLastOkMs) < BLE_DISCONNECT_GRACE_MS){
-    eff = true;
-  }
+  if(real) bleLastRealConnMs = now;
 
-  if(eff != bleStableState){
-    bleStableState = eff;
-    uint32_t ts = (uint32_t)(millis() / 1000);
-    String payload = String("{\"ble\":") + (bleStableState ? "true" : "false") +
-                     ",\"ts\":" + ts + "}";
-    if(mqtt.connected()) mqtt.publish(TOPIC_MIBOX_STATUS, payload.c_str(), true);
+  bool needEdgePublish = (real != bleStableState);
+  bool needHeartbeat = (now - lastBleHeartbeatMs) >= BLE_HEARTBEAT_INTERVAL_MS;
+  bool needRateTick = (now - lastBleStatusMs) >= BLE_STATUS_INTERVAL_MS;
 
-    Serial.printf("[BLE] real=%d eff=%d lastOkAgo=%lu ms\n",
-                  real ? 1 : 0, eff ? 1 : 0,
-                  (bleLastOkMs == 0) ? 0UL : (unsigned long)(nowMs - bleLastOkMs));
-  }
+  if(needEdgePublish || (needHeartbeat && needRateTick)){
+    publishBleSnapshot(real);
+    lastBleStatusMs = now;
+    if(needHeartbeat) lastBleHeartbeatMs = now;
 
-  if(millis() - lastBleHeartbeatMs >= 2000){
-    lastBleHeartbeatMs = millis();
-    uint32_t ts = (uint32_t)(millis() / 1000);
-    String payload = String("{\"ble\":") + (bleStableState ? "true" : "false") +
-                     ",\"ts\":" + ts + "}";
-    if(mqtt.connected()) mqtt.publish(TOPIC_MIBOX_STATUS, payload.c_str(), true);
+    Serial.printf("[BLE] state=%d lastRealAgo=%lu ms\n",
+                  real ? 1 : 0,
+                  (bleLastRealConnMs == 0) ? 0UL : (unsigned long)(now - bleLastRealConnMs));
   }
 }
 
@@ -237,27 +307,41 @@ void bleHealthCheck(){
   static uint32_t lastRecoverAttemptMs = 0;
   static uint8_t recoverCount = 0;
 
+  const uint32_t now = millis();
   if(bleKeyboard.isConnected()){
-    bleLastRealConnMs = millis();
+    bleLastRealConnMs = now;
     recoverCount = 0;
     return;
   }
 
-  if(bleLastRealConnMs == 0) return;
+  bool shouldRecover = false;
+  const char* reason = "";
 
-  const uint32_t now = millis();
-  if((now - bleLastRealConnMs) < BLE_HARD_RECOVER_MS) return;
+  if(bleLastRealConnMs == 0){
+    if((now - bleBootMs) >= BLE_FIRST_RECOVER_MS){
+      shouldRecover = true;
+      reason = "no initial BLE connection";
+    }
+  } else if((now - bleLastRealConnMs) >= BLE_HARD_RECOVER_MS){
+    shouldRecover = true;
+    reason = "long BLE disconnect";
+  }
 
-  uint32_t backoffMs = 60000UL << (recoverCount < 4 ? recoverCount : 4);
-  if(now - lastRecoverAttemptMs < backoffMs) return;
+  if(!shouldRecover) return;
 
-  Serial.printf("[BLE] long disconnect (%lus) -> soft recover\n",
-                (unsigned long)((now - bleLastRealConnMs) / 1000UL));
+  uint32_t backoffMs = 30000UL << (recoverCount < 4 ? recoverCount : 4);
+  if((now - lastRecoverAttemptMs) < backoffMs) return;
+
+  Serial.printf("[BLE] recover: %s (backoff=%lu ms)\n", reason, (unsigned long)backoffMs);
+  publish433Log(String("BLE recover: ") + reason);
 
   bleKeyboard.end();
-  delay(50);
+  delay(80);
   bleKeyboard.begin();
+  delay(120);
+  bleKeyboard.setBatteryLevel(100);
 
+  publishBleSnapshot(false);
   lastRecoverAttemptMs = now;
   if(recoverCount < 10) recoverCount++;
 }
@@ -270,7 +354,9 @@ void startWiFiIfNeeded(){
   nextWiFiTryMs = millis() + WIFI_RETRY_INTERVAL_MS;
 
   WiFi.mode(WIFI_STA);
+#if defined(HAS_ESP_WIFI_H)
   esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+#endif
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.println("[WiFi] begin() retry (PS_MIN_MODEM)");
 }
@@ -303,7 +389,7 @@ void startMQTTIfNeeded(){
 
 // ===================== Command processors =====================
 void processBleCmdIfAny(){
-  if(!pendingBleCmd) return;
+  if(!pendingBleCmd || resetPending) return;
   pendingBleCmd = false;
 
   String msg = pendingBleMsg;
@@ -312,8 +398,14 @@ void processBleCmdIfAny(){
 
   Serial.printf("[MiBox][RUN] %s\n", msg.c_str());
 
+  if(msg=="reset"){
+    requestReset("MiBox cmd reset");
+    return;
+  }
+
   if(!bleKeyboard.isConnected()){
     Serial.println("[BLE] NOT CONNECTED -> ignore");
+    publishBleSnapshot(false);
     return;
   }
 
@@ -322,14 +414,24 @@ void processBleCmdIfAny(){
   else if (msg=="left")  tapKey(KEY_LEFT_ARROW);
   else if (msg=="right") tapKey(KEY_RIGHT_ARROW);
 
-  // 원본과 동일한 볼륨 처리
-  else if (msg=="volup")   bleKeyboard.write(KEY_MEDIA_VOLUME_UP);
-  else if (msg=="voldown") bleKeyboard.write(KEY_MEDIA_VOLUME_DOWN);
-  else if (msg=="mute")    bleKeyboard.write(KEY_MEDIA_MUTE);
+  // MiBox / Android TV BLE keys.
+  // VOL+/VOL-/MUTE are restored to the exact original working method from uniRMC(14).ino.
+  // Extra aliases are accepted for panel-style command labels.
+  else if (msg=="volup" || msg=="vol+" || msg=="volumeup" || msg=="volume_up" || msg=="volume+")
+    bleKeyboard.write(KEY_MEDIA_VOLUME_UP);
+  else if (msg=="voldown" || msg=="vol-" || msg=="volumedown" || msg=="volume_down" || msg=="volume-")
+    bleKeyboard.write(KEY_MEDIA_VOLUME_DOWN);
+  else if (msg=="mute" || msg=="volmute" || msg=="volume_mute" || msg=="vol_mute")
+    bleKeyboard.write(KEY_MEDIA_MUTE);
 
-  else if (msg=="ok1")     tapKey(KEY_RETURN);
+  // BACK/HOME are sent as normal keyboard HID keys, which Android TV/MiBox usually maps correctly.
+  // Raw consumer usages are still available through mb:0224 and mb:0223 if needed.
+  else if (msg=="back" || msg=="return" || msg=="prev")
+    tapKey(KEY_ESC);
+  else if (msg=="home" || msg=="homepage" || msg=="launcher")
+    tapKey(KEY_HOME);
 
-  else if (msg=="reset")   ESP.restart();
+  else if (msg=="ok1" || msg=="ok" || msg=="enter") tapKey(KEY_RETURN);
 
   else if (msg.startsWith("mb:")){
     uint16_t v = hexToU16(msg.substring(3));
@@ -345,7 +447,7 @@ void processBleCmdIfAny(){
 }
 
 void processIrCmdIfAny(){
-  if(!pendingIrCmd) return;
+  if(!pendingIrCmd || resetPending) return;
   pendingIrCmd = false;
 
   String msg = pendingIrMsgJson;
@@ -392,11 +494,11 @@ void processRfCmdIfAny(){
   publish433Log("CMD RX: " + msg);
 
   if(msg.equalsIgnoreCase("reset")){
-    publish433Log("RESET by MQTT");
-    delay(250);
-    ESP.restart();
+    requestReset("433 cmd reset");
     return;
   }
+
+  if(resetPending) return;
 
   bool ok=false;
   for(int i=0;i<RF_COUNT;i++){
@@ -457,14 +559,23 @@ void setup(){
   pinMode(NOTIFY_LED_PIN, OUTPUT);
   digitalWrite(NOTIFY_LED_PIN, LOW);
 
+  // Original ESP32 only: release Classic BT memory.
+  // Skip this on BLE-only ESP32 variants where esp_bt.h is not available.
+#if defined(HAS_ESP_BT_H) && defined(CONFIG_IDF_TARGET_ESP32)
   esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+#endif
+
+  // Increase BLE TX power when the ESP-IDF BLE GAP API is available.
+#if defined(HAS_ESP_GAP_BLE_API_H)
   esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, ESP_PWR_LVL_P9);
+#endif
 
   delay(150);
+  bleBootMs = millis();
   bleKeyboard.begin();
   delay(300);
   bleKeyboard.setBatteryLevel(100);
-  Serial.println("[BLE] begin() + btmem_release + tx_power");
+  Serial.println("[BLE] begin() + optional btmem_release/tx_power");
 
   irsend.begin();
 
@@ -472,7 +583,9 @@ void setup(){
   rf.enableTransmit(TX_PIN);
 
   WiFi.mode(WIFI_STA);
+#if defined(HAS_ESP_WIFI_H)
   esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+#endif
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.println("[WiFi] begin() (PS_MIN_MODEM)");
 
@@ -499,6 +612,7 @@ void loop(){
   processBleCmdIfAny();
   processIrCmdIfAny();
   processRfCmdIfAny();
+  serviceResetIfPending();
 
   if(millis() - last433StatusMs > 1500){
     last433StatusMs = millis();
