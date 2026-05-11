@@ -1,6 +1,11 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
+#include <time.h>
+#include <ctype.h>
+#include <string.h>
+#include <strings.h>
+#include <stdarg.h>
 
 // ESP32 family compatibility:
 // Some ESP32 variants/cores, especially BLE-only targets such as ESP32-C3/S3/C6,
@@ -46,6 +51,12 @@
 // ===================== MQTT =====================
 const char*    MQTT_BROKER = "broker.hivemq.com";
 const uint16_t MQTT_PORT   = 1883;
+
+// ===================== Time / NTP =====================
+const char* NTP_SERVER_1 = "pool.ntp.org";
+const char* NTP_SERVER_2 = "time.google.com";
+static const uint32_t VALID_EPOCH_MIN = 1700000000UL;
+bool ntpConfigured = false;
 
 // ===================== Topics =====================
 const char* TOPIC_MIBOX_CMD    = "tswell/mibox3/cmd";
@@ -98,7 +109,7 @@ uint32_t bleLastRealConnMs = 0;
 bool resetPending = false;
 uint32_t resetAtMs = 0;
 uint32_t lastResetRequestMs = 0;
-String resetReason = "";
+char resetReason[64] = "";
 
 // Notify LED timer
 bool notifyActive = false;
@@ -162,22 +173,104 @@ RFCode rfCodes[] = {
 };
 const int RF_COUNT = sizeof(rfCodes) / sizeof(rfCodes[0]);
 
-// ===================== Pending command queues (1-deep) =====================
-volatile bool pendingBleCmd = false;
-String pendingBleMsg = "";
+// ===================== Pending command queues =====================
+// Ring buffers prevent rapid button presses from overwriting each other.
+static const uint8_t CMD_QUEUE_DEPTH = 12;
+static const size_t CMD_MAX_LEN = 192;
 
-volatile bool pendingIrCmd = false;
-String pendingIrMsgJson = "";
+struct CommandQueue {
+  char items[CMD_QUEUE_DEPTH][CMD_MAX_LEN];
+  uint8_t head = 0;
+  uint8_t tail = 0;
+  uint8_t count = 0;
+  uint32_t dropped = 0;
+};
 
-volatile bool pendingRfCmd = false;
-String pendingRfMsg = "";
+CommandQueue bleQueue;
+CommandQueue irQueue;
+CommandQueue rfQueue;
 
 // ===================== Helpers =====================
-uint16_t hexToU16(String h){
-  h.replace("0x", "");
-  h.replace("0X", "");
-  h.trim();
-  return (uint16_t)strtoul(h.c_str(), nullptr, 16);
+void trimInPlace(char* s){
+  if(!s) return;
+
+  size_t len = strlen(s);
+  while(len > 0 && isspace((unsigned char)s[len - 1])){
+    s[--len] = '\0';
+  }
+
+  char* start = s;
+  while(*start && isspace((unsigned char)*start)) start++;
+  if(start != s){
+    memmove(s, start, strlen(start) + 1);
+  }
+}
+
+void lowerInPlace(char* s){
+  if(!s) return;
+  for(; *s; s++) *s = (char)tolower((unsigned char)*s);
+}
+
+void copyPayloadToCString(const byte* payload, unsigned int length, char* out, size_t outSize){
+  if(!out || outSize == 0) return;
+  size_t n = length;
+  if(n >= outSize) n = outSize - 1;
+  memcpy(out, payload, n);
+  out[n] = '\0';
+  trimInPlace(out);
+}
+
+bool enqueueCmd(CommandQueue& q, const char* msg){
+  if(!msg || !msg[0]) return false;
+
+  if(q.count >= CMD_QUEUE_DEPTH){
+    q.head = (q.head + 1) % CMD_QUEUE_DEPTH;
+    q.count--;
+    q.dropped++;
+  }
+
+  strncpy(q.items[q.tail], msg, CMD_MAX_LEN - 1);
+  q.items[q.tail][CMD_MAX_LEN - 1] = '\0';
+  q.tail = (q.tail + 1) % CMD_QUEUE_DEPTH;
+  q.count++;
+  return true;
+}
+
+bool dequeueCmd(CommandQueue& q, char* out, size_t outSize){
+  if(q.count == 0 || !out || outSize == 0) return false;
+
+  strncpy(out, q.items[q.head], outSize - 1);
+  out[outSize - 1] = '\0';
+  q.head = (q.head + 1) % CMD_QUEUE_DEPTH;
+  q.count--;
+  return true;
+}
+
+uint16_t hexToU16(const char* h){
+  if(!h) return 0;
+  while(*h && isspace((unsigned char)*h)) h++;
+  if(h[0] == '0' && (h[1] == 'x' || h[1] == 'X')) h += 2;
+  return (uint16_t)strtoul(h, nullptr, 16);
+}
+
+bool validEpochTime(){
+  time_t now = time(nullptr);
+  return now > (time_t)VALID_EPOCH_MIN;
+}
+
+uint32_t currentUnixTimestamp(){
+  time_t now = time(nullptr);
+  if(now > (time_t)VALID_EPOCH_MIN) return (uint32_t)now;
+  return 0;
+}
+
+void serviceTimeSync(){
+  if(WiFi.status() != WL_CONNECTED) return;
+  if(ntpConfigured) return;
+
+  configTime(0, 0, NTP_SERVER_1, NTP_SERVER_2);
+  ntpConfigured = true;
+  Serial.println("[TIME] NTP configTime() requested");
 }
 
 static inline void tapKey(uint8_t key, uint16_t holdMs = 55){
@@ -216,33 +309,58 @@ void publish433Status(){
   int mqttOk = mqtt.connected() ? 1 : 0;
   int rssi = (WiFi.status() == WL_CONNECTED) ? WiFi.RSSI() : -999;
 
-  String json = String("{\"wifi\":") + wifiOk +
-                ",\"mqtt\":" + mqttOk +
-                ",\"rssi\":" + rssi + "}";
+  char json[80];
+  snprintf(json, sizeof(json),
+           "{\"wifi\":%d,\"mqtt\":%d,\"rssi\":%d}",
+           wifiOk, mqttOk, rssi);
 
-  if(mqtt.connected()) mqtt.publish(TOPIC_433_STATUS, json.c_str(), false);
+  if(mqtt.connected()) mqtt.publish(TOPIC_433_STATUS, json, false);
 }
 
-void publishIrStatus(const String& msg){
-  if(mqtt.connected()) mqtt.publish(TOPIC_IR_STATUS, msg.c_str(), false);
+void publishIrStatus(const char* msg){
+  if(mqtt.connected()) mqtt.publish(TOPIC_IR_STATUS, msg ? msg : "", false);
 }
 
-void publish433Log(const String& msg){
-  Serial.println(msg);
-  if(mqtt.connected()) mqtt.publish(TOPIC_433_LOG, msg.c_str(), false);
+void publishIrStatusf(const char* fmt, ...){
+  char buf[160];
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, ap);
+  va_end(ap);
+  publishIrStatus(buf);
+}
+
+void publish433Log(const char* msg){
+  Serial.println(msg ? msg : "");
+  if(mqtt.connected()) mqtt.publish(TOPIC_433_LOG, msg ? msg : "", false);
+}
+
+void publish433Logf(const char* fmt, ...){
+  char buf[192];
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, ap);
+  va_end(ap);
+  publish433Log(buf);
 }
 
 void publishBleSnapshot(bool connected){
   bleStableState = connected;
-  // Always publish the current uptime timestamp, even when BLE is disconnected.
-  // This makes both connect and disconnect events traceable in MQTT logs.
-  uint32_t ts = (uint32_t)(millis() / 1000UL);
-  String payload = String("{\"ble\":") + (connected ? "true" : "false") +
-                   ",\"ts\":" + ts + "}";
-  if(mqtt.connected()) mqtt.publish(TOPIC_MIBOX_STATUS, payload.c_str(), true);
+
+  // The web UI treats ts > 1700000000 as Unix epoch seconds and filters stale retained snapshots.
+  // ts=0 is intentionally used until NTP becomes valid, matching the existing UI's unknown/LWT path.
+  const uint32_t ts = currentUnixTimestamp();
+
+  char payload[80];
+  snprintf(payload, sizeof(payload),
+           "{\"ble\":%s,\"ts\":%lu}",
+           connected ? "true" : "false",
+           (unsigned long)ts);
+
+  if(mqtt.connected()) mqtt.publish(TOPIC_MIBOX_STATUS, payload, true);
 }
 
-void requestReset(const String& reason){
+void requestReset(const char* reason){
   uint32_t now = millis();
   if(resetPending){
     publish433Log("RESET already pending");
@@ -255,9 +373,10 @@ void requestReset(const String& reason){
   lastResetRequestMs = now;
   resetPending = true;
   resetAtMs = now + RESET_SETTLE_MS;
-  resetReason = reason;
+  strncpy(resetReason, reason ? reason : "unknown", sizeof(resetReason) - 1);
+  resetReason[sizeof(resetReason) - 1] = '\0';
 
-  publish433Log("RESET scheduled: " + reason);
+  publish433Logf("RESET scheduled: %s", resetReason);
   publishBleSnapshot(false);
   publish433Status();
   if(mqtt.connected()) mqtt.loop();
@@ -267,7 +386,7 @@ void serviceResetIfPending(){
   if(!resetPending) return;
   if((int32_t)(millis() - resetAtMs) < 0) return;
 
-  publish433Log("RESET now: " + resetReason);
+  publish433Logf("RESET now: %s", resetReason);
   publishBleSnapshot(false);
   publish433Status();
 
@@ -333,7 +452,7 @@ void bleHealthCheck(){
   if((now - lastRecoverAttemptMs) < backoffMs) return;
 
   Serial.printf("[BLE] recover: %s (backoff=%lu ms)\n", reason, (unsigned long)backoffMs);
-  publish433Log(String("BLE recover: ") + reason);
+  publish433Logf("BLE recover: %s", reason);
 
   bleKeyboard.end();
   delay(80);
@@ -355,10 +474,10 @@ void startWiFiIfNeeded(){
 
   WiFi.mode(WIFI_STA);
 #if defined(HAS_ESP_WIFI_H)
-  esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+  esp_wifi_set_ps(WIFI_PS_NONE);
 #endif
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.println("[WiFi] begin() retry (PS_MIN_MODEM)");
+  Serial.println("[WiFi] begin() retry (PS_NONE)");
 }
 
 void startMQTTIfNeeded(){
@@ -370,10 +489,11 @@ void startMQTTIfNeeded(){
 
   mqtt.setServer(MQTT_BROKER, MQTT_PORT);
 
-  String cid = "ESP32-UNI-" + String((uint32_t)ESP.getEfuseMac(), HEX);
+  char cid[32];
+  snprintf(cid, sizeof(cid), "ESP32-UNI-%08lX", (unsigned long)((uint32_t)ESP.getEfuseMac()));
   Serial.print("[MQTT] connect retry... ");
 
-  if(mqtt.connect(cid.c_str(), TOPIC_MIBOX_STATUS, 0, true, "{\"ble\":false,\"ts\":0}")){
+  if(mqtt.connect(cid, TOPIC_MIBOX_STATUS, 0, true, "{\"ble\":false,\"ts\":0}")){
     Serial.println("OK");
     mqtt.subscribe(TOPIC_MIBOX_CMD);
     mqtt.subscribe(TOPIC_IR_CMD);
@@ -389,16 +509,17 @@ void startMQTTIfNeeded(){
 
 // ===================== Command processors =====================
 void processBleCmdIfAny(){
-  if(!pendingBleCmd || resetPending) return;
-  pendingBleCmd = false;
+  if(resetPending) return;
 
-  String msg = pendingBleMsg;
-  msg.trim();
-  msg.toLowerCase();
+  char msg[CMD_MAX_LEN];
+  if(!dequeueCmd(bleQueue, msg, sizeof(msg))) return;
 
-  Serial.printf("[MiBox][RUN] %s\n", msg.c_str());
+  trimInPlace(msg);
+  lowerInPlace(msg);
 
-  if(msg=="reset"){
+  Serial.printf("[MiBox][RUN] %s\n", msg);
+
+  if(strcmp(msg, "reset") == 0){
     requestReset("MiBox cmd reset");
     return;
   }
@@ -409,33 +530,33 @@ void processBleCmdIfAny(){
     return;
   }
 
-  if      (msg=="up")    tapKey(KEY_UP_ARROW);
-  else if (msg=="down")  tapKey(KEY_DOWN_ARROW);
-  else if (msg=="left")  tapKey(KEY_LEFT_ARROW);
-  else if (msg=="right") tapKey(KEY_RIGHT_ARROW);
+  if      (strcmp(msg, "up") == 0)    tapKey(KEY_UP_ARROW);
+  else if (strcmp(msg, "down") == 0)  tapKey(KEY_DOWN_ARROW);
+  else if (strcmp(msg, "left") == 0)  tapKey(KEY_LEFT_ARROW);
+  else if (strcmp(msg, "right") == 0) tapKey(KEY_RIGHT_ARROW);
 
   // MiBox / Android TV BLE keys.
   // VOL+/VOL-/MUTE are restored to the exact original working method from uniRMC(14).ino.
   // Extra aliases are accepted for panel-style command labels.
-  else if (msg=="volup" || msg=="vol+" || msg=="volumeup" || msg=="volume_up" || msg=="volume+")
+  else if (strcmp(msg, "volup") == 0 || strcmp(msg, "vol+") == 0 || strcmp(msg, "volumeup") == 0 || strcmp(msg, "volume_up") == 0 || strcmp(msg, "volume+") == 0)
     bleKeyboard.write(KEY_MEDIA_VOLUME_UP);
-  else if (msg=="voldown" || msg=="vol-" || msg=="volumedown" || msg=="volume_down" || msg=="volume-")
+  else if (strcmp(msg, "voldown") == 0 || strcmp(msg, "vol-") == 0 || strcmp(msg, "volumedown") == 0 || strcmp(msg, "volume_down") == 0 || strcmp(msg, "volume-") == 0)
     bleKeyboard.write(KEY_MEDIA_VOLUME_DOWN);
-  else if (msg=="mute" || msg=="volmute" || msg=="volume_mute" || msg=="vol_mute")
+  else if (strcmp(msg, "mute") == 0 || strcmp(msg, "volmute") == 0 || strcmp(msg, "volume_mute") == 0 || strcmp(msg, "vol_mute") == 0)
     bleKeyboard.write(KEY_MEDIA_MUTE);
 
   // BACK/HOME are sent as normal keyboard HID keys, which Android TV/MiBox usually maps correctly.
   // Raw consumer usages are still available through mb:0224 and mb:0223 if needed.
-  else if (msg=="back" || msg=="return" || msg=="prev")
+  else if (strcmp(msg, "back") == 0 || strcmp(msg, "return") == 0 || strcmp(msg, "prev") == 0)
     tapKey(KEY_ESC);
-  else if (msg=="home" || msg=="homepage" || msg=="launcher")
+  else if (strcmp(msg, "home") == 0 || strcmp(msg, "homepage") == 0 || strcmp(msg, "launcher") == 0)
     tapKey(KEY_HOME);
 
-  else if (msg=="ok1" || msg=="ok" || msg=="enter") tapKey(KEY_RETURN);
+  else if (strcmp(msg, "ok1") == 0 || strcmp(msg, "ok") == 0 || strcmp(msg, "enter") == 0) tapKey(KEY_RETURN);
 
-  else if (msg.startsWith("mb:")){
-    uint16_t v = hexToU16(msg.substring(3));
-    uint8_t msb = (v>>8)&0xFF;
+  else if (strncmp(msg, "mb:", 3) == 0){
+    uint16_t v = hexToU16(msg + 3);
+    uint8_t msb = (v >> 8) & 0xFF;
     uint8_t lsb = v & 0xFF;
     tapMediaRaw(lsb, msb);
   } else {
@@ -447,13 +568,14 @@ void processBleCmdIfAny(){
 }
 
 void processIrCmdIfAny(){
-  if(!pendingIrCmd || resetPending) return;
-  pendingIrCmd = false;
+  if(resetPending) return;
 
-  String msg = pendingIrMsgJson;
-  msg.trim();
+  char msg[CMD_MAX_LEN];
+  if(!dequeueCmd(irQueue, msg, sizeof(msg))) return;
 
-  Serial.printf("[IR][RUN] %s\n", msg.c_str());
+  trimInPlace(msg);
+
+  Serial.printf("[IR][RUN] %s\n", msg);
 
   StaticJsonDocument<256> doc;
   if(deserializeJson(doc, msg)){
@@ -481,19 +603,18 @@ void processIrCmdIfAny(){
   }
 
   if(ok) blinkNotify();
-  publishIrStatus(ok ? String("IR sent: ") + cmd : String("Unknown cmd: ") + cmd);
+  publishIrStatusf(ok ? "IR sent: %s" : "Unknown cmd: %s", cmd);
 }
 
 void processRfCmdIfAny(){
-  if(!pendingRfCmd) return;
-  pendingRfCmd = false;
+  char msg[CMD_MAX_LEN];
+  if(!dequeueCmd(rfQueue, msg, sizeof(msg))) return;
 
-  String msg = pendingRfMsg;
-  msg.trim();
+  trimInPlace(msg);
 
-  publish433Log("CMD RX: " + msg);
+  publish433Logf("CMD RX: %s", msg);
 
-  if(msg.equalsIgnoreCase("reset")){
+  if(strcasecmp(msg, "reset") == 0){
     requestReset("433 cmd reset");
     return;
   }
@@ -502,15 +623,16 @@ void processRfCmdIfAny(){
 
   bool ok=false;
   for(int i=0;i<RF_COUNT;i++){
-    if(msg.equalsIgnoreCase(rfCodes[i].name)){
+    if(strcasecmp(msg, rfCodes[i].name) == 0){
       rf.setProtocol(rfCodes[i].protocol);
       rf.setRepeatTransmit(12);
       rf.send(rfCodes[i].value, rfCodes[i].bits);
 
-      publish433Log("RF TX " + msg +
-                    " [value:" + String(rfCodes[i].value) +
-                    ", bits:" + String(rfCodes[i].bits) +
-                    ", proto:" + String(rfCodes[i].protocol) + "]");
+      publish433Logf("RF TX %s [value:%lu, bits:%u, proto:%u]",
+                     msg,
+                     rfCodes[i].value,
+                     rfCodes[i].bits,
+                     rfCodes[i].protocol);
 
       ok=true;
       blinkNotify();
@@ -518,34 +640,33 @@ void processRfCmdIfAny(){
     }
   }
 
-  if(!ok) publish433Log("Unknown CMD: " + msg);
+  if(!ok) publish433Logf("Unknown CMD: %s", msg);
 }
 
 // ===================== MQTT callback =====================
 void mqttCallback(char* topic, byte* payload, unsigned int length){
-  String msg;
-  msg.reserve(length);
-  for(unsigned int i=0;i<length;i++) msg += (char)payload[i];
-  msg.trim();
+  char msg[CMD_MAX_LEN];
+  copyPayloadToCString(payload, length, msg, sizeof(msg));
+  if(!msg[0]) return;
 
   if(strcmp(topic, TOPIC_MIBOX_CMD)==0){
-    pendingBleMsg = msg;
-    pendingBleCmd = true;
-    Serial.printf("[MQTT][MiBox] %s\n", msg.c_str());
+    uint32_t droppedBefore = bleQueue.dropped;
+    enqueueCmd(bleQueue, msg);
+    Serial.printf("[MQTT][MiBox] %s%s\n", msg, (bleQueue.dropped != droppedBefore) ? " (queue full: dropped oldest)" : "");
     return;
   }
 
   if(strcmp(topic, TOPIC_IR_CMD)==0){
-    pendingIrMsgJson = msg;
-    pendingIrCmd = true;
-    Serial.printf("[MQTT][IR] %s\n", msg.c_str());
+    uint32_t droppedBefore = irQueue.dropped;
+    enqueueCmd(irQueue, msg);
+    Serial.printf("[MQTT][IR] %s%s\n", msg, (irQueue.dropped != droppedBefore) ? " (queue full: dropped oldest)" : "");
     return;
   }
 
   if(strcmp(topic, TOPIC_433_CMD)==0){
-    pendingRfMsg = msg;
-    pendingRfCmd = true;
-    Serial.printf("[MQTT][433] %s\n", msg.c_str());
+    uint32_t droppedBefore = rfQueue.dropped;
+    enqueueCmd(rfQueue, msg);
+    Serial.printf("[MQTT][433] %s%s\n", msg, (rfQueue.dropped != droppedBefore) ? " (queue full: dropped oldest)" : "");
     return;
   }
 }
@@ -584,10 +705,10 @@ void setup(){
 
   WiFi.mode(WIFI_STA);
 #if defined(HAS_ESP_WIFI_H)
-  esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+  esp_wifi_set_ps(WIFI_PS_NONE);
 #endif
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.println("[WiFi] begin() (PS_MIN_MODEM)");
+  Serial.println("[WiFi] begin() (PS_NONE)");
 
   mqtt.setServer(MQTT_BROKER, MQTT_PORT);
   mqtt.setCallback(mqttCallback);
@@ -602,6 +723,7 @@ void loop(){
   serviceNotify();
 
   startWiFiIfNeeded();
+  serviceTimeSync();
   startMQTTIfNeeded();
 
   if(mqtt.connected()) mqtt.loop();
