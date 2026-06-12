@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>전자기학 객관식 퀴즈</title>
+  <style>
+    :root{
+      --bg1:#eef6ff;
+      --bg2:#fff6fb;
+      --ink:#172033;
+      --muted:#61708a;
+      --card:#ffffff;
+      --line:#d9e2ef;
+      --brand:#3158d4;
+      --brand2:#7c3aed;
+      --good:#13a36f;
+      --bad:#e24a4a;
+      --star:#ffb703;
+      --shadow:0 18px 45px rgba(22, 35, 72, .12);
+      --radius:24px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",Roboto,Arial,sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(49,88,212,.14), transparent 30%),
+        radial-gradient(circle at 90% 8%, rgba(236,72,153,.12), transparent 34%),
+        linear-gradient(135deg,var(--bg1),var(--bg2));
+      min-height:100vh;
+    }
+
+    .wrap{
+      width:min(1120px, 100%);
+      margin:0 auto;
+      padding:28px 18px 72px;
+    }
+
+    header{
+      background:rgba(255,255,255,.78);
+      border:1px solid rgba(255,255,255,.85);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:26px 24px;
+      backdrop-filter: blur(10px);
+      position:relative;
+      overflow:hidden;
+    }
+
+    header:after{
+      content:"";
+      position:absolute;
+      right:-60px;
+      top:-60px;
+      width:190px;
+      height:190px;
+      border-radius:999px;
+      background:linear-gradient(135deg,rgba(49,88,212,.18),rgba(124,58,237,.14));
+    }
+
+    h1{
+      margin:0 0 8px;
+      font-size:clamp(1.5rem, 3.5vw, 2.35rem);
+      letter-spacing:-.04em;
+      position:relative;
+      z-index:1;
+    }
+
+    .lead{
+      margin:0;
+      color:var(--muted);
+      line-height:1.65;
+      position:relative;
+      z-index:1;
+      font-size:clamp(.95rem, 2vw, 1.05rem);
+    }
+
+    .toolbar{
+      margin:18px 0 24px;
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+    }
+
+    .score{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      color:var(--muted);
+      font-weight:700;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:999px;
+      box-shadow:0 8px 18px rgba(22, 35, 72, .06);
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    button{
+      font:inherit;
+    }
+
+    .ghost{
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--ink);
+      border-radius:999px;
+      padding:10px 14px;
+      cursor:pointer;
+      box-shadow:0 8px 18px rgba(22, 35, 72, .06);
+      transition:.18s ease;
+      font-weight:700;
+    }
+    .ghost:hover{transform:translateY(-1px); border-color:#b9c7dc}
+
+    .quiz{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:18px;
+    }
+
+    .card{
+      background:rgba(255,255,255,.92);
+      border:1px solid rgba(255,255,255,.9);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:22px;
+      min-height:100%;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .card:before{
+      content:attr(data-num);
+      position:absolute;
+      right:18px;
+      top:14px;
+      font-weight:900;
+      color:rgba(49,88,212,.12);
+      font-size:4.6rem;
+      line-height:1;
+    }
+
+    .question{
+      position:relative;
+      z-index:1;
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      margin:0 0 18px;
+    }
+
+    .qnum{
+      flex:0 0 auto;
+      width:34px;
+      height:34px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(135deg,var(--brand),var(--brand2));
+      color:#fff;
+      font-weight:900;
+      box-shadow:0 10px 22px rgba(49,88,212,.23);
+    }
+
+    .qtext{
+      margin:3px 0 0;
+      line-height:1.65;
+      font-weight:750;
+      letter-spacing:-.02em;
+    }
+
+    .choices{
+      display:grid;
+      gap:10px;
+      position:relative;
+      z-index:1;
+    }
+
+    .choice{
+      width:100%;
+      min-height:52px;
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--ink);
+      border-radius:17px;
+      padding:13px 14px;
+      text-align:left;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      line-height:1.45;
+      transition:.18s ease;
+      box-shadow:0 8px 18px rgba(22, 35, 72, .05);
+    }
+    .choice:hover{
+      transform:translateY(-1px);
+      border-color:#aebdda;
+      box-shadow:0 12px 24px rgba(22, 35, 72, .08);
+    }
+    .choice:focus-visible{
+      outline:3px solid rgba(49,88,212,.25);
+      outline-offset:2px;
+    }
+    .choice.correct{
+      border-color:rgba(19,163,111,.7);
+      background:linear-gradient(135deg,rgba(19,163,111,.12),rgba(19,163,111,.04));
+    }
+    .choice.wrong{
+      border-color:rgba(226,74,74,.75);
+      background:linear-gradient(135deg,rgba(226,74,74,.12),rgba(226,74,74,.04));
+    }
+
+    .mark{
+      flex:0 0 auto;
+      width:30px;
+      height:30px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      background:#f3f6fb;
+      color:#3a4a65;
+      font-weight:900;
+    }
+    .choice.correct .mark{background:rgba(19,163,111,.14); color:var(--good)}
+    .choice.wrong .mark{background:rgba(226,74,74,.14); color:var(--bad)}
+
+    .math{
+      font-family:"Times New Roman",serif;
+      font-size:1.05em;
+      white-space:nowrap;
+    }
+    .frac{
+      display:inline-grid;
+      grid-template-rows:auto auto;
+      align-items:center;
+      justify-items:center;
+      vertical-align:middle;
+      line-height:1.1;
+      min-width:82px;
+      margin:0 2px;
+      font-family:"Times New Roman",serif;
+    }
+    .frac .top{
+      border-bottom:1.7px solid currentColor;
+      padding:0 7px 3px;
+      width:100%;
+      text-align:center;
+    }
+    .frac .bottom{
+      padding:3px 7px 0;
+      width:100%;
+      text-align:center;
+    }
+
+    .figure{
+      width:100%;
+      margin:4px 0 14px;
+      background:#f8fbff;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:12px;
+      overflow:hidden;
+    }
+    .figure svg{
+      width:100%;
+      height:auto;
+      display:block;
+      max-height:250px;
+    }
+
+    .modal{
+      position:fixed;
+      inset:0;
+      display:none;
+      place-items:center;
+      background:rgba(14,22,41,.38);
+      z-index:20;
+      padding:18px;
+    }
+    .modal.show{display:grid}
+    .balloon{
+      width:min(520px, 100%);
+      background:#fff;
+      border-radius:30px;
+      padding:26px 22px 22px;
+      box-shadow:0 25px 80px rgba(0,0,0,.24);
+      position:relative;
+      animation:pop .24s ease-out;
+      border:2px solid transparent;
+    }
+    .balloon:after{
+      content:"";
+      position:absolute;
+      left:46px;
+      bottom:-18px;
+      border-width:20px 17px 0 0;
+      border-style:solid;
+      border-color:#fff transparent transparent transparent;
+      filter:drop-shadow(0 8px 8px rgba(0,0,0,.09));
+    }
+    .modal.correct .balloon{
+      border-color:rgba(19,163,111,.3);
+      background:
+        radial-gradient(circle at 18% 13%, rgba(19,163,111,.14), transparent 25%),
+        #fff;
+    }
+    .modal.wrong .balloon{
+      border-color:rgba(255,183,3,.55);
+      background:
+        radial-gradient(circle at 18% 13%, rgba(255,183,3,.22), transparent 26%),
+        #fff;
+    }
+    @keyframes pop{
+      from{transform:scale(.92); opacity:.5}
+      to{transform:scale(1); opacity:1}
+    }
+
+    .modalIcon{
+      width:68px;
+      height:68px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      font-size:2rem;
+      margin:-8px 0 8px;
+      background:#f5f7fb;
+    }
+    .modal.correct .modalIcon{background:rgba(19,163,111,.13)}
+    .modal.wrong .modalIcon{background:rgba(255,183,3,.18)}
+
+    .modalTitle{
+      margin:0 0 8px;
+      font-size:1.45rem;
+      letter-spacing:-.03em;
+    }
+    .modalText{
+      margin:0 0 12px;
+      line-height:1.7;
+      color:#344158;
+      word-break:keep-all;
+    }
+    .site{
+      display:block;
+      margin:10px 0 0;
+      padding:12px 13px;
+      border-radius:16px;
+      background:#f6f8fc;
+      border:1px solid var(--line);
+      color:#2746bd;
+      text-decoration:none;
+      font-weight:800;
+      word-break:break-all;
+    }
+    .site:hover{text-decoration:underline}
+
+    .modalButtons{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      margin-top:18px;
+      flex-wrap:wrap;
+    }
+    .primary{
+      border:0;
+      color:#fff;
+      background:linear-gradient(135deg,var(--brand),var(--brand2));
+      border-radius:999px;
+      padding:11px 16px;
+      font-weight:850;
+      cursor:pointer;
+    }
+    .secondary{
+      border:1px solid var(--line);
+      color:var(--ink);
+      background:#fff;
+      border-radius:999px;
+      padding:10px 15px;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    .confetti{
+      pointer-events:none;
+      position:absolute;
+      inset:0;
+      overflow:hidden;
+      border-radius:30px;
+    }
+    .confetti span{
+      position:absolute;
+      font-size:1.4rem;
+      animation:floaty 1.35s ease-in-out infinite alternate;
+      opacity:.9;
+    }
+    .confetti span:nth-child(1){left:78%; top:16%; animation-delay:.1s}
+    .confetti span:nth-child(2){left:66%; top:64%; animation-delay:.25s}
+    .confetti span:nth-child(3){left:86%; top:48%; animation-delay:.4s}
+    .confetti span:nth-child(4){left:56%; top:20%; animation-delay:.55s}
+    @keyframes floaty{
+      from{transform:translateY(4px) rotate(-4deg)}
+      to{transform:translateY(-8px) rotate(6deg)}
+    }
+
+    .note{
+      margin-top:18px;
+      color:var(--muted);
+      line-height:1.65;
+      font-size:.93rem;
+      text-align:center;
+    }
+
+    @media (max-width: 760px){
+      .wrap{padding:18px 12px 54px}
+      header{padding:22px 18px}
+      .quiz{grid-template-columns:1fr}
+      .card{padding:18px}
+      .toolbar{align-items:stretch}
+      .score,.actions{width:100%}
+      .pill,.ghost{width:100%; justify-content:center}
+      .choice{min-height:56px; padding:14px 13px}
+      .question{gap:10px}
+      .qnum{width:32px;height:32px}
+      .figure{padding:8px}
+      .modal{padding:14px}
+      .balloon{padding:24px 18px 20px}
+      .modalButtons button{flex:1}
+    }
+
+    @media print{
+      body{background:#fff}
+      header,.toolbar,.modal,.note{display:none!important}
+      .wrap{padding:0}
+      .quiz{display:block}
+      .card{break-inside:avoid; box-shadow:none; border:1px solid #bbb; margin:0 0 12px}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>전자기학 객관식 퀴즈</h1>
+      <p class="lead">
+        보기를 누르면 바로 채점됩니다. 정답은 축하 풍선 메시지, 오답은 별풍선 힌트와 설명 사이트 주소가 표시됩니다.
+      </p>
+    </header>
+
+    <div class="toolbar">
+      <div class="score" aria-live="polite">
+        <span class="pill">✅ 정답 <strong id="rightCount">0</strong> / 4</span>
+        <span class="pill">📝 풀이 완료 <strong id="doneCount">0</strong> / 4</span>
+      </div>
+      <div class="actions">
+        <button class="ghost" type="button" onclick="resetQuiz()">다시 풀기</button>
+        <button class="ghost" type="button" onclick="window.print()">인쇄하기</button>
+      </div>
+    </div>
+
+    <main class="quiz" id="quiz">
+      <section class="card" data-num="01" data-q="0">
+        <div class="question">
+          <span class="qnum">1</span>
+          <p class="qtext">
+            <span class="math">ε<sub>r</sub> = 81, μ<sub>r</sub> = 1</span> 인 매질의 고유 임피던스는 약 몇 Ω 인가?<br>
+            <small>(단, <span class="math">ε<sub>r</sub></span>은 비유전율이고, <span class="math">μ<sub>r</sub></span>은 비투자율이다.)</small>
+          </p>
+        </div>
+        <div class="choices">
+          <button class="choice" type="button" data-choice="0"><span class="mark">①</span><span>13.9 Ω</span></button>
+          <button class="choice" type="button" data-choice="1"><span class="mark">②</span><span>21.9 Ω</span></button>
+          <button class="choice" type="button" data-choice="2"><span class="mark">③</span><span>33.9 Ω</span></button>
+          <button class="choice" type="button" data-choice="3"><span class="mark">④</span><span>41.9 Ω</span></button>
+        </div>
+      </section>
+
+      <section class="card" data-num="02" data-q="1">
+        <div class="question">
+          <span class="qnum">2</span>
+          <p class="qtext">
+            강자성체의 B-H 곡선을 자세히 관찰하면 매끈한 곡선이 아니라 자속밀도가 어느 순간 급격히 계단적으로 증가 또는 감소한다. 이러한 현상을 무엇이라 하는가?
+          </p>
+        </div>
+        <div class="choices">
+          <button class="choice" type="button" data-choice="0"><span class="mark">①</span><span>퀴리점(Curie point)</span></button>
+          <button class="choice" type="button" data-choice="1"><span class="mark">②</span><span>자왜현상(Magneto-striction)</span></button>
+          <button class="choice" type="button" data-choice="2"><span class="mark">③</span><span>바크하우젠 효과(Barkhausen effect)</span></button>
+          <button class="choice" type="button" data-choice="3"><span class="mark">④</span><span>자기여자 효과(Magnetic after effect)</span></button>
+        </div>
+      </section>
+
+      <section class="card" data-num="03" data-q="2">
+        <div class="question">
+          <span class="qnum">3</span>
+          <p class="qtext">
+            진공 중에 무한 평면도체와 <span class="math">d(m)</span>만큼 떨어진 곳에 선전하밀도 <span class="math">λ(C/m)</span>의 무한 직선도체가 평행하게 놓여 있는 경우, 직선도체의 단위 길이당 받는 힘은 몇 N/m 인가?
+          </p>
+        </div>
+        <div class="choices">
+          <button class="choice" type="button" data-choice="0">
+            <span class="mark">①</span>
+            <span class="frac"><span class="top">λ<sup>2</sup></span><span class="bottom">π ε<sub>0</sub> d</span></span>
+          </button>
+          <button class="choice" type="button" data-choice="1">
+            <span class="mark">②</span>
+            <span class="frac"><span class="top">λ<sup>2</sup></span><span class="bottom">2π ε<sub>0</sub> d</span></span>
+          </button>
+          <button class="choice" type="button" data-choice="2">
+            <span class="mark">③</span>
+            <span class="frac"><span class="top">λ<sup>2</sup></span><span class="bottom">4π ε<sub>0</sub> d</span></span>
+          </button>
+          <button class="choice" type="button" data-choice="3">
+            <span class="mark">④</span>
+            <span class="frac"><span class="top">λ<sup>2</sup></span><span class="bottom">16π ε<sub>0</sub> d</span></span>
+          </button>
+        </div>
+      </section>
+
+      <section class="card" data-num="04" data-q="3">
+        <div class="question">
+          <span class="qnum">4</span>
+          <p class="qtext">
+            평행 극판 사이에 유전율이 각각 <span class="math">ε<sub>1</sub>, ε<sub>2</sub></span> 인 유전체를 그림과 같이 채우고, 극판 사이에 일정한 전압을 걸었을 때 두 유전체 사이에 작용하는 힘은?<br>
+            <small>(단, <span class="math">ε<sub>1</sub> &gt; ε<sub>2</sub></span>)</small>
+          </p>
+        </div>
+
+        <div class="figure" aria-label="두 유전체와 힘 방향 그림">
+          <svg viewBox="0 0 520 275" role="img">
+            <defs>
+              <pattern id="hatch" patternUnits="userSpaceOnUse" width="12" height="12" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="12" stroke="#d3dbe8" stroke-width="4"/>
+              </pattern>
+              <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L10,3 L0,6 Z" fill="#3d4b63"/>
+              </marker>
+            </defs>
+            <rect x="66" y="35" width="388" height="18" rx="2" fill="#4b5565"/>
+            <rect x="66" y="222" width="388" height="18" rx="2" fill="#4b5565"/>
+            <g font-size="28" font-weight="900" fill="#111827">
+              <text x="105" y="27">+</text><text x="190" y="27">+</text><text x="275" y="27">+</text><text x="360" y="27">+</text>
+              <text x="105" y="268">−</text><text x="190" y="268">−</text><text x="275" y="268">−</text><text x="360" y="268">−</text>
+            </g>
+            <rect x="66" y="53" width="388" height="85" fill="url(#hatch)" opacity=".92"/>
+            <rect x="66" y="138" width="388" height="84" fill="url(#hatch)" opacity=".92"/>
+            <line x1="66" y1="138" x2="454" y2="138" stroke="#4b5565" stroke-width="3"/>
+            <text x="95" y="106" font-size="30" font-family="Times New Roman" fill="#1f2937">ε<tspan dy="7" font-size="18">1</tspan></text>
+            <text x="95" y="195" font-size="30" font-family="Times New Roman" fill="#1f2937">ε<tspan dy="7" font-size="18">2</tspan></text>
+
+            <line x1="260" y1="138" x2="260" y2="73" stroke="#3d4b63" stroke-width="5" marker-end="url(#arrow)"/>
+            <text x="278" y="86" font-size="22" font-weight="900" fill="#1f2937">a</text>
+
+            <line x1="260" y1="138" x2="218" y2="194" stroke="#3d4b63" stroke-width="5" marker-end="url(#arrow)"/>
+            <text x="212" y="210" font-size="22" font-weight="900" fill="#1f2937">b</text>
+
+            <line x1="260" y1="138" x2="350" y2="138" stroke="#3d4b63" stroke-width="5" marker-end="url(#arrow)"/>
+            <text x="356" y="145" font-size="22" font-weight="900" fill="#1f2937">c</text>
+
+            <line x1="260" y1="138" x2="165" y2="138" stroke="#3d4b63" stroke-width="5" marker-end="url(#arrow)"/>
+            <text x="145" y="145" font-size="22" font-weight="900" fill="#1f2937">d</text>
+          </svg>
+        </div>
+
+        <div class="choices">
+          <button class="choice" type="button" data-choice="0"><span class="mark">①</span><span>a의 방향</span></button>
+          <button class="choice" type="button" data-choice="1"><span class="mark">②</span><span>b의 방향</span></button>
+          <button class="choice" type="button" data-choice="2"><span class="mark">③</span><span>c의 방향</span></button>
+          <button class="choice" type="button" data-choice="3"><span class="mark">④</span><span>d의 방향</span></button>
+        </div>
+      </section>
+    </main>
+
+    <p class="note">
+      이 파일은 외부 라이브러리 없이 동작하는 단일 HTML입니다. 휴대폰에서는 한 줄 카드, PC에서는 두 줄 카드 형태로 자동 전환됩니다.
+    </p>
+  </div>
+
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalText">
+    <div class="balloon">
+      <div class="confetti" aria-hidden="true">
+        <span>🎈</span><span>⭐</span><span>🎉</span><span>✨</span>
+      </div>
+      <div class="modalIcon" id="modalIcon">🎈</div>
+      <h2 class="modalTitle" id="modalTitle">축하합니다!</h2>
+      <p class="modalText" id="modalText"></p>
+      <a class="site" id="modalSite" href="#" target="_blank" rel="noopener">설명 사이트 열기</a>
+      <div class="modalButtons">
+        <button class="secondary" type="button" onclick="closeModal()">닫기</button>
+        <button class="primary" type="button" onclick="closeModal()">계속 풀기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const quizData = [
+      {
+        answer: 3,
+        correct: "고유 임피던스는 η = η₀√(μᵣ/εᵣ) 이므로 377×√(1/81) ≈ 41.9Ω 입니다.",
+        wrong: "별풍선 힌트: 고유 임피던스는 자유공간 임피던스 377Ω에 √(μᵣ/εᵣ)을 곱해 계산합니다.",
+        site: "https://en.wikipedia.org/wiki/Wave_impedance"
+      },
+      {
+        answer: 2,
+        correct: "자속밀도가 계단처럼 불연속적으로 변하는 현상은 바크하우젠 효과입니다.",
+        wrong: "별풍선 힌트: 강자성체 내부의 자구가 갑자기 움직이면서 B-H 곡선에 작은 점프가 나타나는 현상입니다.",
+        site: "https://en.wikipedia.org/wiki/Barkhausen_effect"
+      },
+      {
+        answer: 2,
+        correct: "영상법을 적용하면 반대 부호의 영상 선전하가 2d 떨어진 곳에 있는 것으로 볼 수 있어, 단위 길이당 힘은 λ²/(4π ε₀ d) 입니다.",
+        wrong: "별풍선 힌트: 무한 도체 평면 문제는 영상법으로 바꾸고, 실제 선전하와 영상 선전하 사이의 거리가 2d가 됨을 확인하세요.",
+        site: "https://en.wikipedia.org/wiki/Method_of_image_charges"
+      },
+      {
+        answer: 1,
+        correct: "ε₁ > ε₂ 이므로 고유전율 유전체가 더 많이 들어가면 정전용량이 커지는 방향으로 힘이 작용합니다. 그림에서는 b 방향입니다.",
+        wrong: "별풍선 힌트: 전압이 걸린 평행판에서는 정전용량이 증가하는 방향으로 유전체 계면 힘이 작용합니다. ε₁ > ε₂ 조건을 기준으로 방향을 판단해 보세요.",
+        site: "https://en.wikipedia.org/wiki/Maxwell_stress_tensor"
+      }
+    ];
+
+    const labels = ["①", "②", "③", "④"];
+    const solved = new Array(quizData.length).fill(false);
+    const correctSolved = new Array(quizData.length).fill(false);
+
+    document.querySelectorAll(".choice").forEach((button) => {
+      button.addEventListener("click", () => {
+        const card = button.closest(".card");
+        const q = Number(card.dataset.q);
+        const choice = Number(button.dataset.choice);
+        checkAnswer(q, choice, button);
+      });
+    });
+
+    function checkAnswer(q, choice, button){
+      const data = quizData[q];
+      const card = button.closest(".card");
+      const buttons = card.querySelectorAll(".choice");
+
+      buttons.forEach(btn => btn.classList.remove("wrong", "correct"));
+
+      solved[q] = true;
+
+      if(choice === data.answer){
+        correctSolved[q] = true;
+        button.classList.add("correct");
+        showModal({
+          type: "correct",
+          icon: "🎈",
+          title: "축하합니다! 정답입니다",
+          text: data.correct,
+          site: data.site
+        });
+      } else {
+        correctSolved[q] = false;
+        button.classList.add("wrong");
+        buttons[data.answer].classList.add("correct");
+        showModal({
+          type: "wrong",
+          icon: "⭐",
+          title: "별풍선 힌트! 다시 확인해 보세요",
+          text: data.wrong + " 정답 보기 번호는 " + labels[data.answer] + " 입니다.",
+          site: data.site
+        });
+      }
+
+      updateScore();
+    }
+
+    function updateScore(){
+      document.getElementById("rightCount").textContent = correctSolved.filter(Boolean).length;
+      document.getElementById("doneCount").textContent = solved.filter(Boolean).length;
+    }
+
+    function showModal({type, icon, title, text, site}){
+      const modal = document.getElementById("modal");
+      modal.className = "modal show " + type;
+      document.getElementById("modalIcon").textContent = icon;
+      document.getElementById("modalTitle").textContent = title;
+      document.getElementById("modalText").textContent = text;
+      const a = document.getElementById("modalSite");
+      a.href = site;
+      a.textContent = "설명 사이트: " + site;
+    }
+
+    function closeModal(){
+      document.getElementById("modal").className = "modal";
+    }
+
+    function resetQuiz(){
+      solved.fill(false);
+      correctSolved.fill(false);
+      document.querySelectorAll(".choice").forEach(btn => btn.classList.remove("wrong","correct"));
+      updateScore();
+      closeModal();
+      window.scrollTo({top:0, behavior:"smooth"});
+    }
+
+    document.getElementById("modal").addEventListener("click", (e) => {
+      if(e.target.id === "modal") closeModal();
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if(e.key === "Escape") closeModal();
+    });
+  </script>
+</body>
+</html>
