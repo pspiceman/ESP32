@@ -236,7 +236,8 @@ body.theme-light .bat-low{  color:#dc2626; }
 <style>
 /* Compact three-line header; monitoring table and controls below are unchanged. */
 .header-row{gap:8px;}
-.title-main{font-size:24px;font-weight:800;letter-spacing:0;}
+.title-main{font-size:25px;font-weight:800;letter-spacing:0;}
+@media(max-width:600px){.title-main{position:relative;top:-2px;}}
 .monitor-subrow{display:flex;align-items:center;justify-content:space-between;gap:6px;white-space:nowrap;}
 .monitor-subrow .title-sub{font-size:18px;font-weight:500;}
 .monitor-subrow .chip{padding:3px 6px;gap:4px;flex-shrink:0;}
@@ -266,6 +267,28 @@ body.theme-light .bat-low{  color:#dc2626; }
   .status-chips .wifi-rssi,#nodeCountChip .chip-value{font-size:10px;}
 }
 </style>
+<style>
+/* Shared status typography: keep MQTT and the right-hand text equal on phones. */
+.status-chips{--status-font-size:14px;}
+.status-chips .mqtt-status .chip-label,
+.status-chips .mqtt-status .chip-value,
+.status-chips .device-conn-pill,
+.status-chips .wifi-rssi,
+.status-chips #nodeCountChip .chip-label,
+.status-chips #nodeCountChip .chip-value{
+  font-size:var(--status-font-size);font-weight:600;letter-spacing:0;
+}
+.status-chips .status-right .device-conn-pill,
+.status-chips .status-right .wifi-rssi,
+.status-chips .status-right #nodeCountChip .chip-label,
+.status-chips .status-right #nodeCountChip .chip-value{
+  font-size:calc(var(--status-font-size) - 1px);
+}
+.status-right>#nodeCountChip{padding-inline:10px;}
+@media(max-width:430px){.status-chips{--status-font-size:13px;}}
+@media(max-width:379px){.status-chips{--status-font-size:12px;}}
+@media(max-width:350px){.status-chips{--status-font-size:11.5px;}}
+</style>
 </head>
 <body>
 
@@ -289,8 +312,8 @@ body.theme-light .bat-low{  color:#dc2626; }
     <div class="status-chips">
       <div class="chip mqtt-status">
         <span class="chip-label">MQTT</span>
-        <span class="chip-dot" id="mqttDot"></span>
-        <span class="chip-value" id="mqttState">연결안됨</span>
+        <span class="chip-dot" id="mqttDot" role="img" aria-label="연결 안 됨" title="연결 안 됨"></span>
+        <span id="mqttState" hidden>연결안됨</span>
       </div>
       <div class="status-right">
       <div class="chip">
@@ -490,6 +513,8 @@ function connectMQTT(){
     ledPending = {};
     mqttState.textContent = "연결됨";
     mqttDot.classList.add("on");
+    mqttDot.setAttribute("aria-label", "연결됨");
+    mqttDot.title = "연결됨";
 
     client.subscribe(TOPIC_TELEM_SUB);
     client.subscribe(TOPIC_LEDSTATE_SUB);
@@ -504,6 +529,8 @@ function connectMQTT(){
   client.on("close", ()=>{
     mqttState.textContent = "연결안됨";
     mqttDot.classList.remove("on");
+    mqttDot.setAttribute("aria-label", "연결 안 됨");
+    mqttDot.title = "연결 안 됨";
     addLog("[MQTT] disconnected");
     ledPending = {};
     renderTable();
