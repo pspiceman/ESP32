@@ -2,13 +2,12 @@
   "name": "산사태 감지 모니터",
   "short_name": "산사태 감지",
   "description": "LoRa Mesh 기반 산사태 감지 모니터",
-  "lang": "ko-KR",
   "start_url": "./loraMesh.html",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait-primary",
   "background_color": "#0b1020",
   "theme_color": "#0b1020",
+  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "./loraMesh-192.png",
