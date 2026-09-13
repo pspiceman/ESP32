@@ -1,23 +1,32 @@
 {
-  "name": "LoRa Mesh Gateway Monitor",
-  "short_name": "LoRaMesh",
+  "name": "산사태 감지 모니터",
+  "short_name": "산사태 감지",
+  "description": "LoRa Mesh 기반 산사태 감지 모니터",
+  "lang": "ko-KR",
   "start_url": "./loraMesh.html",
   "scope": "./",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#0b1020",
   "theme_color": "#0b1020",
   "icons": [
     {
-      "src": "./loraMesh.png",
+      "src": "./loraMesh-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "./loraMesh.png",
+      "src": "./loraMesh-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "./loraMesh-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
