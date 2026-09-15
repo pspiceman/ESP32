@@ -15,14 +15,19 @@
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script>
 
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500;700;800&display=swap" rel="stylesheet">
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; }
+    html { min-height: 100%; }
+    body { height: auto; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.4;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      -webkit-font-smoothing: antialiased;
       background: #e5e7eb;
       color: #222;
       min-height: 100vh;
@@ -42,10 +47,12 @@
       background: #f3f4f6;
       border-radius: 18px;
       box-shadow: 0 6px 16px rgba(0,0,0,0.18);
-      padding: 16px 16px 14px;
+      padding: 14px 16px 12px;
+      height: auto;
+      min-height: 0;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 8px;
       transition: background 0.25s ease, box-shadow 0.25s ease;
     }
     body.night-mode .container {
@@ -55,7 +62,8 @@
 
     .header-row {
       position: relative;
-      margin-bottom: 14px;
+      margin-bottom: 2px;
+      min-height: 40px;
       padding: 0 42px;
       display: flex;
       justify-content: center;
@@ -63,35 +71,33 @@
     }
     .title {
       text-align: center;
-      font-family: "Georgia", "Times New Roman", serif;
-      font-size: clamp(1.8rem, 7.5vw, 2.3rem);
+      font-family: inherit;
+      font-size: clamp(1.9rem, 8vw, 2.25rem);
+      line-height: 1.2;
+      letter-spacing: -0.035em;
+      white-space: nowrap;
       font-weight: 800;
       color: #111827;
-      transform: translateX(6px);
-      text-shadow:
-        0 1px 0 #f9fafb,
-        0 3px 6px rgba(15, 23, 42, 0.35),
-        0 8px 20px rgba(15, 23, 42, 0.18);
+      transform: none;
+      text-shadow: none;
     }
     body.night-mode .title {
       color: #e5e7eb;
-      text-shadow:
-        0 1px 0 #020617,
-        0 4px 14px rgba(0, 0, 0, 0.9);
+      text-shadow: none;
     }
 
     .mode-toggle-btn {
       position: absolute;
       top: 50%; right: 0;
       transform: translateY(-50%);
-      width: 30px; height: 30px;
+      width: 36px; height: 36px;
       border-radius: 50%;
       border: none;
       background: #d1d5db;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.9rem;
+      font-size: 1.05rem;
       cursor: pointer;
       box-shadow: 0 2px 6px rgba(0,0,0,0.15);
       transition: background 0.2s ease, box-shadow 0.2s ease;
@@ -103,18 +109,18 @@
     }
 
     .mode-switch {
-      margin-top: 6px;
+      margin-top: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      margin-bottom: 8px;
+      margin-bottom: 0;
     }
     .mode-switch-left { display: flex; gap: 8px; }
     .mode-switch-right { margin-left: auto; }
     .mode-btn {
-      padding: 4px 14px;
-      font-size: 0.8rem;
+      padding: 7px 16px;
+      font-size: 0.875rem;
       border-radius: 999px;
       border: 1px solid #9ca3af;
       background: #d1d5db;
@@ -142,8 +148,8 @@
 
     .card {
       border-radius: 14px;
-      padding: 12px;
-      margin-bottom: 8px;
+      padding: 10px 12px;
+      margin-bottom: 6px;
       background: linear-gradient(145deg, #f0f2f5, #d9dde4);
       border: 1px solid rgba(255,255,255,0.55);
       box-shadow:
@@ -162,22 +168,22 @@
         inset 0 -1px 0 rgba(0, 0, 0, 0.35);
     }
 
-    .status-text-group { display: flex; flex-direction: column; gap: 4px; }
+    .status-text-group { display: flex; flex-direction: column; gap: 6px; }
     .status-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    .status-left { display: flex; align-items: center; gap: 6px; }
+    .status-left { display: flex; align-items: center; gap: 6px; min-width: 0; }
     .status-right { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-    .inline-value { font-size: 0.8rem; font-weight: 1000; color: #111827; }
-    #lux-node, #lux-gw, #threshold-node, #threshold-gw { font-weight: 300 !important; }
+    .inline-value { font-size: 0.875rem; font-weight: 700; color: #111827; }
+    #lux-node, #lux-gw, #threshold-node, #threshold-gw { font-weight: 700 !important; }
     body.night-mode .inline-value { color: #e5e7eb; }
-    .status-label { font-size: 0.8rem; color: #444; }
-    body.night-mode .status-label { color: #9ca3af; }
+    .status-label { font-size: 0.8125rem; font-weight: 500; color: #475569; white-space: nowrap; }
+    body.night-mode .status-label { color: #cbd5e1; }
 
     .status-pill {
       display: inline-block;
-      padding: 3px 10px;
+      padding: 4px 8px;
       border-radius: 999px;
-      font-size: 0.78rem;
-      font-weight: 600;
+      font-size: 0.8125rem;
+      font-weight: 700;
       background: #d4d4d8;
       color: #333;
     }
@@ -192,9 +198,9 @@
     }
 
     .reset-btn {
-      padding: 4px 14px;
-      font-size: 0.8rem;
-      font-weight: 1000;
+      padding: 7px 16px;
+      font-size: 0.875rem;
+      font-weight: 700;
       border-radius: 999px;
       border: 1px solid #ef4444;
       cursor: pointer;
@@ -226,14 +232,16 @@
     .led-btn {
       display: inline-block;
       width: 100%;
-      padding: 46px 28px;
+      padding: 24px 24px;
+      min-height: 156px;
       font-family: system-ui, -apple-system, "SF Pro Display", "Apple SD Gothic Neo", "Segoe UI Variable", "Segoe UI", "Noto Sans KR", sans-serif;
-      font-size: 2.30rem;
-      font-weight: 400;
-      border-radius: 24px;
+      font-size: clamp(2rem, 8.8vw, 2.375rem);
+      font-weight: 700;
+      line-height: 1.3;
+      border-radius: 20px;
       border: none;
       cursor: pointer;
-      background: #16a34a;
+      background: #15803d;
       color: #fff;
       box-shadow:
         0 8px 16px rgba(15, 23, 42, 0.4),
@@ -241,7 +249,7 @@
       transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.1s ease, background 0.2s ease, filter 0.2s ease;
       letter-spacing: 0.3px;
     }
-    .led-btn:hover { background: #15803d; }
+    .led-btn:hover { background: #166534; }
     .led-btn:active {
       transform: translateY(2px);
       box-shadow:
@@ -260,9 +268,9 @@
       background: rgba(255,255,255,0.58);
       border: 1px solid rgba(17, 24, 39, 0.10);
       border-radius: 18px;
-      padding: 10px 12px;
-      margin-top: 6px;
-      margin-bottom: 12px;
+      padding: 8px 12px;
+      margin-top: 0;
+      margin-bottom: 8px;
       box-shadow:
         inset 0 1px 0 rgba(255,255,255,0.65),
         0 6px 14px rgba(15, 23, 42, 0.10);
@@ -279,29 +287,124 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 10px;
-      font-size: 1.14rem;
-      font-weight: 300;
-      letter-spacing: 0.2px;
+      gap: 18px;
+      min-height: 72px;
+      font-size: 1.125rem;
+      line-height: 1.4;
+      letter-spacing: -0.02em;
     }
-    .door-label { font-weight: 400; }
+    .door-label { font-weight: 700; color: #1e293b; }
+    body.night-mode .door-label { color: #f1f5f9; }
 
-    .door-state-badge {
-      min-width: 80px;
-      text-align: center;
-      padding: 4px 14px;
-      border-radius: 12px;
-      color: #ffffff;
-      background: #374151;
+    /* A visible state label below Door status, synced with the garage icon. */
+    .door-state-copy {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
     }
-    .door-state-badge.door-open { background: #2563eb; }
-    .door-state-badge.door-close { background: #374151; }
+    .door-state-text {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 80px;
+      padding: 2px 10px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      font-size: 1.125rem;
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: 0;
+      transition: color 220ms ease, background 220ms ease, border-color 220ms ease;
+    }
+    .door-state-text.door-close {
+      color: #52525b;
+      background: #e4e4e7;
+      border-color: #d4d4d8;
+    }
+    .door-state-text.door-open {
+      color: #166534;
+      background: #dcfce7;
+      border-color: #86efac;
+    }
+    body.night-mode .door-state-text.door-close {
+      color: #e4e4e7;
+      background: #27272a;
+      border-color: #52525b;
+    }
+    body.night-mode .door-state-text.door-open {
+      color: #86efac;
+      background: #123024;
+      border-color: #2d6540;
+    }
+
+    /* Inline SVG: the shutter itself moves; no image request is necessary. */
+    .door-state-badge {
+      --garage-opening: #e4e4e7;
+      --shutter-fill: #d4d4d8;
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      justify-content: center;
+      width: 100px;
+      height: 72px;
+      padding: 4px 6px;
+      border: 1px solid #d4d4d8;
+      border-radius: 12px;
+      color: #52525b;
+      background: #f4f4f5;
+      transition: color 220ms ease, background 220ms ease, border-color 220ms ease;
+    }
+    .door-state-badge.door-open {
+      --garage-opening: #dcfce7;
+      --shutter-fill: #86efac;
+      color: #15803d;
+      background: #f0fdf4;
+      border-color: #86efac;
+    }
+    body.night-mode .door-state-badge {
+      --garage-opening: #18181b;
+      --shutter-fill: #52525b;
+      color: #d4d4d8;
+      background: #27272a;
+      border-color: #52525b;
+    }
+    body.night-mode .door-state-badge.door-open {
+      --garage-opening: #0b2116;
+      --shutter-fill: #246b43;
+      color: #86efac;
+      background: #123024;
+      border-color: #2d6540;
+    }
+    .garage-icon { display: block; width: 86px; height: 62px; overflow: visible; }
+    .garage-opening { fill: var(--garage-opening); }
+    .garage-shutter-fill { fill: var(--shutter-fill); }
+    .garage-shutter {
+      transform: translateY(0);
+      transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .door-open .garage-shutter { transform: translateY(-33px); }
+    .garage-car { opacity: 0; transition: opacity 280ms ease; }
+    .door-open .garage-car { opacity: 1; }
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
 
     .footer {
-      margin-top: 6px;
-      font-size: 0.72rem;
-      color: #555;
-      line-height: 1.45;
+      margin-top: 4px;
+      font-size: 0.8125rem;
+      color: #475569;
+      line-height: 1.4;
     }
     .footer-row {
       display: flex;
@@ -309,13 +412,13 @@
       margin-bottom: 2px;
       gap: 6px;
     }
-    .footer-small { font-size: 0.7rem; }
-    body.night-mode .footer { color: #9ca3af; }
+    .footer-small { font-size: 0.8125rem; }
+    body.night-mode .footer { color: #b8c5d8; }
 
     .divider {
       height: 1px;
       background: #d4d4d8;
-      margin: 4px 0;
+      margin: 2px 0;
     }
     body.night-mode .divider { background: #1f2937; }
 
@@ -325,6 +428,47 @@
     @media (max-width: 480px) {
       body { padding: 8px 6px; }
       .container { max-width: 100%; border-radius: 14px; }
+    }
+
+    /* Legibility improvements without moving the original panels or controls. */
+    button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
+    button:focus-visible {
+      outline: 3px solid #2563eb;
+      outline-offset: 4px;
+    }
+    body.night-mode button:focus-visible { outline-color: #93c5fd; }
+    .mode-btn, .reset-btn { min-height: 36px; font-weight: 700; line-height: 1.3; }
+    .status-line { gap: 8px; }
+    .status-pill { line-height: 1.4; text-align: center; }
+    .inline-value { font-size: 1rem; line-height: 1.3; font-variant-numeric: tabular-nums; }
+    .status-right { gap: 5px; flex-shrink: 0; }
+    .card { border-color: #cbd5e1; }
+    body.night-mode .card { border-color: #344258; }
+    .footer-row { align-items: baseline; margin-bottom: 2px; }
+    .footer-row > span { min-width: 0; }
+    .footer-row > span:last-child { text-align: right; }
+    .footer [id] { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .led-btn { font-family: inherit; }
+    @media (max-width: 374px) {
+      .container { padding-left: 14px; padding-right: 14px; }
+      .card { padding-left: 10px; padding-right: 10px; }
+      .status-label { font-size: 0.75rem; }
+      .status-pill { font-size: 0.75rem; padding: 4px 6px; }
+      .status-left { gap: 4px; }
+      .status-right { gap: 4px; }
+      .inline-value { font-size: 0.9375rem; }
+      .footer, .footer-small { font-size: 0.75rem; }
+    }
+    @media (max-width: 339px) {
+      .status-left { flex-wrap: wrap; row-gap: 4px; }
+      .status-left .status-pill { white-space: nowrap; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition: none !important;
+        animation: none !important;
+        scroll-behavior: auto !important;
+      }
     }
   </style>
 </head>
@@ -379,8 +523,36 @@
       <div class="card">
         <div class="door-state-window">
           <div class="door-state-row">
-            <span class="door-label">Door상태</span>
-            <span id="door-state-node" class="door-state-badge door-close">Close</span>
+            <span class="door-state-copy">
+              <span class="door-label">Door상태</span>
+              <span id="door-state-text-node" class="door-state-text door-close" aria-hidden="true">Close</span>
+            </span>
+            <span id="door-state-node" class="door-state-badge door-close" role="status" aria-live="polite" aria-atomic="true" title="주차장 문 닫힘">
+              <svg class="garage-icon" viewBox="0 0 104 76" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                <defs>
+                  <clipPath id="garage-clip-node" clipPathUnits="userSpaceOnUse">
+                    <rect x="24" y="23" width="56" height="43" rx="1" />
+                  </clipPath>
+                </defs>
+                <rect class="garage-opening" x="23" y="22" width="58" height="45" rx="1" />
+                <g class="garage-car" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M35 51l4-11h26l4 11" />
+                  <rect x="32" y="50" width="40" height="12" rx="4" fill="currentColor" fill-opacity="0.12" />
+                  <path d="M35 62v4m34-4v4m-31-10h4m20 0h4m-24 4h20" />
+                  <path d="M41 44h22" opacity="0.5" />
+                </g>
+                <g clip-path="url(#garage-clip-node)">
+                  <g class="garage-shutter" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <rect class="garage-shutter-fill" x="24" y="23" width="56" height="43" rx="1" stroke-width="2" />
+                    <path d="M26 31h52m-52 8h52m-52 8h52m-52 8h52" stroke-width="1.7" opacity="0.8" />
+                    <path d="M46 61h12" stroke-width="2.5" />
+                  </g>
+                </g>
+                <path d="M15 68V14h74v54M23 67V22h58v45M10 68h84" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M34 9h36" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity="0.45" />
+              </svg>
+              <span class="visually-hidden">주차장 문 닫힘</span>
+            </span>
           </div>
         </div>
         <div class="button-wrap">
@@ -430,8 +602,36 @@
       <div class="card">
         <div class="door-state-window">
           <div class="door-state-row">
-            <span class="door-label">Door상태</span>
-            <span id="door-state-gw" class="door-state-badge door-close">Close</span>
+            <span class="door-state-copy">
+              <span class="door-label">Door상태</span>
+              <span id="door-state-text-gw" class="door-state-text door-close" aria-hidden="true">Close</span>
+            </span>
+            <span id="door-state-gw" class="door-state-badge door-close" role="status" aria-live="polite" aria-atomic="true" title="주차장 문 닫힘">
+              <svg class="garage-icon" viewBox="0 0 104 76" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                <defs>
+                  <clipPath id="garage-clip-gw" clipPathUnits="userSpaceOnUse">
+                    <rect x="24" y="23" width="56" height="43" rx="1" />
+                  </clipPath>
+                </defs>
+                <rect class="garage-opening" x="23" y="22" width="58" height="45" rx="1" />
+                <g class="garage-car" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M35 51l4-11h26l4 11" />
+                  <rect x="32" y="50" width="40" height="12" rx="4" fill="currentColor" fill-opacity="0.12" />
+                  <path d="M35 62v4m34-4v4m-31-10h4m20 0h4m-24 4h20" />
+                  <path d="M41 44h22" opacity="0.5" />
+                </g>
+                <g clip-path="url(#garage-clip-gw)">
+                  <g class="garage-shutter" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <rect class="garage-shutter-fill" x="24" y="23" width="56" height="43" rx="1" stroke-width="2" />
+                    <path d="M26 31h52m-52 8h52m-52 8h52m-52 8h52" stroke-width="1.7" opacity="0.8" />
+                    <path d="M46 61h12" stroke-width="2.5" />
+                  </g>
+                </g>
+                <path d="M15 68V14h74v54M23 67V22h58v45M10 68h84" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M34 9h36" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity="0.45" />
+              </svg>
+              <span class="visually-hidden">주차장 문 닫힘</span>
+            </span>
           </div>
         </div>
         <div class="button-wrap">
@@ -528,16 +728,32 @@
       return lastDataGw > 0 && (Date.now() - lastDataGw < DATA_TIMEOUT_MS);
     }
 
+    // Presentation only: continue to use the original MQTT/threshold decisions.
+    function renderDoorState(badge, isOpen) {
+      const open = Boolean(isOpen);
+      const label = open ? "주차장 문 열림" : "주차장 문 닫힘";
+      badge.classList.toggle("door-open", open);
+      badge.classList.toggle("door-close", !open);
+      const stateText = badge.parentElement.querySelector(".door-state-text");
+      if (stateText) {
+        const value = open ? "Open" : "Close";
+        if (stateText.textContent !== value) stateText.textContent = value;
+        stateText.classList.toggle("door-open", open);
+        stateText.classList.toggle("door-close", !open);
+      }
+      if (badge.title !== label) {
+        badge.title = label;
+        const accessibleLabel = badge.querySelector(".visually-hidden");
+        if (accessibleLabel) accessibleLabel.textContent = label;
+      }
+    }
+
     function updateDoorNode(isOpen) {
-      doorNodeBadge.textContent = isOpen ? "Open" : "Close";
-      doorNodeBadge.classList.remove("door-open", "door-close");
-      doorNodeBadge.classList.add(isOpen ? "door-open" : "door-close");
+      renderDoorState(doorNodeBadge, isOpen);
     }
 
     function updateDoorGw(isOpen) {
-      doorGwBadge.textContent = isOpen ? "Open" : "Close";
-      doorGwBadge.classList.remove("door-open", "door-close");
-      doorGwBadge.classList.add(isOpen ? "door-open" : "door-close");
+      renderDoorState(doorGwBadge, isOpen);
     }
 
     function setMqttStatus(connected) {
