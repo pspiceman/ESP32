@@ -47,15 +47,15 @@ th{color:var(--muted)}
 </style>
 
 
-<link rel="manifest" href="./manifest.webmanifest?v=7">
+<link rel="manifest" href="./manifest.webmanifest?v=9">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="myHome">
-<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=7">
-<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=7">
-<link rel="icon" type="image/png" sizes="48x48" href="./favicon-48.png?v=7">
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=7">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=9">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=9">
+<link rel="icon" type="image/png" sizes="48x48" href="./favicon-48.png?v=9">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=9">
 
 </head>
 
@@ -71,7 +71,46 @@ th{color:var(--muted)}
   </div>
 
   <div class="grid">
-    <section class="card">
+<section class="card">
+      <h2>☁ MQTT 정보</h2>
+      <div class="row"><span class="muted">Broker</span><span>broker.hivemq.com</span></div>
+      <div class="row"><span class="muted">WebSocket</span><span>8884 / TLS</span></div>
+      <div class="row"><span class="muted">Base Topic</span><span id="baseTopic">-</span></div>
+      <div class="row"><span class="muted">마지막 수신</span><span id="lastRx">-</span></div>
+    </section>
+<section class="card">
+      <h2>📈 보유 자산</h2>
+
+      <div style="font-weight:700;margin-bottom:8px">삼성전자우 005935</div>
+      <div class="row"><span class="muted">현재가 / 종가</span><strong id="samsungPrice">-</strong></div>
+      <div class="row"><span class="muted">장 상태</span><span id="samsungStatus">-</span></div>
+      <div class="row"><span class="muted">보유수량</span><span>10,610주</span></div>
+      <div class="row"><span class="muted">평가금액</span><strong id="samsungValue">-</strong></div>
+
+      <div style="font-weight:700;margin:18px 0 8px">SOL AI반도체TOP2플러스 0167A0</div>
+      <div class="row"><span class="muted">현재가 / 종가</span><strong id="solPrice">-</strong></div>
+      <div class="row"><span class="muted">장 상태</span><span id="solStatus">-</span></div>
+      <div class="row"><span class="muted">보유수량</span><span>69주</span></div>
+      <div class="row"><span class="muted">평가금액</span><strong id="solValue">-</strong></div>
+
+      <div style="margin-top:18px;padding-top:12px;border-top:1px solid var(--line)">
+        <div class="row"><span class="muted">총 평가금액</span><strong id="portfolioTotal" style="font-size:22px">-</strong></div>
+        <div class="row"><span class="muted">총액 - 6억 5천만원</span><strong id="portfolioDelta" style="font-size:20px">-</strong></div>
+      </div>
+
+      <div class="row" style="margin-top:8px"><span class="muted">삼성 기준시각</span><span id="samsungTime">-</span></div>
+      <div class="row"><span class="muted">SOL 기준시각</span><span id="solTime">-</span></div>
+    </section>
+<section class="card">
+      <h2>🌤 용인 날씨</h2>
+      <div class="big" id="temp">-</div>
+      <div style="margin:5px 0 12px"><span class="badge" id="weatherText">대기 중</span></div>
+      <div class="row"><span class="muted">체감</span><strong id="feels">-</strong></div>
+      <div class="row"><span class="muted">습도</span><strong id="humidity">-</strong></div>
+      <div class="row"><span class="muted">풍속</span><strong id="wind">-</strong></div>
+      <div class="row"><span class="muted">기준시각</span><span id="weatherUpdated">-</span></div>
+    </section>
+<section class="card">
       <h2>📶 집 인터넷 / ESP32</h2>
       <div class="row"><span class="muted">Device</span><strong id="device">esp32s3-demo-01</strong></div>
       <div class="row"><span class="muted">상태</span><strong id="online">-</strong></div>
@@ -81,36 +120,7 @@ th{color:var(--muted)}
       <div class="row"><span class="muted">Channel</span><span id="channel">-</span></div>
       <div class="row"><span class="muted">Uptime</span><span id="uptime">-</span></div>
     </section>
-
-    <section class="card">
-      <h2>🌤 용인 날씨</h2>
-      <div class="big" id="temp">-</div>
-      <div style="margin:5px 0 12px"><span class="badge" id="weatherText">대기 중</span></div>
-      <div class="row"><span class="muted">체감</span><strong id="feels">-</strong></div>
-      <div class="row"><span class="muted">습도</span><strong id="humidity">-</strong></div>
-      <div class="row"><span class="muted">풍속</span><strong id="wind">-</strong></div>
-      <div class="row"><span class="muted">기준시각</span><span id="weatherUpdated">-</span></div>
-    </section>
-
-    <section class="card">
-      <h2>📈 삼성전자우 005935</h2>
-      <div class="big" id="stockPrice">-</div>
-      <div id="stockChange" style="font-size:19px;font-weight:700;margin-top:6px">-</div>
-      <div class="row" style="margin-top:12px"><span class="muted">전일종가</span><span id="prevClose">-</span></div>
-      <div class="muted" style="font-size:12px;margin-top:10px">
-        참고용 시세입니다. 외부 데이터 제공처에 따라 지연될 수 있습니다.
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>☁ MQTT 정보</h2>
-      <div class="row"><span class="muted">Broker</span><span>broker.hivemq.com</span></div>
-      <div class="row"><span class="muted">WebSocket</span><span>8884 / TLS</span></div>
-      <div class="row"><span class="muted">Base Topic</span><span id="baseTopic">-</span></div>
-      <div class="row"><span class="muted">마지막 수신</span><span id="lastRx">-</span></div>
-    </section>
-
-    <section class="card full">
+<section class="card full">
       <h2>📡 집 주변 Wi-Fi</h2>
       <div style="overflow:auto">
         <table>
@@ -123,7 +133,7 @@ th{color:var(--muted)}
         </table>
       </div>
     </section>
-  </div>
+</div>
 </div>
 
 <script>
@@ -200,20 +210,38 @@ function updateWeather(d){
 
 function updateStock(d){
   const won = n => Number(n).toLocaleString('ko-KR') + '원';
+  const signedWon = n => {
+    const v = Number(n);
+    const sign = v > 0 ? '+' : '';
+    return sign + v.toLocaleString('ko-KR') + '원';
+  };
+  const statusText = s => s === 'OPEN' ? '장중' : (s === 'CLOSE' ? '정규장 마감' : (s || '-'));
 
-  document.getElementById('stockPrice').textContent =
-    d.price !== undefined ? won(d.price) : '-';
+  if(d.samsung){
+    document.getElementById('samsungPrice').textContent = won(d.samsung.price || 0);
+    document.getElementById('samsungStatus').textContent = statusText(d.samsung.marketStatus);
+    document.getElementById('samsungTime').textContent = d.samsung.tradedAt || '-';
+  }
 
-  document.getElementById('prevClose').textContent =
-    d.prevClose !== undefined ? won(d.prevClose) : '-';
+  if(d.sol){
+    document.getElementById('solPrice').textContent = won(d.sol.price || 0);
+    document.getElementById('solStatus').textContent = statusText(d.sol.marketStatus);
+    document.getElementById('solTime').textContent = d.sol.tradedAt || '-';
+  }
 
-  if(d.change !== undefined && d.changePct !== undefined){
-    const sign = d.change > 0 ? '+' : '';
-    const e = document.getElementById('stockChange');
-    e.textContent =
-      sign + Number(d.change).toLocaleString('ko-KR') + '원 (' +
-      sign + Number(d.changePct).toFixed(2) + '%)';
-    e.className = d.change > 0 ? 'up' : (d.change < 0 ? 'down' : 'flat');
+  document.getElementById('samsungValue').textContent =
+    d.samsungValue !== undefined ? won(d.samsungValue) : '-';
+  document.getElementById('solValue').textContent =
+    d.solValue !== undefined ? won(d.solValue) : '-';
+  document.getElementById('portfolioTotal').textContent =
+    d.totalValue !== undefined ? won(d.totalValue) : '-';
+
+  const deltaEl = document.getElementById('portfolioDelta');
+  if(d.overBase !== undefined){
+    deltaEl.textContent = signedWon(d.overBase);
+    deltaEl.className = d.overBase > 0 ? 'up' : (d.overBase < 0 ? 'down' : 'flat');
+  } else {
+    deltaEl.textContent = '-';
   }
 }
 
@@ -261,7 +289,7 @@ function escapeHtml(s){
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=7');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=9');
       reg.update();
     } catch (e) {
       console.error('Service Worker registration failed:', e);
