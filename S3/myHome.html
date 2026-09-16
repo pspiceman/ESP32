@@ -48,22 +48,22 @@ th{color:var(--muted)}
 </style>
 
 
-<link rel="manifest" href="./manifest.webmanifest?v=13">
+<link rel="manifest" href="./manifest.webmanifest?v=14">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="myHome">
-<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=13">
-<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=13">
-<link rel="icon" type="image/png" sizes="48x48" href="./favicon-48.png?v=13">
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=13">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=14">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=14">
+<link rel="icon" type="image/png" sizes="48x48" href="./favicon-48.png?v=14">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=14">
 
 </head>
 
 <body>
 <div class="wrap">
   <h1>🏠 외부 Home Dashboard</h1>
-  <div class="sub">ESP32-S3 → MQTT → Internet → Browser</div>
+  <div class="sub">ESP32-S3 → MQTT → Internet → Browser · <span id="appVersion">v14</span></div>
 
   <div class="status">
     <span id="mqttDot" class="dot"></span>
@@ -107,7 +107,7 @@ th{color:var(--muted)}
 
       <div class="row" style="margin-top:8px"><span class="muted">삼성 기준시각</span><span id="samsungTime">-</span></div>
       <div class="row"><span class="muted">SOL 기준시각</span><span id="solTime">-</span></div>
-      <div class="row"><span class="muted">시세 출처</span><span id="stockSource">네이버 금융 직접조회 준비중</span></div>
+      <div class="row"><span class="muted">시세 출처</span><span id="stockSource">네이버 금융 초기화 중</span></div>
     </section>
 <section class="card">
       <h2>🌤 용인 날씨</h2>
@@ -265,7 +265,7 @@ function escapeHtml(s){
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=13');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=14');
       reg.update();
     } catch (e) {
       console.error('Service Worker registration failed:', e);
@@ -469,6 +469,18 @@ async function loadStocksDirect(){
     document.getElementById('samsungStatus').textContent = '시세 수신 실패';
     document.getElementById('solStatus').textContent = '시세 수신 실패';
   }
+}
+
+
+function startStockUpdater(){
+  loadStocksDirect();
+  setInterval(loadStocksDirect, 60000);
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', startStockUpdater);
+}else{
+  startStockUpdater();
 }
 
 </script>

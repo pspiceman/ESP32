@@ -1,4 +1,4 @@
-const CACHE_NAME = 'myhome-v13';
+const CACHE_NAME = 'myhome-v14';
 const ASSETS = [
   './myHome.html',
   './manifest.webmanifest',
