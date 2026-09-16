@@ -45,25 +45,49 @@ th{color:var(--muted)}
 @media(max-width:700px){
   .grid{grid-template-columns:1fr}.full{grid-column:auto}.wrap{padding:13px}.big{font-size:31px}
 }
+
+.stock-name{font-size:16px;font-weight:800;margin-bottom:6px}
+.stock-code{color:var(--muted);font-size:12px;margin-left:4px}
+.stock-quote{
+  padding:8px 0 12px;
+  border-bottom:1px solid rgba(51,65,85,.55);
+  margin-bottom:4px
+}
+.stock-price{
+  font-size:30px;
+  line-height:1.1;
+  font-weight:800;
+  letter-spacing:-0.5px
+}
+.stock-change{
+  margin-top:6px;
+  font-size:15px;
+  font-weight:800
+}
+.stock-sep{
+  margin:18px 0 12px;
+  border-top:1px solid var(--line)
+}
+
 </style>
 
 
-<link rel="manifest" href="./manifest.webmanifest?v=14">
+<link rel="manifest" href="./manifest.webmanifest?v=15">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="myHome">
-<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=14">
-<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=14">
-<link rel="icon" type="image/png" sizes="48x48" href="./favicon-48.png?v=14">
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=14">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=15">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=15">
+<link rel="icon" type="image/png" sizes="48x48" href="./favicon-48.png?v=15">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=15">
 
 </head>
 
 <body>
 <div class="wrap">
   <h1>🏠 외부 Home Dashboard</h1>
-  <div class="sub">ESP32-S3 → MQTT → Internet → Browser · <span id="appVersion">v14</span></div>
+  <div class="sub">ESP32-S3 → MQTT → Internet → Browser · <span id="appVersion">v15</span></div>
 
   <div class="status">
     <span id="mqttDot" class="dot"></span>
@@ -82,18 +106,26 @@ th{color:var(--muted)}
 <section class="card">
       <h2>📈 보유 자산</h2>
 
-      <div style="font-weight:700;margin-bottom:8px">삼성전자우 005935</div>
+      <div class="stock-name">삼성전자우 <span class="stock-code">005935</span></div>
+      <div class="stock-quote">
+        <div id="samsungPrice" class="stock-price">-</div>
+        <div id="samsungChange" class="stock-change flat">-</div>
+      </div>
       <div class="row"><span class="muted">시가</span><strong id="samsungOpen">-</strong></div>
-      <div class="row"><span class="muted">현재가 / 오늘 종가</span><strong id="samsungPrice">-</strong></div>
       <div class="row"><span class="muted">전일 종가</span><span id="samsungPrevClose">-</span></div>
       <div class="row"><span class="muted">고가 / 저가</span><span id="samsungHL">-</span></div>
       <div class="row"><span class="muted">시세 상태</span><span id="samsungStatus">데이터 대기</span></div>
       <div class="row"><span class="muted">보유수량</span><span>10,610주</span></div>
       <div class="row"><span class="muted">평가금액</span><strong id="samsungValue">-</strong></div>
 
-      <div style="font-weight:700;margin:18px 0 8px">SOL AI반도체TOP2플러스 0167A0</div>
+      <div class="stock-sep"></div>
+
+      <div class="stock-name">SOL AI반도체TOP2플러스 <span class="stock-code">0167A0</span></div>
+      <div class="stock-quote">
+        <div id="solPrice" class="stock-price">-</div>
+        <div id="solChange" class="stock-change flat">-</div>
+      </div>
       <div class="row"><span class="muted">시가</span><strong id="solOpen">-</strong></div>
-      <div class="row"><span class="muted">현재가 / 오늘 종가</span><strong id="solPrice">-</strong></div>
       <div class="row"><span class="muted">전일 종가</span><span id="solPrevClose">-</span></div>
       <div class="row"><span class="muted">고가 / 저가</span><span id="solHL">-</span></div>
       <div class="row"><span class="muted">시세 상태</span><span id="solStatus">데이터 대기</span></div>
@@ -265,7 +297,7 @@ function escapeHtml(s){
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=14');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=15');
       reg.update();
     } catch (e) {
       console.error('Service Worker registration failed:', e);
@@ -425,8 +457,27 @@ function renderQuote(prefix, q){
   const won = n => n === null || n === undefined ? '-' :
     Number(n).toLocaleString('ko-KR') + '원';
 
+  const priceEl = document.getElementById(prefix + 'Price');
+  const changeEl = document.getElementById(prefix + 'Change');
+
+  const price = Number(q.price);
+  const prev = Number(q.prevClose);
+  const change = (Number.isFinite(price) && Number.isFinite(prev)) ? price - prev : 0;
+  const pct = (prev > 0) ? (change / prev * 100) : 0;
+
+  const trendClass = change > 0 ? 'up' : (change < 0 ? 'down' : 'flat');
+  const sign = change > 0 ? '+' : '';
+  const pctSign = pct > 0 ? '+' : '';
+
+  priceEl.textContent = won(price);
+  priceEl.className = 'stock-price ' + trendClass;
+
+  changeEl.textContent =
+    sign + Math.round(change).toLocaleString('ko-KR') + '원 (' +
+    pctSign + pct.toFixed(2) + '%)';
+  changeEl.className = 'stock-change ' + trendClass;
+
   document.getElementById(prefix + 'Open').textContent = won(q.open);
-  document.getElementById(prefix + 'Price').textContent = won(q.price);
   document.getElementById(prefix + 'PrevClose').textContent = won(q.prevClose);
   document.getElementById(prefix + 'HL').textContent =
     won(q.high) + ' / ' + won(q.low);
