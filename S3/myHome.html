@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ESP32-S3 Home Dashboard</title>
+<title>myHome</title>
 
 <!-- MQTT.js from CDN -->
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -46,13 +46,16 @@ th{color:var(--muted)}
 }
 </style>
 
-<link rel="manifest" href="./manifest.webmanifest">
+
+<link rel="manifest" href="./manifest.webmanifest?v=3">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="myHome">
-<link rel="apple-touch-icon" href="./apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=3">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=3">
+<link rel="icon" type="image/png" sizes="48x48" href="./favicon-48.png?v=3">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=3">
 
 </head>
 
@@ -239,10 +242,18 @@ function escapeHtml(s){
 }
 </script>
 
+
+
+
 <script>
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(console.error);
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js?v=3');
+      reg.update();
+    } catch (e) {
+      console.error('Service Worker registration failed:', e);
+    }
   });
 }
 </script>
