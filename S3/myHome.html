@@ -47,15 +47,15 @@ th{color:var(--muted)}
 </style>
 
 
-<link rel="manifest" href="./manifest.webmanifest?v=10">
+<link rel="manifest" href="./manifest.webmanifest?v=12">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="myHome">
-<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=10">
-<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=10">
-<link rel="icon" type="image/png" sizes="48x48" href="./favicon-48.png?v=10">
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=10">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=12">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=12">
+<link rel="icon" type="image/png" sizes="48x48" href="./favicon-48.png?v=12">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=12">
 
 </head>
 
@@ -85,7 +85,8 @@ th{color:var(--muted)}
       <div class="row"><span class="muted">시가</span><strong id="samsungOpen">-</strong></div>
       <div class="row"><span class="muted">현재가 / 오늘 종가</span><strong id="samsungPrice">-</strong></div>
       <div class="row"><span class="muted">전일 종가</span><span id="samsungPrevClose">-</span></div>
-      <div class="row"><span class="muted">장 상태</span><span id="samsungStatus">-</span></div>
+      <div class="row"><span class="muted">고가 / 저가</span><span id="samsungHL">-</span></div>
+      <div class="row"><span class="muted">시세 상태</span><span id="samsungStatus">데이터 대기</span></div>
       <div class="row"><span class="muted">보유수량</span><span>10,610주</span></div>
       <div class="row"><span class="muted">평가금액</span><strong id="samsungValue">-</strong></div>
 
@@ -93,7 +94,8 @@ th{color:var(--muted)}
       <div class="row"><span class="muted">시가</span><strong id="solOpen">-</strong></div>
       <div class="row"><span class="muted">현재가 / 오늘 종가</span><strong id="solPrice">-</strong></div>
       <div class="row"><span class="muted">전일 종가</span><span id="solPrevClose">-</span></div>
-      <div class="row"><span class="muted">장 상태</span><span id="solStatus">-</span></div>
+      <div class="row"><span class="muted">고가 / 저가</span><span id="solHL">-</span></div>
+      <div class="row"><span class="muted">시세 상태</span><span id="solStatus">데이터 대기</span></div>
       <div class="row"><span class="muted">보유수량</span><span>69주</span></div>
       <div class="row"><span class="muted">평가금액</span><strong id="solValue">-</strong></div>
 
@@ -104,6 +106,7 @@ th{color:var(--muted)}
 
       <div class="row" style="margin-top:8px"><span class="muted">삼성 기준시각</span><span id="samsungTime">-</span></div>
       <div class="row"><span class="muted">SOL 기준시각</span><span id="solTime">-</span></div>
+      <div class="row"><span class="muted">시세 출처</span><span id="stockSource">-</span></div>
     </section>
 <section class="card">
       <h2>🌤 용인 날씨</h2>
@@ -219,40 +222,34 @@ function updateStock(d){
     const sign = v > 0 ? '+' : '';
     return sign + v.toLocaleString('ko-KR') + '원';
   };
-  const statusText = s => s === 'OPEN' ? '장중' : (s === 'CLOSE' ? '정규장 마감' : (s || '-'));
 
-  if(d.samsung){
-    document.getElementById('samsungOpen').textContent =
-      d.samsung.open !== undefined ? won(d.samsung.open) : '-';
+  document.getElementById('stockSource').textContent =
+    d.source === 'MK' ? '매일경제 마켓' : (d.source || '-');
 
-    document.getElementById('samsungPrice').textContent =
-      d.samsung.price !== undefined ? won(d.samsung.price) : '-';
-
-    document.getElementById('samsungPrevClose').textContent =
-      d.samsung.prevClose !== undefined ? won(d.samsung.prevClose) : '-';
-
-    document.getElementById('samsungStatus').textContent =
-      statusText(d.samsung.marketStatus);
-
+  if(d.samsung && d.samsung.ok){
+    document.getElementById('samsungOpen').textContent = won(d.samsung.open);
+    document.getElementById('samsungPrice').textContent = won(d.samsung.price);
+    document.getElementById('samsungPrevClose').textContent = won(d.samsung.prevClose);
+    document.getElementById('samsungHL').textContent =
+      won(d.samsung.high) + ' / ' + won(d.samsung.low);
+    document.getElementById('samsungStatus').textContent = '시세 수신 정상';
     document.getElementById('samsungTime').textContent =
-      d.samsung.tradedAt || '-';
+      d.samsung.tradedAt || '수신 완료';
+  } else {
+    document.getElementById('samsungStatus').textContent = '시세 수신 실패';
   }
 
-  if(d.sol){
-    document.getElementById('solOpen').textContent =
-      d.sol.open !== undefined ? won(d.sol.open) : '-';
-
-    document.getElementById('solPrice').textContent =
-      d.sol.price !== undefined ? won(d.sol.price) : '-';
-
-    document.getElementById('solPrevClose').textContent =
-      d.sol.prevClose !== undefined ? won(d.sol.prevClose) : '-';
-
-    document.getElementById('solStatus').textContent =
-      statusText(d.sol.marketStatus);
-
+  if(d.sol && d.sol.ok){
+    document.getElementById('solOpen').textContent = won(d.sol.open);
+    document.getElementById('solPrice').textContent = won(d.sol.price);
+    document.getElementById('solPrevClose').textContent = won(d.sol.prevClose);
+    document.getElementById('solHL').textContent =
+      won(d.sol.high) + ' / ' + won(d.sol.low);
+    document.getElementById('solStatus').textContent = '시세 수신 정상';
     document.getElementById('solTime').textContent =
-      d.sol.tradedAt || '-';
+      d.sol.tradedAt || '수신 완료';
+  } else {
+    document.getElementById('solStatus').textContent = '시세 수신 실패';
   }
 
   document.getElementById('samsungValue').textContent =
@@ -317,7 +314,7 @@ function escapeHtml(s){
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=10');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=12');
       reg.update();
     } catch (e) {
       console.error('Service Worker registration failed:', e);
