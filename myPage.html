@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>myHome</title>
+
+<!-- MQTT.js from CDN -->
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js">setInterval(loadStocksDirect,60000);
+</script>
+
+<style>
+:root{
+  --bg:#0f172a;--card:#1e293b;--line:#334155;--text:#f8fafc;
+  --muted:#94a3b8;--cyan:#38bdf8;--green:#4ade80;--red:#fb7185;--blue:#60a5fa;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:linear-gradient(135deg,#0f172a,#111827);
+  color:var(--text);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif
+}
+.wrap{max-width:1100px;margin:auto;padding:20px}
+h1{margin:0;font-size:28px}
+.sub{color:var(--muted);margin:5px 0 18px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.card{
+  background:rgba(30,41,59,.95);border:1px solid var(--line);
+  border-radius:18px;padding:18px;box-shadow:0 8px 25px rgba(0,0,0,.2)
+}
+.full{grid-column:1/-1}
+h2{font-size:17px;margin:0 0 13px}
+.big{font-size:36px;font-weight:750}
+.row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid rgba(51,65,85,.5)}
+.row:last-child{border-bottom:0}
+.muted{color:var(--muted)}
+.status{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.dot{width:10px;height:10px;border-radius:50%;background:#64748b}
+.dot.on{background:var(--green);box-shadow:0 0 10px rgba(74,222,128,.5)}
+.badge{display:inline-block;padding:4px 9px;background:#0c4a6e;color:#bae6fd;border-radius:999px;font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--muted)}
+.up{color:var(--red)}.down{color:var(--blue)}.flat{color:var(--text)}
+#brokerState{font-weight:700}
+@media(max-width:700px){
+  .grid{grid-template-columns:1fr}.full{grid-column:auto}.wrap{padding:13px}.big{font-size:31px}
+}
+
+.stock-name{font-size:16px;font-weight:800;margin-bottom:6px}
+.stock-code{color:var(--muted);font-size:12px;margin-left:4px}
+.stock-quote{
+  padding:8px 0 12px;
+  border-bottom:1px solid rgba(51,65,85,.55);
+  margin-bottom:4px
+}
+.stock-price{
+  font-size:30px;
+  line-height:1.1;
+  font-weight:800;
+  letter-spacing:-0.5px
+}
+.stock-change{
+  margin-top:6px;
+  font-size:15px;
+  font-weight:800
+}
+.stock-sep{
+  margin:18px 0 12px;
+  border-top:1px solid var(--line)
+}
+
+</style>
+
+
+<link rel="manifest" href="./manifest.webmanifest?v=15">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="myHome">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=15">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=15">
+<link rel="icon" type="image/png" sizes="48x48" href="./favicon-48.png?v=15">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=15">
+
+</head>
+
+<body>
+<div class="wrap">
+  <h1>🏠 외부 Home Dashboard</h1>
+  <div class="sub">ESP32-S3 → MQTT → Internet → Browser · <span id="appVersion">v15</span></div>
+
+  <div class="status">
+    <span id="mqttDot" class="dot"></span>
+    <span>MQTT:</span>
+    <span id="brokerState">연결 중...</span>
+  </div>
+
+  <div class="grid">
+<section class="card">
+      <h2>☁ MQTT 정보</h2>
+      <div class="row"><span class="muted">Broker</span><span>broker.hivemq.com</span></div>
+      <div class="row"><span class="muted">WebSocket</span><span>8884 / TLS</span></div>
+      <div class="row"><span class="muted">Base Topic</span><span id="baseTopic">-</span></div>
+      <div class="row"><span class="muted">마지막 수신</span><span id="lastRx">-</span></div>
+    </section>
+<section class="card">
+      <h2>📈 보유 자산</h2>
+
+      <div class="stock-name">삼성전자우 <span class="stock-code">005935</span></div>
+      <div class="stock-quote">
+        <div id="samsungPrice" class="stock-price">-</div>
+        <div id="samsungChange" class="stock-change flat">-</div>
+      </div>
+      <div class="row"><span class="muted">시가</span><strong id="samsungOpen">-</strong></div>
+      <div class="row"><span class="muted">전일 종가</span><span id="samsungPrevClose">-</span></div>
+      <div class="row"><span class="muted">고가 / 저가</span><span id="samsungHL">-</span></div>
+      <div class="row"><span class="muted">시세 상태</span><span id="samsungStatus">데이터 대기</span></div>
+      <div class="row"><span class="muted">보유수량</span><span>10,610주</span></div>
+      <div class="row"><span class="muted">평가금액</span><strong id="samsungValue">-</strong></div>
+
+      <div class="stock-sep"></div>
+
+      <div class="stock-name">SOL AI반도체TOP2플러스 <span class="stock-code">0167A0</span></div>
+      <div class="stock-quote">
+        <div id="solPrice" class="stock-price">-</div>
+        <div id="solChange" class="stock-change flat">-</div>
+      </div>
+      <div class="row"><span class="muted">시가</span><strong id="solOpen">-</strong></div>
+      <div class="row"><span class="muted">전일 종가</span><span id="solPrevClose">-</span></div>
+      <div class="row"><span class="muted">고가 / 저가</span><span id="solHL">-</span></div>
+      <div class="row"><span class="muted">시세 상태</span><span id="solStatus">데이터 대기</span></div>
+      <div class="row"><span class="muted">보유수량</span><span>69주</span></div>
+      <div class="row"><span class="muted">평가금액</span><strong id="solValue">-</strong></div>
+
+      <div style="margin-top:18px;padding-top:12px;border-top:1px solid var(--line)">
+        <div class="row"><span class="muted">총 평가금액</span><strong id="portfolioTotal" style="font-size:22px">-</strong></div>
+        <div class="row"><span class="muted">총액 - 6억 5천만원</span><strong id="portfolioDelta" style="font-size:20px">-</strong></div>
+      </div>
+
+      <div class="row" style="margin-top:8px"><span class="muted">삼성 기준시각</span><span id="samsungTime">-</span></div>
+      <div class="row"><span class="muted">SOL 기준시각</span><span id="solTime">-</span></div>
+      <div class="row"><span class="muted">시세 출처</span><span id="stockSource">네이버 금융 초기화 중</span></div>
+    </section>
+<section class="card">
+      <h2>🌤 용인 날씨</h2>
+      <div class="big" id="temp">-</div>
+      <div style="margin:5px 0 12px"><span class="badge" id="weatherText">대기 중</span></div>
+      <div class="row"><span class="muted">체감</span><strong id="feels">-</strong></div>
+      <div class="row"><span class="muted">습도</span><strong id="humidity">-</strong></div>
+      <div class="row"><span class="muted">풍속</span><strong id="wind">-</strong></div>
+      <div class="row"><span class="muted">기준시각</span><span id="weatherUpdated">-</span></div>
+    </section>
+<section class="card">
+      <h2>📶 집 인터넷 / ESP32</h2>
+      <div class="row"><span class="muted">Device</span><strong id="device">esp32s3-demo-01</strong></div>
+      <div class="row"><span class="muted">상태</span><strong id="online">-</strong></div>
+      <div class="row"><span class="muted">SSID</span><strong id="ssid">-</strong></div>
+      <div class="row"><span class="muted">RSSI</span><strong id="rssi">-</strong></div>
+      <div class="row"><span class="muted">내부 IP</span><span id="ip">-</span></div>
+      <div class="row"><span class="muted">Channel</span><span id="channel">-</span></div>
+      <div class="row"><span class="muted">Uptime</span><span id="uptime">-</span></div>
+    </section>
+<section class="card full">
+      <h2>📡 집 주변 Wi-Fi</h2>
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr><th>SSID</th><th>RSSI</th><th>CH</th></tr>
+          </thead>
+          <tbody id="wifiBody">
+            <tr><td colspan="3">데이터 대기 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+</div>
+</div>
+
+<script>
+const DEVICE_ID = 'esp32s3-demo-01';
+const BASE = 'tswell/home/' + DEVICE_ID;
+
+document.getElementById('device').textContent = DEVICE_ID;
+document.getElementById('baseTopic').textContent = BASE;
+
+const client = mqtt.connect('wss://broker.hivemq.com:8884/mqtt', {
+  clientId: 'WEB-' + Math.random().toString(16).slice(2),
+  clean: true,
+  connectTimeout: 10000,
+  reconnectPeriod: 3000
+});
+
+function setBrokerState(text, on){
+  document.getElementById('brokerState').textContent = text;
+  document.getElementById('mqttDot').className = on ? 'dot on' : 'dot';
+}
+
+client.on('connect', () => {
+  setBrokerState('연결됨', true);
+  client.subscribe(BASE + '/#', {qos:0});
+});
+
+client.on('reconnect', () => setBrokerState('재연결 중...', false));
+client.on('offline', () => setBrokerState('오프라인', false));
+client.on('error', () => setBrokerState('오류', false));
+
+client.on('message', (topic, payload) => {
+  let d;
+  try { d = JSON.parse(payload.toString()); }
+  catch(e){ return; }
+
+  document.getElementById('lastRx').textContent =
+    new Date().toLocaleTimeString('ko-KR');
+
+  if(topic.endsWith('/status')) updateStatus(d);
+  else if(topic.endsWith('/weather')) updateWeather(d);
+  else if(topic.endsWith('/stock')) { /* 주식은 브라우저가 네이버 금융에서 직접 조회 */ }
+  else if(topic.endsWith('/wifi')) updateWifi(d);
+});
+
+function updateStatus(d){
+  document.getElementById('online').textContent = d.online ? 'ONLINE' : 'OFFLINE';
+  if(!d.online) return;
+
+  document.getElementById('ssid').textContent = d.ssid || '-';
+  document.getElementById('rssi').textContent =
+    (d.rssi !== undefined ? d.rssi + ' dBm' : '-');
+  document.getElementById('ip').textContent = d.ip || '-';
+  document.getElementById('channel').textContent = d.channel ?? '-';
+
+  if(d.uptime !== undefined){
+    const h = Math.floor(d.uptime / 3600);
+    const m = Math.floor((d.uptime % 3600) / 60);
+    document.getElementById('uptime').textContent = h + '시간 ' + m + '분';
+  }
+}
+
+function updateWeather(d){
+  document.getElementById('temp').textContent =
+    (d.temp !== undefined ? Number(d.temp).toFixed(1) + '°C' : '-');
+  document.getElementById('feels').textContent =
+    (d.feels !== undefined ? Number(d.feels).toFixed(1) + '°C' : '-');
+  document.getElementById('humidity').textContent =
+    (d.humidity !== undefined ? Math.round(d.humidity) + '%' : '-');
+  document.getElementById('wind').textContent =
+    (d.wind !== undefined ? Number(d.wind).toFixed(1) + ' km/h' : '-');
+  document.getElementById('weatherText').textContent = d.text || '-';
+  document.getElementById('weatherUpdated').textContent = d.updated || '-';
+}
+
+function updateStock(d){
+  // v13부터 주식 시세는 ESP32/MQTT가 아니라 브라우저에서
+  // 네이버 금융 realtime API를 직접 조회합니다.
+}
+
+function updateWifi(d){
+  const body = document.getElementById('wifiBody');
+  const a = Array.isArray(d.networks) ? d.networks : [];
+
+  a.sort((x,y) => y.rssi - x.rssi);
+
+  if(!a.length){
+    body.innerHTML = '<tr><td colspan="3">검색 결과 없음</td></tr>';
+    return;
+  }
+
+  body.innerHTML = a.map(x =>
+    '<tr><td>' + escapeHtml(x.ssid || '(hidden)') + '</td>' +
+    '<td><strong>' + x.rssi + ' dBm</strong></td>' +
+    '<td>' + x.channel + '</td></tr>'
+  ).join('');
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js?v=15');
+      reg.update();
+    } catch (e) {
+      console.error('Service Worker registration failed:', e);
+    }
+  });
+}
+
+// -----------------------------------------------------------------------------
+// v13: 주식 시세는 브라우저에서 네이버 금융 realtime API 직접 조회
+// 1차: modern JSON endpoint(fetch)
+// 2차: legacy realtime JSONP (_callback) - CORS 회피
+//
+// Legacy fields:
+// nv 현재가/오늘 종가, sv 전일종가, ov 시가, hv 고가, lv 저가, ms 장상태
+// -----------------------------------------------------------------------------
+const SAMSUNG_QTY = 10610;
+const SOL_QTY = 69;
+const BASE_AMOUNT = 650000000;
+
+function naverNum(v){
+  if(v === null || v === undefined || v === '') return null;
+  const n = Number(String(v).replace(/,/g,'').replace(/%/g,'').trim());
+  return Number.isFinite(n) ? n : null;
+}
+
+function marketStatusText(s){
+  if(s === 'OPEN') return '장중';
+  if(s === 'CLOSE') return '정규장 마감';
+  if(s === 'PREOPEN') return '장 시작 전';
+  if(s === 'AFTER_HOURS') return '시간외';
+  return s || '-';
+}
+
+function normalizeModernNaver(d){
+  if(!d) return null;
+  const price = naverNum(d.closePrice);
+  if(!price) return null;
+  return {
+    code: d.itemCode || d.stockCode || '',
+    name: d.stockName || '',
+    price,
+    prevClose: (() => {
+      const ch = naverNum(d.compareToPreviousClosePrice);
+      const dir = d.compareToPreviousPrice && d.compareToPreviousPrice.name;
+      if(ch === null) return null;
+      const signed = (dir === 'FALLING' && ch > 0) ? -ch : ch;
+      return price - signed;
+    })(),
+    open: naverNum(d.openPrice),
+    high: naverNum(d.highPrice),
+    low: naverNum(d.lowPrice),
+    status: d.marketStatus || '',
+    tradedAt: d.localTradedAt || '',
+    source: '네이버 금융 realtime'
+  };
+}
+
+function normalizeLegacyNaver(root, code){
+  const areas = root && root.result && root.result.areas;
+  if(!Array.isArray(areas)) return null;
+
+  for(const area of areas){
+    if(area.name !== 'SERVICE_ITEM' || !Array.isArray(area.datas)) continue;
+    const d = area.datas.find(x => String(x.cd) === String(code)) || area.datas[0];
+    if(!d) continue;
+
+    const price = naverNum(d.nv);
+    if(!price) continue;
+
+    return {
+      code: String(d.cd || code),
+      name: d.nm || '',
+      price,
+      prevClose: naverNum(d.sv),
+      open: naverNum(d.ov),
+      high: naverNum(d.hv),
+      low: naverNum(d.lv),
+      status: d.ms || '',
+      tradedAt: root.result.time ? new Date(root.result.time).toLocaleString('ko-KR') : '',
+      source: '네이버 금융 JSONP'
+    };
+  }
+  return null;
+}
+
+async function fetchNaverModern(code){
+  const url = 'https://polling.finance.naver.com/api/realtime/domestic/stock/' + encodeURIComponent(code);
+  const r = await fetch(url, {cache:'no-store', mode:'cors'});
+  if(!r.ok) throw new Error('HTTP ' + r.status);
+  const j = await r.json();
+  const d = Array.isArray(j.datas) ? j.datas[0] : null;
+  const q = normalizeModernNaver(d);
+  if(!q) throw new Error('modern parse failed');
+  return q;
+}
+
+function fetchNaverJSONP(code, timeoutMs=8000){
+  return new Promise((resolve, reject) => {
+    const cb = '__myHomeNaver_' + code.replace(/[^0-9A-Za-z]/g,'') + '_' +
+               Date.now() + '_' + Math.floor(Math.random()*100000);
+
+    let done = false;
+    const script = document.createElement('script');
+
+    const cleanup = () => {
+      if(done) return;
+      done = true;
+      clearTimeout(timer);
+      try { delete window[cb]; } catch(e) { window[cb] = undefined; }
+      if(script.parentNode) script.parentNode.removeChild(script);
+    };
+
+    window[cb] = data => {
+      const q = normalizeLegacyNaver(data, code);
+      cleanup();
+      if(q) resolve(q);
+      else reject(new Error('JSONP parse failed'));
+    };
+
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('JSONP timeout'));
+    }, timeoutMs);
+
+    script.onerror = () => {
+      cleanup();
+      reject(new Error('JSONP script error'));
+    };
+
+    // Naver PC finance itself uses Jindo JSONP; its default callback parameter is "_callback".
+    script.src =
+      'https://polling.finance.naver.com/api/realtime' +
+      '?query=' + encodeURIComponent('SERVICE_ITEM:' + code) +
+      '&_callback=' + encodeURIComponent(cb) +
+      '&_=' + Date.now();
+
+    document.head.appendChild(script);
+  });
+}
+
+async function getNaverQuote(code){
+  // Try modern JSON first. If browser CORS blocks it, use Naver's JSONP path.
+  try {
+    return await fetchNaverModern(code);
+  } catch(e1) {
+    console.warn('[STOCK] modern fetch failed', code, e1);
+    try {
+      return await fetchNaverJSONP(code);
+    } catch(e2) {
+      console.error('[STOCK] JSONP failed', code, e2);
+      throw e2;
+    }
+  }
+}
+
+function renderQuote(prefix, q){
+  const won = n => n === null || n === undefined ? '-' :
+    Number(n).toLocaleString('ko-KR') + '원';
+
+  const priceEl = document.getElementById(prefix + 'Price');
+  const changeEl = document.getElementById(prefix + 'Change');
+
+  const price = Number(q.price);
+  const prev = Number(q.prevClose);
+  const change = (Number.isFinite(price) && Number.isFinite(prev)) ? price - prev : 0;
+  const pct = (prev > 0) ? (change / prev * 100) : 0;
+
+  const trendClass = change > 0 ? 'up' : (change < 0 ? 'down' : 'flat');
+  const sign = change > 0 ? '+' : '';
+  const pctSign = pct > 0 ? '+' : '';
+
+  priceEl.textContent = won(price);
+  priceEl.className = 'stock-price ' + trendClass;
+
+  changeEl.textContent =
+    sign + Math.round(change).toLocaleString('ko-KR') + '원 (' +
+    pctSign + pct.toFixed(2) + '%)';
+  changeEl.className = 'stock-change ' + trendClass;
+
+  document.getElementById(prefix + 'Open').textContent = won(q.open);
+  document.getElementById(prefix + 'PrevClose').textContent = won(q.prevClose);
+  document.getElementById(prefix + 'HL').textContent =
+    won(q.high) + ' / ' + won(q.low);
+  document.getElementById(prefix + 'Status').textContent = marketStatusText(q.status);
+  document.getElementById(prefix + 'Time').textContent = q.tradedAt || '수신 완료';
+}
+
+async function loadStocksDirect(){
+  const sourceEl = document.getElementById('stockSource');
+  sourceEl.textContent = '네이버 금융 조회 중...';
+
+  try {
+    const [samsung, sol] = await Promise.all([
+      getNaverQuote('005935'),
+      getNaverQuote('0167A0')
+    ]);
+
+    renderQuote('samsung', samsung);
+    renderQuote('sol', sol);
+
+    const samsungValue = samsung.price * SAMSUNG_QTY;
+    const solValue = sol.price * SOL_QTY;
+    const total = samsungValue + solValue;
+    const delta = total - BASE_AMOUNT;
+
+    const won = n => Number(n).toLocaleString('ko-KR') + '원';
+    document.getElementById('samsungValue').textContent = won(samsungValue);
+    document.getElementById('solValue').textContent = won(solValue);
+    document.getElementById('portfolioTotal').textContent = won(total);
+
+    const deltaEl = document.getElementById('portfolioDelta');
+    deltaEl.textContent = (delta > 0 ? '+' : '') + Number(delta).toLocaleString('ko-KR') + '원';
+    deltaEl.className = delta > 0 ? 'up' : (delta < 0 ? 'down' : 'flat');
+
+    const sourceNames = [...new Set([samsung.source, sol.source])];
+    sourceEl.textContent = sourceNames.join(' / ');
+  } catch(e) {
+    console.error('[STOCK] direct quote load failed', e);
+    sourceEl.textContent = '네이버 금융 직접조회 실패';
+    document.getElementById('samsungStatus').textContent = '시세 수신 실패';
+    document.getElementById('solStatus').textContent = '시세 수신 실패';
+  }
+}
+
+
+function startStockUpdater(){
+  loadStocksDirect();
+  setInterval(loadStocksDirect, 60000);
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', startStockUpdater);
+}else{
+  startStockUpdater();
+}
+
+</script>
+
+</body>
+</html>
