@@ -47,15 +47,15 @@ th{color:var(--muted)}
 </style>
 
 
-<link rel="manifest" href="./manifest.webmanifest?v=9">
+<link rel="manifest" href="./manifest.webmanifest?v=10">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="myHome">
-<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=9">
-<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=9">
-<link rel="icon" type="image/png" sizes="48x48" href="./favicon-48.png?v=9">
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=9">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=10">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=10">
+<link rel="icon" type="image/png" sizes="48x48" href="./favicon-48.png?v=10">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=10">
 
 </head>
 
@@ -82,13 +82,17 @@ th{color:var(--muted)}
       <h2>📈 보유 자산</h2>
 
       <div style="font-weight:700;margin-bottom:8px">삼성전자우 005935</div>
-      <div class="row"><span class="muted">현재가 / 종가</span><strong id="samsungPrice">-</strong></div>
+      <div class="row"><span class="muted">시가</span><strong id="samsungOpen">-</strong></div>
+      <div class="row"><span class="muted">현재가 / 오늘 종가</span><strong id="samsungPrice">-</strong></div>
+      <div class="row"><span class="muted">전일 종가</span><span id="samsungPrevClose">-</span></div>
       <div class="row"><span class="muted">장 상태</span><span id="samsungStatus">-</span></div>
       <div class="row"><span class="muted">보유수량</span><span>10,610주</span></div>
       <div class="row"><span class="muted">평가금액</span><strong id="samsungValue">-</strong></div>
 
       <div style="font-weight:700;margin:18px 0 8px">SOL AI반도체TOP2플러스 0167A0</div>
-      <div class="row"><span class="muted">현재가 / 종가</span><strong id="solPrice">-</strong></div>
+      <div class="row"><span class="muted">시가</span><strong id="solOpen">-</strong></div>
+      <div class="row"><span class="muted">현재가 / 오늘 종가</span><strong id="solPrice">-</strong></div>
+      <div class="row"><span class="muted">전일 종가</span><span id="solPrevClose">-</span></div>
       <div class="row"><span class="muted">장 상태</span><span id="solStatus">-</span></div>
       <div class="row"><span class="muted">보유수량</span><span>69주</span></div>
       <div class="row"><span class="muted">평가금액</span><strong id="solValue">-</strong></div>
@@ -218,21 +222,45 @@ function updateStock(d){
   const statusText = s => s === 'OPEN' ? '장중' : (s === 'CLOSE' ? '정규장 마감' : (s || '-'));
 
   if(d.samsung){
-    document.getElementById('samsungPrice').textContent = won(d.samsung.price || 0);
-    document.getElementById('samsungStatus').textContent = statusText(d.samsung.marketStatus);
-    document.getElementById('samsungTime').textContent = d.samsung.tradedAt || '-';
+    document.getElementById('samsungOpen').textContent =
+      d.samsung.open !== undefined ? won(d.samsung.open) : '-';
+
+    document.getElementById('samsungPrice').textContent =
+      d.samsung.price !== undefined ? won(d.samsung.price) : '-';
+
+    document.getElementById('samsungPrevClose').textContent =
+      d.samsung.prevClose !== undefined ? won(d.samsung.prevClose) : '-';
+
+    document.getElementById('samsungStatus').textContent =
+      statusText(d.samsung.marketStatus);
+
+    document.getElementById('samsungTime').textContent =
+      d.samsung.tradedAt || '-';
   }
 
   if(d.sol){
-    document.getElementById('solPrice').textContent = won(d.sol.price || 0);
-    document.getElementById('solStatus').textContent = statusText(d.sol.marketStatus);
-    document.getElementById('solTime').textContent = d.sol.tradedAt || '-';
+    document.getElementById('solOpen').textContent =
+      d.sol.open !== undefined ? won(d.sol.open) : '-';
+
+    document.getElementById('solPrice').textContent =
+      d.sol.price !== undefined ? won(d.sol.price) : '-';
+
+    document.getElementById('solPrevClose').textContent =
+      d.sol.prevClose !== undefined ? won(d.sol.prevClose) : '-';
+
+    document.getElementById('solStatus').textContent =
+      statusText(d.sol.marketStatus);
+
+    document.getElementById('solTime').textContent =
+      d.sol.tradedAt || '-';
   }
 
   document.getElementById('samsungValue').textContent =
     d.samsungValue !== undefined ? won(d.samsungValue) : '-';
+
   document.getElementById('solValue').textContent =
     d.solValue !== undefined ? won(d.solValue) : '-';
+
   document.getElementById('portfolioTotal').textContent =
     d.totalValue !== undefined ? won(d.totalValue) : '-';
 
@@ -289,7 +317,7 @@ function escapeHtml(s){
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=9');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=10');
       reg.update();
     } catch (e) {
       console.error('Service Worker registration failed:', e);
