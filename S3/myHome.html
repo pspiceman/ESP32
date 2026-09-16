@@ -47,15 +47,15 @@ th{color:var(--muted)}
 </style>
 
 
-<link rel="manifest" href="./manifest.webmanifest?v=4">
+<link rel="manifest" href="./manifest.webmanifest?v=7">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="myHome">
-<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=4">
-<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=4">
-<link rel="icon" type="image/png" sizes="48x48" href="./favicon-48.png?v=4">
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=4">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=7">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=7">
+<link rel="icon" type="image/png" sizes="48x48" href="./favicon-48.png?v=7">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=7">
 
 </head>
 
@@ -248,11 +248,20 @@ function escapeHtml(s){
 
 
 
+
+
+
+
+
+
+
+
+
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=4');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=7');
       reg.update();
     } catch (e) {
       console.error('Service Worker registration failed:', e);
