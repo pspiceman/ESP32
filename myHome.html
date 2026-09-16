@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESP32-S3 Home Dashboard</title>
+
+<!-- MQTT.js from CDN -->
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+<style>
+:root{
+  --bg:#0f172a;--card:#1e293b;--line:#334155;--text:#f8fafc;
+  --muted:#94a3b8;--cyan:#38bdf8;--green:#4ade80;--red:#fb7185;--blue:#60a5fa;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:linear-gradient(135deg,#0f172a,#111827);
+  color:var(--text);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif
+}
+.wrap{max-width:1100px;margin:auto;padding:20px}
+h1{margin:0;font-size:28px}
+.sub{color:var(--muted);margin:5px 0 18px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.card{
+  background:rgba(30,41,59,.95);border:1px solid var(--line);
+  border-radius:18px;padding:18px;box-shadow:0 8px 25px rgba(0,0,0,.2)
+}
+.full{grid-column:1/-1}
+h2{font-size:17px;margin:0 0 13px}
+.big{font-size:36px;font-weight:750}
+.row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid rgba(51,65,85,.5)}
+.row:last-child{border-bottom:0}
+.muted{color:var(--muted)}
+.status{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.dot{width:10px;height:10px;border-radius:50%;background:#64748b}
+.dot.on{background:var(--green);box-shadow:0 0 10px rgba(74,222,128,.5)}
+.badge{display:inline-block;padding:4px 9px;background:#0c4a6e;color:#bae6fd;border-radius:999px;font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--muted)}
+.up{color:var(--red)}.down{color:var(--blue)}.flat{color:var(--text)}
+#brokerState{font-weight:700}
+@media(max-width:700px){
+  .grid{grid-template-columns:1fr}.full{grid-column:auto}.wrap{padding:13px}.big{font-size:31px}
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+  <h1>🏠 외부 Home Dashboard</h1>
+  <div class="sub">ESP32-S3 → MQTT → Internet → Browser</div>
+
+  <div class="status">
+    <span id="mqttDot" class="dot"></span>
+    <span>MQTT:</span>
+    <span id="brokerState">연결 중...</span>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>📶 집 인터넷 / ESP32</h2>
+      <div class="row"><span class="muted">Device</span><strong id="device">esp32s3-demo-01</strong></div>
+      <div class="row"><span class="muted">상태</span><strong id="online">-</strong></div>
+      <div class="row"><span class="muted">SSID</span><strong id="ssid">-</strong></div>
+      <div class="row"><span class="muted">RSSI</span><strong id="rssi">-</strong></div>
+      <div class="row"><span class="muted">내부 IP</span><span id="ip">-</span></div>
+      <div class="row"><span class="muted">Channel</span><span id="channel">-</span></div>
+      <div class="row"><span class="muted">Uptime</span><span id="uptime">-</span></div>
+    </section>
+
+    <section class="card">
+      <h2>🌤 용인 날씨</h2>
+      <div class="big" id="temp">-</div>
+      <div style="margin:5px 0 12px"><span class="badge" id="weatherText">대기 중</span></div>
+      <div class="row"><span class="muted">체감</span><strong id="feels">-</strong></div>
+      <div class="row"><span class="muted">습도</span><strong id="humidity">-</strong></div>
+      <div class="row"><span class="muted">풍속</span><strong id="wind">-</strong></div>
+      <div class="row"><span class="muted">기준시각</span><span id="weatherUpdated">-</span></div>
+    </section>
+
+    <section class="card">
+      <h2>📈 삼성전자우 005935</h2>
+      <div class="big" id="stockPrice">-</div>
+      <div id="stockChange" style="font-size:19px;font-weight:700;margin-top:6px">-</div>
+      <div class="row" style="margin-top:12px"><span class="muted">전일종가</span><span id="prevClose">-</span></div>
+      <div class="muted" style="font-size:12px;margin-top:10px">
+        참고용 시세입니다. 외부 데이터 제공처에 따라 지연될 수 있습니다.
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>☁ MQTT 정보</h2>
+      <div class="row"><span class="muted">Broker</span><span>broker.hivemq.com</span></div>
+      <div class="row"><span class="muted">WebSocket</span><span>8884 / TLS</span></div>
+      <div class="row"><span class="muted">Base Topic</span><span id="baseTopic">-</span></div>
+      <div class="row"><span class="muted">마지막 수신</span><span id="lastRx">-</span></div>
+    </section>
+
+    <section class="card full">
+      <h2>📡 집 주변 Wi-Fi</h2>
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr><th>SSID</th><th>RSSI</th><th>CH</th></tr>
+          </thead>
+          <tbody id="wifiBody">
+            <tr><td colspan="3">데이터 대기 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+const DEVICE_ID = 'esp32s3-demo-01';
+const BASE = 'tswell/home/' + DEVICE_ID;
+
+document.getElementById('device').textContent = DEVICE_ID;
+document.getElementById('baseTopic').textContent = BASE;
+
+const client = mqtt.connect('wss://broker.hivemq.com:8884/mqtt', {
+  clientId: 'WEB-' + Math.random().toString(16).slice(2),
+  clean: true,
+  connectTimeout: 10000,
+  reconnectPeriod: 3000
+});
+
+function setBrokerState(text, on){
+  document.getElementById('brokerState').textContent = text;
+  document.getElementById('mqttDot').className = on ? 'dot on' : 'dot';
+}
+
+client.on('connect', () => {
+  setBrokerState('연결됨', true);
+  client.subscribe(BASE + '/#', {qos:0});
+});
+
+client.on('reconnect', () => setBrokerState('재연결 중...', false));
+client.on('offline', () => setBrokerState('오프라인', false));
+client.on('error', () => setBrokerState('오류', false));
+
+client.on('message', (topic, payload) => {
+  let d;
+  try { d = JSON.parse(payload.toString()); }
+  catch(e){ return; }
+
+  document.getElementById('lastRx').textContent =
+    new Date().toLocaleTimeString('ko-KR');
+
+  if(topic.endsWith('/status')) updateStatus(d);
+  else if(topic.endsWith('/weather')) updateWeather(d);
+  else if(topic.endsWith('/stock')) updateStock(d);
+  else if(topic.endsWith('/wifi')) updateWifi(d);
+});
+
+function updateStatus(d){
+  document.getElementById('online').textContent = d.online ? 'ONLINE' : 'OFFLINE';
+  if(!d.online) return;
+
+  document.getElementById('ssid').textContent = d.ssid || '-';
+  document.getElementById('rssi').textContent =
+    (d.rssi !== undefined ? d.rssi + ' dBm' : '-');
+  document.getElementById('ip').textContent = d.ip || '-';
+  document.getElementById('channel').textContent = d.channel ?? '-';
+
+  if(d.uptime !== undefined){
+    const h = Math.floor(d.uptime / 3600);
+    const m = Math.floor((d.uptime % 3600) / 60);
+    document.getElementById('uptime').textContent = h + '시간 ' + m + '분';
+  }
+}
+
+function updateWeather(d){
+  document.getElementById('temp').textContent =
+    (d.temp !== undefined ? Number(d.temp).toFixed(1) + '°C' : '-');
+  document.getElementById('feels').textContent =
+    (d.feels !== undefined ? Number(d.feels).toFixed(1) + '°C' : '-');
+  document.getElementById('humidity').textContent =
+    (d.humidity !== undefined ? Math.round(d.humidity) + '%' : '-');
+  document.getElementById('wind').textContent =
+    (d.wind !== undefined ? Number(d.wind).toFixed(1) + ' km/h' : '-');
+  document.getElementById('weatherText').textContent = d.text || '-';
+  document.getElementById('weatherUpdated').textContent = d.updated || '-';
+}
+
+function updateStock(d){
+  const won = n => Number(n).toLocaleString('ko-KR') + '원';
+
+  document.getElementById('stockPrice').textContent =
+    d.price !== undefined ? won(d.price) : '-';
+
+  document.getElementById('prevClose').textContent =
+    d.prevClose !== undefined ? won(d.prevClose) : '-';
+
+  if(d.change !== undefined && d.changePct !== undefined){
+    const sign = d.change > 0 ? '+' : '';
+    const e = document.getElementById('stockChange');
+    e.textContent =
+      sign + Number(d.change).toLocaleString('ko-KR') + '원 (' +
+      sign + Number(d.changePct).toFixed(2) + '%)';
+    e.className = d.change > 0 ? 'up' : (d.change < 0 ? 'down' : 'flat');
+  }
+}
+
+function updateWifi(d){
+  const body = document.getElementById('wifiBody');
+  const a = Array.isArray(d.networks) ? d.networks : [];
+
+  a.sort((x,y) => y.rssi - x.rssi);
+
+  if(!a.length){
+    body.innerHTML = '<tr><td colspan="3">검색 결과 없음</td></tr>';
+    return;
+  }
+
+  body.innerHTML = a.map(x =>
+    '<tr><td>' + escapeHtml(x.ssid || '(hidden)') + '</td>' +
+    '<td><strong>' + x.rssi + ' dBm</strong></td>' +
+    '<td>' + x.channel + '</td></tr>'
+  ).join('');
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+</script>
+</body>
+</html>
