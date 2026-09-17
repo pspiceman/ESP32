@@ -28,6 +28,21 @@ h1{margin:0;font-size:28px}
 .full{grid-column:1/-1}
 h2{font-size:17px;margin:0 0 13px}
 .big{font-size:36px;font-weight:800}
+.subscriber-exact-input{
+  display:block;width:100%;max-width:280px;border:0;background:transparent;color:var(--text);
+  font-size:36px;font-weight:800;line-height:1.15;padding:2px 0 4px;outline:none;
+  border-bottom:1px dashed rgba(148,163,184,.35);border-radius:0;
+}
+.subscriber-exact-input:focus{border-bottom-color:var(--cyan)}
+.subscriber-source{font-size:11px;color:var(--muted);margin:4px 0 8px}
+.popular-box{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.popular-title{font-size:17px;font-weight:850;margin-bottom:2px}
+.popular-sub{font-size:12px;color:var(--muted);margin-bottom:7px}
+.popular-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0}
+.popular-name{font-size:14px;font-weight:750;line-height:1.35}
+.popular-count-input{width:86px;border:0;background:transparent;color:var(--text);font-size:15px;font-weight:850;text-align:right;outline:none;padding:2px 0;border-bottom:1px dashed transparent;border-radius:0}
+.popular-count-input:focus{border-bottom-color:var(--cyan)}
+.popular-hint{font-size:10px;color:var(--muted);margin-top:5px}
 .row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(51,65,85,.5)}
 .row:last-child{border-bottom:0}
 .muted{color:var(--muted)}
@@ -95,21 +110,21 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
 }
 </style>
 
-<link rel="manifest" href="./manifest.webmanifest?v=19">
+<link rel="manifest" href="./manifest.webmanifest?v=22">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="myHome">
-<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=19">
-<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=19">
-<link rel="icon" type="image/png" sizes="48x48" href="./favicon-48.png?v=19">
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=19">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=22">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=22">
+<link rel="icon" type="image/png" sizes="48x48" href="./favicon-48.png?v=22">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=22">
 </head>
 
 <body>
 <div class="wrap">
   <h1>🏠 myHome Dashboard</h1>
-  <div class="sub">시장 · 보유자산 · YouTube · 경제뉴스 · 바로가기 · <span id="appVersion">v19</span></div>
+  <div class="sub">시장 · 보유자산 · YouTube · 경제뉴스 · 바로가기 · <span id="appVersion">v22</span></div>
 
   <div class="grid">
 
@@ -198,11 +213,32 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
     <section class="card full">
       <h2>▶ 내 YouTube · 아날로그 공장</h2>
       <div class="muted" style="font-size:12px">총 구독자 수</div>
-      <div id="analogSubscribers" class="big">-</div>
+      <input id="analogExactSubscribersInput" class="subscriber-exact-input" type="text" inputmode="numeric" value="6,081" aria-label="아날로그 공장 정확한 구독자 수">
+      <div class="subscriber-source">정확값 · 숫자를 터치해 수정</div>
+      <div class="row"><span class="muted">공개 자동값</span><strong id="analogPublicSubscribers">-</strong></div>
+      <div id="analogStatsSource" class="subscriber-source">-</div>
       <div class="row"><span class="muted">채널명</span><strong>아날로그 공장</strong></div>
       <div class="row"><span class="muted">총 조회수</span><strong id="analogViews">-</strong></div>
       <div class="row"><span class="muted">영상 수</span><strong id="analogVideos">-</strong></div>
       <div class="row"><span class="muted">기준시각</span><span id="analogUpdated">-</span></div>
+
+      <div class="popular-box">
+        <div class="popular-title">인기 콘텐츠</div>
+        <div class="popular-sub">지난 48시간 · 조회수</div>
+        <div class="popular-row">
+          <span class="popular-name">트렌지스터 기초</span>
+          <input id="popularCount1" class="popular-count-input" type="text" inputmode="numeric" value="177" aria-label="트렌지스터 기초 지난 48시간 조회수">
+        </div>
+        <div class="popular-row">
+          <span class="popular-name">LED기초</span>
+          <input id="popularCount2" class="popular-count-input" type="text" inputmode="numeric" value="17" aria-label="LED기초 지난 48시간 조회수">
+        </div>
+        <div class="popular-row">
+          <span class="popular-name">MI CC기초</span>
+          <input id="popularCount3" class="popular-count-input" type="text" inputmode="numeric" value="16" aria-label="MI CC기초 지난 48시간 조회수">
+        </div>
+        <div class="popular-hint">조회수 숫자를 터치해 수정 · 이 브라우저에 저장</div>
+      </div>
       <div class="btn-row">
         <a id="analogChannelLink" class="btn primary" href="https://www.youtube.com/results?search_query=%EC%95%84%EB%82%A0%EB%A1%9C%EA%B7%B8+%EA%B3%B5%EC%9E%A5" target="_blank" rel="noopener noreferrer">YouTube 채널 열기</a>
         <button class="btn" type="button" onclick="loadAnalogChannelStats()">↻ 정보 새로고침</button>
@@ -212,10 +248,11 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
         <details>
           <summary>아날로그 공장 채널 정보 설정</summary>
           <div class="setting-grid">
-            <input id="analogChannelUrlInput" class="setting-input" type="text" placeholder="YouTube 채널 URL 또는 @핸들">
+            <input id="analogChannelUrlInput" class="setting-input" type="text" placeholder="YouTube 채널 URL 또는 @핸들 (이메일 주소 아님)">
             <input id="analogChannelIdInput" class="setting-input" type="text" placeholder="채널 ID (UC로 시작)">
+            <input id="analogExactSubscribersSettingInput" class="setting-input" type="text" inputmode="numeric" placeholder="정확한 구독자 수" value="6,081">
             <button class="btn" type="button" onclick="saveAnalogChannelSettings()">저장 후 조회</button>
-            <div class="small-note">구독자·조회수·영상 수 자동조회에는 YouTube 채널 ID(UC로 시작)가 가장 정확합니다. 한 번 저장하면 이 브라우저에 기억됩니다.</div>
+            <div class="small-note">YouTube 공개 구독자 수는 1,000명 이상에서 반올림/축약되므로 정확한 수치는 직접 입력값을 우선 표시합니다. 채널 ID와 정확값은 이 브라우저에 저장됩니다.</div>
           </div>
         </details>
       </div>
@@ -285,7 +322,11 @@ const STORE = {
   solQty: 'myHome_solQty_v18',
   baseAmount: 'myHome_baseAmount_v18',
   analogUrl: 'myHome_analogUrl_v18',
-  analogId: 'myHome_analogId_v18'
+  analogId: 'myHome_analogId_v18',
+  analogExactSubs: 'myHome_analogExactSubs_v1',
+  popularCount1: 'myHome_popularCount1_v1',
+  popularCount2: 'myHome_popularCount2_v1',
+  popularCount3: 'myHome_popularCount3_v1'
 };
 
 function numberOnly(v){
@@ -327,6 +368,73 @@ function safeHttpUrl(url){
 
 function touchSelect(el){
   el.addEventListener('focus', () => setTimeout(() => el.select(), 0));
+}
+
+function getAnalogExactSubscribers(){
+  const saved = localStorage.getItem(STORE.analogExactSubs);
+  const n = saved !== null ? numberOnly(saved) : 6081;
+  return Math.max(0, Math.round(n || 6081));
+}
+
+function syncAnalogExactSubscribersInputs(value){
+  const n = Math.max(0, Math.round(Number(value) || 0));
+  const formatted = formatInt(n);
+  const main = document.getElementById('analogExactSubscribersInput');
+  const setting = document.getElementById('analogExactSubscribersSettingInput');
+  if(main) main.value = formatted;
+  if(setting) setting.value = formatted;
+}
+
+function saveAnalogExactSubscribers(value){
+  const n = Math.max(0, Math.round(numberOnly(value)));
+  if(!n) return;
+  localStorage.setItem(STORE.analogExactSubs, String(n));
+  syncAnalogExactSubscribersInputs(n);
+}
+
+function setupAnalogExactSubscribers(){
+  const exact = getAnalogExactSubscribers();
+  syncAnalogExactSubscribersInputs(exact);
+  ['analogExactSubscribersInput','analogExactSubscribersSettingInput'].forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    touchSelect(el);
+    const commit = () => saveAnalogExactSubscribers(el.value);
+    el.addEventListener('change', commit);
+    el.addEventListener('blur', commit);
+    el.addEventListener('keydown', e => {
+      if(e.key === 'Enter'){ e.preventDefault(); el.blur(); }
+    });
+  });
+}
+
+function setupPopularContentCounts(){
+  const configs = [
+    ['popularCount1', STORE.popularCount1, 177],
+    ['popularCount2', STORE.popularCount2, 17],
+    ['popularCount3', STORE.popularCount3, 16]
+  ];
+
+  configs.forEach(([id,key,def]) => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    const saved = localStorage.getItem(key);
+    const value = saved !== null ? Math.max(0, Math.round(numberOnly(saved))) : def;
+    el.value = formatInt(value);
+    touchSelect(el);
+
+    const commit = () => {
+      const n = Math.max(0, Math.round(numberOnly(el.value)));
+      el.value = formatInt(n);
+      localStorage.setItem(key, String(n));
+    };
+
+    el.addEventListener('change', commit);
+    el.addEventListener('blur', commit);
+    el.addEventListener('keydown', e => {
+      if(e.key === 'Enter'){ e.preventDefault(); el.blur(); }
+    });
+  });
 }
 
 // =============================================================================
@@ -927,8 +1035,14 @@ async function loadMarketIndices(){
 // =============================================================================
 // 아날로그 공장 YouTube - SocialCounts 공개 API
 // =============================================================================
-function normalizeChannelUrl(input){
+function normalizeChannelUrl(input, channelId=''){
   const s = String(input || '').trim();
+  const id = String(channelId || '').trim();
+  if(/^UC[A-Za-z0-9_-]{22}$/.test(id)){
+    if(!s || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)){
+      return 'https://www.youtube.com/channel/' + encodeURIComponent(id);
+    }
+  }
   if(!s) return 'https://www.youtube.com/results?search_query=' + encodeURIComponent('아날로그 공장');
   if(/^https?:\/\//i.test(s)) return s;
   if(s.startsWith('@')) return 'https://www.youtube.com/' + encodeURI(s);
@@ -940,7 +1054,7 @@ function loadAnalogSettingsToUI(){
   const id = localStorage.getItem(STORE.analogId) || '';
   document.getElementById('analogChannelUrlInput').value = url;
   document.getElementById('analogChannelIdInput').value = id;
-  document.getElementById('analogChannelLink').href = normalizeChannelUrl(url);
+  document.getElementById('analogChannelLink').href = normalizeChannelUrl(url, id);
 }
 
 function saveAnalogChannelSettings(){
@@ -948,58 +1062,257 @@ function saveAnalogChannelSettings(){
   const id = document.getElementById('analogChannelIdInput').value.trim();
   localStorage.setItem(STORE.analogUrl, url);
   localStorage.setItem(STORE.analogId, id);
-  document.getElementById('analogChannelLink').href = normalizeChannelUrl(url);
+  document.getElementById('analogChannelLink').href = normalizeChannelUrl(url, id);
   loadAnalogChannelStats();
+}
+
+function parseHumanCount(text){
+  if(text === null || text === undefined) return NaN;
+  let s = String(text).replace(/\\u0026/g,'&').replace(/\\u00a0/g,' ').trim();
+  if(!s) return NaN;
+
+  // English/YouTube style: 1.23K, 4.5M, 1.2B
+  let m = s.replace(/,/g,'').match(/([0-9]+(?:\.[0-9]+)?)\s*([KMB])\b/i);
+  if(m){
+    const mult = {K:1e3,M:1e6,B:1e9}[m[2].toUpperCase()];
+    return Math.round(Number(m[1]) * mult);
+  }
+
+  // Korean style: 1.2천 / 3.4만 / 1.1억
+  m = s.replace(/,/g,'').match(/([0-9]+(?:\.[0-9]+)?)\s*(천|만|억)/);
+  if(m){
+    const mult = {'천':1e3,'만':1e4,'억':1e8}[m[2]];
+    return Math.round(Number(m[1]) * mult);
+  }
+
+  // Exact count
+  m = s.match(/([0-9][0-9,]*)/);
+  if(m){
+    const n = Number(m[1].replace(/,/g,''));
+    return Number.isFinite(n) ? n : NaN;
+  }
+  return NaN;
+}
+
+function decodeYouTubeJsonString(s){
+  return String(s || '')
+    .replace(/\\u0026/g,'&')
+    .replace(/\\u003d/g,'=')
+    .replace(/\\u0027/g,"'")
+    .replace(/\\u003c/g,'<')
+    .replace(/\\u003e/g,'>')
+    .replace(/\\"/g,'"');
+}
+
+function extractYouTubeTextField(region, key){
+  const escKey = key.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const patterns = [
+    new RegExp('"' + escKey + '"\\s*:\\s*"([^"\\n]+)"'),
+    new RegExp('"' + escKey + '"\\s*:\\s*\\{[\\s\\S]{0,900}?"simpleText"\\s*:\\s*"([^"\\n]+)"'),
+    new RegExp('"' + escKey + '"\\s*:\\s*\\{[\\s\\S]{0,900}?"text"\\s*:\\s*"([^"\\n]+)"')
+  ];
+  for(const re of patterns){
+    const m = region.match(re);
+    if(m) return decodeYouTubeJsonString(m[1]);
+  }
+  return '';
+}
+
+function parseYouTubeAboutHtml(html){
+  const raw = String(html || '');
+  let region = raw;
+
+  // New YouTube channel about layout (2024+)
+  const idx = raw.indexOf('"aboutChannelViewModel"');
+  if(idx >= 0) region = raw.slice(idx, idx + 30000);
+  else{
+    const legacy = raw.indexOf('"c4TabbedHeaderRenderer"');
+    if(legacy >= 0) region = raw.slice(legacy, legacy + 30000);
+  }
+
+  const subText = extractYouTubeTextField(region, 'subscriberCountText');
+  const viewText = extractYouTubeTextField(region, 'viewCountText');
+  const videoText = extractYouTubeTextField(region, 'videoCountText') || extractYouTubeTextField(region, 'videosCountText');
+
+  return {
+    subscribers: parseHumanCount(subText),
+    views: parseHumanCount(viewText),
+    videos: parseHumanCount(videoText),
+    subText, viewText, videoText,
+    source: 'YouTube 공개 채널 정보'
+  };
+}
+
+async function fetchYouTubeAboutStats(id){
+  const url = 'https://www.youtube.com/channel/' + encodeURIComponent(id) + '/about?hl=en&gl=US';
+  const html = await fetchTextWithProxy(url);
+  const stats = parseYouTubeAboutHtml(html);
+  if(!Number.isFinite(stats.subscribers) && !Number.isFinite(stats.views) && !Number.isFinite(stats.videos)){
+    throw new Error('YouTube about parse failed');
+  }
+  return stats;
 }
 
 function pickStatFromTable(data, keyword){
   const table = Array.isArray(data && data.table) ? data.table : [];
-  const row = table.find(x => String(x.name || '').toLowerCase().includes(keyword));
-  return row ? Number(row.count) : NaN;
+  const row = table.find(x => String(x.name || x.label || '').toLowerCase().includes(keyword));
+  if(!row) return NaN;
+  return parseHumanCount(row.count ?? row.value ?? row.total ?? '');
+}
+
+function findNestedStat(data, type){
+  const wanted = {
+    subscribers: ['est_sub','API_sub','subscriberCount','subscribers','subscriber_count','subs','followers'],
+    views: ['API_view','viewCount','views','view_count','totalViews','total_views'],
+    videos: ['API_video','videoCount','videos','video_count','totalVideos','total_videos']
+  }[type] || [];
+  const labelTerms = {
+    subscribers: ['subscriber','subscribers','subs'],
+    views: ['view','views'],
+    videos: ['video','videos']
+  }[type] || [];
+
+  const seen = new Set();
+  const candidates = [];
+
+  function walk(node, path='', depth=0){
+    if(depth > 8 || node === null || node === undefined) return;
+    if(typeof node !== 'object') return;
+    if(seen.has(node)) return;
+    seen.add(node);
+
+    if(Array.isArray(node)){
+      node.forEach((v,i) => walk(v, path + '[' + i + ']', depth+1));
+      return;
+    }
+
+    const label = String(node.name ?? node.label ?? node.title ?? node.type ?? '').toLowerCase();
+    if(labelTerms.some(t => label.includes(t))){
+      for(const k of ['count','value','total','amount','number']){
+        if(node[k] !== undefined){
+          const n = parseHumanCount(node[k]);
+          if(Number.isFinite(n)) candidates.push({score:8,n,path:path+'.'+k});
+        }
+      }
+    }
+
+    for(const [k,v] of Object.entries(node)){
+      const kl = k.toLowerCase();
+      if(wanted.some(w => kl === w.toLowerCase())){
+        const n = parseHumanCount(v);
+        if(Number.isFinite(n)) candidates.push({score:10,n,path:path+'.'+k});
+      }else if(labelTerms.some(t => kl.includes(t)) && !/(change|diff|gain|rate|avg|goal|milestone)/i.test(kl)){
+        const n = parseHumanCount(v);
+        if(Number.isFinite(n)) candidates.push({score:6,n,path:path+'.'+k});
+      }
+      if(v && typeof v === 'object') walk(v, path+'.'+k, depth+1);
+    }
+  }
+
+  walk(data,'root',0);
+  candidates.sort((a,b) => b.score-a.score);
+  return candidates.length ? candidates[0].n : NaN;
+}
+
+async function fetchJsonWithProxy(url){
+  try{
+    const r = await fetch(url, {cache:'no-store'});
+    if(r.ok) return await r.json();
+  }catch(e){}
+
+  const proxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+  const r2 = await fetch(proxy, {cache:'no-store'});
+  if(!r2.ok) throw new Error('proxy HTTP ' + r2.status);
+  return JSON.parse(await r2.text());
+}
+
+async function fetchSocialCountsStats(id){
+  const url = 'https://api.socialcounts.org/youtube-live-subscriber-count/' + encodeURIComponent(id);
+  const data = await fetchJsonWithProxy(url);
+
+  const subscribers = findNestedStat(data, 'subscribers');
+  const views = findNestedStat(data, 'views');
+  const videos = findNestedStat(data, 'videos');
+
+  if(!Number.isFinite(subscribers) && !Number.isFinite(views) && !Number.isFinite(videos)){
+    throw new Error('SocialCounts fields not found');
+  }
+  return {subscribers, views, videos, source:'SocialCounts'};
+}
+
+function showSubscriberEmbed(id){}
+function hideSubscriberEmbed(){}
+
+function renderAnalogStats(stats, source){
+  const publicSubEl = document.getElementById('analogPublicSubscribers');
+  const viewsEl = document.getElementById('analogViews');
+  const videosEl = document.getElementById('analogVideos');
+  const updatedEl = document.getElementById('analogUpdated');
+  const sourceEl = document.getElementById('analogStatsSource');
+
+  if(Number.isFinite(stats.subscribers)){
+    publicSubEl.textContent = Math.round(stats.subscribers).toLocaleString('ko-KR') + '명';
+  }
+  if(Number.isFinite(stats.views)) viewsEl.textContent = Math.round(stats.views).toLocaleString('ko-KR') + '회';
+  if(Number.isFinite(stats.videos)) videosEl.textContent = Math.round(stats.videos).toLocaleString('ko-KR') + '개';
+  updatedEl.textContent = new Date().toLocaleString('ko-KR');
+  sourceEl.textContent = (source || stats.source || '-') + ' · 총 구독자 수는 위 직접 입력 정확값 우선';
 }
 
 async function loadAnalogChannelStats(){
   loadAnalogSettingsToUI();
   const id = (localStorage.getItem(STORE.analogId) || '').trim();
-  const subEl = document.getElementById('analogSubscribers');
+  const publicSubEl = document.getElementById('analogPublicSubscribers');
   const viewsEl = document.getElementById('analogViews');
   const videosEl = document.getElementById('analogVideos');
   const updatedEl = document.getElementById('analogUpdated');
+  const sourceEl = document.getElementById('analogStatsSource');
 
-  if(!id){
-    subEl.textContent = 'ID 설정 필요';
-    subEl.style.fontSize = '24px';
+  if(!/^UC[A-Za-z0-9_-]{22}$/.test(id)){
+    publicSubEl.textContent = '-';
     viewsEl.textContent = '-';
     videosEl.textContent = '-';
-    updatedEl.textContent = '아래 “채널 정보 설정”에서 UC로 시작하는 채널 ID 입력';
+    updatedEl.textContent = 'UC로 시작하는 24자리 채널 ID를 확인해 주세요';
+    sourceEl.textContent = '-';
     return;
   }
 
-  subEl.style.fontSize = '';
-  subEl.textContent = '조회 중...';
+  publicSubEl.textContent = '조회 중...';
+  sourceEl.textContent = '구독자 수 불러오는 중...';
+  viewsEl.textContent = '-';
+  videosEl.textContent = '-';
+  updatedEl.textContent = new Date().toLocaleString('ko-KR');
+
+  // 1차: YouTube 공개 About 페이지. 최신 채널 페이지의 subscriber/view/video 텍스트 사용.
   try{
-    const url = 'https://api.socialcounts.org/youtube-live-subscriber-count/' + encodeURIComponent(id);
-    const r = await fetch(url, {cache:'no-store'});
-    if(!r.ok) throw new Error('HTTP ' + r.status);
-    const data = await r.json();
-
-    const subs = Number(data.est_sub ?? data.API_sub ?? data.subscribers ?? data.subscriberCount);
-    const views = Number(data.API_view ?? data.views ?? data.viewCount ?? pickStatFromTable(data,'view'));
-    const videos = Number(data.API_video ?? data.videos ?? data.videoCount ?? pickStatFromTable(data,'video'));
-
-    subEl.textContent = Number.isFinite(subs) ? Math.round(subs).toLocaleString('ko-KR') + '명' : '확인 불가';
-    viewsEl.textContent = Number.isFinite(views) ? Math.round(views).toLocaleString('ko-KR') + '회' : '-';
-    videosEl.textContent = Number.isFinite(videos) ? Math.round(videos).toLocaleString('ko-KR') + '개' : '-';
-    updatedEl.textContent = new Date().toLocaleString('ko-KR');
+    const yt = await fetchYouTubeAboutStats(id);
+    if(Number.isFinite(yt.subscribers)){
+      renderAnalogStats(yt, 'YouTube 공개 채널 정보');
+      return;
+    }
+    // 구독자는 숨김이어도 조회수/영상수는 살릴 수 있음
+    renderAnalogStats(yt, 'YouTube 공개 채널 정보 · 구독자 수는 외부 카운터');
   }catch(e){
-    console.error('[YOUTUBE] analog channel stats failed', e);
-    subEl.textContent = '조회 실패';
-    viewsEl.textContent = '-';
-    videosEl.textContent = '-';
-    updatedEl.textContent = 'SocialCounts 연결 실패';
+    console.warn('[YOUTUBE] about page failed', e);
   }
-}
 
+  // 2차: SocialCounts. 응답 구조가 바뀌어도 중첩 키를 재귀 탐색.
+  try{
+    const sc = await fetchSocialCountsStats(id);
+    if(Number.isFinite(sc.subscribers)){
+      renderAnalogStats(sc, 'SocialCounts');
+      return;
+    }
+    if(Number.isFinite(sc.views)) viewsEl.textContent = Math.round(sc.views).toLocaleString('ko-KR') + '회';
+    if(Number.isFinite(sc.videos)) videosEl.textContent = Math.round(sc.videos).toLocaleString('ko-KR') + '개';
+  }catch(e){
+    console.warn('[YOUTUBE] SocialCounts failed', e);
+  }
+
+  sourceEl.textContent = '공개 자동값 조회 실패 · 총 구독자 수는 위 직접 입력 정확값을 표시';
+  publicSubEl.textContent = '-';
+  updatedEl.textContent = new Date().toLocaleString('ko-KR');
+}
 // =============================================================================
 // 주요 경제뉴스 Top 10 - 네이버 뉴스 경제면 헤드라인
 // =============================================================================
@@ -1118,6 +1431,8 @@ async function loadEconomicNews(){
 // =============================================================================
 function startDashboard(){
   setupEditableNumbers();
+  setupAnalogExactSubscribers();
+  setupPopularContentCounts();
   loadAnalogSettingsToUI();
   loadStocksDirect();
   loadMarketIndices();
@@ -1133,7 +1448,7 @@ function startDashboard(){
 if('serviceWorker' in navigator){
   window.addEventListener('load', async () => {
     try{
-      const reg = await navigator.serviceWorker.register('./sw.js?v=19');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=22');
       reg.update();
     }catch(e){
       console.warn('Service Worker registration failed:', e);
