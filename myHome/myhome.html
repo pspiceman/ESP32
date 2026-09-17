@@ -1,459 +1,1151 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-  <title>My Smart Home</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>myHome</title>
 
-  <!-- ICON / PWA -->
-  <link rel="icon" href="icons/favicon.ico">
-  <link rel="apple-touch-icon" href="icons/icon-180x180.png">
-  <link rel="manifest" href="icons/manifest.json">
-  <meta name="theme-color" content="#1f7cc6">
+<style>
+:root{
+  --bg:#0f172a;--card:#1e293b;--line:#334155;--text:#f8fafc;
+  --muted:#94a3b8;--cyan:#38bdf8;--green:#4ade80;--red:#fb7185;--blue:#60a5fa;
+  --yellow:#facc15;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:linear-gradient(135deg,#0f172a,#111827);
+  color:var(--text);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif
+}
+a{color:inherit}
+.wrap{max-width:1100px;margin:auto;padding:20px}
+h1{margin:0;font-size:28px}
+.sub{color:var(--muted);margin:5px 0 18px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.card{
+  background:rgba(30,41,59,.95);border:1px solid var(--line);
+  border-radius:18px;padding:18px;box-shadow:0 8px 25px rgba(0,0,0,.2)
+}
+.full{grid-column:1/-1}
+h2{font-size:17px;margin:0 0 13px}
+.big{font-size:36px;font-weight:800}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(51,65,85,.5)}
+.row:last-child{border-bottom:0}
+.muted{color:var(--muted)}
+.badge{display:inline-block;padding:4px 9px;background:#0c4a6e;color:#bae6fd;border-radius:999px;font-size:12px}
+.up{color:var(--red)}.down{color:var(--blue)}.flat{color:var(--text)}
 
-  <!-- MQTT.js -->
-  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+.market-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.market-box{background:#111827;border:1px solid var(--line);border-radius:14px;padding:14px}
+.market-title{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:14px;color:var(--muted)}
+.market-value{font-size:30px;font-weight:850;margin-top:8px}
+.market-change{font-size:15px;font-weight:800;margin-top:5px}
+.market-time{font-size:12px;color:var(--muted);margin-top:7px}
 
-  <style>
-    :root{
-      --blue1:#1f7cc6; --blue2:#2a8bd6;
-      --bg:#eef3f7; --card:#ffffff; --line:#d9e3ee;
-      --text:#102a43; --muted:#5b7083;
-      --shadow:0 10px 22px rgba(16,42,67,.10);
-      --r:12px;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-      background:var(--bg);
-      color:var(--text);
-      -webkit-tap-highlight-color:transparent;
-    }
-    .wrap{max-width:420px;margin:0 auto;padding-bottom:18px}
+.stock-name{font-size:16px;font-weight:800;margin-bottom:6px}
+.stock-code{color:var(--muted);font-size:12px;margin-left:4px}
+.stock-quote{padding:8px 0 12px;border-bottom:1px solid rgba(51,65,85,.55);margin-bottom:4px}
+.stock-price{font-size:30px;line-height:1.1;font-weight:800;letter-spacing:-0.5px}
+.stock-change{margin-top:6px;font-size:15px;font-weight:800}
+.stock-sep{margin:18px 0 12px;border-top:1px solid var(--line)}
 
-    .top{
-      background:linear-gradient(180deg,var(--blue2),var(--blue1));
-      padding:18px 14px 10px;
-      padding-top:calc(18px + env(safe-area-inset-top));
-      color:#fff;
-      position:sticky;top:0;z-index:10;
-      box-shadow:0 6px 18px rgba(0,0,0,.12);
-    }
-    .topRow{display:flex;align-items:center;justify-content:space-between}
-    .title{font-size:22px;font-weight:800;}
-    .actions{display:flex;gap:10px;}
-    .iconBtn{
-      width:38px;height:38px;border-radius:10px;
-      display:grid;place-items:center;
-      border:1px solid rgba(255,255,255,.35);
-      background:rgba(255,255,255,.10);
-      cursor:pointer;
-      user-select:none;
-    }
+.editable-wrap{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}
+.editable-input{
+  max-width:190px;width:100%;padding:9px 10px;border:1px solid #475569;border-radius:10px;
+  background:#0f172a;color:var(--text);font-size:17px;font-weight:800;text-align:right;
+  outline:none;touch-action:manipulation
+}
+.editable-input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.13)}
+.edit-hint{font-size:11px;color:var(--muted);margin-top:5px;text-align:right}
 
-    .sub{margin-top:8px;font-size:12px;opacity:.92;}
-    .content{padding:12px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;text-decoration:none;
+  border:1px solid #475569;background:#0f172a;color:var(--text);padding:10px 13px;
+  border-radius:11px;font-weight:750;font-size:14px;cursor:pointer;touch-action:manipulation
+}
+.btn:hover{border-color:var(--cyan)}
+.btn.primary{background:#0c4a6e;border-color:#0369a1;color:#e0f2fe}
+.btn.live{background:#4c0519;border-color:#9f1239;color:#ffe4e6}
 
-    .statusBar{
-      background:#f0b429;
-      color:#fff;
-      border-radius:8px;
-      padding:10px 12px;
-      display:flex;
-      align-items:center;
-      gap:10px;
-      box-shadow:var(--shadow);
-      margin-bottom:10px;
-    }
-    .statusDot{
-      width:10px;height:10px;border-radius:999px;
-      background:#fff;
-    }
-    .statusText{font-weight:800;font-size:13px}
-    .statusSub{margin-left:auto;font-size:12px;opacity:.95}
+.news-list{margin:0;padding-left:25px}
+.news-list li{padding:9px 4px;border-bottom:1px solid rgba(51,65,85,.45)}
+.news-list li:last-child{border-bottom:0}
+.news-list a{text-decoration:none;line-height:1.45}
+.news-list a:hover{text-decoration:underline;color:#bae6fd}
+.news-meta{display:block;color:var(--muted);font-size:11px;margin-top:3px}
 
-    .list{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--r);
-      overflow:hidden;
-      box-shadow:var(--shadow);
-    }
+.link-group{padding:12px 0;border-bottom:1px solid rgba(51,65,85,.55)}
+.link-group:last-child{border-bottom:0}
+.link-title{font-weight:850;font-size:16px}
+.link-desc{color:var(--muted);font-size:12px;margin-top:3px}
 
-    .item{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      padding:12px;
-      border-top:1px solid var(--line);
-    }
-    .item:first-child{border-top:none}
+.setting-box{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
+.setting-grid{display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px}
+.setting-input{
+  width:100%;padding:9px 10px;border:1px solid #475569;border-radius:10px;
+  background:#0f172a;color:var(--text);font-size:14px;outline:none
+}
+.small-note{font-size:11px;color:var(--muted);line-height:1.5}
 
-    .icon{
-      width:34px;height:34px;border-radius:8px;
-      background:#f2f7ff;
-      border:1px solid #e1ecfb;
-      display:grid;place-items:center;
-      user-select:none;
-    }
+@media(max-width:700px){
+  .grid{grid-template-columns:1fr}.full{grid-column:auto}.wrap{padding:13px}.big{font-size:31px}
+  .market-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.market-box{padding:12px}.market-title{font-size:12px}.market-value{font-size:22px}.market-change{font-size:13px}
+  .row{align-items:flex-start}.editable-input{max-width:160px}
+}
+</style>
 
-    .grow{flex:1;min-width:0}
-    .name{font-weight:800}
-    .key{font-size:12px;color:var(--muted)}
-
-    /* ===== Toggle Pill ===== */
-    .pill{
-      width:82px;height:30px;
-      border-radius:999px;
-      background:#e6edf5;
-      border:1px solid #d3dfea;
-      position:relative;
-      display:flex;
-      align-items:center;
-
-      /* OFF는 오른쪽 */
-      justify-content:flex-end;
-
-      padding:0 10px;
-      font-weight:900;
-      font-size:12px;
-      cursor:pointer;
-      user-select:none;
-    }
-    .pill.on{
-      background:#2c79d8;
-      border-color:#2c79d8;
-      color:#fff;
-
-      /* ON은 왼쪽 */
-      justify-content:flex-start;
-    }
-
-    .pillLabel{width:100%;pointer-events:none;}
-    .pill:not(.on) .pillLabel{ text-align:right; padding-right:2px; }
-    .pill.on .pillLabel{ text-align:left; padding-left:2px; }
-
-    .knob{
-      width:24px;height:24px;
-      border-radius:999px;
-      background:#fff;
-      position:absolute;
-      top:2px;left:3px;
-      box-shadow:0 6px 14px rgba(0,0,0,.18);
-      transition:.18s ease;
-      pointer-events:none;
-    }
-    .pill.on .knob{ transform:translateX(52px); }
-
-    /* Debug log sheet */
-    .backdrop{
-      position:fixed; inset:0;
-      background:rgba(0,0,0,.45);
-      display:none;
-      padding:14px;
-      z-index:100;
-    }
-    .sheet{
-      max-width:520px;margin:0 auto;
-      background:#0f172a;
-      color:#e5e7eb;
-      border-radius:16px;
-      overflow:hidden;
-    }
-    .sheetHead{
-      padding:12px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      border-bottom:1px solid rgba(255,255,255,.1);
-    }
-    .sheetHead button{
-      border:none;
-      padding:8px 12px;
-      border-radius:10px;
-      cursor:pointer;
-    }
-    pre{
-      margin:0;
-      padding:12px;
-      max-height:60vh;
-      overflow:auto;
-      font-size:12px;
-      white-space:pre-wrap;
-    }
-  </style>
+<link rel="manifest" href="./manifest.webmanifest?v=19">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="myHome">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=19">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=19">
+<link rel="icon" type="image/png" sizes="48x48" href="./favicon-48.png?v=19">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=19">
 </head>
 
 <body>
 <div class="wrap">
+  <h1>🏠 myHome Dashboard</h1>
+  <div class="sub">시장 · 보유자산 · YouTube · 경제뉴스 · 바로가기 · <span id="appVersion">v19</span></div>
 
-  <div class="top">
-    <div class="topRow">
-      <div class="title">My Smart Home</div>
-      <div class="actions">
-        <div class="iconBtn" id="btnRefresh" title="Refresh">⟳</div>
-        <div class="iconBtn" id="btnBug" title="Log">🐞</div>
+  <div class="grid">
+
+    <section class="card full">
+      <h2>🌏 주요 지수</h2>
+      <div class="market-grid">
+        <div class="market-box">
+          <div class="market-title"><span>🇰🇷 한국 KOSPI</span><span class="badge">KOSPI</span></div>
+          <div id="kospiValue" class="market-value">-</div>
+          <div id="kospiChange" class="market-change flat">조회 중...</div>
+          <div id="kospiTime" class="market-time">-</div>
+        </div>
+        <div class="market-box">
+          <div class="market-title"><span>🇺🇸 필라델피아 반도체지수</span><span class="badge">SOX</span></div>
+          <div id="soxValue" class="market-value">-</div>
+          <div id="soxChange" class="market-change flat">조회 중...</div>
+          <div id="soxTime" class="market-time">-</div>
+        </div>
       </div>
-    </div>
-    <div class="sub"><b id="connText">MQTT Connecting...</b></div>
-  </div>
+      <div class="btn-row">
+        <button class="btn" type="button" onclick="loadMarketIndices()">↻ 지수 새로고침</button>
+        <a class="btn" href="https://m.stock.naver.com/domestic/index/KOSPI" target="_blank" rel="noopener noreferrer">KOSPI 상세</a>
+        <a class="btn" href="https://m.stock.naver.com/worldstock/index/.SOX" target="_blank" rel="noopener noreferrer">SOX 상세</a>
+      </div>
+      <div class="small-note" style="margin-top:8px">주요 지수는 네이버 증권 기준으로 자동 조회합니다.</div>
+    </section>
 
-  <div class="content">
-    <div class="statusBar" id="statusBar">
-      <div class="statusDot"></div>
-      <div class="statusText" id="statusText">Connecting…</div>
-      <div class="statusSub" id="statusSub">—</div>
-    </div>
+    <section class="card full">
+      <h2>📈 보유 자산</h2>
 
-    <div class="list" id="list"></div>
-  </div>
-</div>
+      <div class="stock-name">삼성전자우 <span class="stock-code">005935</span></div>
+      <div class="stock-quote">
+        <div id="samsungPrice" class="stock-price">-</div>
+        <div id="samsungChange" class="stock-change flat">-</div>
+      </div>
+      <div class="row"><span class="muted">시가</span><strong id="samsungOpen">-</strong></div>
+      <div class="row"><span class="muted">전일 종가</span><span id="samsungPrevClose">-</span></div>
+      <div class="row"><span class="muted">고가 / 저가</span><span id="samsungHL">-</span></div>
+      <div class="row"><span class="muted">시세 상태</span><span id="samsungStatus">데이터 대기</span></div>
+      <div class="row">
+        <span class="muted">보유수량</span>
+        <div>
+          <div class="editable-wrap"><input id="samsungQtyInput" class="editable-input" type="text" inputmode="numeric" value="10,610" aria-label="삼성전자우 보유수량"><span>주</span></div>
+          <div class="edit-hint">숫자를 터치해 수정</div>
+        </div>
+      </div>
+      <div class="row"><span class="muted">평가금액</span><strong id="samsungValue">-</strong></div>
 
-<!-- LOG PANEL -->
-<div class="backdrop" id="backdrop">
-  <div class="sheet">
-    <div class="sheetHead">
-      <div><b>Debug Log</b></div>
-      <button onclick="closeLog()">Close</button>
-    </div>
-    <pre id="logView">ready.</pre>
+      <div class="stock-sep"></div>
+
+      <div class="stock-name">SOL AI반도체TOP2플러스 <span class="stock-code">0167A0</span></div>
+      <div class="stock-quote">
+        <div id="solPrice" class="stock-price">-</div>
+        <div id="solChange" class="stock-change flat">-</div>
+      </div>
+      <div class="row"><span class="muted">시가</span><strong id="solOpen">-</strong></div>
+      <div class="row"><span class="muted">전일 종가</span><span id="solPrevClose">-</span></div>
+      <div class="row"><span class="muted">고가 / 저가</span><span id="solHL">-</span></div>
+      <div class="row"><span class="muted">시세 상태</span><span id="solStatus">데이터 대기</span></div>
+      <div class="row">
+        <span class="muted">보유수량</span>
+        <div>
+          <div class="editable-wrap"><input id="solQtyInput" class="editable-input" type="text" inputmode="numeric" value="69" aria-label="SOL AI반도체TOP2플러스 보유수량"><span>주</span></div>
+          <div class="edit-hint">숫자를 터치해 수정</div>
+        </div>
+      </div>
+      <div class="row"><span class="muted">평가금액</span><strong id="solValue">-</strong></div>
+
+      <div style="margin-top:18px;padding-top:12px;border-top:1px solid var(--line)">
+        <div class="row"><span class="muted">총 평가금액</span><strong id="portfolioTotal" style="font-size:22px">-</strong></div>
+        <div class="row">
+          <span class="muted">총액 - 기준금액</span>
+          <div>
+            <div class="editable-wrap"><input id="baseAmountInput" class="editable-input" type="text" inputmode="numeric" value="650,000,000" aria-label="기준 총액"><span>원</span></div>
+            <div id="baseAmountKorean" class="edit-hint">6억 5,000만원 · 터치해 수정</div>
+          </div>
+        </div>
+        <div class="row"><span class="muted">차액</span><strong id="portfolioDelta" style="font-size:20px">-</strong></div>
+      </div>
+
+      <div class="row" style="margin-top:8px"><span class="muted">삼성 기준시각</span><span id="samsungTime">-</span></div>
+      <div class="row"><span class="muted">SOL 기준시각</span><span id="solTime">-</span></div>
+      <div class="row"><span class="muted">시세 출처</span><span id="stockSource">네이버 금융 초기화 중</span></div>
+    </section>
+
+    <section class="card full">
+      <h2>▶ 내 YouTube · 아날로그 공장</h2>
+      <div class="muted" style="font-size:12px">총 구독자 수</div>
+      <div id="analogSubscribers" class="big">-</div>
+      <div class="row"><span class="muted">채널명</span><strong>아날로그 공장</strong></div>
+      <div class="row"><span class="muted">총 조회수</span><strong id="analogViews">-</strong></div>
+      <div class="row"><span class="muted">영상 수</span><strong id="analogVideos">-</strong></div>
+      <div class="row"><span class="muted">기준시각</span><span id="analogUpdated">-</span></div>
+      <div class="btn-row">
+        <a id="analogChannelLink" class="btn primary" href="https://www.youtube.com/results?search_query=%EC%95%84%EB%82%A0%EB%A1%9C%EA%B7%B8+%EA%B3%B5%EC%9E%A5" target="_blank" rel="noopener noreferrer">YouTube 채널 열기</a>
+        <button class="btn" type="button" onclick="loadAnalogChannelStats()">↻ 정보 새로고침</button>
+      </div>
+
+      <div class="setting-box">
+        <details>
+          <summary>아날로그 공장 채널 정보 설정</summary>
+          <div class="setting-grid">
+            <input id="analogChannelUrlInput" class="setting-input" type="text" placeholder="YouTube 채널 URL 또는 @핸들">
+            <input id="analogChannelIdInput" class="setting-input" type="text" placeholder="채널 ID (UC로 시작)">
+            <button class="btn" type="button" onclick="saveAnalogChannelSettings()">저장 후 조회</button>
+            <div class="small-note">구독자·조회수·영상 수 자동조회에는 YouTube 채널 ID(UC로 시작)가 가장 정확합니다. 한 번 저장하면 이 브라우저에 기억됩니다.</div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="card full">
+      <h2>📰 주요 경제뉴스 TOP 10</h2>
+      <ol id="econNewsList" class="news-list">
+        <li>네이버 경제 뉴스 헤드라인 불러오는 중...</li>
+      </ol>
+      <div class="btn-row">
+        <button class="btn" type="button" onclick="loadEconomicNews()">↻ 뉴스 새로고침</button>
+        <a class="btn" href="https://news.naver.com/section/101" target="_blank" rel="noopener noreferrer">네이버 경제 뉴스</a>
+      </div>
+      <div id="newsStatus" class="small-note" style="margin-top:8px">네이버 뉴스 경제면 헤드라인 10건</div>
+    </section>
+
+    <section class="card full">
+      <h2>🎧 YouTube 바로가기</h2>
+
+      <div class="link-group">
+        <div class="link-title">🕛 12시에 만나요</div>
+        <div class="link-desc">김어준의 겸손은힘들다 뉴스공장 채널 내 경제 프로그램</div>
+        <div class="btn-row">
+          <a class="btn primary" href="https://www.youtube.com/@gyeomsonisnothing/search?query=12%EC%8B%9C%EC%97%90%20%EB%A7%8C%EB%82%98%EC%9A%94" target="_blank" rel="noopener noreferrer">▶ 12시에 만나요 최신</a>
+          <a class="btn live" href="https://www.youtube.com/@gyeomsonisnothing/live" target="_blank" rel="noopener noreferrer">🔴 실시간 방송</a>
+        </div>
+      </div>
+
+      <div class="link-group">
+        <div class="link-title">🎵 EverOldies</div>
+        <div class="link-desc">추억의 올드팝 음악 채널</div>
+        <div class="btn-row">
+          <a class="btn primary" href="https://www.youtube.com/@everoldies/videos" target="_blank" rel="noopener noreferrer">▶ 전체듣기 / 최신영상</a>
+          <a class="btn live" href="https://www.youtube.com/@everoldies/streams" target="_blank" rel="noopener noreferrer">🔴 실시간 듣기</a>
+        </div>
+      </div>
+
+      <div class="link-group">
+        <div class="link-title">🎵 7080 Your Memories</div>
+        <div class="link-desc">채널명이 같은 결과가 있을 수 있어 정확한 검색 링크로 연결</div>
+        <div class="btn-row">
+          <a class="btn primary" href="https://www.youtube.com/results?search_query=%227080+Your+Memories%22+playlist" target="_blank" rel="noopener noreferrer">▶ 전체듣기 찾기</a>
+          <a class="btn live" href="https://www.youtube.com/results?search_query=%227080+Your+Memories%22+live" target="_blank" rel="noopener noreferrer">🔴 실시간 듣기 찾기</a>
+        </div>
+      </div>
+
+      <div class="link-group">
+        <div class="link-title">🎵 GRASS COTTON 그래스코튼</div>
+        <div class="link-desc">잔잔한 음악·플레이리스트 채널</div>
+        <div class="btn-row">
+          <a class="btn primary" href="https://www.youtube.com/@grasscotton/videos" target="_blank" rel="noopener noreferrer">▶ 전체듣기 / 최신영상</a>
+          <a class="btn live" href="https://www.youtube.com/@grasscotton/streams" target="_blank" rel="noopener noreferrer">🔴 실시간 듣기</a>
+        </div>
+      </div>
+    </section>
+
   </div>
 </div>
 
 <script>
-(() => {
-  /* ================= MQTT CONFIG ================= */
-  const ROOT = "pspiceman/myhome";
-  const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
+// =============================================================================
+// 공통 유틸리티
+// =============================================================================
+const STORE = {
+  samsungQty: 'myHome_samsungQty_v18',
+  solQty: 'myHome_solQty_v18',
+  baseAmount: 'myHome_baseAmount_v18',
+  analogUrl: 'myHome_analogUrl_v18',
+  analogId: 'myHome_analogId_v18'
+};
 
-  const LS_NODE_KEY = "myhome:lastNode";
+function numberOnly(v){
+  const n = Number(String(v ?? '').replace(/[^0-9.-]/g,''));
+  return Number.isFinite(n) ? n : 0;
+}
 
-  let client = null;
-  let currentNode = null;
-  let devices = [];
+function formatInt(n){
+  return Math.round(Number(n) || 0).toLocaleString('ko-KR');
+}
 
-  /* ================= UI ================= */
-  const list = document.getElementById("list");
-  const connText = document.getElementById("connText");
-  const statusText = document.getElementById("statusText");
-  const statusSub = document.getElementById("statusSub");
-  const logView = document.getElementById("logView");
-  const backdrop = document.getElementById("backdrop");
+function won(n){
+  return Number.isFinite(Number(n)) ? Number(n).toLocaleString('ko-KR') + '원' : '-';
+}
 
-  function log(msg,obj){
-    const ts = new Date().toLocaleTimeString();
-    let line = `[${ts}] ${msg}`;
-    if(obj) line += "\n" + JSON.stringify(obj,null,2);
-    logView.textContent = line + "\n\n" + logView.textContent;
+function toKoreanMoney(n){
+  n = Math.max(0, Math.round(Number(n) || 0));
+  if(n >= 100000000){
+    const eok = Math.floor(n / 100000000);
+    const man = Math.floor((n % 100000000) / 10000);
+    return man ? eok + '억 ' + man.toLocaleString('ko-KR') + '만원' : eok + '억원';
   }
-  function setStatus(main,sub){
-    statusText.textContent = main;
-    statusSub.textContent = sub || "—";
-  }
-  function iconFor(key){
-    if(key==="myDesk") return "🛠️";
-    if(key==="floor") return "🔥";
-    if(key==="tablet") return "📱";
-    if(key==="server") return "🖥️";
-    if(key==="water") return "🚰";
-    return "🔌";
-  }
+  if(n >= 10000) return Math.floor(n / 10000).toLocaleString('ko-KR') + '만원';
+  return n.toLocaleString('ko-KR') + '원';
+}
 
-  /* ================= RENDER ================= */
-  function render(){
-    list.innerHTML = "";
+function safeText(s){
+  return String(s ?? '').replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
 
-    if(!devices.length){
-      list.innerHTML = `
-        <div class="item">
-          <div class="icon">ℹ️</div>
-          <div class="grow">
-            <div class="name">Connected to Devices</div>
-            <div class="key">MQTT retained devices 수신 대기</div>
-          </div>
-        </div>`;
-      return;
-    }
+function safeHttpUrl(url){
+  try{
+    const u = new URL(url);
+    return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : '#';
+  }catch(e){ return '#'; }
+}
 
-    devices.forEach(d=>{
-      const row = document.createElement("div");
-      row.className="item";
+function touchSelect(el){
+  el.addEventListener('focus', () => setTimeout(() => el.select(), 0));
+}
 
-      const pill = document.createElement("div");
-      pill.className="pill"+(d.state?" on":"");
-      pill.innerHTML=`<span class="pillLabel">${d.state ? "ON" : "OFF"}</span><span class="knob"></span>`;
+// =============================================================================
+// 보유수량 / 기준총액 - 터치 편집 + localStorage 저장
+// =============================================================================
+let lastSamsungQuote = null;
+let lastSolQuote = null;
 
-      pill.onclick=()=>{
-        if(!currentNode) return;
-        const next = !d.state;
-        client.publish(`${ROOT}/${currentNode}/cmd/set`, JSON.stringify({key:d.key,on:next}));
-        log("CMD sent",{key:d.key,on:next});
-      };
+function setupEditableNumbers(){
+  const configs = [
+    ['samsungQtyInput', STORE.samsungQty, 10610],
+    ['solQtyInput', STORE.solQty, 69],
+    ['baseAmountInput', STORE.baseAmount, 650000000]
+  ];
 
-      row.innerHTML=`
-        <div class="icon">${iconFor(d.key)}</div>
-        <div class="grow">
-          <div class="name">${d.name}</div>
-          <div class="key">${d.key}</div>
-        </div>
-      `;
-      row.appendChild(pill);
-      list.appendChild(row);
-    });
-  }
+  configs.forEach(([id,key,def]) => {
+    const el = document.getElementById(id);
+    const saved = localStorage.getItem(key);
+    const value = saved !== null ? numberOnly(saved) : def;
+    el.value = formatInt(value);
+    touchSelect(el);
 
-  /* ================= ON-DEMAND REFRESH (Quota Saver) ================= */
-  const REFRESH_DEBOUNCE_MS = 8000; // refresh 폭주 방지
-  const AUTO_SWITCH_GRACE_MS = 20000; // saved node가 살아있지 않으면 다른 node로 자동 전환
-  let lastRefreshAt = 0;
-  let lastSeenAtByNode = {}; // {node: ms}
+    const commit = () => {
+      const n = Math.max(0, Math.round(numberOnly(el.value)));
+      el.value = formatInt(n);
+      localStorage.setItem(key, String(n));
+      updatePortfolioValues();
+      updateBaseAmountLabel();
+    };
 
-  function publishRefresh(reason){
-    if(!client || !client.connected){
-      log("refresh skipped (mqtt not ready)", {reason});
-      return;
-    }
-    if(!currentNode){
-      log("refresh skipped (no node)", {reason});
-      return;
-    }
-    const now = Date.now();
-    if(now - lastRefreshAt < REFRESH_DEBOUNCE_MS){
-      log("refresh skipped (debounce)", {reason});
-      return;
-    }
-    lastRefreshAt = now;
-    client.publish(`${ROOT}/${currentNode}/cmd/refresh`, JSON.stringify({t:now, reason}));
-    log("refresh requested", {node: currentNode, reason});
-    setStatus("MQTT Connected", `node: ${currentNode} (refreshing)`);
-  }
-
-  /* ================= NODE PICK ================= */
-  function pickNode(node, why){
-    if(!node) return;
-    if(currentNode === node) return;
-    currentNode = node;
-    localStorage.setItem(LS_NODE_KEY, node);
-    log("use node", {node, why: why || "manual/auto"});
-    setStatus("MQTT Connected", `node: ${node}`);
-    // node가 바뀌면 1회 동기화 요청
-    publishRefresh("node_selected");
-  }
-
-  /* ================= MQTT CONNECT ================= */
-  function connectMQTT(){
-    const savedNode = localStorage.getItem(LS_NODE_KEY);
-    if(savedNode) currentNode = savedNode;
-
-    client = mqtt.connect(MQTT_URL, {
-      clean: true,
-      reconnectPeriod: 1500,
-      keepalive: 25,
-      connectTimeout: 8000
-    });
-
-    client.on("connect",()=>{
-      connText.textContent="Connected to Devices";
-      setStatus("MQTT Connected", "loading retained devices...");
-      log("mqtt connected",{root:ROOT});
-
-      // ✅ 핵심: announce 기다리지 않고, 바로 모든 node의 devices를 구독
-      client.subscribe(`${ROOT}/+/devices`);
-      // announce는 있어도 되고 없어도 됨(보조)
-      client.subscribe(`${ROOT}/announce`);
-
-      // 저장된 node가 있으면: 최초 화면 로드 시 1회만 refresh
-      if(currentNode){
-        setStatus("MQTT Connected", `node: ${currentNode} (saved)`);
-        publishRefresh("page_load_saved_node");
+    el.addEventListener('change', commit);
+    el.addEventListener('blur', commit);
+    el.addEventListener('keydown', e => {
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        el.blur();
       }
     });
-
-    client.on("message",(topic,payload)=>{
-      const msg = payload.toString();
-
-      // announce는 보조로 node 찾기 (retained가 아니면 늦을 수 있음)
-      if(topic === `${ROOT}/announce`){
-        try{
-          const data = JSON.parse(msg);
-          lastSeenAtByNode[data.node] = Date.now();
-          // saved node가 없거나, saved node가 일정 시간 동안 보이지 않으면 자동 전환
-          if(!currentNode){
-            pickNode(data.node, "announce_first");
-          }else{
-            const seen = lastSeenAtByNode[currentNode] || 0;
-            if(Date.now() - seen > AUTO_SWITCH_GRACE_MS){
-              pickNode(data.node, "announce_auto_switch");
-            }
-          }
-          log("announce",data);
-        }catch(e){}
-        return;
-      }
-
-      // ✅ devices: ROOT/{node}/devices 형태에서 node를 뽑아온다
-      // topic 예: pspiceman/myhome/node-xxxx/devices
-      const parts = topic.split("/");
-      if(parts.length >= 4 && parts[0]===ROOT.split("/")[0] && parts[1]===ROOT.split("/")[1] && parts[3]==="devices"){
-        const node = parts[2];
-
-        // savedNode가 있으면 그 node 우선, 없으면 첫 수신 node 채택
-        if(!currentNode) pickNode(node);
-
-        // currentNode와 같은 node에서 온 devices만 화면에 적용 (혼선 방지)
-        if(node === currentNode){
-          try{
-            const data = JSON.parse(msg);
-            devices = data.devices || [];
-            render();
-            log("devices updated",{node, count:devices.length});
-            setStatus("MQTT Connected", `node: ${currentNode}`);
-          }catch(e){
-            log("devices parse err", String(e));
-          }
-        }else{
-          // 다른 node의 devices도 들어오긴 함(멀티 노드 대비). 로그만 남김
-          log("devices from other node", {node});
-          const seen = lastSeenAtByNode[currentNode] || 0;
-          if(Date.now() - seen > AUTO_SWITCH_GRACE_MS){
-            pickNode(node, "devices_auto_switch");
-          }
-        }
-      }
-    });
-
-    client.on("close",()=>{
-      setStatus("Disconnected","retry...");
-      log("mqtt closed");
-    });
-
-    client.on("error",(err)=>{
-      setStatus("MQTT Error","see log");
-      log("mqtt error",String(err));
-    });
-  }
-
-  /* ================= LOG PANEL ================= */
-  document.getElementById("btnBug").onclick=()=>{ backdrop.style.display="block"; };
-  document.getElementById("btnRefresh").onclick=()=>{ publishRefresh("manual_refresh"); };
-  window.closeLog=()=>{ backdrop.style.display="none"; };
-
-  /* ================= PAGE VISIBILITY / FOCUS ================= */
-  document.addEventListener("visibilitychange", ()=>{
-    if(document.visibilityState === "visible"){
-      publishRefresh("visibility_visible");
-    }
-  });
-  window.addEventListener("focus", ()=>{
-    publishRefresh("window_focus");
   });
 
-  /* ================= START ================= */
-  log("boot",{github:true,mode:"MQTT ONLY (fast devices subscribe)"});
-  render();
-  connectMQTT();
-})();
+  updateBaseAmountLabel();
+}
+
+function updateBaseAmountLabel(){
+  const base = numberOnly(document.getElementById('baseAmountInput').value);
+  document.getElementById('baseAmountKorean').textContent = toKoreanMoney(base) + ' · 터치해 수정';
+}
+
+function updatePortfolioValues(){
+  if(!lastSamsungQuote || !lastSolQuote) return;
+
+  const samsungQty = numberOnly(document.getElementById('samsungQtyInput').value);
+  const solQty = numberOnly(document.getElementById('solQtyInput').value);
+  const baseAmount = numberOnly(document.getElementById('baseAmountInput').value);
+
+  const samsungValue = lastSamsungQuote.price * samsungQty;
+  const solValue = lastSolQuote.price * solQty;
+  const total = samsungValue + solValue;
+  const delta = total - baseAmount;
+
+  document.getElementById('samsungValue').textContent = won(samsungValue);
+  document.getElementById('solValue').textContent = won(solValue);
+  document.getElementById('portfolioTotal').textContent = won(total);
+
+  const deltaEl = document.getElementById('portfolioDelta');
+  deltaEl.textContent = (delta > 0 ? '+' : '') + Number(delta).toLocaleString('ko-KR') + '원';
+  deltaEl.className = delta > 0 ? 'up' : (delta < 0 ? 'down' : 'flat');
+}
+
+// =============================================================================
+// 삼성전자우 / SOL AI반도체TOP2플러스 - 네이버 금융
+// =============================================================================
+function naverNum(v){
+  if(v === null || v === undefined || v === '') return null;
+  const n = Number(String(v).replace(/,/g,'').replace(/%/g,'').trim());
+  return Number.isFinite(n) ? n : null;
+}
+
+function marketStatusText(s){
+  if(s === 'OPEN') return '장중';
+  if(s === 'CLOSE') return '정규장 마감';
+  if(s === 'PREOPEN') return '장 시작 전';
+  if(s === 'AFTER_HOURS') return '시간외';
+  return s || '-';
+}
+
+function normalizeModernNaver(d){
+  if(!d) return null;
+  const price = naverNum(d.closePrice);
+  if(!price) return null;
+  return {
+    code: d.itemCode || d.stockCode || '',
+    name: d.stockName || '',
+    price,
+    prevClose: (() => {
+      const ch = naverNum(d.compareToPreviousClosePrice);
+      const dir = d.compareToPreviousPrice && d.compareToPreviousPrice.name;
+      if(ch === null) return null;
+      const signed = (dir === 'FALLING' && ch > 0) ? -ch : ch;
+      return price - signed;
+    })(),
+    open: naverNum(d.openPrice),
+    high: naverNum(d.highPrice),
+    low: naverNum(d.lowPrice),
+    status: d.marketStatus || '',
+    tradedAt: d.localTradedAt || '',
+    source: '네이버 금융 realtime'
+  };
+}
+
+function normalizeLegacyNaver(root, code){
+  const areas = root && root.result && root.result.areas;
+  if(!Array.isArray(areas)) return null;
+
+  for(const area of areas){
+    if(area.name !== 'SERVICE_ITEM' || !Array.isArray(area.datas)) continue;
+    const d = area.datas.find(x => String(x.cd) === String(code)) || area.datas[0];
+    if(!d) continue;
+
+    const price = naverNum(d.nv);
+    if(!price) continue;
+
+    return {
+      code: String(d.cd || code),
+      name: d.nm || '',
+      price,
+      prevClose: naverNum(d.sv),
+      open: naverNum(d.ov),
+      high: naverNum(d.hv),
+      low: naverNum(d.lv),
+      status: d.ms || '',
+      tradedAt: root.result.time ? new Date(root.result.time).toLocaleString('ko-KR') : '',
+      source: '네이버 금융 JSONP'
+    };
+  }
+  return null;
+}
+
+async function fetchNaverModern(code){
+  const url = 'https://polling.finance.naver.com/api/realtime/domestic/stock/' + encodeURIComponent(code);
+  const r = await fetch(url, {cache:'no-store', mode:'cors'});
+  if(!r.ok) throw new Error('HTTP ' + r.status);
+  const j = await r.json();
+  const d = Array.isArray(j.datas) ? j.datas[0] : null;
+  const q = normalizeModernNaver(d);
+  if(!q) throw new Error('modern parse failed');
+  return q;
+}
+
+function fetchNaverJSONP(code, timeoutMs=8000){
+  return new Promise((resolve, reject) => {
+    const cb = '__myHomeNaver_' + code.replace(/[^0-9A-Za-z]/g,'') + '_' + Date.now() + '_' + Math.floor(Math.random()*100000);
+    let done = false;
+    const script = document.createElement('script');
+
+    const cleanup = () => {
+      if(done) return;
+      done = true;
+      clearTimeout(timer);
+      try { delete window[cb]; } catch(e) { window[cb] = undefined; }
+      if(script.parentNode) script.parentNode.removeChild(script);
+    };
+
+    window[cb] = data => {
+      const q = normalizeLegacyNaver(data, code);
+      cleanup();
+      if(q) resolve(q); else reject(new Error('JSONP parse failed'));
+    };
+
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('JSONP timeout'));
+    }, timeoutMs);
+
+    script.onerror = () => {
+      cleanup();
+      reject(new Error('JSONP script error'));
+    };
+
+    script.src = 'https://polling.finance.naver.com/api/realtime' +
+      '?query=' + encodeURIComponent('SERVICE_ITEM:' + code) +
+      '&_callback=' + encodeURIComponent(cb) + '&_=' + Date.now();
+
+    document.head.appendChild(script);
+  });
+}
+
+async function getNaverQuote(code){
+  try { return await fetchNaverModern(code); }
+  catch(e1){
+    console.warn('[STOCK] modern fetch failed', code, e1);
+    return await fetchNaverJSONP(code);
+  }
+}
+
+function renderQuote(prefix, q){
+  const priceEl = document.getElementById(prefix + 'Price');
+  const changeEl = document.getElementById(prefix + 'Change');
+
+  const price = Number(q.price);
+  const prev = Number(q.prevClose);
+  const change = (Number.isFinite(price) && Number.isFinite(prev)) ? price - prev : 0;
+  const pct = (prev > 0) ? (change / prev * 100) : 0;
+
+  const trendClass = change > 0 ? 'up' : (change < 0 ? 'down' : 'flat');
+  const sign = change > 0 ? '+' : '';
+  const pctSign = pct > 0 ? '+' : '';
+
+  priceEl.textContent = won(price);
+  priceEl.className = 'stock-price ' + trendClass;
+  changeEl.textContent = sign + Math.round(change).toLocaleString('ko-KR') + '원 (' + pctSign + pct.toFixed(2) + '%)';
+  changeEl.className = 'stock-change ' + trendClass;
+
+  document.getElementById(prefix + 'Open').textContent = won(q.open);
+  document.getElementById(prefix + 'PrevClose').textContent = won(q.prevClose);
+  document.getElementById(prefix + 'HL').textContent = won(q.high) + ' / ' + won(q.low);
+  document.getElementById(prefix + 'Status').textContent = marketStatusText(q.status);
+  document.getElementById(prefix + 'Time').textContent = q.tradedAt || '수신 완료';
+}
+
+async function loadStocksDirect(){
+  const sourceEl = document.getElementById('stockSource');
+  sourceEl.textContent = '네이버 금융 조회 중...';
+
+  try{
+    const [samsung, sol] = await Promise.all([
+      getNaverQuote('005935'),
+      getNaverQuote('0167A0')
+    ]);
+
+    lastSamsungQuote = samsung;
+    lastSolQuote = sol;
+    renderQuote('samsung', samsung);
+    renderQuote('sol', sol);
+    updatePortfolioValues();
+
+    const sourceNames = [...new Set([samsung.source, sol.source])];
+    sourceEl.textContent = sourceNames.join(' / ');
+  }catch(e){
+    console.error('[STOCK] direct quote load failed', e);
+    sourceEl.textContent = '네이버 금융 직접조회 실패';
+    document.getElementById('samsungStatus').textContent = '시세 수신 실패';
+    document.getElementById('solStatus').textContent = '시세 수신 실패';
+  }
+}
+
+// =============================================================================
+// KOSPI / Philadelphia Semiconductor Index(SOX) - 네이버 증권
+// =============================================================================
+const NAVER_KOSPI_REALTIME = 'https://polling.finance.naver.com/api/realtime/domestic/index/KOSPI';
+const NAVER_KOSPI_LEGACY = 'https://polling.finance.naver.com/api/realtime';
+const NAVER_US_INDEX_LIST = 'https://api.stock.naver.com/index/nation/USA';
+const NAVER_SOX_CHART = 'https://api.stock.naver.com/chart/foreign/index/.SOX?periodType=dayCandle';
+const NAVER_KOSPI_PAGE = 'https://m.stock.naver.com/domestic/index/KOSPI';
+const NAVER_SOX_PAGE = 'https://m.stock.naver.com/worldstock/index/.SOX';
+const INDEX_CACHE_KEY = 'myHome_naverIndexCache_v19';
+
+// 네이버 공개 시세를 직접 확인한 마지막 안전 스냅샷.
+// 네트워크/CORS가 모두 막힐 때 빈 화면 대신 "최근 확인값"으로만 사용합니다.
+const INDEX_SAFE_SNAPSHOT = {
+  kospi: {price:6715.41, change:-2.56, pct:-0.04, tradedAt:'2026-09-17 장마감', state:'CLOSE', source:'최근 확인값 · 2026-09-18'},
+  sox:   {price:11599.49, change:353.38, pct:3.14, tradedAt:'2026-09-17 미국장 마감', state:'CLOSE', source:'최근 확인값 · 2026-09-18'}
+};
+
+function indexNum(v){
+  if(v === null || v === undefined || v === '') return NaN;
+  const n = Number(String(v).replace(/,/g,'').replace(/%/g,'').replace(/[^0-9+\-.]/g,'').trim());
+  return Number.isFinite(n) ? n : NaN;
+}
+
+function signedByDirection(value, obj){
+  let n = indexNum(value);
+  if(!Number.isFinite(n)) return NaN;
+  const dir = String(
+    obj?.compareToPreviousPrice?.name ||
+    obj?.fluctuationsType?.name ||
+    obj?.fluctuationType ||
+    obj?.compareToPreviousPrice ||
+    ''
+  ).toUpperCase();
+  if((dir.includes('FALL') || dir.includes('DOWN')) && n > 0) n = -n;
+  return n;
+}
+
+async function fetchJsonDirect(url, timeoutMs=7000){
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), timeoutMs);
+  try{
+    const r = await fetch(url + (url.includes('?') ? '&' : '?') + '_=' + Date.now(), {
+      cache:'no-store', mode:'cors', signal:ctl.signal
+    });
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchJsonViaAllOriginsRaw(url, timeoutMs=9000){
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), timeoutMs);
+  try{
+    const proxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url + (url.includes('?') ? '&' : '?') + '_=' + Date.now());
+    const r = await fetch(proxy, {cache:'no-store', signal:ctl.signal});
+    if(!r.ok) throw new Error('AllOrigins raw HTTP ' + r.status);
+    return await r.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchJsonViaAllOriginsGet(url, timeoutMs=9000){
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), timeoutMs);
+  try{
+    const proxy = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url + (url.includes('?') ? '&' : '?') + '_=' + Date.now());
+    const r = await fetch(proxy, {cache:'no-store', signal:ctl.signal});
+    if(!r.ok) throw new Error('AllOrigins get HTTP ' + r.status);
+    const wrap = await r.json();
+    if(!wrap || typeof wrap.contents !== 'string') throw new Error('AllOrigins contents 없음');
+    return JSON.parse(wrap.contents);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchJsonViaCodeTabs(url, timeoutMs=9000){
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), timeoutMs);
+  try{
+    const proxy = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url + (url.includes('?') ? '&' : '?') + '_=' + Date.now());
+    const r = await fetch(proxy, {cache:'no-store', signal:ctl.signal});
+    if(!r.ok) throw new Error('CodeTabs HTTP ' + r.status);
+    return await r.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchNaverJsonMulti(url){
+  const methods = [fetchJsonDirect, fetchJsonViaAllOriginsRaw, fetchJsonViaAllOriginsGet, fetchJsonViaCodeTabs];
+  let lastErr = null;
+  for(const fn of methods){
+    try { return await fn(url); }
+    catch(e){ lastErr = e; console.warn('[INDEX] fetch fallback', fn.name, e); }
+  }
+  throw lastErr || new Error('네이버 JSON 조회 실패');
+}
+
+function fetchKospiLegacyJSONP(timeoutMs=8000){
+  return new Promise((resolve,reject) => {
+    const cb = '__myHomeKospi_' + Date.now() + '_' + Math.floor(Math.random()*100000);
+    const script = document.createElement('script');
+    let done = false;
+
+    const cleanup = () => {
+      if(done) return;
+      done = true;
+      clearTimeout(timer);
+      try { delete window[cb]; } catch(e) { window[cb] = undefined; }
+      if(script.parentNode) script.parentNode.removeChild(script);
+    };
+
+    window[cb] = root => {
+      try{
+        const areas = root?.result?.areas || [];
+        const area = areas.find(x => x.name === 'SERVICE_INDEX') || areas[0];
+        const d = area?.datas?.find(x => String(x.cd) === 'KOSPI') || area?.datas?.[0];
+        if(!d) throw new Error('KOSPI JSONP data 없음');
+        cleanup();
+        resolve({
+          price:indexNum(d.nv) / 100,
+          change:indexNum(d.cv) / 100,
+          pct:indexNum(d.cr),
+          tradedAt:root?.result?.time ? new Date(root.result.time).toLocaleString('ko-KR') : '',
+          state:d.ms || '',
+          source:'네이버 증권 JSONP'
+        });
+      }catch(e){ cleanup(); reject(e); }
+    };
+
+    const timer = setTimeout(() => { cleanup(); reject(new Error('KOSPI JSONP timeout')); }, timeoutMs);
+    script.onerror = () => { cleanup(); reject(new Error('KOSPI JSONP script error')); };
+    script.src = NAVER_KOSPI_LEGACY +
+      '?query=' + encodeURIComponent('SERVICE_INDEX:KOSPI') +
+      '&_callback=' + encodeURIComponent(cb) +
+      '&_=' + Date.now();
+    document.head.appendChild(script);
+  });
+}
+
+function normalizeKospiModern(root){
+  const d = Array.isArray(root?.datas) ? root.datas[0] : null;
+  if(!d) return null;
+  const price = indexNum(d.closePriceRaw ?? d.closePrice);
+  if(!Number.isFinite(price)) return null;
+  return {
+    price,
+    change:signedByDirection(d.compareToPreviousClosePriceRaw ?? d.compareToPreviousClosePrice, d),
+    pct:indexNum(d.fluctuationsRatioRaw ?? d.fluctuationsRatio),
+    tradedAt:d.localTradedAt || '',
+    state:d.marketStatus || '',
+    source:'네이버 증권 실시간'
+  };
+}
+
+async function getKospiNaver(){
+  try{
+    const root = await fetchJsonDirect(NAVER_KOSPI_REALTIME);
+    const q = normalizeKospiModern(root);
+    if(q) return q;
+    throw new Error('KOSPI modern parse 실패');
+  }catch(e){
+    console.warn('[KOSPI] direct failed, JSONP fallback', e);
+    return await fetchKospiLegacyJSONP();
+  }
+}
+
+function collectObjects(node, out, depth=0){
+  if(depth > 8 || node === null || node === undefined) return;
+  if(Array.isArray(node)){
+    for(const x of node) collectObjects(x,out,depth+1);
+    return;
+  }
+  if(typeof node !== 'object') return;
+  out.push(node);
+  for(const v of Object.values(node)) collectObjects(v,out,depth+1);
+}
+
+function findSoxObject(root){
+  const objs = [];
+  collectObjects(root, objs);
+  let best = null, bestScore = -1;
+  for(const o of objs){
+    const code = String(o.reutersCode || o.symbolCode || o.symbol || o.indexCode || o.code || '').toUpperCase();
+    const name = String(o.indexName || o.stockName || o.name || o.indexNameEng || '').toLowerCase();
+    let score = 0;
+    if(code === '.SOX' || code === 'SOX') score += 10;
+    if(code.includes('SOX')) score += 5;
+    if(name.includes('필라델피아') || name.includes('semiconductor')) score += 5;
+    if(o.closePrice !== undefined || o.currentPrice !== undefined) score += 2;
+    if(score > bestScore){ bestScore=score; best=o; }
+  }
+  return bestScore >= 5 ? best : null;
+}
+
+function normalizeSoxNation(root){
+  const d = findSoxObject(root);
+  if(!d) return null;
+  const price = indexNum(d.closePrice ?? d.currentPrice ?? d.price);
+  if(!Number.isFinite(price)) return null;
+  const change = signedByDirection(d.compareToPreviousClosePrice ?? d.fluctuations ?? d.changePrice ?? d.change, d);
+  let pct = indexNum(d.fluctuationsRatio ?? d.changeRate ?? d.rate);
+  let finalChange = change;
+  const prev = indexNum(d.lastClosePrice ?? d.previousClosePrice ?? d.prevClosePrice);
+  if(!Number.isFinite(finalChange) && Number.isFinite(prev)) finalChange = price - prev;
+  if(!Number.isFinite(pct) && Number.isFinite(prev) && prev !== 0) pct = (price-prev)/prev*100;
+  return {
+    price,
+    change:finalChange,
+    pct,
+    tradedAt:d.localTradedAt || d.localDateTime || d.tradedAt || d.dateTime || '',
+    state:d.marketStatus || d.marketState || '',
+    source:'네이버 증권 해외지수'
+  };
+}
+
+function normalizeSoxChart(root){
+  const objs = [];
+  collectObjects(root, objs);
+  const rows = objs.filter(o => {
+    const date = String(o.localDate || o.date || o.tradingDate || '');
+    const close = indexNum(o.closePrice ?? o.close);
+    return date.length >= 8 && Number.isFinite(close);
+  }).map(o => ({
+    date:String(o.localDate || o.date || o.tradingDate || ''),
+    close:indexNum(o.closePrice ?? o.close)
+  }));
+
+  const uniq = new Map();
+  for(const r of rows) uniq.set(r.date, r);
+  const sorted = [...uniq.values()].sort((a,b) => a.date.localeCompare(b.date));
+  if(!sorted.length) return null;
+  const last = sorted[sorted.length-1];
+  const prev = sorted.length >= 2 ? sorted[sorted.length-2] : null;
+  const change = prev ? last.close - prev.close : NaN;
+  const pct = prev && prev.close ? change / prev.close * 100 : NaN;
+  return {
+    price:last.close,
+    change,
+    pct,
+    tradedAt:last.date,
+    state:'CLOSE',
+    source:'네이버 증권 SOX 일별시세'
+  };
+}
+
+async function getSoxNaver(){
+  let lastErr = null;
+  try{
+    const nation = await fetchNaverJsonMulti(NAVER_US_INDEX_LIST);
+    const q = normalizeSoxNation(nation);
+    if(q) return q;
+    throw new Error('SOX nation parse 실패');
+  }catch(e){ lastErr=e; console.warn('[SOX] nation endpoint failed', e); }
+
+  try{
+    const chart = await fetchNaverJsonMulti(NAVER_SOX_CHART);
+    const q = normalizeSoxChart(chart);
+    if(q) return q;
+    throw new Error('SOX chart parse 실패');
+  }catch(e){ lastErr=e; console.warn('[SOX] chart endpoint failed', e); }
+
+  throw lastErr || new Error('SOX 네이버 조회 실패');
+}
+
+function saveIndexCache(prefix, q){
+  try{
+    const root = JSON.parse(localStorage.getItem(INDEX_CACHE_KEY) || '{}');
+    root[prefix] = {q, savedAt:Date.now()};
+    localStorage.setItem(INDEX_CACHE_KEY, JSON.stringify(root));
+  }catch(e){}
+}
+
+function loadIndexCache(prefix){
+  try{
+    const root = JSON.parse(localStorage.getItem(INDEX_CACHE_KEY) || '{}');
+    const row = root[prefix];
+    if(row && row.q && Number.isFinite(Number(row.q.price))){
+      return {...row.q, source:'마지막 정상 조회값 · ' + new Date(row.savedAt).toLocaleString('ko-KR')};
+    }
+  }catch(e){}
+  return null;
+}
+
+function renderIndex(prefix, q){
+  const price = Number(q.price);
+  const change = Number(q.change);
+  const pct = Number(q.pct);
+  const trend = Number.isFinite(change) ? (change > 0 ? 'up' : (change < 0 ? 'down' : 'flat')) : 'flat';
+  const sign = Number.isFinite(change) && change > 0 ? '+' : '';
+  const pctSign = Number.isFinite(pct) && pct > 0 ? '+' : '';
+
+  document.getElementById(prefix + 'Value').textContent = Number.isFinite(price)
+    ? price.toLocaleString('ko-KR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '-';
+
+  const ch = document.getElementById(prefix + 'Change');
+  if(Number.isFinite(change) && Number.isFinite(pct)){
+    ch.textContent = sign + change.toLocaleString('ko-KR', {minimumFractionDigits:2, maximumFractionDigits:2}) +
+      ' (' + pctSign + pct.toFixed(2) + '%)';
+  }else if(Number.isFinite(pct)){
+    ch.textContent = pctSign + pct.toFixed(2) + '%';
+  }else{
+    ch.textContent = '변동 정보 확인 중';
+  }
+  ch.className = 'market-change ' + trend;
+
+  const parts = [];
+  if(q.source) parts.push(q.source);
+  if(q.tradedAt){
+    const dt = new Date(q.tradedAt);
+    parts.push(isNaN(dt.getTime()) ? String(q.tradedAt) : dt.toLocaleString('ko-KR'));
+  }
+  if(q.state) parts.push(marketStatusText(q.state));
+  document.getElementById(prefix + 'Time').textContent = parts.filter(Boolean).join(' · ') || '네이버 증권';
+}
+
+async function loadOneIndex(prefix, getter){
+  const ch = document.getElementById(prefix + 'Change');
+  ch.textContent = '네이버 조회 중...';
+  ch.className = 'market-change flat';
+  try{
+    const q = await getter();
+    if(!q || !Number.isFinite(Number(q.price))) throw new Error('유효한 지수값 없음');
+    renderIndex(prefix, q);
+    saveIndexCache(prefix, q);
+    return true;
+  }catch(e){
+    console.error('[INDEX] ' + prefix + ' failed', e);
+    const cached = loadIndexCache(prefix);
+    if(cached){ renderIndex(prefix, cached); return false; }
+    const safe = INDEX_SAFE_SNAPSHOT[prefix];
+    if(safe){ renderIndex(prefix, safe); return false; }
+    document.getElementById(prefix + 'Value').textContent = '-';
+    ch.textContent = '네이버 조회 실패';
+    document.getElementById(prefix + 'Time').textContent = '-';
+    return false;
+  }
+}
+
+async function loadMarketIndices(){
+  await Promise.all([
+    loadOneIndex('kospi', getKospiNaver),
+    loadOneIndex('sox', getSoxNaver)
+  ]);
+}
+
+// =============================================================================
+// 아날로그 공장 YouTube - SocialCounts 공개 API
+// =============================================================================
+function normalizeChannelUrl(input){
+  const s = String(input || '').trim();
+  if(!s) return 'https://www.youtube.com/results?search_query=' + encodeURIComponent('아날로그 공장');
+  if(/^https?:\/\//i.test(s)) return s;
+  if(s.startsWith('@')) return 'https://www.youtube.com/' + encodeURI(s);
+  return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(s);
+}
+
+function loadAnalogSettingsToUI(){
+  const url = localStorage.getItem(STORE.analogUrl) || '';
+  const id = localStorage.getItem(STORE.analogId) || '';
+  document.getElementById('analogChannelUrlInput').value = url;
+  document.getElementById('analogChannelIdInput').value = id;
+  document.getElementById('analogChannelLink').href = normalizeChannelUrl(url);
+}
+
+function saveAnalogChannelSettings(){
+  const url = document.getElementById('analogChannelUrlInput').value.trim();
+  const id = document.getElementById('analogChannelIdInput').value.trim();
+  localStorage.setItem(STORE.analogUrl, url);
+  localStorage.setItem(STORE.analogId, id);
+  document.getElementById('analogChannelLink').href = normalizeChannelUrl(url);
+  loadAnalogChannelStats();
+}
+
+function pickStatFromTable(data, keyword){
+  const table = Array.isArray(data && data.table) ? data.table : [];
+  const row = table.find(x => String(x.name || '').toLowerCase().includes(keyword));
+  return row ? Number(row.count) : NaN;
+}
+
+async function loadAnalogChannelStats(){
+  loadAnalogSettingsToUI();
+  const id = (localStorage.getItem(STORE.analogId) || '').trim();
+  const subEl = document.getElementById('analogSubscribers');
+  const viewsEl = document.getElementById('analogViews');
+  const videosEl = document.getElementById('analogVideos');
+  const updatedEl = document.getElementById('analogUpdated');
+
+  if(!id){
+    subEl.textContent = 'ID 설정 필요';
+    subEl.style.fontSize = '24px';
+    viewsEl.textContent = '-';
+    videosEl.textContent = '-';
+    updatedEl.textContent = '아래 “채널 정보 설정”에서 UC로 시작하는 채널 ID 입력';
+    return;
+  }
+
+  subEl.style.fontSize = '';
+  subEl.textContent = '조회 중...';
+  try{
+    const url = 'https://api.socialcounts.org/youtube-live-subscriber-count/' + encodeURIComponent(id);
+    const r = await fetch(url, {cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+
+    const subs = Number(data.est_sub ?? data.API_sub ?? data.subscribers ?? data.subscriberCount);
+    const views = Number(data.API_view ?? data.views ?? data.viewCount ?? pickStatFromTable(data,'view'));
+    const videos = Number(data.API_video ?? data.videos ?? data.videoCount ?? pickStatFromTable(data,'video'));
+
+    subEl.textContent = Number.isFinite(subs) ? Math.round(subs).toLocaleString('ko-KR') + '명' : '확인 불가';
+    viewsEl.textContent = Number.isFinite(views) ? Math.round(views).toLocaleString('ko-KR') + '회' : '-';
+    videosEl.textContent = Number.isFinite(videos) ? Math.round(videos).toLocaleString('ko-KR') + '개' : '-';
+    updatedEl.textContent = new Date().toLocaleString('ko-KR');
+  }catch(e){
+    console.error('[YOUTUBE] analog channel stats failed', e);
+    subEl.textContent = '조회 실패';
+    viewsEl.textContent = '-';
+    videosEl.textContent = '-';
+    updatedEl.textContent = 'SocialCounts 연결 실패';
+  }
+}
+
+// =============================================================================
+// 주요 경제뉴스 Top 10 - 네이버 뉴스 경제면 헤드라인
+// =============================================================================
+const NAVER_ECON_NEWS_PAGE = 'https://news.naver.com/section/101';
+const NEWS_CACHE_KEY = 'myHome.naverEconomyHeadlines.v2';
+
+function normalizeNewsHref(href){
+  if(!href) return '';
+  if(/^https?:\/\//i.test(href)) return href;
+  if(href.startsWith('//')) return 'https:' + href;
+  if(href.startsWith('/')) return 'https://news.naver.com' + href;
+  return href;
+}
+
+function fetchHtmlProxyFirst(url){
+  const proxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+  return fetch(proxy, {cache:'no-store'}).then(r => {
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    return r.text();
+  });
+}
+
+function extractHeadlineMeta(anchor){
+  const wrap = anchor.closest('li, article, div');
+  if(!wrap) return '';
+  const txt = normalizeText(wrap.textContent || '');
+  const title = normalizeText(anchor.textContent || '');
+  let meta = txt.replace(title, '').trim();
+  meta = meta.replace(/더보기|좋아요|댓글|본문보기/g, '').trim();
+  return meta.slice(0, 60);
+}
+
+function parseNaverEconomyHeadlines(html){
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const anchors = [...doc.querySelectorAll('a[href*="/article/"], a[href*="n.news.naver.com/article/"]')];
+  const seen = new Set();
+  const items = [];
+
+  for(const a of anchors){
+    const title = normalizeText(a.textContent || '').replace(/\s+/g, ' ');
+    const href = normalizeNewsHref(a.getAttribute('href') || '');
+    if(!title || title.length < 8 || title.length > 120) continue;
+    if(!href || !/\/article\//.test(href)) continue;
+    const key = title + '|' + href;
+    if(seen.has(key)) continue;
+    seen.add(key);
+    const meta = extractHeadlineMeta(a);
+    items.push({title, link: href, meta});
+    if(items.length >= 20) break;
+  }
+
+  const filtered = [];
+  const seenTitle = new Set();
+  for(const item of items){
+    if(seenTitle.has(item.title)) continue;
+    seenTitle.add(item.title);
+    filtered.push(item);
+    if(filtered.length >= 10) break;
+  }
+  return filtered;
+}
+
+function renderNewsItems(items){
+  const list = document.getElementById('econNewsList');
+  const top = items.slice(0,10);
+  if(!top.length){
+    list.innerHTML = '<li>표시할 네이버 경제 뉴스가 없습니다.</li>';
+    return;
+  }
+  list.innerHTML = top.map(item => '<li><a href="' + safeHttpUrl(item.link || NAVER_ECON_NEWS_PAGE) + '" target="_blank" rel="noopener noreferrer">' + safeText(item.title || '제목 없음') + '</a>' + (item.meta ? '<span class="news-meta">' + safeText(item.meta) + '</span>' : '') + '</li>').join('');
+}
+
+function saveNewsCache(items){
+  try{ localStorage.setItem(NEWS_CACHE_KEY, JSON.stringify({at:Date.now(), items:items.slice(0,10)})); }catch(e){}
+}
+
+function loadNewsCache(){
+  try{
+    const cached = JSON.parse(localStorage.getItem(NEWS_CACHE_KEY) || 'null');
+    if(cached && Array.isArray(cached.items) && cached.items.length) return cached;
+  }catch(e){}
+  return null;
+}
+
+async function loadEconomicNews(){
+  const list = document.getElementById('econNewsList');
+  const status = document.getElementById('newsStatus');
+  list.innerHTML = '<li>네이버 경제 뉴스 헤드라인 불러오는 중...</li>';
+  status.textContent = '네이버 뉴스 경제면 헤드라인 조회 중...';
+
+  try{
+    const html = await fetchHtmlProxyFirst(NAVER_ECON_NEWS_PAGE);
+    const items = parseNaverEconomyHeadlines(html);
+    if(!items.length) throw new Error('뉴스 헤드라인 파싱 실패');
+    renderNewsItems(items);
+    saveNewsCache(items);
+    status.textContent = '네이버 뉴스 경제면 헤드라인 · 최신 10건 · ' + new Date().toLocaleTimeString('ko-KR');
+    return;
+  }catch(e){
+    console.warn('[NAVER ECON NEWS] fetch failed', e);
+  }
+
+  const cached = loadNewsCache();
+  if(cached){
+    renderNewsItems(cached.items);
+    status.textContent = '네이버 뉴스 경제면 헤드라인 · 마지막 성공 조회 데이터 (' + new Date(cached.at).toLocaleString('ko-KR') + ')';
+    return;
+  }
+
+  list.innerHTML = '<li><a href="' + NAVER_ECON_NEWS_PAGE + '" target="_blank" rel="noopener noreferrer">네이버 경제 뉴스 열기</a></li>';
+  status.textContent = '네이버 경제 뉴스 자동조회 실패 · 새로고침 버튼으로 다시 시도';
+}
+
+// =============================================================================
+// 시작
+// =============================================================================
+function startDashboard(){
+  setupEditableNumbers();
+  loadAnalogSettingsToUI();
+  loadStocksDirect();
+  loadMarketIndices();
+  loadAnalogChannelStats();
+  loadEconomicNews();
+
+  setInterval(loadStocksDirect, 60000);
+  setInterval(loadMarketIndices, 60000);
+  setInterval(loadAnalogChannelStats, 5 * 60000);
+  setInterval(loadEconomicNews, 10 * 60000);
+}
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', async () => {
+    try{
+      const reg = await navigator.serviceWorker.register('./sw.js?v=19');
+      reg.update();
+    }catch(e){
+      console.warn('Service Worker registration failed:', e);
+    }
+  });
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', startDashboard);
+}else{
+  startDashboard();
+}
 </script>
 </body>
 </html>
