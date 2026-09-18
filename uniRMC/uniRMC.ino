@@ -61,6 +61,7 @@ bool ntpConfigured = false;
 // ===================== Topics =====================
 const char* TOPIC_MIBOX_CMD    = "tswell/mibox3/cmd";
 const char* TOPIC_MIBOX_STATUS = "tswell/mibox3/status";
+const char* TOPIC_GATEWAY_STATUS = "tswell/gateway/status";  // MQTT online/offline LWT (separate from BLE status)
 
 const char* TOPIC_IR_CMD       = "tswell/ir/cmd";
 const char* TOPIC_IR_STATUS    = "tswell/ir/status";
@@ -89,17 +90,20 @@ IRsend irsend(IR_SEND_PIN);
 RCSwitch rf = RCSwitch();
 
 // ===================== Timing / intervals =====================
-static const uint32_t WIFI_RETRY_INTERVAL_MS = 5000;
-static const uint32_t MQTT_RETRY_INTERVAL_MS = 3000;
+static const uint32_t WIFI_RETRY_INTERVAL_MS = 10000;
+static const uint32_t WIFI_HARD_RESTART_MS = 60000UL;
+static const uint32_t MQTT_RETRY_INTERVAL_MS = 5000;
 static const uint32_t BLE_STATUS_INTERVAL_MS = 1000;
 static const uint32_t BLE_HEARTBEAT_INTERVAL_MS = 2000;
-static const uint32_t BLE_FIRST_RECOVER_MS = 45000UL;   // no first connection for 45s -> soft recover
 static const uint32_t BLE_HARD_RECOVER_MS = 300000UL;   // 5 min disconnected after a real link -> soft recover
 static const uint32_t RESET_SETTLE_MS = 700;
 static const uint32_t RESET_GUARD_MS  = 3000;
 
 uint32_t nextWiFiTryMs = 0;
+uint32_t wifiDisconnectedSinceMs = 0;
+wl_status_t lastWiFiStatus = WL_IDLE_STATUS;
 uint32_t nextMQTTTryMs = 0;
+bool lastMQTTConnected = false;
 uint32_t last433StatusMs = 0;
 uint32_t lastBleStatusMs = 0;
 uint32_t lastBleHeartbeatMs = 0;
@@ -151,9 +155,9 @@ IRCode irCodes[] = {
   {"POWER1", NEC,      0x20DF10EF, 32, nullptr,    0,  0},
   {"VOL-1",  NEC,      0x20DFC03F, 32, nullptr,    0,  0},
   {"VOL+1",  NEC,      0x20DF40BF, 32, nullptr,    0,  0},
-  {"POWER2", NEC_LIKE, 0x55CCA2FF, 32, RAW_POWER2, 67, 38},
-  {"VOL-2",  NEC_LIKE, 0x55CCA8FF, 32, RAW_VOLM2,  67, 38},
-  {"VOL+2",  NEC_LIKE, 0x55CC90FF, 32, RAW_VOLP2,  67, 38},
+  {"POWER2", NEC,      0xB24D3BC4, 32, nullptr,    0,  0},
+  {"VOL-2",  NEC,      0xB24D817E, 32, nullptr,    0,  0},
+  {"VOL+2",  NEC,      0xB24D01FE, 32, nullptr,    0,  0},
 };
 const int IR_COUNT = sizeof(irCodes) / sizeof(irCodes[0]);
 
@@ -360,6 +364,36 @@ void publishBleSnapshot(bool connected){
   if(mqtt.connected()) mqtt.publish(TOPIC_MIBOX_STATUS, payload, true);
 }
 
+void publishGatewayOnline(){
+  if(!mqtt.connected()) return;
+
+  const uint32_t ts = currentUnixTimestamp();
+  char payload[128];
+  snprintf(payload, sizeof(payload),
+           "{\"online\":true,\"ts\":%lu,\"rssi\":%d}",
+           (unsigned long)ts,
+           (WiFi.status() == WL_CONNECTED) ? WiFi.RSSI() : -999);
+  mqtt.publish(TOPIC_GATEWAY_STATUS, payload, true);
+}
+
+void logConnectivityEdges(){
+  wl_status_t ws = WiFi.status();
+  if(ws != lastWiFiStatus){
+    Serial.printf("[WiFi] status %d -> %d", (int)lastWiFiStatus, (int)ws);
+    if(ws == WL_CONNECTED){
+      Serial.printf(" IP=%s RSSI=%d", WiFi.localIP().toString().c_str(), WiFi.RSSI());
+    }
+    Serial.println();
+    lastWiFiStatus = ws;
+  }
+
+  bool mc = mqtt.connected();
+  if(mc != lastMQTTConnected){
+    Serial.printf("[MQTT] connected=%d state=%d\n", mc ? 1 : 0, mqtt.state());
+    lastMQTTConnected = mc;
+  }
+}
+
 void requestReset(const char* reason){
   uint32_t now = millis();
   if(resetPending){
@@ -436,12 +470,13 @@ void bleHealthCheck(){
   bool shouldRecover = false;
   const char* reason = "";
 
+  // Before the first real BLE connection, keep advertising and leave the
+  // rest of the gateway (433 / IR / Wi-Fi / MQTT) undisturbed.
   if(bleLastRealConnMs == 0){
-    if((now - bleBootMs) >= BLE_FIRST_RECOVER_MS){
-      shouldRecover = true;
-      reason = "no initial BLE connection";
-    }
-  } else if((now - bleLastRealConnMs) >= BLE_HARD_RECOVER_MS){
+    return;
+  }
+
+  if((now - bleLastRealConnMs) >= BLE_HARD_RECOVER_MS){
     shouldRecover = true;
     reason = "long BLE disconnect";
   }
@@ -467,38 +502,67 @@ void bleHealthCheck(){
 
 // ===================== Connectivity =====================
 void startWiFiIfNeeded(){
-  if(WiFi.status() == WL_CONNECTED) return;
-  if(millis() < nextWiFiTryMs) return;
+  const uint32_t now = millis();
+  wl_status_t st = WiFi.status();
 
-  nextWiFiTryMs = millis() + WIFI_RETRY_INTERVAL_MS;
+  if(st == WL_CONNECTED){
+    wifiDisconnectedSinceMs = 0;
+    return;
+  }
 
+  if(wifiDisconnectedSinceMs == 0) wifiDisconnectedSinceMs = now;
+  if((int32_t)(now - nextWiFiTryMs) < 0) return;
+  nextWiFiTryMs = now + WIFI_RETRY_INTERVAL_MS;
+
+  // Do not call WiFi.begin() every few seconds. Reconnect first so an in-progress
+  // association is not continuously reset. Only hard-restart Wi-Fi after a long outage.
+  if((now - wifiDisconnectedSinceMs) < WIFI_HARD_RESTART_MS){
+    Serial.println("[WiFi] reconnect()");
+    WiFi.reconnect();
+    return;
+  }
+
+  Serial.println("[WiFi] hard reconnect: disconnect + begin");
+  WiFi.disconnect(false, false);
+  delay(50);
   WiFi.mode(WIFI_STA);
 #if defined(HAS_ESP_WIFI_H)
   esp_wifi_set_ps(WIFI_PS_NONE);
 #endif
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.println("[WiFi] begin() retry (PS_NONE)");
+  wifiDisconnectedSinceMs = now;
+}
+
+void makeMqttClientId(char* out, size_t outSize){
+  const uint64_t mac = ESP.getEfuseMac();
+  const uint16_t hi = (uint16_t)(mac >> 32);
+  const uint32_t lo = (uint32_t)mac;
+  snprintf(out, outSize, "ESP32-UNI-%04X%08lX", hi, (unsigned long)lo);
 }
 
 void startMQTTIfNeeded(){
   if(WiFi.status() != WL_CONNECTED) return;
   if(mqtt.connected()) return;
-  if(millis() < nextMQTTTryMs) return;
+  if((int32_t)(millis() - nextMQTTTryMs) < 0) return;
 
   nextMQTTTryMs = millis() + MQTT_RETRY_INTERVAL_MS;
-
   mqtt.setServer(MQTT_BROKER, MQTT_PORT);
 
-  char cid[32];
-  snprintf(cid, sizeof(cid), "ESP32-UNI-%08lX", (unsigned long)((uint32_t)ESP.getEfuseMac()));
-  Serial.print("[MQTT] connect retry... ");
+  char cid[40];
+  makeMqttClientId(cid, sizeof(cid));
+  Serial.printf("[MQTT] connect retry cid=%s... ", cid);
 
-  if(mqtt.connect(cid, TOPIC_MIBOX_STATUS, 0, true, "{\"ble\":false,\"ts\":0}")){
+  // LWT belongs to gateway online/offline state, not to the MiBox BLE state topic.
+  // This prevents a short MQTT loss from overwriting the retained BLE state with false.
+  if(mqtt.connect(cid, TOPIC_GATEWAY_STATUS, 0, true, "{\"online\":false,\"ts\":0}")){
     Serial.println("OK");
     mqtt.subscribe(TOPIC_MIBOX_CMD);
     mqtt.subscribe(TOPIC_IR_CMD);
     mqtt.subscribe(TOPIC_433_CMD);
     Serial.println("[MQTT] subscribed 3 topics");
+
+    publishGatewayOnline();
+    publishBleSnapshot(bleKeyboard.isConnected());
     publish433Status();
     publishIrStatus("MQTT connected");
   } else {
@@ -542,7 +606,11 @@ void processBleCmdIfAny(){
     bleKeyboard.write(KEY_MEDIA_VOLUME_UP);
   else if (strcmp(msg, "voldown") == 0 || strcmp(msg, "vol-") == 0 || strcmp(msg, "volumedown") == 0 || strcmp(msg, "volume_down") == 0 || strcmp(msg, "volume-") == 0)
     bleKeyboard.write(KEY_MEDIA_VOLUME_DOWN);
-  else if (strcmp(msg, "mute") == 0 || strcmp(msg, "volmute") == 0 || strcmp(msg, "volume_mute") == 0 || strcmp(msg, "vol_mute") == 0)
+  // Xiaomi Mi Box S 3rd Gen POWER key.
+  // IMPORTANT: the supplied BleKeyboard POWER patch changes media bit 4
+  // from Consumer Mute (0xE2) to Consumer Power (0x30).
+  // KEY_MEDIA_MUTE is therefore intentionally used as the bit-4 carrier here.
+  else if (strcmp(msg, "power") == 0 || strcmp(msg, "pwr") == 0 || strcmp(msg, "powerkey") == 0)
     bleKeyboard.write(KEY_MEDIA_MUTE);
 
   // BACK/HOME are sent as normal keyboard HID keys, which Android TV/MiBox usually maps correctly.
@@ -607,6 +675,9 @@ void processIrCmdIfAny(){
 }
 
 void processRfCmdIfAny(){
+  // Match BLE/IR behavior: while reset is pending, leave queued RF commands untouched.
+  if(resetPending) return;
+
   char msg[CMD_MAX_LEN];
   if(!dequeueCmd(rfQueue, msg, sizeof(msg))) return;
 
@@ -618,8 +689,6 @@ void processRfCmdIfAny(){
     requestReset("433 cmd reset");
     return;
   }
-
-  if(resetPending) return;
 
   bool ok=false;
   for(int i=0;i<RF_COUNT;i++){
@@ -700,20 +769,24 @@ void setup(){
 
   irsend.begin();
 
-  rf.enableReceive(RX_PIN);
+  // 433 RX is not used in this firmware. Keep RX disabled to avoid unnecessary interrupts.
   rf.enableTransmit(TX_PIN);
 
+  WiFi.persistent(false);
   WiFi.mode(WIFI_STA);
+  WiFi.setAutoReconnect(true);
 #if defined(HAS_ESP_WIFI_H)
   esp_wifi_set_ps(WIFI_PS_NONE);
 #endif
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.println("[WiFi] begin() (PS_NONE)");
+  wifiDisconnectedSinceMs = millis();
+  lastWiFiStatus = WiFi.status();
+  Serial.println("[WiFi] begin() (auto-reconnect, PS_NONE)");
 
   mqtt.setServer(MQTT_BROKER, MQTT_PORT);
   mqtt.setCallback(mqttCallback);
   mqtt.setBufferSize(512);
-  mqtt.setKeepAlive(20);
+  mqtt.setKeepAlive(30);
   mqtt.setSocketTimeout(5);
 
   publish433Log("Universal Remote Booting");
@@ -727,6 +800,7 @@ void loop(){
   startMQTTIfNeeded();
 
   if(mqtt.connected()) mqtt.loop();
+  logConnectivityEdges();
 
   publishBleStatus();
   bleHealthCheck();
