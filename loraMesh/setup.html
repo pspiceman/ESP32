@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>LoRaMesh Gateway</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg:#f3f6fa; --card:#ffffff; --ink:#101828; --muted:#667085;
+      --line:#d0d5dd; --primary:#2563eb; --primary2:#1d4ed8;
+      --ok:#16a34a; --warn:#d97706; --danger:#dc2626; --dark:#0f172a;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",Arial,sans-serif;color:var(--ink)}
+    .wrap{max-width:760px;margin:0 auto;padding:20px 14px 40px}
+    .head{background:linear-gradient(135deg,#0f172a,#1e3a8a);color:#fff;padding:24px;border-radius:20px;box-shadow:0 12px 30px #0f172a1a}
+    .head h1{margin:0 0 7px;font-size:28px;letter-spacing:-.5px}.head p{margin:0;color:#dbeafe;font-size:14px}
+    .statusbar{display:flex;align-items:center;gap:10px;margin-top:18px;padding:11px 13px;background:#ffffff14;border:1px solid #ffffff25;border-radius:12px}
+    .dot{width:10px;height:10px;border-radius:50%;background:#94a3b8;box-shadow:0 0 0 4px #ffffff10}.dot.on{background:#4ade80;box-shadow:0 0 0 4px #4ade8030}
+    .status{font-weight:700}.device{margin-left:auto;max-width:48%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#dbeafe;font-size:12px}
+    .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+    button{appearance:none;border:0;border-radius:12px;padding:13px 15px;font-size:15px;font-weight:750;cursor:pointer;transition:.15s}
+    button:active{transform:translateY(1px)}button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+    .btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary2)}
+    .btn-light{background:#fff;color:#1e293b}.btn-secondary{background:#e7eefc;color:#1d4ed8}.btn-run{background:#111827;color:#fff}.btn-danger{background:#fee2e2;color:#b91c1c}
+    .card{background:var(--card);margin-top:14px;padding:20px;border-radius:18px;border:1px solid #e4e7ec;box-shadow:0 4px 15px #1018280a}
+    .card h2{font-size:18px;margin:0 0 16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .field{display:flex;flex-direction:column;gap:7px}.field.full{grid-column:1/-1}.field label{font-size:13px;color:#475467;font-weight:750}
+    input,select{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px 12px;background:#fff;color:var(--ink);font-size:15px;outline:none}
+    input:focus,select:focus{border-color:#84adff;box-shadow:0 0 0 3px #2563eb18}.hint{font-size:11px;color:#98a2b3;margin-top:1px}
+    .pwrow{display:flex;gap:8px}.pwrow input{flex:1}.pwrow button{padding:0 14px;background:#f2f4f7;color:#475467;font-size:13px}
+    .cardActions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+    .runbox{margin-top:14px;padding:16px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0}
+    .runbox b{display:block;margin-bottom:5px}.runbox span{font-size:12px;color:#667085}.runbox button{width:100%;margin-top:12px}
+    .log{background:#08111f;color:#cbd5e1;border-radius:13px;padding:13px;height:240px;overflow:auto;white-space:pre-wrap;word-break:break-word;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .log .tx{color:#93c5fd}.rowtop{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}.rowtop h2{margin:0}.tiny{padding:8px 10px;font-size:12px;background:#f2f4f7;color:#475467}
+    .msg{display:none;margin-top:12px;padding:10px 12px;border-radius:10px;font-size:13px}.msg.show{display:block}.msg.ok{background:#dcfce7;color:#166534}.msg.err{background:#fee2e2;color:#991b1b}.msg.info{background:#dbeafe;color:#1e40af}
+    .foot{text-align:center;color:#98a2b3;font-size:11px;margin-top:18px}
+    @media(max-width:560px){.grid,.actions,.cardActions{grid-template-columns:1fr}.field.full{grid-column:auto}.device{max-width:42%}.head h1{font-size:24px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <section class="head">
+    <h1>LoRaMesh Gateway</h1>
+    <p>Bluetooth LE Gateway Configuration</p>
+    <div class="statusbar">
+      <span id="dot" class="dot"></span>
+      <span id="status" class="status">연결 안 됨</span>
+      <span id="device" class="device"></span>
+    </div>
+    <div class="actions">
+      <button id="connectBtn" class="btn-light">Bluetooth 연결</button>
+      <button id="disconnectBtn" class="btn-light" disabled>연결 해제</button>
+    </div>
+  </section>
+
+  <div id="message" class="msg"></div>
+
+  <section class="card">
+    <h2>Gateway 설정</h2>
+    <div class="grid">
+      <div class="field">
+        <label for="sensorMode">Sensor 설정 방식</label>
+        <select id="sensorMode">
+          <option value="profile">Profile</option>
+          <option value="manual">Manual Nodes</option>
+        </select>
+      </div>
+      <div class="field" id="profileField">
+        <label for="profile">Profile</label>
+        <input id="profile" type="number" min="1" max="48" value="3" inputmode="numeric" />
+        <span class="hint">1~48 · Node 2부터 연속 자동 구성</span>
+      </div>
+      <div class="field full" id="nodesField" style="display:none">
+        <label for="nodes">Sensor Nodes</label>
+        <input id="nodes" type="text" placeholder="예: 2,7,15" autocomplete="off" />
+        <span class="hint">2~49 · 쉼표로 구분 · 중복 불가</span>
+      </div>
+      <div class="field full">
+        <label for="routers">Routers</label>
+        <input id="routers" type="text" value="50" placeholder="예: 50,51" autocomplete="off" />
+        <span class="hint">50~55 · 최대 6개</span>
+      </div>
+      <div class="field">
+        <label for="freq">Frequency (MHz)</label>
+        <input id="freq" type="number" min="850" max="950" step="0.001" value="922.000" inputmode="decimal" />
+      </div>
+      <div class="field">
+        <label for="power">TX Power (dBm)</label>
+        <input id="power" type="number" min="5" max="20" step="1" value="13" inputmode="numeric" />
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Wi-Fi 설정</h2>
+    <div class="grid">
+      <div class="field full">
+        <label for="ssid">Wi-Fi SSID</label>
+        <input id="ssid" type="text" maxlength="32" autocomplete="off" placeholder="SSID" />
+      </div>
+      <div class="field full">
+        <label for="password">Wi-Fi Password</label>
+        <div class="pwrow">
+          <input id="password" type="password" maxlength="63" autocomplete="new-password" placeholder="Password" />
+          <button id="togglePw" type="button">보기</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cardActions">
+      <button id="readBtn" class="btn-secondary" disabled>현재값 읽기</button>
+      <button id="writeBtn" class="btn-primary" disabled>설정 쓰기</button>
+    </div>
+
+    <div class="runbox">
+      <b>설정 완료 후 RUN</b>
+      <span>RUN을 누르면 설정 모드를 종료하고 Gateway 정상 운전을 시작합니다. Bluetooth 연결이 끊기는 것이 정상입니다.</span>
+      <button id="runBtn" class="btn-run" disabled>RUN · Gateway 시작</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="rowtop">
+      <h2>통신 로그</h2>
+      <button id="clearBtn" class="tiny">로그 지우기</button>
+    </div>
+    <div id="log" class="log">LoRaMesh Gateway 설정 페이지 준비됨.\n</div>
+  </section>
+
+  <div class="foot">설정값과 Wi-Fi 비밀번호는 이 웹페이지에 저장되지 않습니다.</div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+  const RX_UUID      = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'; // Browser -> Gateway
+  const TX_UUID      = '6e400003-b5a3-f393-e0a9-e50e24dcca9e'; // Gateway -> Browser
+
+  let device = null;
+  let server = null;
+  let rxChar = null;
+  let txChar = null;
+  let decoder = new TextDecoder('utf-8');
+  let receiveText = '';
+
+  const $ = id => document.getElementById(id);
+  const ui = {
+    dot:$('dot'), status:$('status'), device:$('device'), message:$('message'),
+    connect:$('connectBtn'), disconnect:$('disconnectBtn'), read:$('readBtn'), write:$('writeBtn'), run:$('runBtn'),
+    sensorMode:$('sensorMode'), profileField:$('profileField'), nodesField:$('nodesField'),
+    profile:$('profile'), nodes:$('nodes'), routers:$('routers'), freq:$('freq'), power:$('power'),
+    ssid:$('ssid'), password:$('password'), togglePw:$('togglePw'), log:$('log'), clear:$('clearBtn')
+  };
+
+  function setConnected(connected) {
+    ui.dot.classList.toggle('on', connected);
+    ui.status.textContent = connected ? 'BLE 연결됨' : '연결 안 됨';
+    ui.connect.disabled = connected;
+    ui.disconnect.disabled = !connected;
+    ui.read.disabled = !connected;
+    ui.write.disabled = !connected;
+    ui.run.disabled = !connected;
+    if (!connected) ui.device.textContent = '';
+  }
+
+  function message(text, type='info') {
+    ui.message.textContent = text;
+    ui.message.className = `msg show ${type}`;
+    clearTimeout(message.timer);
+    message.timer = setTimeout(() => ui.message.className='msg', 5000);
+  }
+
+  function log(text, kind='rx') {
+    const prefix = kind === 'tx' ? 'TX > ' : '';
+    ui.log.textContent += prefix + text;
+    if (!text.endsWith('\n')) ui.log.textContent += '\n';
+    ui.log.scrollTop = ui.log.scrollHeight;
+  }
+
+  function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+  async function connect() {
+    if (!navigator.bluetooth) {
+      message('이 브라우저는 Web Bluetooth를 지원하지 않습니다. Android Chrome 또는 Windows Chrome/Edge를 사용하세요.', 'err');
+      return;
+    }
+
+    try {
+      message('Bluetooth 장치를 선택하세요.', 'info');
+      device = await navigator.bluetooth.requestDevice({
+        filters: [{ services: [SERVICE_UUID] }]
+      });
+      device.addEventListener('gattserverdisconnected', onDisconnected);
+
+      ui.status.textContent = '연결 중...';
+      server = await device.gatt.connect();
+      const service = await server.getPrimaryService(SERVICE_UUID);
+      rxChar = await service.getCharacteristic(RX_UUID);
+      txChar = await service.getCharacteristic(TX_UUID);
+
+      await txChar.startNotifications();
+      txChar.addEventListener('characteristicvaluechanged', onNotify);
+
+      setConnected(true);
+      ui.device.textContent = device.name || 'BLE Gateway';
+      log(`Connected: ${device.name || 'BLE Gateway'}`);
+      message('LoRaMesh Gateway에 연결되었습니다.', 'ok');
+
+      // Notification subscription is ready now. Ask the firmware for a clean snapshot.
+      await sleep(180);
+      await sendCommand('SHOW');
+    } catch (err) {
+      console.error(err);
+      setConnected(false);
+      if (err && err.name === 'NotFoundError') message('장치 선택이 취소되었습니다.', 'info');
+      else message(`Bluetooth 연결 실패: ${err?.message || err}`, 'err');
+    }
+  }
+
+  function onDisconnected() {
+    setConnected(false);
+    rxChar = txChar = server = null;
+    log('Bluetooth disconnected');
+    message('Bluetooth 연결이 종료되었습니다.', 'info');
+  }
+
+  async function disconnect() {
+    try {
+      if (device?.gatt?.connected) device.gatt.disconnect();
+    } catch (_) {}
+    onDisconnected();
+  }
+
+  function onNotify(event) {
+    const bytes = event.target.value;
+    const text = decoder.decode(bytes, {stream:true});
+    receiveText += text;
+    ui.log.textContent += text;
+    ui.log.scrollTop = ui.log.scrollHeight;
+
+    // Keep a bounded buffer and parse whenever new text arrives.
+    if (receiveText.length > 12000) receiveText = receiveText.slice(-8000);
+    parseConfig(receiveText);
+  }
+
+  async function writeBytes(bytes) {
+    if (!rxChar || !device?.gatt?.connected) throw new Error('BLE가 연결되지 않았습니다.');
+
+    // Browser API names differ slightly across versions. Prefer explicit response writes.
+    if (typeof rxChar.writeValueWithResponse === 'function') {
+      await rxChar.writeValueWithResponse(bytes);
+    } else if (typeof rxChar.writeValue === 'function') {
+      await rxChar.writeValue(bytes);
+    } else if (typeof rxChar.writeValueWithoutResponse === 'function') {
+      await rxChar.writeValueWithoutResponse(bytes);
+    } else {
+      throw new Error('이 브라우저에서 BLE Write를 지원하지 않습니다.');
+    }
+  }
+
+  async function sendCommand(command, quiet=false) {
+    const cmd = command.trim();
+    if (!cmd) return;
+    if (!quiet) log(cmd, 'tx');
+    const data = new TextEncoder().encode(cmd + '\n');
+    await writeBytes(data);
+    await sleep(90);
+  }
+
+  function parseConfig(text) {
+    // Work on the most recent SHOW block where possible.
+    const idx = text.lastIndexOf('--- GW CONFIG ---');
+    const block = idx >= 0 ? text.slice(idx) : text;
+    let m;
+
+    m = block.match(/PROFILE\s*:\s*(\d+)/i);
+    if (m) {
+      const profile = Number(m[1]);
+      if (profile > 0) {
+        ui.sensorMode.value = 'profile';
+        ui.profile.value = profile;
+        updateSensorMode();
+      }
+    }
+
+    m = block.match(/SENSORS\s*:\s*\d+\s*->\s*([0-9,\s]+)/i);
+    if (m) ui.nodes.value = m[1].trim().replace(/\s+/g,'');
+
+    m = block.match(/ROUTERS\s*:\s*\d+\s*->\s*([0-9,\s]+)/i);
+    if (m) ui.routers.value = m[1].trim().replace(/\s+/g,'');
+
+    m = block.match(/FREQ\s*:\s*([0-9.]+)\s*MHz/i);
+    if (m) ui.freq.value = Number(m[1]).toFixed(3);
+
+    m = block.match(/POWER\s*:\s*(-?\d+)\s*dBm/i);
+    if (m) ui.power.value = m[1];
+
+    m = block.match(/SSID\s*:\s*([^\r\n]*)/i);
+    if (m) ui.ssid.value = m[1].trim();
+
+    m = block.match(/PASSWORD\s*:\s*([^\r\n]*)/i);
+    if (m) ui.password.value = m[1].trim();
+
+    if (/PROFILE\s*:\s*0\s*\(MANUAL\)/i.test(block)) {
+      ui.sensorMode.value = 'manual';
+      updateSensorMode();
+    }
+  }
+
+  function cleanCsv(value) {
+    return value.split(',').map(v => v.trim()).filter(Boolean).join(',');
+  }
+
+  function validate() {
+    if (ui.sensorMode.value === 'profile') {
+      const p = Number(ui.profile.value);
+      if (!Number.isInteger(p) || p < 1 || p > 48) throw new Error('Profile은 1~48 사이 정수여야 합니다.');
+    } else {
+      const items = cleanCsv(ui.nodes.value).split(',').filter(Boolean).map(Number);
+      if (!items.length || items.some(v => !Number.isInteger(v) || v < 2 || v > 49) || new Set(items).size !== items.length)
+        throw new Error('Sensor Nodes는 중복 없이 2~49 범위로 입력하세요.');
+    }
+
+    const routers = cleanCsv(ui.routers.value).split(',').filter(Boolean).map(Number);
+    if (!routers.length || routers.length > 6 || routers.some(v => !Number.isInteger(v) || v < 50 || v > 55) || new Set(routers).size !== routers.length)
+      throw new Error('Routers는 중복 없이 50~55 범위, 최대 6개입니다.');
+
+    const f = Number(ui.freq.value);
+    if (!Number.isFinite(f) || f < 850 || f > 950) throw new Error('Frequency는 850~950 MHz 범위입니다.');
+
+    const pwr = Number(ui.power.value);
+    if (!Number.isInteger(pwr) || pwr < 5 || pwr > 20) throw new Error('TX Power는 5~20 dBm 범위의 정수입니다.');
+
+    if (ui.ssid.value.length < 1 || ui.ssid.value.length > 32) throw new Error('Wi-Fi SSID는 1~32자입니다.');
+    if (ui.password.value.length > 63) throw new Error('Wi-Fi Password는 최대 63자입니다.');
+    if (/[\r\n]/.test(ui.ssid.value) || /[\r\n]/.test(ui.password.value)) throw new Error('SSID/PW에는 줄바꿈 문자를 사용할 수 없습니다.');
+  }
+
+  async function readCurrent() {
+    try {
+      receiveText = '';
+      await sendCommand('SHOW');
+      message('현재 설정을 요청했습니다.', 'ok');
+    } catch (err) { message(err.message || String(err), 'err'); }
+  }
+
+  async function writeSettings() {
+    try {
+      validate();
+      ui.write.disabled = true;
+      ui.run.disabled = true;
+      message('설정을 전송하고 있습니다.', 'info');
+
+      if (ui.sensorMode.value === 'profile') await sendCommand(`SET PROFILE ${Number(ui.profile.value)}`);
+      else await sendCommand(`SET NODES ${cleanCsv(ui.nodes.value)}`);
+
+      await sendCommand(`SET ROUTERS ${cleanCsv(ui.routers.value)}`);
+      await sendCommand(`SET FREQ ${Number(ui.freq.value).toFixed(3)}`);
+      await sendCommand(`SET POWER ${Number(ui.power.value)}`);
+      await sendCommand(`SET ID ${ui.ssid.value}`);
+      await sendCommand(`SET PW ${ui.password.value}`);
+      await sleep(120);
+      await sendCommand('SHOW');
+
+      message('설정 쓰기 완료. 값을 확인한 뒤 RUN을 누르세요.', 'ok');
+    } catch (err) {
+      console.error(err);
+      message(`설정 쓰기 실패: ${err.message || err}`, 'err');
+    } finally {
+      if (device?.gatt?.connected) {
+        ui.write.disabled = false;
+        ui.run.disabled = false;
+      }
+    }
+  }
+
+  async function runGateway() {
+    if (!confirm('설정 모드를 종료하고 Gateway를 시작할까요?\nRUN 후 Bluetooth 연결이 끊기는 것이 정상입니다.')) return;
+    try {
+      ui.run.disabled = true;
+      await sendCommand('RUN');
+      message('RUN 명령을 전송했습니다. Gateway가 정상 운전 모드로 전환됩니다.', 'ok');
+    } catch (err) {
+      // A disconnect immediately after RUN is expected, so do not show it as a hard failure when GATT dropped.
+      if (!device?.gatt?.connected) message('RUN 처리 후 Bluetooth가 종료되었습니다. 정상 동작입니다.', 'ok');
+      else message(`RUN 전송 오류: ${err.message || err}`, 'err');
+    }
+  }
+
+  function updateSensorMode() {
+    const manual = ui.sensorMode.value === 'manual';
+    ui.profileField.style.display = manual ? 'none' : 'flex';
+    ui.nodesField.style.display = manual ? 'flex' : 'none';
+  }
+
+  ui.connect.addEventListener('click', connect);
+  ui.disconnect.addEventListener('click', disconnect);
+  ui.read.addEventListener('click', readCurrent);
+  ui.write.addEventListener('click', writeSettings);
+  ui.run.addEventListener('click', runGateway);
+  ui.sensorMode.addEventListener('change', updateSensorMode);
+  ui.togglePw.addEventListener('click', () => {
+    const hidden = ui.password.type === 'password';
+    ui.password.type = hidden ? 'text' : 'password';
+    ui.togglePw.textContent = hidden ? '숨기기' : '보기';
+  });
+  ui.clear.addEventListener('click', () => ui.log.textContent = '');
+
+  window.addEventListener('beforeunload', () => {
+    try { if (device?.gatt?.connected) device.gatt.disconnect(); } catch (_) {}
+  });
+
+  setConnected(false);
+  updateSensorMode();
+})();
+</script>
+</body>
+</html>
