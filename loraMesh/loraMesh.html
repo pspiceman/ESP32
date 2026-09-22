@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>산사태 감지 모니터</title>
+<!-- LoRaMesh FINAL: v2 firmware-compatible BLE setup + MQTT monitor -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- ✅ [PWA] Android(Chrome) 설치용 manifest + theme + 아이콘(1개만 사용) -->
@@ -575,13 +576,19 @@ body.theme-light .gateway-setup-open{background:#f3f4ff;color:#111827;border-col
 
 /* ========= UPDATED LOGIC (EMPTY TABLE ON RELOAD + IGNORE RETAINED) ========= */
 const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
-const isRouter = id => Number.isInteger(id) && id >= 50 && id <= 54;
-const validDevice = id => Number.isInteger(id) && id >= 2 && id <= 54;
+const isRouter = id => Number.isInteger(id) && id >= 50 && id <= 55;
+const validDevice = id => Number.isInteger(id) && id >= 2 && id <= 55;
 let connectionEpoch = 0;
 
 const GW_TIMEOUT_MS = 60000;
-const NODE_TIMEOUT_MS = 70000;
-const ROUTER_TIMEOUT_MS = 130000;   // ✅ Router 60초 응답 구조 대응(2분10초)
+// Firmware v2 uses ~10 s per Sensor slot and ~8 s per Router slot.
+// Alive timeout must scale with the actually observed device count; otherwise
+// large deployments (up to 48 Sensors + 6 Routers) are falsely shown OFFLINE.
+const SENSOR_SLOT_EST_MS = 10000;
+const ROUTER_SLOT_EST_MS = 8000;
+const NODE_TIMEOUT_MIN_MS = 70000;
+const ROUTER_TIMEOUT_MIN_MS = 180000;
+const LED_PENDING_TIMEOUT_MS = 600000; // 10 min: covers a full 48-Node cycle + margin
 
 const TOPIC_TELEM_SUB      = "tswell/lora/node/+/telemetry";
 const TOPIC_LEDSTATE_SUB   = "tswell/lora/node/+/led_state";
@@ -662,12 +669,31 @@ function toggleTheme(){
 themeToggle.addEventListener("click", toggleTheme);
 applyTheme(localStorage.getItem("lora-theme") || "dark");
 
+function observedCounts(){
+  const ids = seenOrder.filter(validDevice);
+  return {
+    sensors: ids.filter(id => !isRouter(id)).length,
+    routers: ids.filter(isRouter).length
+  };
+}
+
+function estimatedPollCycleMs(){
+  const c = observedCounts();
+  const sensors = Math.max(1, c.sensors);
+  return sensors * SENSOR_SLOT_EST_MS + c.routers * ROUTER_SLOT_EST_MS;
+}
+
+function deviceAliveTimeoutMs(id){
+  const cycle = estimatedPollCycleMs();
+  if(isRouter(id)) return Math.max(ROUTER_TIMEOUT_MIN_MS, cycle + 120000);
+  return Math.max(NODE_TIMEOUT_MIN_MS, cycle + 60000);
+}
+
 function isAlive(id, last_ok_ms){
   if(typeof last_ok_ms !== "number") return false;
   if(!client || !client.connected || nodes[id]?.epoch !== connectionEpoch) return false;
   const now = Date.now();
-  const tout = isRouter(id) ? ROUTER_TIMEOUT_MS : NODE_TIMEOUT_MS;
-  return ((now - last_ok_ms) < tout);
+  return ((now - last_ok_ms) < deviceAliveTimeoutMs(id));
 }
 
 function touchOrder(id){
@@ -925,17 +951,20 @@ function sendLED(id, checked){
   renderTable();
   updateDeviceStatus();
 
+  // LED command is intentionally applied on the Node's normal Poll turn.
+  // With 48 Sensors, one full turn can approach 8 minutes, so do not clear
+  // the pending UI after only 12 seconds. Keep it until confirmation or 10 min.
   setTimeout(()=>{
     const p = ledPending[id];
     if(!p || p !== pendingCommand) return;
     const age = Date.now() - p.ts;
-    if(age >= 12000){
+    if(age >= LED_PENDING_TIMEOUT_MS){
       addLog(`[LED CMD] pending timeout node ${id} -> follow led_state`);
       delete ledPending[id];
       renderTable();
       updateDeviceStatus();
     }
-  }, 12500);
+  }, LED_PENDING_TIMEOUT_MS + 500);
 }
 
 function updateDeviceStatus(){
@@ -1420,6 +1449,15 @@ setInterval(()=>{
       ui.run.disabled = true;
       await sendCommand('RUN', 0);
       message('RUN 명령을 전송했습니다. Gateway가 재부팅되며 Bluetooth 연결이 종료됩니다.', 'ok');
+
+      // Integrated page: after RUN, return to the monitoring screen immediately.
+      // Do not reload the page; MQTT monitoring remains active in the background.
+      const setupModal = document.getElementById('gwSetupModal');
+      if (setupModal) {
+        setupModal.classList.remove('open');
+        setupModal.setAttribute('aria-hidden', 'true');
+      }
+      document.body.style.overflow = '';
     } catch (err) {
       if (!device?.gatt?.connected) message('RUN 처리 후 Bluetooth가 종료되었습니다. 정상 동작입니다.', 'ok');
       else {
