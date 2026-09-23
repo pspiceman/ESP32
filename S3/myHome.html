@@ -77,17 +77,24 @@ h2{font-size:17px;margin:0 0 13px}
 .btn.primary{background:#0c4a6e;border-color:#0369a1;color:#e0f2fe}
 .btn.live{background:#4c0519;border-color:#9f1239;color:#ffe4e6}
 
-.news-list{margin:0;padding-left:25px}
-.news-list li{padding:9px 4px;border-bottom:1px solid rgba(51,65,85,.45)}
+.news-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.news-panel{background:#111827;border:1px solid var(--line);border-radius:14px;padding:14px;min-width:0}
+.news-panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+.news-panel-title{font-size:16px;font-weight:850}
+.news-brief-lead{font-size:11px;color:var(--muted);line-height:1.45;margin:0 0 7px}
+.news-list{margin:0;padding-left:22px}
+.news-list li{padding:9px 3px;border-bottom:1px solid rgba(51,65,85,.45)}
 .news-list li:last-child{border-bottom:0}
-.news-list a{text-decoration:none;line-height:1.45}
+.news-list a{text-decoration:none;line-height:1.42;font-weight:720}
 .news-list a:hover{text-decoration:underline;color:#bae6fd}
-.news-meta{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+.news-meta{display:block;color:var(--muted);font-size:11px;margin-top:3px;line-height:1.35}
+.news-point{display:block;color:#cbd5e1;font-size:11px;margin-top:4px;line-height:1.4}
+.news-tag{display:inline-block;padding:2px 6px;margin-right:5px;border:1px solid #475569;border-radius:999px;color:#bae6fd;font-size:10px;font-weight:800}
 
-.link-group{padding:12px 0;border-bottom:1px solid rgba(51,65,85,.55)}
-.link-group:last-child{border-bottom:0}
-.link-title{font-weight:850;font-size:16px}
-.link-desc{color:var(--muted);font-size:12px;margin-top:3px}
+.live-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.live-card{background:#111827;border:1px solid var(--line);border-radius:14px;padding:12px;min-width:0}
+.live-title{font-weight:850;font-size:14px;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.live-card .btn{width:100%;padding:11px 8px}
 
 .setting-box{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
 details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
@@ -102,6 +109,8 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
   .grid{grid-template-columns:1fr}.full{grid-column:auto}.wrap{padding:13px}.big{font-size:31px}
   .market-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.market-box{padding:12px}.market-title{font-size:12px}.market-value{font-size:22px}.market-change{font-size:13px}
   .row{align-items:flex-start}.editable-input{max-width:160px}
+  .news-grid{grid-template-columns:1fr}
+  .live-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.live-card{padding:9px}.live-card .btn{font-size:12px;padding:10px 6px}
 }
 </style>
 
@@ -122,7 +131,7 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
 <body>
 <div class="wrap">
   <h1>🏠 myHome Dashboard</h1>
-  <div class="sub">시장 · 보유자산 · YouTube · 경제뉴스 · 바로가기 · <span id="appVersion">v24</span></div>
+  <div class="sub">시장 · 보유자산 · YouTube · 뉴스 · 바로가기 · <span id="appVersion">v34</span></div>
 
   <div class="grid">
 
@@ -192,7 +201,14 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
       <div class="row"><span class="muted">평가금액</span><strong id="solValue">-</strong></div>
 
       <div style="margin-top:18px;padding-top:12px;border-top:1px solid var(--line)">
-        <div class="row"><span class="muted">총 평가금액</span><strong id="portfolioTotal" style="font-size:22px">-</strong></div>
+        <div class="row">
+          <span class="muted">예수금</span>
+          <div>
+            <div class="editable-wrap"><input id="cashAmountInput" class="editable-input" type="text" inputmode="numeric" value="0" aria-label="예수금"><span>원</span></div>
+            <div id="cashAmountKorean" class="edit-hint">0원 · 터치해 수정</div>
+          </div>
+        </div>
+        <div class="row"><span class="muted">총액 (주식 + 예수금)</span><strong id="portfolioTotal" style="font-size:22px">-</strong></div>
         <div class="row">
           <span class="muted">총액 - 기준금액</span>
           <div>
@@ -206,6 +222,66 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
       <div class="row" style="margin-top:8px"><span class="muted">삼성 기준시각</span><span id="samsungTime">-</span></div>
       <div class="row"><span class="muted">SOL 기준시각</span><span id="solTime">-</span></div>
       <div class="row"><span class="muted">시세 출처</span><span id="stockSource">네이버 금융 초기화 중</span></div>
+    </section>
+
+    <section class="card full">
+      <h2>📰 뉴스</h2>
+      <div class="news-grid">
+        <div class="news-panel">
+          <div class="news-panel-head">
+            <div class="news-panel-title">🤖 AI타임스</div>
+            <span class="badge">aitimes.com</span>
+          </div>
+          <div class="news-brief-lead">AI·인공지능·기술 전문 뉴스</div>
+          <div class="btn-row">
+            <a class="btn" href="https://www.aitimes.com/" target="_blank" rel="noopener noreferrer">AI타임스 최신뉴스 보기</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-head">
+            <div class="news-panel-title">🧠 인공지능신문</div>
+            <span class="badge">aitimes.kr</span>
+          </div>
+          <div class="news-brief-lead">AI·산업·기술 전문 뉴스</div>
+          <div class="btn-row">
+            <a class="btn" href="https://www.aitimes.kr/" target="_blank" rel="noopener noreferrer">인공지능신문 최신뉴스 보기</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-head">
+            <div class="news-panel-title">💹 네이버 경제뉴스</div>
+            <span class="badge">경제</span>
+          </div>
+          <div class="news-brief-lead">경제·금융·증권 최신 뉴스</div>
+          <div class="btn-row">
+            <a class="btn" href="https://news.naver.com/section/101" target="_blank" rel="noopener noreferrer">네이버 경제뉴스 보기</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card full">
+      <h2>🎧 YouTube 바로가기 · 실시간</h2>
+      <div class="live-grid">
+        <div class="live-card">
+          <div class="live-title">🟣 겸손은힘들다</div>
+          <a class="btn live" href="https://www.youtube.com/@gyeomsonisnothing/streams" target="_blank" rel="noopener noreferrer">🔴 실시간 방송</a>
+        </div>
+        <div class="live-card">
+          <div class="live-title">📺 연합뉴스</div>
+          <a class="btn live" href="https://www.youtube.com/watch?v=6QZ_qc75ihU" target="_blank" rel="noopener noreferrer">🔴 연합뉴스 Live</a>
+        </div>
+        <div class="live-card">
+          <div class="live-title">📺 YTN</div>
+          <a class="btn live" href="https://m.ytn.co.kr/live_view.php?id=YTN" target="_blank" rel="noopener noreferrer">🔴 YTN Live</a>
+        </div>
+        <div class="live-card">
+          <div class="live-title">📺 MBC</div>
+          <a class="btn live" href="https://www.youtube.com/watch?v=q9bM12ucTIY" target="_blank" rel="noopener noreferrer">🔴 MBC Live</a>
+        </div>
+      </div>
     </section>
 
     <section class="card full">
@@ -253,55 +329,6 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
       </div>
     </section>
 
-    <section class="card full">
-      <h2>📰 주요 경제뉴스 TOP 10</h2>
-      <ol id="econNewsList" class="news-list">
-        <li>네이버 경제 뉴스 헤드라인 불러오는 중...</li>
-      </ol>
-      <div class="btn-row">
-        <button class="btn" type="button" onclick="loadEconomicNews()">↻ 뉴스 새로고침</button>
-        <a class="btn" href="https://news.naver.com/section/101" target="_blank" rel="noopener noreferrer">네이버 경제 뉴스</a>
-      </div>
-      <div id="newsStatus" class="small-note" style="margin-top:8px">네이버 뉴스 경제면 헤드라인 10건</div>
-    </section>
-
-    <section class="card full">
-      <h2>🎧 YouTube 바로가기</h2>
-
-      <div class="link-group">
-        <div class="link-title">🕛 12시에 만나요</div>
-        <div class="link-desc">김어준의 겸손은힘들다 뉴스공장 채널 내 경제 프로그램</div>
-        <div class="btn-row">
-          <a class="btn primary" href="https://www.youtube.com/@gyeomsonisnothing/search?query=12%EC%8B%9C%EC%97%90%20%EB%A7%8C%EB%82%98%EC%9A%94" target="_blank" rel="noopener noreferrer">▶ 12시에 만나요 최신</a>
-          <a class="btn live" href="https://www.youtube.com/@gyeomsonisnothing/streams" target="_blank" rel="noopener noreferrer">🔴 실시간 방송</a>
-        </div>
-      </div>
-
-      <div class="link-group">
-        <div class="link-title">📺 연합뉴스 Live</div>
-        <div class="link-desc">연합뉴스 실시간 뉴스 방송</div>
-        <div class="btn-row">
-          <a class="btn live" href="https://www.youtube.com/watch?v=6QZ_qc75ihU" target="_blank" rel="noopener noreferrer">🔴 연합뉴스 Live</a>
-        </div>
-      </div>
-
-      <div class="link-group">
-        <div class="link-title">📺 YTN Live</div>
-        <div class="link-desc">YTN 실시간 뉴스 방송</div>
-        <div class="btn-row">
-          <a class="btn live" href="https://m.ytn.co.kr/live_view.php?id=YTN" target="_blank" rel="noopener noreferrer">🔴 YTN Live</a>
-        </div>
-      </div>
-
-      <div class="link-group">
-        <div class="link-title">📺 MBC Live</div>
-        <div class="link-desc">MBC 실시간 뉴스 방송</div>
-        <div class="btn-row">
-          <a class="btn live" href="https://www.youtube.com/watch?v=q9bM12ucTIY" target="_blank" rel="noopener noreferrer">🔴 MBC Live</a>
-        </div>
-      </div>
-    </section>
-
   </div>
 </div>
 
@@ -313,6 +340,7 @@ const STORE = {
   samsungQty: 'myHome_samsungQty_v18',
   solQty: 'myHome_solQty_v18',
   baseAmount: 'myHome_baseAmount_v18',
+  cashAmount: 'myHome_cashAmount_v29',
   analogUrl: 'myHome_analogUrl_v18',
   analogId: 'myHome_analogId_v18',
   popularCount1: 'myHome_popularCount1_v1',
@@ -391,7 +419,7 @@ function setupPopularContentCounts(){
 }
 
 // =============================================================================
-// 보유수량 / 기준총액 - 터치 편집 + localStorage 저장
+// 보유수량 / 예수금 / 기준총액 - 터치 편집 + localStorage 저장
 // =============================================================================
 let lastSamsungQuote = null;
 let lastSolQuote = null;
@@ -400,6 +428,7 @@ function setupEditableNumbers(){
   const configs = [
     ['samsungQtyInput', STORE.samsungQty, 10610],
     ['solQtyInput', STORE.solQty, 69],
+    ['cashAmountInput', STORE.cashAmount, 0],
     ['baseAmountInput', STORE.baseAmount, 650000000]
   ];
 
@@ -416,6 +445,7 @@ function setupEditableNumbers(){
       localStorage.setItem(key, String(n));
       updatePortfolioValues();
       updateBaseAmountLabel();
+      updateCashAmountLabel();
     };
 
     el.addEventListener('change', commit);
@@ -429,6 +459,7 @@ function setupEditableNumbers(){
   });
 
   updateBaseAmountLabel();
+  updateCashAmountLabel();
 }
 
 function updateBaseAmountLabel(){
@@ -436,16 +467,22 @@ function updateBaseAmountLabel(){
   document.getElementById('baseAmountKorean').textContent = toKoreanMoney(base) + ' · 터치해 수정';
 }
 
+function updateCashAmountLabel(){
+  const cash = numberOnly(document.getElementById('cashAmountInput').value);
+  document.getElementById('cashAmountKorean').textContent = toKoreanMoney(cash) + ' · 터치해 수정';
+}
+
 function updatePortfolioValues(){
   if(!lastSamsungQuote || !lastSolQuote) return;
 
   const samsungQty = numberOnly(document.getElementById('samsungQtyInput').value);
   const solQty = numberOnly(document.getElementById('solQtyInput').value);
+  const cashAmount = numberOnly(document.getElementById('cashAmountInput').value);
   const baseAmount = numberOnly(document.getElementById('baseAmountInput').value);
 
   const samsungValue = lastSamsungQuote.price * samsungQty;
   const solValue = lastSolQuote.price * solQty;
-  const total = samsungValue + solValue;
+  const total = samsungValue + solValue + cashAmount;
   const delta = total - baseAmount;
 
   document.getElementById('samsungValue').textContent = won(samsungValue);
@@ -641,7 +678,7 @@ async function loadStocksDirect(){
 const NAVER_KOSPI_REALTIME = 'https://polling.finance.naver.com/api/realtime/domestic/index/KOSPI';
 const NAVER_KOSPI_LEGACY = 'https://polling.finance.naver.com/api/realtime';
 const NAVER_SOX_POLLING = 'https://stock.naver.com/api/polling/worldstock/index?reutersCodes=.SOX';
-const NAVER_US_INDEX_LIST = 'https://api.stock.naver.com/index/nation/USA'; // 구형 보조 경로
+const NAVER_SOX_NATION = 'https://api.stock.naver.com/index/nation/USA'; // 미국 지수 목록(.SOX 포함)
 const NAVER_SOX_CHART = 'https://api.stock.naver.com/chart/foreign/index/.SOX?periodType=dayCandle'; // 장마감 보조 검증
 const NAVER_KOSPI_PAGE = 'https://m.stock.naver.com/domestic/index/KOSPI';
 const NAVER_SOX_PAGE = 'https://m.stock.naver.com/worldstock/index/.SOX';
@@ -721,7 +758,8 @@ async function fetchJsonViaCodeTabs(url, timeoutMs=9000){
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), timeoutMs);
   try{
-    const proxy = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url + (url.includes('?') ? '&' : '?') + '_=' + Date.now());
+    const target = url + (url.includes('?') ? '&' : '?') + '_=' + Date.now();
+    const proxy = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(target);
     const r = await fetch(proxy, {cache:'no-store', signal:ctl.signal});
     if(!r.ok) throw new Error('CodeTabs HTTP ' + r.status);
     return await r.json();
@@ -730,20 +768,35 @@ async function fetchJsonViaCodeTabs(url, timeoutMs=9000){
   }
 }
 
+async function fetchJsonViaCorsProxyIo(url, timeoutMs=7000){
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), timeoutMs);
+  try{
+    const target = url + (url.includes('?') ? '&' : '?') + '_=' + Date.now();
+    const proxy = 'https://corsproxy.io/?' + encodeURIComponent(target);
+    const r = await fetch(proxy, {cache:'no-store', signal:ctl.signal});
+    if(!r.ok) throw new Error('CorsProxy HTTP ' + r.status);
+    return await r.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function fetchNaverJsonMulti(url){
-  // SOX는 첫 응답 시간을 줄이기 위해 직접조회와 프록시를 처음부터 동시에 시도합니다.
-  // 가장 먼저 정상 JSON을 반환한 경로만 사용하므로 직접조회 timeout을 기다릴 필요가 없습니다.
+  // 로컬 HTML(file://)에서도 SOX가 갱신되도록 직접조회 + 여러 CORS 경로를 동시에 시도합니다.
+  // 가장 먼저 정상 JSON을 반환한 경로를 사용합니다.
   const jobs = [
-    fetchJsonDirect(url, 2500),
-    fetchJsonViaAllOriginsRaw(url, 4500),
-    fetchJsonViaCodeTabs(url, 4500),
-    fetchJsonViaAllOriginsGet(url, 4500)
+    fetchJsonDirect(url, 2800),
+    fetchJsonViaCorsProxyIo(url, 5000),
+    fetchJsonViaAllOriginsRaw(url, 5500),
+    fetchJsonViaCodeTabs(url, 5500),
+    fetchJsonViaAllOriginsGet(url, 5500)
   ];
 
   try{
     return await Promise.any(jobs);
   }catch(e){
-    console.warn('[INDEX] all SOX fetch paths failed', e);
+    console.warn('[INDEX] all Naver JSON fetch paths failed', e);
     throw e;
   }
 }
@@ -935,11 +988,11 @@ function soxQuoteDateKey(q){
 }
 
 async function getSoxNaver(){
-  // 네이버의 현재 SOX 값이 있는 두 공개 경로를 동시에 조회합니다.
-  // 먼저 도착한 유효한 현재값을 사용하므로 한 경로의 timeout을 기다리지 않습니다.
+  // 현재 네이버 미국 지수 목록(.SOX 포함)과 worldstock polling을 동시에 조회합니다.
+  // KOSPI와 마찬가지로 getter 하나가 최신값을 반환하고, 표시/캐시/주기 갱신은 공통 루틴이 담당합니다.
   const currentJobs = [
-    fetchNaverJsonMulti(NAVER_SOX_POLLING).then(normalizeSoxPolling),
-    fetchNaverJsonMulti(NAVER_US_INDEX_LIST).then(normalizeSoxNation)
+    fetchNaverJsonMulti(NAVER_SOX_NATION).then(normalizeSoxNation),
+    fetchNaverJsonMulti(NAVER_SOX_POLLING).then(normalizeSoxPolling)
   ];
 
   try{
@@ -951,34 +1004,11 @@ async function getSoxNaver(){
     console.warn('[SOX] current endpoints failed; chart fallback', e);
   }
 
-  // 최후 보조: 장마감 일봉. 화면을 비우지 않고 기존 정상값을 유지한 상태에서만 사용됩니다.
+  // 최후 보조: 네이버 SOX 일봉의 최신 종가/전일 대비를 사용합니다.
   const chart = await fetchNaverJsonMulti(NAVER_SOX_CHART);
   const q = normalizeSoxChart(chart);
   if(q) return q;
   throw new Error('SOX 네이버 조회 실패');
-}
-
-let soxLoadInFlight = false;
-async function loadSoxFast(quiet=false){
-  if(soxLoadInFlight) return false;
-  soxLoadInFlight = true;
-  try{
-    return await loadOneIndex('sox', getSoxNaver, {quiet, cacheFirst:true});
-  }finally{
-    soxLoadInFlight = false;
-  }
-}
-
-let soxRefreshTimer = null;
-async function runSoxAutoRefresh(){
-  // 고정 setInterval 대신 "조회 완료 후 60초" 뒤 다음 조회를 예약합니다.
-  // 따라서 첫 조회가 오래 걸려도 직후 다시 재조회되는 현상이 없습니다.
-  try{
-    await loadSoxFast(false);
-  }finally{
-    clearTimeout(soxRefreshTimer);
-    soxRefreshTimer = setTimeout(runSoxAutoRefresh, 60000);
-  }
 }
 
 function saveIndexCache(prefix, q){
@@ -1118,14 +1148,10 @@ function waitForVisiblePaint(ms=110){
 
 async function refreshIndexSameWay(prefix, getter, options={}){
   const visibleRefresh = options.visibleRefresh !== false;
-  const useSoxLock = options.useSoxLock === true;
-
-  if(useSoxLock && soxLoadInFlight) return false;
-  if(useSoxLock) soxLoadInFlight = true;
 
   try{
     if(visibleRefresh){
-      // KOSPI / SOX 공통 표시 순서: - -> 조회 중 -> 마지막 정상값 -> 최신값
+      // KOSPI / SOX 완전 공통 표시 순서: - -> 조회 중 -> 마지막 정상값 -> 최신값
       showIndexLoadingCard(prefix);
       await waitForVisiblePaint();
 
@@ -1151,16 +1177,14 @@ async function refreshIndexSameWay(prefix, getter, options={}){
     ch.className = 'market-change flat';
     document.getElementById(prefix + 'Time').textContent = '-';
     return false;
-  }finally{
-    if(useSoxLock) soxLoadInFlight = false;
   }
 }
 
 async function loadMarketIndices(){
-  // 버튼 새로고침도 KOSPI와 SOX가 정확히 같은 표시 순서로 동작합니다.
+  // 수동 새로고침도 두 지수가 동일한 공통 루틴을 사용합니다.
   await Promise.all([
     refreshIndexSameWay('kospi', getKospiNaver, {visibleRefresh:true}),
-    refreshIndexSameWay('sox', getSoxNaver, {visibleRefresh:true, useSoxLock:true})
+    refreshIndexSameWay('sox', getSoxNaver, {visibleRefresh:true})
   ]);
 }
 
@@ -1446,118 +1470,9 @@ async function loadAnalogChannelStats(){
   updatedEl.textContent = new Date().toLocaleString('ko-KR');
 }
 // =============================================================================
-// 주요 경제뉴스 Top 10 - 네이버 뉴스 경제면 헤드라인
+// 뉴스 - 자동조회 없음
+// 뉴스 영역은 각 사이트 바로가기만 사용합니다.
 // =============================================================================
-const NAVER_ECON_NEWS_PAGE = 'https://news.naver.com/section/101';
-const NEWS_CACHE_KEY = 'myHome.naverEconomyHeadlines.v2';
-
-function normalizeNewsHref(href){
-  if(!href) return '';
-  if(/^https?:\/\//i.test(href)) return href;
-  if(href.startsWith('//')) return 'https:' + href;
-  if(href.startsWith('/')) return 'https://news.naver.com' + href;
-  return href;
-}
-
-function fetchHtmlProxyFirst(url){
-  const proxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
-  return fetch(proxy, {cache:'no-store'}).then(r => {
-    if(!r.ok) throw new Error('HTTP ' + r.status);
-    return r.text();
-  });
-}
-
-function extractHeadlineMeta(anchor){
-  const wrap = anchor.closest('li, article, div');
-  if(!wrap) return '';
-  const txt = normalizeText(wrap.textContent || '');
-  const title = normalizeText(anchor.textContent || '');
-  let meta = txt.replace(title, '').trim();
-  meta = meta.replace(/더보기|좋아요|댓글|본문보기/g, '').trim();
-  return meta.slice(0, 60);
-}
-
-function parseNaverEconomyHeadlines(html){
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-  const anchors = [...doc.querySelectorAll('a[href*="/article/"], a[href*="n.news.naver.com/article/"]')];
-  const seen = new Set();
-  const items = [];
-
-  for(const a of anchors){
-    const title = normalizeText(a.textContent || '').replace(/\s+/g, ' ');
-    const href = normalizeNewsHref(a.getAttribute('href') || '');
-    if(!title || title.length < 8 || title.length > 120) continue;
-    if(!href || !/\/article\//.test(href)) continue;
-    const key = title + '|' + href;
-    if(seen.has(key)) continue;
-    seen.add(key);
-    const meta = extractHeadlineMeta(a);
-    items.push({title, link: href, meta});
-    if(items.length >= 20) break;
-  }
-
-  const filtered = [];
-  const seenTitle = new Set();
-  for(const item of items){
-    if(seenTitle.has(item.title)) continue;
-    seenTitle.add(item.title);
-    filtered.push(item);
-    if(filtered.length >= 10) break;
-  }
-  return filtered;
-}
-
-function renderNewsItems(items){
-  const list = document.getElementById('econNewsList');
-  const top = items.slice(0,10);
-  if(!top.length){
-    list.innerHTML = '<li>표시할 네이버 경제 뉴스가 없습니다.</li>';
-    return;
-  }
-  list.innerHTML = top.map(item => '<li><a href="' + safeHttpUrl(item.link || NAVER_ECON_NEWS_PAGE) + '" target="_blank" rel="noopener noreferrer">' + safeText(item.title || '제목 없음') + '</a>' + (item.meta ? '<span class="news-meta">' + safeText(item.meta) + '</span>' : '') + '</li>').join('');
-}
-
-function saveNewsCache(items){
-  try{ localStorage.setItem(NEWS_CACHE_KEY, JSON.stringify({at:Date.now(), items:items.slice(0,10)})); }catch(e){}
-}
-
-function loadNewsCache(){
-  try{
-    const cached = JSON.parse(localStorage.getItem(NEWS_CACHE_KEY) || 'null');
-    if(cached && Array.isArray(cached.items) && cached.items.length) return cached;
-  }catch(e){}
-  return null;
-}
-
-async function loadEconomicNews(){
-  const list = document.getElementById('econNewsList');
-  const status = document.getElementById('newsStatus');
-  list.innerHTML = '<li>네이버 경제 뉴스 헤드라인 불러오는 중...</li>';
-  status.textContent = '네이버 뉴스 경제면 헤드라인 조회 중...';
-
-  try{
-    const html = await fetchHtmlProxyFirst(NAVER_ECON_NEWS_PAGE);
-    const items = parseNaverEconomyHeadlines(html);
-    if(!items.length) throw new Error('뉴스 헤드라인 파싱 실패');
-    renderNewsItems(items);
-    saveNewsCache(items);
-    status.textContent = '네이버 뉴스 경제면 헤드라인 · 최신 10건 · ' + new Date().toLocaleTimeString('ko-KR');
-    return;
-  }catch(e){
-    console.warn('[NAVER ECON NEWS] fetch failed', e);
-  }
-
-  const cached = loadNewsCache();
-  if(cached){
-    renderNewsItems(cached.items);
-    status.textContent = '네이버 뉴스 경제면 헤드라인 · 마지막 성공 조회 데이터 (' + new Date(cached.at).toLocaleString('ko-KR') + ')';
-    return;
-  }
-
-  list.innerHTML = '<li><a href="' + NAVER_ECON_NEWS_PAGE + '" target="_blank" rel="noopener noreferrer">네이버 경제 뉴스 열기</a></li>';
-  status.textContent = '네이버 경제 뉴스 자동조회 실패 · 새로고침 버튼으로 다시 시도';
-}
-
 // =============================================================================
 // 시작
 // =============================================================================
@@ -1567,23 +1482,17 @@ function startDashboard(){
   loadAnalogSettingsToUI();
   loadStocksDirect();
 
-  // 브라우저 새로고침 시 KOSPI와 SOX 모두 같은 공통 표시 순서를 사용합니다.
-  // 둘 다 먼저 '-' / '네이버 조회 중...'을 실제로 한 번 그린 뒤 마지막 정상값을 표시하고,
-  // 최신 네이버 값은 뒤에서 교체합니다.
+  // 브라우저 새로고침 시 KOSPI와 SOX가 동일한 공통 표시/갱신 루틴을 사용합니다.
   refreshIndexSameWay('kospi', getKospiNaver, {visibleRefresh:true});
-  refreshIndexSameWay('sox', getSoxNaver, {visibleRefresh:true, useSoxLock:true}).finally(() => {
-    clearTimeout(soxRefreshTimer);
-    soxRefreshTimer = setTimeout(runSoxAutoRefresh, 60000);
-  });
+  refreshIndexSameWay('sox', getSoxNaver, {visibleRefresh:true});
 
   loadAnalogChannelStats();
-  loadEconomicNews();
 
   setInterval(loadStocksDirect, 60000);
+  // 자동 갱신도 KOSPI와 SOX 모두 동일하게 60초 주기입니다.
   setInterval(() => loadOneIndex('kospi', getKospiNaver, {quiet:true, cacheFirst:true}), 60000);
-  // SOX는 고정 setInterval을 사용하지 않습니다. 조회 완료 후 60초 뒤 재조회합니다.
+  setInterval(() => loadOneIndex('sox', getSoxNaver, {quiet:true, cacheFirst:true}), 60000);
   setInterval(loadAnalogChannelStats, 5 * 60000);
-  setInterval(loadEconomicNews, 10 * 60000);
 }
 
 if(document.readyState === 'loading'){
