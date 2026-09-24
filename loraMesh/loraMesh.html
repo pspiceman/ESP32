@@ -310,6 +310,11 @@ body.theme-light .gateway-setup-open{background:#f3f4ff;color:#111827;border-col
 #gwSetupModal .dot.on{background:#4ade80;box-shadow:0 0 0 4px #4ade8030;}
 #gwSetupModal .status{font-weight:700;color:#fff;}
 #gwSetupModal .device{margin-left:auto;max-width:48%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#dbeafe;font-size:12px;}
+#gwSetupModal .versionbox{margin-top:10px;padding:11px 13px;background:#ffffff0d;border:1px solid #ffffff20;border-radius:12px;color:#fff;}
+#gwSetupModal .version-title{font-size:12px;font-weight:800;letter-spacing:.04em;color:#bfdbfe;margin-bottom:6px;}
+#gwSetupModal .version-row{display:flex;align-items:center;gap:7px;font-size:13px;line-height:1.6;}
+#gwSetupModal .version-row span{width:58px;color:#cbd5e1;font-weight:700;}
+#gwSetupModal .version-row b{color:#fff;font-weight:800;}
 #gwSetupModal .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
 #gwSetupModal button{appearance:none;border:0;border-radius:12px;padding:13px 15px;font-size:15px;font-weight:750;cursor:pointer;transition:.15s;}
 #gwSetupModal button:active{transform:translateY(1px);}
@@ -356,6 +361,55 @@ body.theme-light .gateway-setup-open{background:#f3f4ff;color:#111827;border-col
   #gwSetupModal .device{max-width:42%;}
   #gwSetupModal .head h1{font-size:24px;}
 }
+</style>
+
+
+<style>
+/* ===== Node / Router Production-AS Setup (via dedicated ESP32+LoRa SETUP BOX) ===== */
+#gwSetupModal .nr-prod-card{border:1px solid #bfdbfe;background:linear-gradient(180deg,#ffffff,#f8fbff);}
+#gwSetupModal .nr-prod-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px;}
+#gwSetupModal .nr-prod-title{margin:0!important;display:flex;align-items:center;gap:8px;}
+#gwSetupModal .nr-prod-badge{font-size:11px;font-weight:800;color:#1d4ed8;background:#dbeafe;border:1px solid #bfdbfe;border-radius:999px;padding:5px 9px;white-space:nowrap;}
+#gwSetupModal .nr-tip{padding:11px 12px;border-radius:12px;background:#fff7ed;color:#9a3412;font-size:12px;line-height:1.55;border:1px solid #fed7aa;}
+#gwSetupModal .nr-statusbar{display:flex;align-items:center;gap:10px;margin-top:12px;padding:11px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;}
+#gwSetupModal .nr-dot{width:10px;height:10px;border-radius:50%;background:#94a3b8;box-shadow:none;flex:0 0 auto;}
+#gwSetupModal .nr-dot.on{background:#22c55e;box-shadow:0 0 0 4px #22c55e22;}
+#gwSetupModal .nr-dot.bad{background:#ef4444;box-shadow:0 0 0 4px #ef444422;}
+#gwSetupModal .nr-state{font-weight:800;color:#101828;font-size:14px;}
+#gwSetupModal .nr-sub{font-size:11px;color:#667085;margin-top:2px;line-height:1.45;}
+#gwSetupModal .nr-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+#gwSetupModal .nr-divider{height:1px;background:#e4e7ec;margin:18px 0;}
+#gwSetupModal .nr-result{display:none;margin-top:12px;padding:13px;border-radius:12px;background:#dcfce7;color:#166534;border:1px solid #bbf7d0;font-size:13px;line-height:1.5;}
+#gwSetupModal .nr-result.show{display:block;}
+#gwSetupModal .nr-result strong{display:block;font-size:18px;margin-bottom:3px;}
+#gwSetupModal .nr-msg{display:none;margin-top:12px;padding:10px 12px;border-radius:10px;font-size:13px;line-height:1.45;}
+#gwSetupModal .nr-msg.show{display:block;}
+#gwSetupModal .nr-msg.info{background:#dbeafe;color:#1e40af;}
+#gwSetupModal .nr-msg.ok{background:#dcfce7;color:#166534;}
+#gwSetupModal .nr-msg.err{background:#fee2e2;color:#991b1b;}
+#gwSetupModal .nr-scan{width:100%;background:#e7eefc;color:#1d4ed8;margin-top:12px;}
+#gwSetupModal .nr-save{width:100%;background:#2563eb;color:#fff;}
+#gwSetupModal .nr-save:hover:not(:disabled){background:#1d4ed8;}
+#gwSetupModal .nr-device-list{display:grid;gap:8px;margin-top:10px;}
+#gwSetupModal .nr-device-empty{padding:12px;border:1px dashed #cbd5e1;border-radius:11px;color:#667085;font-size:12px;text-align:center;background:#f8fafc;}
+#gwSetupModal .nr-device-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:center;padding:11px 12px;border:1px solid #dbe3ef;border-radius:12px;background:#fff;cursor:pointer;transition:.12s;}
+#gwSetupModal .nr-device-row:hover{border-color:#93c5fd;background:#f8fbff;}
+#gwSetupModal .nr-device-row.selected{border-color:#2563eb;box-shadow:0 0 0 2px #2563eb18;background:#eff6ff;}
+#gwSetupModal .nr-device-main{min-width:0;}
+#gwSetupModal .nr-device-title{font-size:13px;font-weight:850;color:#101828;display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
+#gwSetupModal .nr-device-meta{margin-top:3px;font-size:11px;color:#667085;line-height:1.45;word-break:break-word;}
+#gwSetupModal .nr-device-tag{font-size:10px;padding:3px 7px;border-radius:999px;background:#e2e8f0;color:#475569;font-weight:800;}
+#gwSetupModal .nr-device-tag.new{background:#fef3c7;color:#92400e;}
+#gwSetupModal .nr-identify{padding:9px 10px!important;border:1px solid #bfdbfe!important;background:#dbeafe!important;color:#1d4ed8!important;font-size:12px!important;white-space:nowrap;}
+#gwSetupModal .nr-selected-note{margin-top:10px;padding:10px 12px;border-radius:10px;background:#eef2ff;color:#3730a3;font-size:12px;line-height:1.45;display:none;}
+#gwSetupModal .nr-selected-note.show{display:block;}
+#gwSetupModal details.nr-details{margin-top:14px;}
+#gwSetupModal details.nr-details>summary{list-style:none;cursor:pointer;user-select:none;padding:14px 15px;border-radius:14px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;font-weight:850;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+#gwSetupModal details.nr-details>summary::-webkit-details-marker{display:none;}
+#gwSetupModal details.nr-details>summary::after{content:'▼';font-size:12px;transition:transform .15s;}
+#gwSetupModal details.nr-details[open]>summary::after{transform:rotate(180deg);}
+#gwSetupModal .nr-inner{padding-top:4px;}
+@media(max-width:560px){#gwSetupModal .nr-actions{grid-template-columns:1fr;}}
 </style>
 
 </head>
@@ -476,6 +530,11 @@ body.theme-light .gateway-setup-open{background:#f3f4ff;color:#111827;border-col
       <span id="status" class="status">연결 안 됨</span>
       <span id="device" class="device"></span>
     </div>
+    <div class="versionbox" aria-label="Gateway Version">
+      <div class="version-title">Version</div>
+      <div class="version-row"><span>FW :</span><b id="fwVersion">-</b></div>
+      <div class="version-row"><span>BOARD :</span><b id="boardVersion">-</b></div>
+    </div>
     <div class="actions">
       <button id="connectBtn" class="btn-light">Bluetooth 연결</button>
       <button id="disconnectBtn" class="btn-light" disabled>연결 해제</button>
@@ -547,6 +606,90 @@ body.theme-light .gateway-setup-open{background:#f3f4ff;color:#111827;border-col
       <button id="runBtn" class="btn-run" disabled>RUN · Gateway 시작</button>
     </div>
   </section>
+
+  <details class="nr-details">
+    <summary>
+      <span>🛠 Node / Router 양산·AS 설정</span>
+      <span class="nr-prod-badge">SETUP BOX</span>
+    </summary>
+    <div class="nr-inner">
+      <section class="card nr-prod-card">
+        <div class="nr-prod-head">
+          <div>
+            <h2 class="nr-prod-title">Node / Router Production Setup</h2>
+            <div class="hint">BLE → ESP32+LoRa SETUP BOX → LoRa → Node/Router</div>
+          </div>
+        </div>
+
+        <div class="nr-tip">
+          <b>양산/AS 사용 순서</b><br>
+          ① SETUP BOX 전원 ON → ② Bluetooth 연결 → ③ Node/Router 전원 ON → ④ 장비 검색 → ⑤ [LED 식별]로 실제 보드 확인 → ⑥ 설정 저장 &amp; RUN
+        </div>
+
+        <div class="nr-statusbar">
+          <span id="nrBleDot" class="nr-dot"></span>
+          <div style="min-width:0;flex:1">
+            <div id="nrBleState" class="nr-state">SETUP BOX 연결 안 됨</div>
+            <div id="nrBleSub" class="nr-sub">LoRa-NR-SETUP-XXXX 장치를 연결하세요.</div>
+          </div>
+        </div>
+
+        <div class="nr-actions">
+          <button id="nrConnectBtn" class="btn-primary" type="button">SETUP BOX Bluetooth 연결</button>
+          <button id="nrDisconnectBtn" class="btn-light" type="button" disabled>연결 해제</button>
+        </div>
+        <div id="nrMessage" class="nr-msg"></div>
+
+        <div class="nr-divider"></div>
+
+        <h2 style="margin-bottom:4px">대상 Node / Router 설정</h2>
+        <div class="hint">여러 대를 동시에 켜도 됩니다. 검색 후 [LED 식별]로 실제 보드를 확인하고 한 대씩 설정하세요.<br>LED: 미설정=느린 점멸 · 식별=빠른 점멸 · 저장 성공=2.5초 ON · 설정완료=OFF</div>
+        <button id="nrScanBtn" class="nr-scan" type="button" disabled>장비 검색 · 최대 8초</button>
+
+        <div class="nr-statusbar">
+          <span id="nrTargetDot" class="nr-dot"></span>
+          <div style="min-width:0;flex:1">
+            <div id="nrTargetState" class="nr-state">장비 검색 대기</div>
+            <div id="nrTargetSub" class="nr-sub">Node/Router 전원 ON 후 검색하세요. 여러 대 동시 검색이 가능합니다.</div>
+          </div>
+        </div>
+
+        <div id="nrDeviceList" class="nr-device-list">
+          <div class="nr-device-empty">검색된 장비가 없습니다.</div>
+        </div>
+        <div id="nrSelectedNote" class="nr-selected-note"></div>
+
+        <div class="grid" style="margin-top:14px">
+          <div class="field">
+            <label for="nrRole">장비 종류</label>
+            <select id="nrRole" disabled>
+              <option value="sensor">Sensor Node</option>
+              <option value="router">Router</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="nrAddr">주소</label>
+            <input id="nrAddr" type="number" value="2" min="2" max="49" inputmode="numeric" disabled />
+            <span class="hint">Sensor 2~49 · Router 50~55</span>
+          </div>
+          <div class="field">
+            <label for="nrFreq">운용 주파수 (MHz)</label>
+            <input id="nrFreq" type="number" value="922.000" min="850" max="950" step="0.001" inputmode="decimal" disabled />
+          </div>
+          <div class="field">
+            <label for="nrPower">TX Power (dBm)</label>
+            <input id="nrPower" type="number" value="13" min="5" max="20" step="1" inputmode="numeric" disabled />
+          </div>
+          <div class="field full">
+            <button id="nrSaveBtn" class="nr-save" type="button" disabled>설정 저장 &amp; RUN</button>
+          </div>
+        </div>
+
+        <div id="nrResult" class="nr-result"></div>
+        <div class="foot" style="margin-top:14px">SETUP 채널 923.000 MHz · Node 2~49 · Router 50~55 · TX Power 5~20 dBm</div>
+      </section>
+    </div>
+  </details>
 
   <section class="card">
     <div class="rowtop">
@@ -1065,6 +1208,7 @@ setInterval(()=>{
   const $ = id => document.getElementById(id);
   const ui = {
     dot:$('dot'), status:$('status'), device:$('device'), message:$('message'),
+    fwVersion:$('fwVersion'), boardVersion:$('boardVersion'),
     connect:$('connectBtn'), disconnect:$('disconnectBtn'), read:$('readBtn'), write:$('writeBtn'), run:$('runBtn'),
     sensorMode:$('sensorMode'), profileField:$('profileField'), nodesField:$('nodesField'),
     profile:$('profile'), nodes:$('nodes'), routers:$('routers'), freq:$('freq'), power:$('power'),
@@ -1079,7 +1223,11 @@ setInterval(()=>{
     ui.read.disabled = !connected;
     ui.write.disabled = !connected;
     ui.run.disabled = !connected;
-    if (!connected) ui.device.textContent = '';
+    if (!connected) {
+      ui.device.textContent = '';
+      ui.fwVersion.textContent = '-';
+      ui.boardVersion.textContent = '-';
+    }
   }
 
   function message(text, type='info') {
@@ -1121,7 +1269,7 @@ setInterval(()=>{
       loadedSnapshot = null;
       message('Bluetooth 장치를 선택하세요.', 'info');
       device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: [SERVICE_UUID] }]
+        filters: [{ namePrefix: 'LoRaMesh-GW-', services: [SERVICE_UUID] }]
       });
       device.removeEventListener('gattserverdisconnected', onDisconnected);
       device.addEventListener('gattserverdisconnected', onDisconnected);
@@ -1139,7 +1287,7 @@ setInterval(()=>{
       await sleep(600);
       try {
         await loadCurrentValues();
-        message('현재 Gateway 및 WiFi 설정을 불러왔습니다.', 'ok');
+        message('Version 및 현재 Gateway/WiFi 설정을 불러왔습니다.', 'ok');
       } catch (readErr) {
         // A read/parsing error must never make the UI pretend GATT disconnected.
         console.warn(readErr);
@@ -1252,14 +1400,24 @@ setInterval(()=>{
   }
 
   function parseConfig(text) {
+    // VERSION is requested explicitly after BLE connection.  Keep parsing
+    // independent from SHOW/SHOW WIFI so older gateways can still be configured.
+    const versionIdx = text.lastIndexOf('--- VERSION ---');
+    const versionBlock = versionIdx >= 0 ? text.slice(versionIdx) : '';
+    let m;
+    if (versionBlock) {
+      m = versionBlock.match(/FW\s*:\s*([^\r\n]+)/i);
+      if (m) ui.fwVersion.textContent = m[1].trim();
+      m = versionBlock.match(/BOARD\s*:\s*([^\r\n]+)/i);
+      if (m) ui.boardVersion.textContent = m[1].trim();
+    }
+
     // v2 SHOW and SHOW WIFI are separate commands, so parse the two newest
     // blocks independently instead of assuming WiFi is inside SHOW.
     const gwIdx = text.lastIndexOf('--- GW CONFIG ---');
     const gwBlock = gwIdx >= 0 ? text.slice(gwIdx) : '';
     const wifiIdx = text.lastIndexOf('--- WIFI CONFIG ---');
     const wifiBlock = wifiIdx >= 0 ? text.slice(wifiIdx) : '';
-    let m;
-
     if (gwBlock) {
       m = gwBlock.match(/PROFILE\s*:\s*(\d+)/i);
       if (m) {
@@ -1343,6 +1501,14 @@ setInterval(()=>{
     if (!device?.gatt?.connected) throw new Error('BLE가 연결되지 않았습니다.');
     receiveText = '';
     log('[READ] 현재 설정 요청 시작');
+    try {
+      await sendCommand('VERSION', 550);
+    } catch (versionErr) {
+      // Older firmware may not support VERSION.  Keep setup usable and show it clearly.
+      ui.fwVersion.textContent = '미지원';
+      ui.boardVersion.textContent = '미지원';
+      log(`[VERSION] 읽기 미지원: ${versionErr?.message || versionErr}`);
+    }
     await sendCommand('SHOW WIFI', 800);
     await sendCommand('SHOW', 1000);
     parseConfig(receiveText);
@@ -1354,7 +1520,7 @@ setInterval(()=>{
     try {
       ui.read.disabled = true;
       await loadCurrentValues();
-      message('현재 Gateway 및 WiFi 설정을 불러왔습니다.', 'ok');
+      message('Version 및 현재 Gateway/WiFi 설정을 불러왔습니다.', 'ok');
     } catch (err) {
       message(`현재값 읽기 실패: ${err.message || err}`, 'err');
     } finally {
@@ -1492,6 +1658,337 @@ setInterval(()=>{
 
   setConnected(false);
   updateSensorMode();
+})();
+
+
+(() => {
+  'use strict';
+
+  // Dedicated Node/Router production SETUP BOX - UID + physical LED identification V2.
+  const NR_SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+  const NR_RX_UUID      = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+  const NR_TX_UUID      = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+  const NR_DEVICE_PREFIX = 'LoRa-NR-SETUP';
+
+  const byId = id => document.getElementById(id);
+  const ui = {
+    bleDot:byId('nrBleDot'), bleState:byId('nrBleState'), bleSub:byId('nrBleSub'),
+    connect:byId('nrConnectBtn'), disconnect:byId('nrDisconnectBtn'), message:byId('nrMessage'),
+    scan:byId('nrScanBtn'), targetDot:byId('nrTargetDot'), targetState:byId('nrTargetState'), targetSub:byId('nrTargetSub'),
+    deviceList:byId('nrDeviceList'), selectedNote:byId('nrSelectedNote'),
+    role:byId('nrRole'), addr:byId('nrAddr'), freq:byId('nrFreq'), power:byId('nrPower'), save:byId('nrSaveBtn'), result:byId('nrResult')
+  };
+  if (Object.values(ui).some(v => !v)) return;
+
+  let nrDevice=null, nrServer=null, nrRxChar=null, nrTxChar=null;
+  let nrRxText='';
+  let nrLineWaiters=[];
+  let nrManualDisconnect=false;
+  let nrDevices=new Map();
+  let nrSelectedUid=null;
+  const decoder=new TextDecoder('utf-8');
+  const encoder=new TextEncoder();
+
+  function showMessage(text,type='info'){
+    ui.message.textContent=text;
+    ui.message.className='nr-msg show '+type;
+  }
+  function clearMessage(){ ui.message.className='nr-msg'; }
+  function setTargetEnabled(enabled){
+    ui.role.disabled=!enabled;
+    ui.addr.disabled=!enabled;
+    ui.freq.disabled=!enabled;
+    ui.power.disabled=!enabled;
+    ui.save.disabled=!enabled;
+  }
+  function resetTargetUi(clearList=true){
+    nrSelectedUid=null;
+    setTargetEnabled(false);
+    ui.targetDot.className='nr-dot';
+    ui.targetState.textContent='장비 검색 대기';
+    ui.targetSub.textContent='Node/Router 전원 ON 후 검색하세요. 여러 대 동시 검색이 가능합니다.';
+    ui.selectedNote.className='nr-selected-note';
+    ui.selectedNote.textContent='';
+    ui.result.className='nr-result';
+    ui.result.textContent='';
+    if(clearList){ nrDevices.clear(); renderDeviceList(); }
+  }
+  function setConnected(connected){
+    ui.bleDot.className='nr-dot'+(connected?' on':'');
+    ui.bleState.textContent=connected?'SETUP BOX 연결됨':'SETUP BOX 연결 안 됨';
+    ui.connect.disabled=connected;
+    ui.disconnect.disabled=!connected;
+    ui.scan.disabled=!connected;
+    if(!connected){
+      ui.bleSub.textContent='LoRa-NR-SETUP-XXXX 장치를 연결하세요.';
+      resetTargetUi(true);
+    }
+  }
+  function updateRoleRange(){
+    if(ui.role.value==='router'){
+      ui.addr.min=50; ui.addr.max=55;
+      if(+ui.addr.value<50 || +ui.addr.value>55) ui.addr.value=50;
+    }else{
+      ui.addr.min=2; ui.addr.max=49;
+      if(+ui.addr.value<2 || +ui.addr.value>49) ui.addr.value=2;
+    }
+  }
+  ui.role.addEventListener('change',updateRoleRange);
+
+  function rejectWaiters(message){
+    nrLineWaiters.forEach(w=>{ clearTimeout(w.timer); w.reject(new Error(message)); });
+    nrLineWaiters=[];
+  }
+
+  function onDisconnected(){
+    const wasManual=nrManualDisconnect;
+    nrManualDisconnect=false;
+    nrServer=nrRxChar=nrTxChar=null;
+    rejectWaiters('SETUP BOX Bluetooth 연결이 종료되었습니다.');
+    setConnected(false);
+    showMessage(wasManual?'SETUP BOX Bluetooth 연결을 해제했습니다.':'SETUP BOX Bluetooth 연결이 종료되었습니다.','info');
+  }
+
+  function parseDeviceLine(line){
+    if(!line.startsWith('DEVICE,')) return false;
+    const p=line.split(',');
+    if(p.length<9) return true;
+    const uid=(p[1]||'').toUpperCase();
+    const role=p[2]==='router'?'router':'sensor';
+    const configured=p[3]==='1';
+    const addr=Number(p[4]);
+    const freq=Number(p[5]);
+    const power=Number(p[6]);
+    const rssi=Number(p[7]);
+    const fw=p[8]||'NR';
+    if(!/^[0-9A-F]{8}$/.test(uid) || !Number.isInteger(addr) || !Number.isFinite(freq) || !Number.isInteger(power)) return true;
+    nrDevices.set(uid,{uid,role,configured,addr,freq,power,rssi,fw});
+    renderDeviceList();
+    return true;
+  }
+
+  function onNotify(event){
+    nrRxText += decoder.decode(event.target.value,{stream:true});
+    if(nrRxText.length>20000) nrRxText=nrRxText.slice(-12000);
+    let idx;
+    while((idx=nrRxText.indexOf('\n'))>=0){
+      const line=nrRxText.slice(0,idx).replace(/\r/g,'').trim();
+      nrRxText=nrRxText.slice(idx+1);
+      if(!line) continue;
+      parseDeviceLine(line);
+      const current=nrLineWaiters.slice();
+      for(const w of current){
+        if(w.predicate(line)){
+          nrLineWaiters=nrLineWaiters.filter(x=>x!==w);
+          clearTimeout(w.timer);
+          w.resolve(line);
+          break;
+        }
+      }
+    }
+  }
+
+  function createLineWaiter(predicate,timeoutMs){
+    let waiter=null;
+    const promise=new Promise((resolve,reject)=>{
+      waiter={predicate,resolve,reject,timer:null};
+      waiter.timer=setTimeout(()=>{
+        nrLineWaiters=nrLineWaiters.filter(x=>x!==waiter);
+        reject(new Error('SETUP BOX 응답 시간 초과'));
+      },timeoutMs);
+      nrLineWaiters.push(waiter);
+    });
+    return {promise,cancel(){if(!waiter)return;clearTimeout(waiter.timer);nrLineWaiters=nrLineWaiters.filter(x=>x!==waiter);}};
+  }
+
+  async function writeLine(line){
+    if(!nrRxChar || !nrDevice?.gatt?.connected) throw new Error('SETUP BOX Bluetooth가 연결되지 않았습니다.');
+    const bytes=encoder.encode(line+'\n');
+    for(let off=0;off<bytes.length;off+=20){
+      const chunk=bytes.slice(off,Math.min(off+20,bytes.length));
+      if(nrRxChar.properties?.write && typeof nrRxChar.writeValueWithResponse==='function'){
+        try{ await nrRxChar.writeValueWithResponse(chunk); }
+        catch(e){
+          if(nrRxChar.properties?.writeWithoutResponse && typeof nrRxChar.writeValueWithoutResponse==='function') await nrRxChar.writeValueWithoutResponse(chunk);
+          else throw e;
+        }
+      }else if(nrRxChar.properties?.writeWithoutResponse && typeof nrRxChar.writeValueWithoutResponse==='function'){
+        await nrRxChar.writeValueWithoutResponse(chunk);
+      }else if(typeof nrRxChar.writeValue==='function'){
+        await nrRxChar.writeValue(chunk);
+      }else throw new Error('이 브라우저에서 BLE Write를 지원하지 않습니다.');
+      if(off+20<bytes.length) await new Promise(r=>setTimeout(r,12));
+    }
+  }
+
+  async function command(line,predicate,timeoutMs=3000){
+    const waiter=createLineWaiter(predicate,timeoutMs);
+    try{ await writeLine(line); return await waiter.promise; }
+    catch(e){ waiter.cancel(); throw e; }
+  }
+
+  function renderDeviceList(){
+    const devices=[...nrDevices.values()].sort((a,b)=>a.uid.localeCompare(b.uid));
+    if(!devices.length){
+      ui.deviceList.innerHTML='<div class="nr-device-empty">검색된 장비가 없습니다.</div>';
+      return;
+    }
+    ui.deviceList.innerHTML=devices.map(d=>{
+      const selected=d.uid===nrSelectedUid?' selected':'';
+      const status=d.configured?'설정됨':'미설정';
+      const statusClass=d.configured?'':' new';
+      return `<div class="nr-device-row${selected}" data-select-uid="${d.uid}">
+        <div class="nr-device-main">
+          <div class="nr-device-title">UID ${d.uid}<span class="nr-device-tag${statusClass}">${status}</span></div>
+          <div class="nr-device-meta">${d.role==='router'?'Router':'Sensor'} · ADDR ${d.addr} · ${d.freq.toFixed(3)} MHz · ${d.power} dBm · RSSI ${Number.isFinite(d.rssi)?d.rssi:'-'} dBm</div>
+        </div>
+        <button class="nr-identify" type="button" data-identify-uid="${d.uid}">LED 식별</button>
+      </div>`;
+    }).join('');
+    ui.deviceList.querySelectorAll('[data-select-uid]').forEach(el=>el.addEventListener('click',e=>{
+      if(e.target.closest('[data-identify-uid]')) return;
+      selectDevice(el.dataset.selectUid);
+    }));
+    ui.deviceList.querySelectorAll('[data-identify-uid]').forEach(btn=>btn.addEventListener('click',e=>{
+      e.stopPropagation(); identifyDevice(btn.dataset.identifyUid);
+    }));
+  }
+
+  function selectDevice(uid){
+    const d=nrDevices.get(uid); if(!d) return;
+    nrSelectedUid=uid;
+    ui.role.value=d.role;
+    ui.addr.value=d.addr;
+    ui.freq.value=d.freq.toFixed(3);
+    ui.power.value=d.power;
+    updateRoleRange();
+    setTargetEnabled(true);
+    ui.targetDot.className='nr-dot on';
+    ui.targetState.textContent='장비 선택됨 · UID '+uid;
+    ui.targetSub.textContent='[LED 식별]을 눌러 실제 보드의 빠른 점멸을 확인한 뒤 설정하세요.';
+    ui.selectedNote.textContent='선택 UID '+uid+' · WRITE 명령은 이 UID의 보드에만 적용됩니다.';
+    ui.selectedNote.className='nr-selected-note show';
+    ui.result.className='nr-result';
+    renderDeviceList();
+  }
+
+  async function identifyDevice(uid){
+    if(!nrDevice?.gatt?.connected) return;
+    selectDevice(uid);
+    showMessage('UID '+uid+' 식별 중: 해당 실제 보드의 통신 LED가 약 7초간 빠르게 점멸합니다.','info');
+    try{
+      const line=await command(`IDENTIFY,${uid}`,l=>l.startsWith('IDENTIFY,OK,')||l.startsWith('ERR,'),5000);
+      if(line.startsWith('ERR,')) throw new Error(line.substring(4).replaceAll('_',' '));
+      ui.targetState.textContent='LED 식별 중 · UID '+uid;
+      ui.targetSub.textContent='빠르게 점멸하는 실제 보드가 선택 대상입니다. 확인 후 주소/주파수/출력을 입력하세요.';
+      showMessage('LED 식별 성공. 빠르게 점멸하는 보드를 확인하세요.','ok');
+    }catch(e){ showMessage('LED 식별 실패: '+(e?.message||e),'err'); }
+  }
+
+  async function connect(){
+    if(!navigator.bluetooth){ showMessage('Web Bluetooth 미지원 브라우저입니다. Windows Chrome/Edge 또는 Android Chrome을 사용하세요.','err'); return; }
+    try{
+      clearMessage(); nrManualDisconnect=false; nrRxText='';
+      nrDevice=await navigator.bluetooth.requestDevice({filters:[{namePrefix:NR_DEVICE_PREFIX,services:[NR_SERVICE_UUID]}]});
+      nrDevice.removeEventListener('gattserverdisconnected',onDisconnected);
+      nrDevice.addEventListener('gattserverdisconnected',onDisconnected);
+      ui.bleState.textContent='연결 중...';
+      nrServer=await nrDevice.gatt.connect();
+      const svc=await nrServer.getPrimaryService(NR_SERVICE_UUID);
+      nrRxChar=await svc.getCharacteristic(NR_RX_UUID);
+      nrTxChar=await svc.getCharacteristic(NR_TX_UUID);
+      await nrTxChar.startNotifications();
+      nrTxChar.removeEventListener('characteristicvaluechanged',onNotify);
+      nrTxChar.addEventListener('characteristicvaluechanged',onNotify);
+      setConnected(true);
+      ui.bleSub.textContent=nrDevice.name || 'LoRa-NR-SETUP';
+      const ready=await command('HELLO',l=>l.startsWith('READY,')||l.startsWith('ERR,'),3000);
+      if(ready.startsWith('ERR,')) throw new Error(ready.substring(4).replaceAll('_',' '));
+      const p=ready.split(',');
+      if(p.length>=4) ui.bleSub.textContent=(nrDevice.name||'LoRa-NR-SETUP')+' · SETUP '+p[3]+' MHz · '+(p[2]||'');
+      showMessage('SETUP BOX 연결 완료. Node/Router 전원을 켠 뒤 장비 검색을 누르세요.','ok');
+    }catch(e){
+      if(nrDevice?.gatt?.connected){ try{ nrDevice.gatt.disconnect(); }catch(_){} }
+      setConnected(false);
+      if(e?.name==='NotFoundError') showMessage('Bluetooth 장치 선택이 취소되었습니다.','info');
+      else showMessage('SETUP BOX Bluetooth 연결 실패: '+(e?.message||e),'err');
+    }
+  }
+
+  function disconnect(){
+    nrManualDisconnect=true;
+    try{ if(nrDevice?.gatt?.connected) nrDevice.gatt.disconnect(); else onDisconnected(); }
+    catch(_){ onDisconnected(); }
+  }
+
+  async function scanTarget(){
+    if(!nrDevice?.gatt?.connected) return;
+    nrDevices.clear(); nrSelectedUid=null; setTargetEnabled(false); renderDeviceList();
+    ui.result.className='nr-result';
+    ui.targetDot.className='nr-dot';
+    ui.targetState.textContent='검색 중...';
+    ui.targetSub.textContent='923.000 MHz SETUP 채널에서 여러 장비의 UID를 수집합니다.';
+    ui.scan.disabled=true;
+    showMessage('Node/Router를 검색하고 있습니다. 약 8초 걸립니다.','info');
+    try{
+      const line=await command('SCAN',l=>l.startsWith('SCANEND,')||l.startsWith('ERR,'),13000);
+      if(line.startsWith('ERR,')) throw new Error(line.substring(4).replaceAll('_',' '));
+      const count=Number(line.split(',')[1]||0);
+      if(!count || !nrDevices.size) throw new Error('검색된 Node/Router가 없습니다. 미설정 보드는 전원이 켜져 있으면 SETUP 모드에서 계속 대기합니다.');
+      ui.targetDot.className='nr-dot on';
+      ui.targetState.textContent=`${nrDevices.size}대 검색 완료`;
+      ui.targetSub.textContent='목록에서 보드를 선택하거나 [LED 식별]을 눌러 실제 하드웨어를 확인하세요.';
+      showMessage(`${nrDevices.size}대 검색 완료. LED 식별 후 한 대씩 설정하세요.`,'ok');
+    }catch(e){
+      ui.targetDot.className='nr-dot bad';
+      ui.targetState.textContent='장비 없음';
+      ui.targetSub.textContent='Node/Router 전원 및 SETUP 채널을 확인한 뒤 다시 검색하세요.';
+      showMessage(e?.message||String(e),'err');
+    }finally{ ui.scan.disabled=!nrDevice?.gatt?.connected; }
+  }
+
+  async function writeConfig(){
+    if(!nrSelectedUid || !nrDevice?.gatt?.connected) return showMessage('먼저 목록에서 설정할 장비를 선택하고 LED 식별을 확인하세요.','err');
+    const role=ui.role.value;
+    const addr=Number(ui.addr.value);
+    const freq=Number(ui.freq.value);
+    const power=Number(ui.power.value);
+    if(role==='sensor' && (!Number.isInteger(addr)||addr<2||addr>49)) return showMessage('Sensor Node 주소는 2~49입니다.','err');
+    if(role==='router' && (!Number.isInteger(addr)||addr<50||addr>55)) return showMessage('Router 주소는 50~55입니다.','err');
+    if(!Number.isFinite(freq)||freq<850||freq>950) return showMessage('주파수는 850~950 MHz 범위입니다.','err');
+    if(!Number.isInteger(power)||power<5||power>20) return showMessage('TX Power는 5~20 dBm 범위의 정수입니다.','err');
+
+    const uid=nrSelectedUid;
+    ui.save.disabled=true; ui.scan.disabled=true;
+    showMessage('UID '+uid+' 보드에만 설정을 저장하고 있습니다.','info');
+    try{
+      const cmd=`WRITE,${uid},${addr},${freq.toFixed(3)},${power}`;
+      const line=await command(cmd,l=>l.startsWith('RESULT,')||l.startsWith('ERR,'),6000);
+      if(line.startsWith('ERR,')) throw new Error(line.substring(4).replaceAll('_',' '));
+      const p=line.split(',');
+      if(p.length<6 || p[1]!=='OK' || p[2]!==uid) throw new Error('설정 결과 UID 불일치: '+line);
+      const savedAddr=Number(p[3]), savedFreq=Number(p[4]), savedPower=Number(p[5]);
+      ui.targetDot.className='nr-dot on';
+      ui.targetState.textContent='설정 완료 · UID '+uid;
+      ui.targetSub.textContent=`ADDR ${savedAddr} · ${savedFreq.toFixed(3)} MHz · ${savedPower} dBm`;
+      ui.result.innerHTML='<strong>✓ PASS</strong>선택 보드 EEPROM 저장 완료 · LED가 약 2.5초 켜진 뒤 OFF되고 운용 주파수로 전환됩니다.';
+      ui.result.className='nr-result show';
+      showMessage('설정 완료. 실제 보드 LED가 2.5초 ON 후 꺼지는지 확인하세요.','ok');
+      nrDevices.delete(uid); nrSelectedUid=null; setTargetEnabled(false); renderDeviceList();
+      ui.selectedNote.className='nr-selected-note';
+    }catch(e){
+      showMessage(e?.message||String(e),'err');
+      ui.save.disabled=false;
+    }finally{ ui.scan.disabled=!nrDevice?.gatt?.connected; }
+  }
+
+  ui.connect.addEventListener('click',connect);
+  ui.disconnect.addEventListener('click',disconnect);
+  ui.scan.addEventListener('click',scanTarget);
+  ui.save.addEventListener('click',writeConfig);
+  setConnected(false);
+  updateRoleRange();
+  renderDeviceList();
 })();
 
 (() => {
