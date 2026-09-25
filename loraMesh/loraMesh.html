@@ -623,7 +623,7 @@ body.theme-light .gateway-setup-open{background:#f3f4ff;color:#111827;border-col
 
         <div class="nr-tip">
           <b>양산/AS 사용 순서</b><br>
-          ① SETUP BOX 전원 ON → ② Bluetooth 연결 → ③ Node/Router 전원 ON → ④ 장비 검색 → ⑤ [LED 식별]로 실제 보드 확인 → ⑥ 설정 저장 &amp; RUN
+          ① SETUP BOX 전원 ON → ② Bluetooth 연결 → ③ Node/Router 전원 ON → ④ 장비 검색 → ⑤ 장비 선택(자동 LED 식별) → ⑥ 설정 저장 &amp; RUN
         </div>
 
         <div class="nr-statusbar">
@@ -643,7 +643,7 @@ body.theme-light .gateway-setup-open{background:#f3f4ff;color:#111827;border-col
         <div class="nr-divider"></div>
 
         <h2 style="margin-bottom:4px">대상 Node / Router 설정</h2>
-        <div class="hint">여러 대를 동시에 켜도 됩니다. 검색 후 [LED 식별]로 실제 보드를 확인하고 한 대씩 설정하세요.<br>LED: 미설정=느린 점멸 · 식별=빠른 점멸 · 저장 성공=2.5초 ON · 설정완료=OFF</div>
+        <div class="hint">여러 대를 동시에 켜도 됩니다. 검색 후 장비 행을 누르면 해당 보드만 자동으로 아주 빠르게 점멸합니다.<br>LED: 미설정=느린 점멸 · 선택/식별=아주 빠른 점멸 · 저장 성공=2.5초 ON · 설정완료=OFF</div>
         <button id="nrScanBtn" class="nr-scan" type="button" disabled>장비 검색 · 최대 8초</button>
 
         <div class="nr-statusbar">
@@ -1847,7 +1847,7 @@ setInterval(()=>{
     }).join('');
     ui.deviceList.querySelectorAll('[data-select-uid]').forEach(el=>el.addEventListener('click',e=>{
       if(e.target.closest('[data-identify-uid]')) return;
-      selectDevice(el.dataset.selectUid);
+      identifyDevice(el.dataset.selectUid);
     }));
     ui.deviceList.querySelectorAll('[data-identify-uid]').forEach(btn=>btn.addEventListener('click',e=>{
       e.stopPropagation(); identifyDevice(btn.dataset.identifyUid);
@@ -1865,7 +1865,7 @@ setInterval(()=>{
     setTargetEnabled(true);
     ui.targetDot.className='nr-dot on';
     ui.targetState.textContent='장비 선택됨 · UID '+uid;
-    ui.targetSub.textContent='[LED 식별]을 눌러 실제 보드의 빠른 점멸을 확인한 뒤 설정하세요.';
+    ui.targetSub.textContent='선택 즉시 해당 보드만 아주 빠르게 점멸합니다. 실제 보드를 확인한 뒤 설정하세요.';
     ui.selectedNote.textContent='선택 UID '+uid+' · WRITE 명령은 이 UID의 보드에만 적용됩니다.';
     ui.selectedNote.className='nr-selected-note show';
     ui.result.className='nr-result';
@@ -1875,13 +1875,13 @@ setInterval(()=>{
   async function identifyDevice(uid){
     if(!nrDevice?.gatt?.connected) return;
     selectDevice(uid);
-    showMessage('UID '+uid+' 식별 중: 해당 실제 보드의 통신 LED가 약 7초간 빠르게 점멸합니다.','info');
+    showMessage('UID '+uid+' 선택/식별 중: 해당 실제 보드의 통신 LED가 약 10초간 아주 빠르게 점멸합니다.','info');
     try{
       const line=await command(`IDENTIFY,${uid}`,l=>l.startsWith('IDENTIFY,OK,')||l.startsWith('ERR,'),5000);
       if(line.startsWith('ERR,')) throw new Error(line.substring(4).replaceAll('_',' '));
       ui.targetState.textContent='LED 식별 중 · UID '+uid;
-      ui.targetSub.textContent='빠르게 점멸하는 실제 보드가 선택 대상입니다. 확인 후 주소/주파수/출력을 입력하세요.';
-      showMessage('LED 식별 성공. 빠르게 점멸하는 보드를 확인하세요.','ok');
+      ui.targetSub.textContent='아주 빠르게 점멸하는 실제 보드가 현재 선택 대상입니다. 확인 후 주소/주파수/출력을 입력하세요.';
+      showMessage('선택 완료. 아주 빠르게 점멸하는 보드를 확인하세요.','ok');
     }catch(e){ showMessage('LED 식별 실패: '+(e?.message||e),'err'); }
   }
 
@@ -1937,8 +1937,14 @@ setInterval(()=>{
       if(!count || !nrDevices.size) throw new Error('검색된 Node/Router가 없습니다. 미설정 보드는 전원이 켜져 있으면 SETUP 모드에서 계속 대기합니다.');
       ui.targetDot.className='nr-dot on';
       ui.targetState.textContent=`${nrDevices.size}대 검색 완료`;
-      ui.targetSub.textContent='목록에서 보드를 선택하거나 [LED 식별]을 눌러 실제 하드웨어를 확인하세요.';
-      showMessage(`${nrDevices.size}대 검색 완료. LED 식별 후 한 대씩 설정하세요.`,'ok');
+      if(nrDevices.size===1){
+        const onlyUid=[...nrDevices.keys()][0];
+        ui.targetSub.textContent='1대가 검색되어 자동으로 LED 식별을 시작합니다.';
+        await identifyDevice(onlyUid);
+      }else{
+        ui.targetSub.textContent='목록에서 설정할 장비 행을 누르면 해당 보드만 자동으로 아주 빠르게 점멸합니다.';
+        showMessage(`${nrDevices.size}대 검색 완료. 장비를 누르면 자동 LED 식별됩니다.`,'ok');
+      }
     }catch(e){
       ui.targetDot.className='nr-dot bad';
       ui.targetState.textContent='장비 없음';
