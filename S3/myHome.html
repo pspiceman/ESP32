@@ -57,6 +57,13 @@ h2{font-size:17px;margin:0 0 13px}
 .stock-price{font-size:30px;line-height:1.1;font-weight:800;letter-spacing:-0.5px}
 .stock-change{margin-top:6px;font-size:15px;font-weight:800}
 .stock-sep{margin:18px 0 12px;border-top:1px solid var(--line)}
+.samsung-compare{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;border-bottom:1px solid rgba(51,65,85,.55);margin-bottom:4px}
+.samsung-compare-side{min-width:0}
+.samsung-compare-side.right{text-align:right}
+.samsung-compare-side.right .stock-name,.samsung-compare-side.right .stock-quote{text-align:right}
+.samsung-compare .stock-quote{border-bottom:0;margin-bottom:0;padding-bottom:12px}
+.samsung-compare-side.right .stock-price{white-space:nowrap}
+.samsung-compare-side.right .stock-change{white-space:nowrap}
 
 .editable-wrap{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}
 .editable-input{
@@ -77,7 +84,7 @@ h2{font-size:17px;margin:0 0 13px}
 .btn.primary{background:#0c4a6e;border-color:#0369a1;color:#e0f2fe}
 .btn.live{background:#4c0519;border-color:#9f1239;color:#ffe4e6}
 
-.news-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.news-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .news-panel{background:#111827;border:1px solid var(--line);border-radius:14px;padding:14px;min-width:0}
 .news-panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
 .news-panel-title{font-size:16px;font-weight:850}
@@ -109,6 +116,7 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
   .grid{grid-template-columns:1fr}.full{grid-column:auto}.wrap{padding:13px}.big{font-size:31px}
   .market-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.market-box{padding:12px}.market-title{font-size:12px}.market-value{font-size:22px}.market-change{font-size:13px}
   .row{align-items:flex-start}.editable-input{max-width:160px}
+  .samsung-compare{gap:12px}.samsung-compare .stock-name{font-size:15px}.samsung-compare .stock-price{font-size:28px}.samsung-compare .stock-change{font-size:14px}
   .news-grid{grid-template-columns:1fr}
   .live-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.live-card{padding:9px}.live-card .btn{font-size:12px;padding:10px 6px}
 }
@@ -131,7 +139,7 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
 <body>
 <div class="wrap">
   <h1>🏠 myHome Dashboard</h1>
-  <div class="sub">시장 · 보유자산 · YouTube · 뉴스 · 바로가기 · <span id="appVersion">v34</span></div>
+  <div class="sub">시장 · 보유자산 · YouTube · 뉴스 · 바로가기 · <span id="appVersion">v35c</span></div>
 
   <div class="grid">
 
@@ -162,10 +170,21 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
     <section class="card full">
       <h2>📈 보유 자산</h2>
 
-      <div class="stock-name">삼성전자우 <span class="stock-code">005935</span></div>
-      <div class="stock-quote">
-        <div id="samsungPrice" class="stock-price">-</div>
-        <div id="samsungChange" class="stock-change flat">-</div>
+      <div class="samsung-compare">
+        <div class="samsung-compare-side">
+          <div class="stock-name">삼성전자우 <span class="stock-code">005935</span></div>
+          <div class="stock-quote">
+            <div id="samsungPrice" class="stock-price">-</div>
+            <div id="samsungChange" class="stock-change flat">-</div>
+          </div>
+        </div>
+        <div class="samsung-compare-side right">
+          <div class="stock-name">삼성전자 <span class="stock-code">005930</span></div>
+          <div class="stock-quote">
+            <div id="samsungCommonPrice" class="stock-price">-</div>
+            <div id="samsungCommonChange" class="stock-change flat">-</div>
+          </div>
+        </div>
       </div>
       <div class="row"><span class="muted">시가</span><strong id="samsungOpen">-</strong></div>
       <div class="row"><span class="muted">전일 종가</span><span id="samsungPrevClose">-</span></div>
@@ -229,34 +248,45 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
       <div class="news-grid">
         <div class="news-panel">
           <div class="news-panel-head">
+            <div class="news-panel-title">💹 네이버 경제뉴스</div>
+            <span class="badge">NAVER</span>
+          </div>
+          <div class="news-brief-lead">경제·금융·증권 최신 뉴스</div>
+          <div class="btn-row">
+            <a class="btn" href="https://news.naver.com/section/101" target="_blank" rel="noopener noreferrer">네이버 경제뉴스 보기</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-head">
+            <div class="news-panel-title">🟡 다음 경제뉴스</div>
+            <span class="badge">DAUM</span>
+          </div>
+          <div class="news-brief-lead">다음 경제 분야 최신 뉴스</div>
+          <div class="btn-row">
+            <a class="btn" href="https://news.daum.net/economy" target="_blank" rel="noopener noreferrer">다음 경제뉴스 보기</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-head">
+            <div class="news-panel-title">🌐 구글 뉴스</div>
+            <span class="badge">GOOGLE</span>
+          </div>
+          <div class="news-brief-lead">국내외 주요 뉴스 통합 보기</div>
+          <div class="btn-row">
+            <a class="btn" href="https://news.google.com" target="_blank" rel="noopener noreferrer">구글 뉴스 보기</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-head">
             <div class="news-panel-title">🤖 AI타임스</div>
             <span class="badge">aitimes.com</span>
           </div>
           <div class="news-brief-lead">AI·인공지능·기술 전문 뉴스</div>
           <div class="btn-row">
             <a class="btn" href="https://www.aitimes.com/" target="_blank" rel="noopener noreferrer">AI타임스 최신뉴스 보기</a>
-          </div>
-        </div>
-
-        <div class="news-panel">
-          <div class="news-panel-head">
-            <div class="news-panel-title">🧠 인공지능신문</div>
-            <span class="badge">aitimes.kr</span>
-          </div>
-          <div class="news-brief-lead">AI·산업·기술 전문 뉴스</div>
-          <div class="btn-row">
-            <a class="btn" href="https://www.aitimes.kr/" target="_blank" rel="noopener noreferrer">인공지능신문 최신뉴스 보기</a>
-          </div>
-        </div>
-
-        <div class="news-panel">
-          <div class="news-panel-head">
-            <div class="news-panel-title">💹 네이버 경제뉴스</div>
-            <span class="badge">경제</span>
-          </div>
-          <div class="news-brief-lead">경제·금융·증권 최신 뉴스</div>
-          <div class="btn-row">
-            <a class="btn" href="https://news.naver.com/section/101" target="_blank" rel="noopener noreferrer">네이버 경제뉴스 보기</a>
           </div>
         </div>
       </div>
@@ -511,11 +541,52 @@ function marketStatusText(s){
   return s || '-';
 }
 
+// 삼성전자(005930) 비교 시세 전용: KRX 정규장이 닫혀 있고 NXT가 거래 중이면
+// 네이버가 함께 내려주는 NXT 체결가를 사용합니다. (08:00~08:50 / 15:40~20:00 등)
+// 삼성전자우/SOL 및 총액 계산에는 영향을 주지 않습니다.
+function applySamsungNxtQuote(baseQuote, nxtInfo){
+  if(!baseQuote || !nxtInfo) return baseQuote;
+
+  const regularOpen = String(baseQuote.status || '').toUpperCase() === 'OPEN';
+  const nxtStatus = String(nxtInfo.overMarketStatus || nxtInfo.marketStatus || '').toUpperCase();
+  const nxtOpen = nxtStatus.includes('OPEN') || nxtStatus.includes('TRADING');
+  const nxtPrice = naverNum(nxtInfo.overPrice ?? nxtInfo.closePrice ?? nxtInfo.currentPrice ?? nxtInfo.price);
+
+  // KRX 정규장 중에는 기존 KRX 가격을 그대로 사용합니다.
+  if(regularOpen || !nxtOpen || !nxtPrice) return baseQuote;
+
+  let prevClose = Number(baseQuote.prevClose);
+  if(!Number.isFinite(prevClose) || prevClose <= 0){
+    const diffRaw = naverNum(nxtInfo.compareToPreviousClosePrice ?? nxtInfo.changePrice ?? nxtInfo.change);
+    if(diffRaw !== null){
+      const dir = String(
+        nxtInfo.compareToPreviousPrice?.name ||
+        nxtInfo.fluctuationsType?.name ||
+        nxtInfo.fluctuationType || ''
+      ).toUpperCase();
+      const signed = ((dir.includes('FALL') || dir.includes('DOWN')) && diffRaw > 0) ? -diffRaw : diffRaw;
+      prevClose = nxtPrice - signed;
+    }
+  }
+
+  return {
+    ...baseQuote,
+    price: nxtPrice,
+    prevClose: Number.isFinite(prevClose) ? prevClose : baseQuote.prevClose,
+    open: naverNum(nxtInfo.openPrice) ?? baseQuote.open,
+    high: naverNum(nxtInfo.highPrice) ?? baseQuote.high,
+    low: naverNum(nxtInfo.lowPrice) ?? baseQuote.low,
+    status: 'NXT ' + (nxtStatus || 'OPEN'),
+    tradedAt: nxtInfo.localTradedAt || nxtInfo.localDateTime || baseQuote.tradedAt,
+    source: '네이버 금융 NXT 실시간'
+  };
+}
+
 function normalizeModernNaver(d){
   if(!d) return null;
   const price = naverNum(d.closePrice);
   if(!price) return null;
-  return {
+  const q = {
     code: d.itemCode || d.stockCode || '',
     name: d.stockName || '',
     price,
@@ -533,6 +604,12 @@ function normalizeModernNaver(d){
     tradedAt: d.localTradedAt || '',
     source: '네이버 금융 realtime'
   };
+
+  const code = String(q.code || '');
+  if(code === '005930'){
+    return applySamsungNxtQuote(q, d.nxtOverMarketPriceInfo || d.overMarketPriceInfo);
+  }
+  return q;
 }
 
 function normalizeLegacyNaver(root, code){
@@ -547,7 +624,7 @@ function normalizeLegacyNaver(root, code){
     const price = naverNum(d.nv);
     if(!price) continue;
 
-    return {
+    const q = {
       code: String(d.cd || code),
       name: d.nm || '',
       price,
@@ -559,6 +636,11 @@ function normalizeLegacyNaver(root, code){
       tradedAt: root.result.time ? new Date(root.result.time).toLocaleString('ko-KR') : '',
       source: '네이버 금융 JSONP'
     };
+
+    if(String(code) === '005930'){
+      return applySamsungNxtQuote(q, d.nxtOverMarketPriceInfo || d.overMarketPriceInfo);
+    }
+    return q;
   }
   return null;
 }
@@ -620,6 +702,31 @@ async function getNaverQuote(code){
   }
 }
 
+// 삼성전자 비교용은 modern/JSONP를 같이 확인합니다.
+// 둘 중 하나라도 NXT 실시간 정보를 주면 그 값을 우선 사용합니다.
+async function getSamsungCommonQuote(){
+  const results = await Promise.allSettled([
+    fetchNaverModern('005930'),
+    fetchNaverJSONP('005930')
+  ]);
+  const quotes = results
+    .filter(r => r.status === 'fulfilled' && r.value && Number.isFinite(Number(r.value.price)))
+    .map(r => r.value);
+
+  if(!quotes.length) throw new Error('삼성전자 시세 조회 실패');
+
+  const nxtQuotes = quotes.filter(q => String(q.source || '').includes('NXT 실시간'));
+  if(nxtQuotes.length){
+    nxtQuotes.sort((a,b) => {
+      const ta = Date.parse(a.tradedAt || '') || 0;
+      const tb = Date.parse(b.tradedAt || '') || 0;
+      return tb - ta;
+    });
+    return nxtQuotes[0];
+  }
+  return quotes[0];
+}
+
 function renderQuote(prefix, q){
   const priceEl = document.getElementById(prefix + 'Price');
   const changeEl = document.getElementById(prefix + 'Change');
@@ -645,28 +752,51 @@ function renderQuote(prefix, q){
   document.getElementById(prefix + 'Time').textContent = q.tradedAt || '수신 완료';
 }
 
+function renderCompareQuote(prefix, q){
+  const priceEl = document.getElementById(prefix + 'Price');
+  const changeEl = document.getElementById(prefix + 'Change');
+  if(!priceEl || !changeEl) return;
+
+  const price = Number(q.price);
+  const prev = Number(q.prevClose);
+  const change = (Number.isFinite(price) && Number.isFinite(prev)) ? price - prev : 0;
+  const pct = (prev > 0) ? (change / prev * 100) : 0;
+  const trendClass = change > 0 ? 'up' : (change < 0 ? 'down' : 'flat');
+  const sign = change > 0 ? '+' : '';
+  const pctSign = pct > 0 ? '+' : '';
+
+  priceEl.textContent = won(price);
+  priceEl.className = 'stock-price ' + trendClass;
+  changeEl.textContent = sign + Math.round(change).toLocaleString('ko-KR') + '원 (' + pctSign + pct.toFixed(2) + '%)';
+  changeEl.className = 'stock-change ' + trendClass;
+}
+
 async function loadStocksDirect(){
   const sourceEl = document.getElementById('stockSource');
   sourceEl.textContent = '네이버 금융 조회 중...';
 
   try{
-    const [samsung, sol] = await Promise.all([
+    const [samsung, samsungCommon, sol] = await Promise.all([
       getNaverQuote('005935'),
+      getSamsungCommonQuote(),
       getNaverQuote('0167A0')
     ]);
 
     lastSamsungQuote = samsung;
     lastSolQuote = sol;
     renderQuote('samsung', samsung);
+    renderCompareQuote('samsungCommon', samsungCommon);
     renderQuote('sol', sol);
-    updatePortfolioValues();
+    updatePortfolioValues(); // 삼성전자(005930)는 비교 표시만 하고 총액에는 포함하지 않음
 
-    const sourceNames = [...new Set([samsung.source, sol.source])];
+    const sourceNames = [...new Set([samsung.source, samsungCommon.source, sol.source])];
     sourceEl.textContent = sourceNames.join(' / ');
   }catch(e){
     console.error('[STOCK] direct quote load failed', e);
     sourceEl.textContent = '네이버 금융 직접조회 실패';
     document.getElementById('samsungStatus').textContent = '시세 수신 실패';
+    const sc = document.getElementById('samsungCommonChange');
+    if(sc) sc.textContent = '시세 수신 실패';
     document.getElementById('solStatus').textContent = '시세 수신 실패';
   }
 }
@@ -682,7 +812,8 @@ const NAVER_SOX_NATION = 'https://api.stock.naver.com/index/nation/USA'; // 미�
 const NAVER_SOX_CHART = 'https://api.stock.naver.com/chart/foreign/index/.SOX?periodType=dayCandle'; // 장마감 보조 검증
 const NAVER_KOSPI_PAGE = 'https://m.stock.naver.com/domestic/index/KOSPI';
 const NAVER_SOX_PAGE = 'https://m.stock.naver.com/worldstock/index/.SOX';
-const INDEX_CACHE_KEY = 'myHome_naverIndexCache_v20';
+const INDEX_CACHE_KEY = 'myHome_naverIndexCache_v21'; // mobile SOX stale-cache reset
+const SOX_MAX_STALE_MS = 5 * 24 * 60 * 60 * 1000; // 주말/휴장 고려, 5일 초과 SOX 값은 폐기
 
 // 네이버 공개 시세를 직접 확인한 마지막 안전 스냅샷.
 // 네트워크/CORS가 모두 막힐 때 빈 화면 대신 "최근 확인값"으로만 사용합니다.
@@ -783,14 +914,15 @@ async function fetchJsonViaCorsProxyIo(url, timeoutMs=7000){
 }
 
 async function fetchNaverJsonMulti(url){
-  // 로컬 HTML(file://)에서도 SOX가 갱신되도록 직접조회 + 여러 CORS 경로를 동시에 시도합니다.
-  // 가장 먼저 정상 JSON을 반환한 경로를 사용합니다.
+  // PC는 Naver API 직접조회가 잘 되지만 Android/file:// 환경에서는 CORS/네트워크 조건이 달라질 수 있습니다.
+  // 모바일에서도 PC와 같은 최신 응답을 얻도록 직접조회와 4개 우회 경로를 동시에 사용하고,
+  // 휴대폰 데이터망에서 응답이 늦어지는 경우를 고려해 timeout을 조금 더 넉넉하게 둡니다.
   const jobs = [
-    fetchJsonDirect(url, 2800),
-    fetchJsonViaCorsProxyIo(url, 5000),
-    fetchJsonViaAllOriginsRaw(url, 5500),
-    fetchJsonViaCodeTabs(url, 5500),
-    fetchJsonViaAllOriginsGet(url, 5500)
+    fetchJsonDirect(url, 5000),
+    fetchJsonViaCorsProxyIo(url, 7500),
+    fetchJsonViaAllOriginsRaw(url, 8000),
+    fetchJsonViaCodeTabs(url, 8000),
+    fetchJsonViaAllOriginsGet(url, 8000)
   ];
 
   try{
@@ -987,32 +1119,67 @@ function soxQuoteDateKey(q){
   return m ? Number(m[1] + m[2] + m[3]) : 0;
 }
 
-async function getSoxNaver(){
-  // 현재 네이버 미국 지수 목록(.SOX 포함)과 worldstock polling을 동시에 조회합니다.
-  // KOSPI와 마찬가지로 getter 하나가 최신값을 반환하고, 표시/캐시/주기 갱신은 공통 루틴이 담당합니다.
-  const currentJobs = [
-    fetchNaverJsonMulti(NAVER_SOX_NATION).then(normalizeSoxNation),
-    fetchNaverJsonMulti(NAVER_SOX_POLLING).then(normalizeSoxPolling)
-  ];
+function soxFreshnessScore(q){
+  const s = String(q?.tradedAt || '').trim();
+  let t = 0;
 
-  try{
-    return await Promise.any(currentJobs.map(p => p.then(q => {
-      if(!q || !Number.isFinite(Number(q.price))) throw new Error('SOX current parse 실패');
-      return q;
-    })));
-  }catch(e){
-    console.warn('[SOX] current endpoints failed; chart fallback', e);
+  // 2026-09-30T09:31:20 / 2026-09-30 09:31 형태
+  let m = s.match(/(20\d{2})[-\/.]?(\d{2})[-\/.]?(\d{2})(?:[T\s]?(\d{2}):?(\d{2})?:?(\d{2})?)?/);
+  if(m){
+    const y=Number(m[1]), mo=Number(m[2])-1, d=Number(m[3]);
+    const hh=Number(m[4]||0), mm=Number(m[5]||0), ss=Number(m[6]||0);
+    t = Date.UTC(y,mo,d,hh,mm,ss);
   }
 
-  // 최후 보조: 네이버 SOX 일봉의 최신 종가/전일 대비를 사용합니다.
-  const chart = await fetchNaverJsonMulti(NAVER_SOX_CHART);
-  const q = normalizeSoxChart(chart);
-  if(q) return q;
-  throw new Error('SOX 네이버 조회 실패');
+  // 날짜/시각이 같거나 없는 경우에는 실시간 polling 응답을 우선합니다.
+  const sourceBonus = String(q?.source || '').includes('SOX 실시간') ? 1000 : 0;
+  return t + sourceBonus;
+}
+
+function soxQuoteTimestamp(q){
+  const s = String(q?.tradedAt || '').trim();
+  const m = s.match(/(20\d{2})[-\/.]?(\d{2})[-\/.]?(\d{2})(?:[T\s]?(\d{2}):?(\d{2})?:?(\d{2})?)?/);
+  if(!m) return 0;
+  return Date.UTC(Number(m[1]), Number(m[2])-1, Number(m[3]), Number(m[4]||0), Number(m[5]||0), Number(m[6]||0));
+}
+
+function isSoxQuoteTooOld(q){
+  const t = soxQuoteTimestamp(q);
+  if(!t) return false; // 날짜 필드가 없는 실시간 응답은 source/price 검증 후 후보로 허용
+  return (Date.now() - t) > SOX_MAX_STALE_MS;
+}
+
+async function getSoxNaver(){
+  // PC에서 정상인 실시간 polling을 최우선으로 사용하되,
+  // 모바일에서 polling CORS가 막혀도 같은 날짜의 값을 얻을 수 있도록 미국지수 목록 + 일봉도 동시에 조회합니다.
+  // 세 경로 중 "가장 최신 거래일/시각" 후보를 고르므로 9/23 같은 오래된 nation 응답이 9/30 값을 덮지 않습니다.
+  const results = await Promise.allSettled([
+    fetchNaverJsonMulti(NAVER_SOX_POLLING).then(normalizeSoxPolling),
+    fetchNaverJsonMulti(NAVER_SOX_NATION).then(normalizeSoxNation),
+    fetchNaverJsonMulti(NAVER_SOX_CHART).then(normalizeSoxChart)
+  ]);
+
+  const candidates = results
+    .filter(r => r.status === 'fulfilled')
+    .map(r => r.value)
+    .filter(q => q && Number.isFinite(Number(q.price)))
+    .filter(q => !isSoxQuoteTooOld(q));
+
+  if(candidates.length){
+    candidates.sort((a,b) => soxFreshnessScore(b) - soxFreshnessScore(a));
+    const best = candidates[0];
+    console.info('[SOX] selected freshest quote', best?.source, best?.tradedAt, best?.price);
+    return best;
+  }
+
+  console.warn('[SOX] no fresh quote from polling/nation/chart', results);
+  throw new Error('SOX 최신 네이버 조회 실패');
 }
 
 function saveIndexCache(prefix, q){
   try{
+    // 모바일에서 오래된 SOX 응답이 다시 "마지막 정상값"으로 고정되지 않도록 저장 단계에서도 차단합니다.
+    if(prefix === 'sox' && isSoxQuoteTooOld(q)) return;
     const root = JSON.parse(localStorage.getItem(INDEX_CACHE_KEY) || '{}');
     root[prefix] = {q, savedAt:Date.now()};
     localStorage.setItem(INDEX_CACHE_KEY, JSON.stringify(root));
@@ -1024,6 +1191,8 @@ function loadIndexCache(prefix){
     const root = JSON.parse(localStorage.getItem(INDEX_CACHE_KEY) || '{}');
     const row = root[prefix];
     if(row && row.q && Number.isFinite(Number(row.q.price))){
+      // SOX만 날짜까지 검사합니다. 5일을 넘긴 값은 화면에 잠깐이라도 표시하지 않습니다.
+      if(prefix === 'sox' && isSoxQuoteTooOld(row.q)) return null;
       return {...row.q, source:'마지막 정상 조회값 · ' + new Date(row.savedAt).toLocaleString('ko-KR')};
     }
   }catch(e){}
@@ -1492,6 +1661,14 @@ function startDashboard(){
   // 자동 갱신도 KOSPI와 SOX 모두 동일하게 60초 주기입니다.
   setInterval(() => loadOneIndex('kospi', getKospiNaver, {quiet:true, cacheFirst:true}), 60000);
   setInterval(() => loadOneIndex('sox', getSoxNaver, {quiet:true, cacheFirst:true}), 60000);
+
+  // 모바일 브라우저는 백그라운드에서 타이머가 멈출 수 있으므로 화면 복귀 시 SOX만 즉시 최신 조회합니다.
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState === 'visible'){
+      loadOneIndex('sox', getSoxNaver, {quiet:true, cacheFirst:false});
+    }
+  });
+
   setInterval(loadAnalogChannelStats, 5 * 60000);
 }
 
