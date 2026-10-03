@@ -139,7 +139,7 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
 <body>
 <div class="wrap">
   <h1>🏠 myHome Dashboard</h1>
-  <div class="sub">시장 · 보유자산 · YouTube · 뉴스 · 바로가기 · <span id="appVersion">v35i</span></div>
+  <div class="sub">시장 · 보유자산 · YouTube · 뉴스 · 바로가기 · <span id="appVersion">v35j</span></div>
 
   <div class="grid">
 
@@ -808,11 +808,11 @@ async function loadStocksDirect(){
 const NAVER_KOSPI_REALTIME = 'https://polling.finance.naver.com/api/realtime/domestic/index/KOSPI';
 const NAVER_KOSPI_LEGACY = 'https://polling.finance.naver.com/api/realtime';
 const NAVER_SOX_POLLING = 'https://stock.naver.com/api/polling/worldstock/index?reutersCodes=.SOX';
-const NAVER_SOX_NATION = 'https://api.stock.naver.com/index/nation/USA'; // 미국 지수 목록(.SOX 포함)
+const NAVER_SOX_NATION = 'https://api.stock.naver.com/index/nation/USA'; // SOX 현재값 원본(.SOX, delayTime 0)
 const NAVER_SOX_CHART = 'https://api.stock.naver.com/chart/foreign/index/.SOX?periodType=dayCandle'; // 장마감 보조 검증
 const NAVER_KOSPI_PAGE = 'https://m.stock.naver.com/domestic/index/KOSPI';
 const NAVER_SOX_PAGE = 'https://m.stock.naver.com/worldstock/index/.SOX';
-const INDEX_CACHE_KEY = 'myHome_naverIndexCache_v24'; // SOX 단일 네이버 polling 경로 적용 후 이전 캐시 폐기
+const INDEX_CACHE_KEY = 'myHome_naverIndexCache_v25'; // SOX 단일 네이버 polling 경로 적용 후 이전 캐시 폐기
 const SOX_MAX_STALE_MS = 5 * 24 * 60 * 60 * 1000; // 주말/휴장 고려, 5일 초과 SOX 값은 폐기
 
 // 네이버 공개 시세를 직접 확인한 마지막 안전 스냅샷.
@@ -1198,24 +1198,35 @@ function fetchSoxPollingViaJsonp(timeoutMs=9000){
 }
 
 async function getSoxNaver(){
-  // SOX는 딱 한 소스만 사용합니다:
-  // 네이버 SOX 상세 화면의 실시간 polling URL(NAVER_SOX_POLLING).
-  // PC: 직접 fetch, 모바일/file://: 동일 URL을 JSONP 중계로 가져옵니다.
-  // nation/chart/여러 프록시 후보를 섞지 않아 네이버 화면과 값이 어긋나는 문제를 제거합니다.
+  // SOX는 네이버의 해외지수 실시간 목록 API 한 경로만 사용합니다.
+  // KOSPI와 동일하게 "네이버 현재값 -> 화면 표시" 구조이며,
+  // GitHub Pages 모바일에서 CORS로 직접조회가 막히는 경우에만
+  // 같은 네이버 URL을 AllOrigins raw로 1회 중계합니다.
+  // 값의 원천은 항상 NAVER_SOX_NATION(.SOX)입니다.
+
+  // 1) 네이버 직접조회
   try{
-    const root = await fetchJsonDirect(NAVER_SOX_POLLING, 5500);
-    const q = normalizeSoxPolling(root);
-    if(!q || !Number.isFinite(Number(q.price))) throw new Error('SOX polling parse 실패');
+    const root = await fetchJsonDirect(NAVER_SOX_NATION, 6500);
+    const q = normalizeSoxNation(root);
+    if(!q || !Number.isFinite(Number(q.price))) throw new Error('SOX nation parse 실패');
     q.source = '네이버 증권 실시간';
     return q;
   }catch(e){
-    console.warn('[SOX] direct polling failed -> same URL JSONP fallback', e);
+    console.warn('[SOX] direct nation failed -> mobile fallback', e);
   }
 
-  const q = await fetchSoxPollingViaJsonp(9000);
-  if(!q || !Number.isFinite(Number(q.price))) throw new Error('SOX 최신 네이버 조회 실패');
-  q.source = '네이버 증권 실시간';
-  return q;
+  // 2) GitHub Pages 모바일 CORS 보조: 동일한 네이버 nation URL만 중계
+  try{
+    const root = await fetchJsonViaAllOriginsRaw(NAVER_SOX_NATION, 10000);
+    const q = normalizeSoxNation(root);
+    if(!q || !Number.isFinite(Number(q.price))) throw new Error('SOX mobile nation parse 실패');
+    q.source = '네이버 증권 실시간';
+    return q;
+  }catch(e){
+    console.warn('[SOX] mobile fallback failed', e);
+  }
+
+  throw new Error('SOX 최신 네이버 조회 실패');
 }
 
 function saveIndexCache(prefix, q){
@@ -1306,6 +1317,9 @@ async function loadOneIndex(prefix, getter, options={}){
   if(cacheFirst){
     const cached = loadIndexCache(prefix);
     if(cached){
+      // SOX는 값이 캐시여도 '조회 시각'은 이번 새로고침 시각으로 표시합니다.
+      // 값의 마지막 정상 수신 시각은 source 문구에 그대로 남겨 사실관계를 구분합니다.
+      if(prefix === 'sox') cached.checkedAt = options.checkedAt || Date.now();
       renderIndex(prefix, cached);
       hadVisibleValue = true;
     }
@@ -1327,11 +1341,24 @@ async function loadOneIndex(prefix, getter, options={}){
   }catch(e){
     console.error('[INDEX] ' + prefix + ' failed', e);
 
-    // 이미 캐시를 표시 중이면 그대로 유지합니다.
-    if(hadVisibleValue) return false;
+    // 이미 캐시를 표시 중이어도 SOX의 '조회 시각'은 이번 갱신 시각으로 업데이트합니다.
+    if(hadVisibleValue){
+      if(prefix === 'sox'){
+        const cached = loadIndexCache(prefix);
+        if(cached){
+          cached.checkedAt = options.checkedAt || Date.now();
+          renderIndex(prefix, cached);
+        }
+      }
+      return false;
+    }
 
     const cached = loadIndexCache(prefix);
-    if(cached){ renderIndex(prefix, cached); return false; }
+    if(cached){
+      if(prefix === 'sox') cached.checkedAt = options.checkedAt || Date.now();
+      renderIndex(prefix, cached);
+      return false;
+    }
     const safe = INDEX_SAFE_SNAPSHOT[prefix];
     if(safe){ renderIndex(prefix, safe); return false; }
     document.getElementById(prefix + 'Value').textContent = '-';
@@ -1371,7 +1398,11 @@ async function refreshIndexSameWay(prefix, getter, options={}){
       await waitForVisiblePaint();
 
       const cached = loadIndexCache(prefix);
-      if(cached) renderIndex(prefix, cached);
+      if(cached){
+        // 수동 새로고침 시 SOX 값이 캐시여도 조회 시각은 KOSPI와 동일한 checkedAt을 사용합니다.
+        if(prefix === 'sox') cached.checkedAt = options.checkedAt || Date.now();
+        renderIndex(prefix, cached);
+      }
     }
 
     // 최신값은 화면을 비우지 않고 뒤에서 교체합니다.
@@ -1384,7 +1415,11 @@ async function refreshIndexSameWay(prefix, getter, options={}){
   }catch(e){
     console.error('[INDEX] ' + prefix + ' failed', e);
     const cached = loadIndexCache(prefix);
-    if(cached){ renderIndex(prefix, cached); return false; }
+    if(cached){
+      if(prefix === 'sox') cached.checkedAt = options.checkedAt || Date.now();
+      renderIndex(prefix, cached);
+      return false;
+    }
     const safe = INDEX_SAFE_SNAPSHOT[prefix];
     if(safe){ renderIndex(prefix, safe); return false; }
     document.getElementById(prefix + 'Value').textContent = '-';
