@@ -589,7 +589,10 @@ button:active,.btn:active,.logbtn:active,.pressed{
     client.on("connect", ()=>{ mqttOk = true; 
       setPill(stMqtt, true, "MQTT: OK");
       addLog("MQTT connected");
-      client.subscribe(Object.values(TOPIC), { qos:0 }, (err)=>{
+      // Browser only needs status/log topics. Do not subscribe to command
+      // topics, which only creates needless echoed traffic on a public broker.
+      const statusTopics = [TOPIC.miboxStatus, TOPIC.irStatus, TOPIC.r433Status, TOPIC.r433Log];
+      client.subscribe(statusTopics, { qos:0 }, (err)=>{
         if(err) addLog("SUB ERR: " + err.message);
         else addLog("Subscribed topics");
       });
@@ -615,6 +618,11 @@ button:active,.btn:active,.logbtn:active,.pressed{
       bleLastTs = 0;
       setPill(stBle, false, "BLE: --");
     });
+    client.on("offline", ()=>{
+      mqttOk = false;
+      setPill(stMqtt, false, "MQTT: --");
+      addLog("MQTT offline");
+    });
     client.on("error", (e)=> addLog("MQTT ERR: " + e.message));
 
     client.on("message", (topic, payload)=>{
@@ -634,20 +642,8 @@ button:active,.btn:active,.logbtn:active,.pressed{
           const j = JSON.parse(msg);
           const now = Date.now();
 
-          // If LWT/offline marker arrives (ts==0), don't flicker OFF immediately.
-          // Reset freshness and show unknown; stale checker will turn it to OFF if no heartbeat follows.
-          if(j.ts === 0){
-            // LWT/offline marker can arrive briefly during reconnect.
-            // If we recently had a fresh heartbeat, ignore this marker to prevent flicker.
-            if(bleLastTs && (now - bleLastTs) <= BLE_STALE_MS){
-              return;
-            }
-            ble = false;
-            bleLastTs = 0;
-            bleOffStart = 0;
-            setPill(stBle, false, "BLE: --");
-            return;
-          }
+          // ts==0 only means NTP time is not valid yet. It is NOT a BLE-off/LWT
+          // marker anymore (gateway LWT uses its own topic), so always trust j.ble.
 
           // Ignore stale retained snapshots (prevents OFF/OK flicker on first load)
           if(j.ts && j.ts > 1700000000){
@@ -666,16 +662,21 @@ button:active,.btn:active,.logbtn:active,.pressed{
             ble = true;
             setPill(stBle, true, "BLE: OK");
           }else{
-            // OFF: debounce so brief BLE hiccups don't flip the UI
-            if(!bleOffStart) bleOffStart = now;
-            const offLongEnough = (now - bleOffStart) >= BLE_UI_OFF_CONFIRM_MS;
-            if(offLongEnough){
+            // OFF debounce is only valid after a previously confirmed ON state.
+            // On first load, ble is null/false; never invent a temporary BLE: OK.
+            if(ble === true){
+              if(!bleOffStart) bleOffStart = now;
+              const offLongEnough = (now - bleOffStart) >= BLE_UI_OFF_CONFIRM_MS;
+              if(offLongEnough){
+                ble = false;
+                setPill(stBle, false, "BLE: OFF");
+              }else{
+                setPill(stBle, true, "BLE: OK");
+              }
+            }else{
+              bleOffStart = now;
               ble = false;
               setPill(stBle, false, "BLE: OFF");
-            }else{
-              // keep previous OK during the debounce window
-              ble = true;
-              setPill(stBle, true, "BLE: OK");
             }
           }
         }catch(e){}
