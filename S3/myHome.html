@@ -139,7 +139,7 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
 <body>
 <div class="wrap">
   <h1>🏠 myHome Dashboard</h1>
-  <div class="sub">시장 · 보유자산 · YouTube · 뉴스 · 바로가기 · <span id="appVersion">v35c</span></div>
+  <div class="sub">시장 · 보유자산 · YouTube · 뉴스 · 바로가기 · <span id="appVersion">v35i</span></div>
 
   <div class="grid">
 
@@ -153,7 +153,7 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
           <div id="kospiTime" class="market-time">-</div>
         </div>
         <div class="market-box">
-          <div class="market-title"><span>🇺🇸 필라델피아 반도체지수</span><span class="badge">SOX</span></div>
+          <div class="market-title"><span>필라델피아 반도체지수</span><span class="badge">SOX</span></div>
           <div id="soxValue" class="market-value">-</div>
           <div id="soxChange" class="market-change flat">조회 중...</div>
           <div id="soxTime" class="market-time">-</div>
@@ -812,7 +812,7 @@ const NAVER_SOX_NATION = 'https://api.stock.naver.com/index/nation/USA'; // 미�
 const NAVER_SOX_CHART = 'https://api.stock.naver.com/chart/foreign/index/.SOX?periodType=dayCandle'; // 장마감 보조 검증
 const NAVER_KOSPI_PAGE = 'https://m.stock.naver.com/domestic/index/KOSPI';
 const NAVER_SOX_PAGE = 'https://m.stock.naver.com/worldstock/index/.SOX';
-const INDEX_CACHE_KEY = 'myHome_naverIndexCache_v21'; // mobile SOX stale-cache reset
+const INDEX_CACHE_KEY = 'myHome_naverIndexCache_v24'; // SOX 단일 네이버 polling 경로 적용 후 이전 캐시 폐기
 const SOX_MAX_STALE_MS = 5 * 24 * 60 * 60 * 1000; // 주말/휴장 고려, 5일 초과 SOX 값은 폐기
 
 // 네이버 공개 시세를 직접 확인한 마지막 안전 스냅샷.
@@ -913,24 +913,25 @@ async function fetchJsonViaCorsProxyIo(url, timeoutMs=7000){
   }
 }
 
-async function fetchNaverJsonMulti(url){
-  // PC는 Naver API 직접조회가 잘 되지만 Android/file:// 환경에서는 CORS/네트워크 조건이 달라질 수 있습니다.
-  // 모바일에서도 PC와 같은 최신 응답을 얻도록 직접조회와 4개 우회 경로를 동시에 사용하고,
-  // 휴대폰 데이터망에서 응답이 늦어지는 경우를 고려해 timeout을 조금 더 넉넉하게 둡니다.
+async function fetchNaverJsonProxyCandidates(url, normalizer){
+  // 직접 네이버 조회가 막힌 환경에서만 사용하는 보조 경로입니다.
+  // 예전처럼 Promise.any()로 "가장 먼저 온 프록시 응답"을 채택하지 않습니다.
+  // 프록시 캐시에 남은 과거값이 먼저 도착해 SOX 최신값을 덮는 문제를 피하기 위해
+  // 모든 보조 응답을 받은 뒤 normalizer를 통과한 후보만 반환합니다.
   const jobs = [
-    fetchJsonDirect(url, 5000),
-    fetchJsonViaCorsProxyIo(url, 7500),
-    fetchJsonViaAllOriginsRaw(url, 8000),
-    fetchJsonViaCodeTabs(url, 8000),
-    fetchJsonViaAllOriginsGet(url, 8000)
+    fetchJsonViaCorsProxyIo(url, 8000),
+    fetchJsonViaAllOriginsRaw(url, 9000),
+    fetchJsonViaCodeTabs(url, 9000),
+    fetchJsonViaAllOriginsGet(url, 9000)
   ];
 
-  try{
-    return await Promise.any(jobs);
-  }catch(e){
-    console.warn('[INDEX] all Naver JSON fetch paths failed', e);
-    throw e;
-  }
+  const settled = await Promise.allSettled(jobs);
+  return settled
+    .filter(r => r.status === 'fulfilled')
+    .map(r => {
+      try { return normalizer(r.value); } catch(e) { return null; }
+    })
+    .filter(q => q && Number.isFinite(Number(q.price)));
 }
 
 function fetchKospiLegacyJSONP(timeoutMs=8000){
@@ -1149,31 +1150,72 @@ function isSoxQuoteTooOld(q){
   return (Date.now() - t) > SOX_MAX_STALE_MS;
 }
 
+function fetchSoxPollingViaJsonp(timeoutMs=9000){
+  // 모바일/file://에서 네이버 polling fetch가 CORS로 막힐 때에도
+  // "같은 NAVER_SOX_POLLING URL"의 응답만 JSONP 중계로 가져옵니다.
+  return new Promise((resolve, reject) => {
+    const cb = '__myHomeSox_' + Date.now() + '_' + Math.floor(Math.random()*100000);
+    const script = document.createElement('script');
+    let done = false;
+
+    const cleanup = () => {
+      if(done) return;
+      done = true;
+      clearTimeout(timer);
+      try { delete window[cb]; } catch(e) { window[cb] = undefined; }
+      if(script.parentNode) script.parentNode.removeChild(script);
+    };
+
+    window[cb] = wrap => {
+      try{
+        let root = wrap;
+        if(wrap && typeof wrap.contents === 'string') root = JSON.parse(wrap.contents);
+        const q = normalizeSoxPolling(root);
+        if(!q || !Number.isFinite(Number(q.price))) throw new Error('SOX JSONP parse 실패');
+        cleanup();
+        resolve(q);
+      }catch(e){
+        cleanup();
+        reject(e);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('SOX JSONP timeout'));
+    }, timeoutMs);
+
+    script.onerror = () => {
+      cleanup();
+      reject(new Error('SOX JSONP script error'));
+    };
+
+    const target = NAVER_SOX_POLLING + '&_=' + Date.now();
+    script.src = 'https://api.allorigins.win/get?callback=' + encodeURIComponent(cb) +
+      '&url=' + encodeURIComponent(target) + '&_=' + Date.now();
+    document.head.appendChild(script);
+  });
+}
+
 async function getSoxNaver(){
-  // PC에서 정상인 실시간 polling을 최우선으로 사용하되,
-  // 모바일에서 polling CORS가 막혀도 같은 날짜의 값을 얻을 수 있도록 미국지수 목록 + 일봉도 동시에 조회합니다.
-  // 세 경로 중 "가장 최신 거래일/시각" 후보를 고르므로 9/23 같은 오래된 nation 응답이 9/30 값을 덮지 않습니다.
-  const results = await Promise.allSettled([
-    fetchNaverJsonMulti(NAVER_SOX_POLLING).then(normalizeSoxPolling),
-    fetchNaverJsonMulti(NAVER_SOX_NATION).then(normalizeSoxNation),
-    fetchNaverJsonMulti(NAVER_SOX_CHART).then(normalizeSoxChart)
-  ]);
-
-  const candidates = results
-    .filter(r => r.status === 'fulfilled')
-    .map(r => r.value)
-    .filter(q => q && Number.isFinite(Number(q.price)))
-    .filter(q => !isSoxQuoteTooOld(q));
-
-  if(candidates.length){
-    candidates.sort((a,b) => soxFreshnessScore(b) - soxFreshnessScore(a));
-    const best = candidates[0];
-    console.info('[SOX] selected freshest quote', best?.source, best?.tradedAt, best?.price);
-    return best;
+  // SOX는 딱 한 소스만 사용합니다:
+  // 네이버 SOX 상세 화면의 실시간 polling URL(NAVER_SOX_POLLING).
+  // PC: 직접 fetch, 모바일/file://: 동일 URL을 JSONP 중계로 가져옵니다.
+  // nation/chart/여러 프록시 후보를 섞지 않아 네이버 화면과 값이 어긋나는 문제를 제거합니다.
+  try{
+    const root = await fetchJsonDirect(NAVER_SOX_POLLING, 5500);
+    const q = normalizeSoxPolling(root);
+    if(!q || !Number.isFinite(Number(q.price))) throw new Error('SOX polling parse 실패');
+    q.source = '네이버 증권 실시간';
+    return q;
+  }catch(e){
+    console.warn('[SOX] direct polling failed -> same URL JSONP fallback', e);
   }
 
-  console.warn('[SOX] no fresh quote from polling/nation/chart', results);
-  throw new Error('SOX 최신 네이버 조회 실패');
+  const q = await fetchSoxPollingViaJsonp(9000);
+  if(!q || !Number.isFinite(Number(q.price))) throw new Error('SOX 최신 네이버 조회 실패');
+  q.source = '네이버 증권 실시간';
+  return q;
 }
 
 function saveIndexCache(prefix, q){
@@ -1238,14 +1280,17 @@ function renderIndex(prefix, q){
 
   const parts = [];
   if(q.source) parts.push(q.source);
-  if(q.tradedAt){
-    if(prefix === 'sox'){
-      parts.push(formatSoxNaverTime(q.tradedAt));
-    }else{
-      const dt = new Date(q.tradedAt);
-      parts.push(isNaN(dt.getTime()) ? String(q.tradedAt) : dt.toLocaleString('ko-KR'));
-    }
+
+  // KOSPI / SOX 모두 '실제 거래일'이 아니라 이 페이지가 네이버 금융을 조회한
+  // 동일한 한국 시각을 표시합니다. SOX 값 자체의 조회 로직은 기존 안정판 그대로 유지합니다.
+  const checked = new Date(q.checkedAt || Date.now());
+  if(!isNaN(checked.getTime())){
+    parts.push('조회 ' + checked.toLocaleString('ko-KR'));
+  }else if(q.tradedAt){
+    const dt = new Date(q.tradedAt);
+    parts.push(isNaN(dt.getTime()) ? String(q.tradedAt) : dt.toLocaleString('ko-KR'));
   }
+
   if(q.state) parts.push(marketStatusText(q.state));
   document.getElementById(prefix + 'Time').textContent = parts.filter(Boolean).join(' · ') || '네이버 증권';
 }
@@ -1275,6 +1320,7 @@ async function loadOneIndex(prefix, getter, options={}){
   try{
     const q = await getter();
     if(!q || !Number.isFinite(Number(q.price))) throw new Error('유효한 지수값 없음');
+    q.checkedAt = options.checkedAt || Date.now();
     renderIndex(prefix, q);
     saveIndexCache(prefix, q);
     return true;
@@ -1331,6 +1377,7 @@ async function refreshIndexSameWay(prefix, getter, options={}){
     // 최신값은 화면을 비우지 않고 뒤에서 교체합니다.
     const q = await getter();
     if(!q || !Number.isFinite(Number(q.price))) throw new Error('유효한 지수값 없음');
+    q.checkedAt = options.checkedAt || Date.now();
     renderIndex(prefix, q);
     saveIndexCache(prefix, q);
     return true;
@@ -1350,10 +1397,20 @@ async function refreshIndexSameWay(prefix, getter, options={}){
 }
 
 async function loadMarketIndices(){
-  // 수동 새로고침도 두 지수가 동일한 공통 루틴을 사용합니다.
+  // 한 번의 수동 새로고침에서 KOSPI와 SOX에 완전히 동일한 한국 조회시각을 부여합니다.
+  const checkedAt = Date.now();
   await Promise.all([
-    refreshIndexSameWay('kospi', getKospiNaver, {visibleRefresh:true}),
-    refreshIndexSameWay('sox', getSoxNaver, {visibleRefresh:true})
+    refreshIndexSameWay('kospi', getKospiNaver, {visibleRefresh:true, checkedAt}),
+    refreshIndexSameWay('sox', getSoxNaver, {visibleRefresh:true, checkedAt})
+  ]);
+}
+
+async function refreshMarketIndicesQuiet(){
+  // 자동 갱신도 두 지수를 같은 시각으로 갱신하되 화면을 깜빡이지 않습니다.
+  const checkedAt = Date.now();
+  await Promise.all([
+    loadOneIndex('kospi', getKospiNaver, {quiet:true, cacheFirst:true, checkedAt}),
+    loadOneIndex('sox', getSoxNaver, {quiet:true, cacheFirst:true, checkedAt})
   ]);
 }
 
@@ -1651,21 +1708,19 @@ function startDashboard(){
   loadAnalogSettingsToUI();
   loadStocksDirect();
 
-  // 브라우저 새로고침 시 KOSPI와 SOX가 동일한 공통 표시/갱신 루틴을 사용합니다.
-  refreshIndexSameWay('kospi', getKospiNaver, {visibleRefresh:true});
-  refreshIndexSameWay('sox', getSoxNaver, {visibleRefresh:true});
+  // 최초 로드부터 KOSPI와 SOX를 같은 한국 조회시각으로 표시합니다.
+  loadMarketIndices();
 
   loadAnalogChannelStats();
 
   setInterval(loadStocksDirect, 60000);
-  // 자동 갱신도 KOSPI와 SOX 모두 동일하게 60초 주기입니다.
-  setInterval(() => loadOneIndex('kospi', getKospiNaver, {quiet:true, cacheFirst:true}), 60000);
-  setInterval(() => loadOneIndex('sox', getSoxNaver, {quiet:true, cacheFirst:true}), 60000);
+  // 자동 갱신도 하나의 공통 타이머에서 두 지수를 함께 갱신합니다.
+  setInterval(refreshMarketIndicesQuiet, 60000);
 
-  // 모바일 브라우저는 백그라운드에서 타이머가 멈출 수 있으므로 화면 복귀 시 SOX만 즉시 최신 조회합니다.
+  // 모바일에서 화면으로 돌아오면 두 지수를 동시에 재조회합니다.
   document.addEventListener('visibilitychange', () => {
     if(document.visibilityState === 'visible'){
-      loadOneIndex('sox', getSoxNaver, {quiet:true, cacheFirst:false});
+      refreshMarketIndicesQuiet();
     }
   });
 
