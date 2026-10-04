@@ -532,6 +532,7 @@ button:active,.btn:active,.logbtn:active,.pressed{
   const TOPIC = {
     miboxCmd: "tswell/mibox3/cmd",
     miboxStatus: "tswell/mibox3/status",
+    gatewayStatus: "tswell/gateway/status",
     irCmd: "tswell/ir/cmd",
     irStatus: "tswell/ir/status",
     r433Cmd: "tswell/433home/cmd",
@@ -542,14 +543,19 @@ button:active,.btn:active,.logbtn:active,.pressed{
   let client = null;
   let gw = { wifi:null, mqtt:null, rssi:null };
   let gwLastTs = 0; // ms timestamp of last 433 status update (gateway heartbeat)
-  const GW_STALE_MS = 7000; // 7s without 433 status => gateway offline
+  const GW_STALE_MS = 45000; // tolerate short broker / Wi-Fi jitter; ESP32 sends every ~1.5s
 
   let ble = null;
-  let bleLastTs = 0; // ms timestamp of last BLE status update
-  const BLE_STALE_MS = 6000; // stable: 6s timeout
+  let bleLastTs = 0; // ms timestamp of last live BLE status update
+  const BLE_STALE_MS = 45000; // ESP32 BLE heartbeat is ~2s; allow several missed packets
   let bleOffStart = 0; // UI-side OFF debounce start (ms)
-  const BLE_UI_OFF_CONFIRM_MS = 4000; // require 4s continuous OFF before showing OFF
+  const BLE_UI_OFF_CONFIRM_MS = 5000; // require continuous real OFF before showing OFF
+  const MQTT_UI_GRACE_MS = 30000; // do not erase Gateway/BLE on a brief browser MQTT reconnect
   let mqttOk = false;
+  let mqttLostTs = 0;
+  let gatewayOfflineTs = 0;
+  let lastGatewayUptime = null;
+  let lastGatewayMqttConnects = null;
 
 
   const $ = (id)=>document.getElementById(id);
@@ -582,56 +588,96 @@ button:active,.btn:active,.logbtn:active,.pressed{
     client = mqtt.connect(url, {
       clientId: cid,
       clean: true,
-      reconnectPeriod: 1500,
-      keepalive: 30,
+      reconnectPeriod: 3000,
+      connectTimeout: 10000,
+      keepalive: 20,
+      resubscribe: true,
     });
 
-    client.on("connect", ()=>{ mqttOk = true; 
+    client.on("connect", ()=>{
+      mqttOk = true;
+      mqttLostTs = 0;
       setPill(stMqtt, true, "MQTT: OK");
-      addLog("MQTT connected");
+      addLog("MQTT connected / UI stable-v4");
       // Browser only needs status/log topics. Do not subscribe to command
       // topics, which only creates needless echoed traffic on a public broker.
-      const statusTopics = [TOPIC.miboxStatus, TOPIC.irStatus, TOPIC.r433Status, TOPIC.r433Log];
+      const statusTopics = [TOPIC.miboxStatus, TOPIC.gatewayStatus, TOPIC.irStatus, TOPIC.r433Status, TOPIC.r433Log];
       client.subscribe(statusTopics, { qos:0 }, (err)=>{
         if(err) addLog("SUB ERR: " + err.message);
         else addLog("Subscribed topics");
       });
     });
 
-    client.on("reconnect", ()=>{
+    function markMqttTransportLost(reason){
       mqttOk = false;
+      if(!mqttLostTs) mqttLostTs = Date.now();
       setPill(stMqtt, false, "MQTT: --");
-      // MQTT가 흔들릴 때 Gateway/BLE는 판정 보류
-      gwLastTs = 0;
-      setPill(stGw, false, "Gateway: --");
-      stRssi.innerText = "RSSI: --";
-      bleLastTs = 0;
-      setPill(stBle, false, "BLE: --");
-    });
+      // IMPORTANT: do not clear Gateway/BLE here. A browser WebSocket reconnect
+      // does not mean the ESP32 or its BLE link went offline. The stale checker
+      // applies a grace period and evaluates each state independently.
+      if(reason) addLog(reason);
+    }
 
-    client.on("close", ()=>{
-      mqttOk = false;
-      setPill(stMqtt, false, "MQTT: --");
-      gwLastTs = 0;
-      setPill(stGw, false, "Gateway: --");
-      stRssi.innerText = "RSSI: --";
-      bleLastTs = 0;
-      setPill(stBle, false, "BLE: --");
-    });
-    client.on("offline", ()=>{
-      mqttOk = false;
-      setPill(stMqtt, false, "MQTT: --");
-      addLog("MQTT offline");
-    });
+    client.on("reconnect", ()=> markMqttTransportLost("MQTT reconnecting"));
+    client.on("close", ()=> markMqttTransportLost("MQTT socket closed"));
+    client.on("offline", ()=> markMqttTransportLost("MQTT offline"));
     client.on("error", (e)=> addLog("MQTT ERR: " + e.message));
 
-    client.on("message", (topic, payload)=>{
+    client.on("message", (topic, payload, packet)=>{
       const msg = payload.toString();
+
+      if(topic === TOPIC.gatewayStatus){
+        try{
+          const j = JSON.parse(msg);
+          const now = Date.now();
+          if(j.online === true){
+            gatewayOfflineTs = 0;
+            gwLastTs = now;
+            const rssi = (j.rssi ?? gw.rssi ?? "--");
+            setPill(stGw, true, "Gateway: OK");
+            stRssi.innerText = "RSSI: " + rssi;
+
+            // Diagnostic: distinguish an ESP32 reboot from a mere MQTT reconnect.
+            if(lastGatewayUptime !== null && Number.isFinite(j.uptime) && j.uptime < lastGatewayUptime){
+              addLog("ESP32 reboot detected (uptime reset)");
+            }
+            if(lastGatewayMqttConnects !== null && Number.isFinite(j.mqttConnects) && j.mqttConnects > lastGatewayMqttConnects){
+              addLog("ESP32 MQTT reconnected (#" + j.mqttConnects + ")");
+            }
+            if(Number.isFinite(j.uptime)) lastGatewayUptime = j.uptime;
+            if(Number.isFinite(j.mqttConnects)) lastGatewayMqttConnects = j.mqttConnects;
+
+            // Gateway heartbeat also carries the physical BLE state. This is a live
+            // device report, not an inference from missing MQTT packets.
+            if(typeof j.ble === "boolean"){
+              bleLastTs = now;
+              if(j.ble){
+                bleOffStart = 0;
+                ble = true;
+                setPill(stBle, true, "BLE: OK");
+              }else if(ble === true){
+                if(!bleOffStart) bleOffStart = now;
+                if((now - bleOffStart) >= BLE_UI_OFF_CONFIRM_MS){
+                  ble = false;
+                  setPill(stBle, false, "BLE: OFF");
+                }
+              }else{
+                ble = false;
+                setPill(stBle, false, "BLE: OFF");
+              }
+            }
+          }else if(j.online === false){
+            gatewayOfflineTs = now;
+          }
+        }catch(e){}
+      }
+
       if(topic === TOPIC.r433Status){
         try{
           const j = JSON.parse(msg);
           gw = j;
           gwLastTs = Date.now();
+          gatewayOfflineTs = 0;
           const ok = (j.wifi===1 && j.mqtt===1);
           setPill(stGw, ok, "Gateway: " + (ok ? "OK":"BAD"));
           stRssi.innerText = "RSSI: " + (j.rssi ?? "--");
@@ -642,19 +688,16 @@ button:active,.btn:active,.logbtn:active,.pressed{
           const j = JSON.parse(msg);
           const now = Date.now();
 
-          // ts==0 only means NTP time is not valid yet. It is NOT a BLE-off/LWT
-          // marker anymore (gateway LWT uses its own topic), so always trust j.ble.
-
-          // Ignore stale retained snapshots (prevents OFF/OK flicker on first load)
-          if(j.ts && j.ts > 1700000000){
-            const age = now - (j.ts*1000);
-            if(age > BLE_STALE_MS){
-              return;
-            }
+          // Do not compare ESP32 Unix time with the tablet/browser clock. Clock skew
+          // can make a perfectly live BLE heartbeat look stale. Freshness is based
+          // only on receive-time in this browser.
+          if(packet && packet.retain && bleLastTs === 0){
+            // Retained snapshot may be old. Wait for the next live heartbeat (~2s).
+            return;
           }
 
           const cand = !!j.ble;
-          bleLastTs = now; // use receive-time
+          bleLastTs = now; // authoritative receive-time
 
           if(cand){
             // ON: clear OFF debounce and reflect immediately
@@ -751,47 +794,39 @@ button:active,.btn:active,.logbtn:active,.pressed{
 
   // Gateway/BLE stale checker
   setInterval(()=>{
-    // MQTT 끊김이면 전부 판정 보류
+    const now = Date.now();
+
+    // Browser MQTT transport can briefly reconnect even while the ESP32 is fine.
+    // Preserve the last known Gateway/BLE state during a short transport glitch.
     if(!mqttOk){
-      gwLastTs = 0;
-      setPill(stGw, false, "Gateway: --");
-      stRssi.innerText = "RSSI: --";
-
-      ble = false;
-      bleLastTs = 0;
-      setPill(stBle, false, "BLE: --");
-      return;
-    }
-
-    // Gateway(433 status) freshness
-    if(!gwLastTs){
-      setPill(stGw, false, "Gateway: --");
-      stRssi.innerText = "RSSI: --";
-    }else{
-      const gwStale = (Date.now() - gwLastTs) > GW_STALE_MS;
-      if(gwStale){
-        gwLastTs = 0;
-        setPill(stGw, false, "Gateway: --");
+      if(!mqttLostTs) mqttLostTs = now;
+      if((now - mqttLostTs) > MQTT_UI_GRACE_MS){
+        setPill(stGw, false, "Gateway: ?");
         stRssi.innerText = "RSSI: --";
-        // Gateway 오프라인이면 BLE도 -- 로
-        ble = false;
-        bleLastTs = 0;
-        setPill(stBle, false, "BLE: --");
-        return;
+        setPill(stBle, false, "BLE: ?");
       }
-    }
-
-    // BLE freshness (Gateway가 살아있을 때만 의미 있음)
-    if(!bleLastTs){
-      setPill(stBle, false, "BLE: --");
       return;
     }
 
-    const bleStale = (Date.now() - bleLastTs) > BLE_STALE_MS;
-    if(bleStale){
+    // Gateway and BLE are independent. Never clear BLE just because a 433/gateway
+    // heartbeat was delayed.
+    if(gatewayOfflineTs && (now - gatewayOfflineTs) > MQTT_UI_GRACE_MS){
+      setPill(stGw, false, "Gateway: ?");
+      stRssi.innerText = "RSSI: --";
+    }else if(!gwLastTs){
+      setPill(stGw, false, "Gateway: --");
+      stRssi.innerText = "RSSI: --";
+    }else if((now - gwLastTs) > GW_STALE_MS){
+      setPill(stGw, false, "Gateway: ?");
+      stRssi.innerText = "RSSI: --";
+    }
+
+    if(!bleLastTs){
+      setPill(stBle, false, "BLE: ?");
+    }else if((now - bleLastTs) > BLE_STALE_MS){
+      // Missing MQTT heartbeat is not proof that the physical BLE link is OFF.
       ble = false;
-      bleLastTs = 0;
-      setPill(stBle, false, "BLE: --");
+      setPill(stBle, false, "BLE: ?");
     }
   }, 1000);
 
@@ -917,7 +952,9 @@ window.addEventListener('DOMContentLoaded', initMiAutoRepeatButtons);
   // Android Chrome PWA install support
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch((err) => {
+      navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then((reg) => {
+        reg.update().catch(()=>{});
+      }).catch((err) => {
         console.warn('Service worker registration failed:', err);
       });
     });
