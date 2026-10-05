@@ -54,7 +54,9 @@ h2{font-size:17px;margin:0 0 13px}
 .stock-name{font-size:16px;font-weight:800;margin-bottom:6px}
 .stock-code{color:var(--muted);font-size:12px;margin-left:4px}
 .stock-quote{padding:8px 0 12px;border-bottom:1px solid rgba(51,65,85,.55);margin-bottom:4px}
-.stock-price{font-size:30px;line-height:1.1;font-weight:800;letter-spacing:-0.5px}
+ .stock-price{font-size:30px;line-height:1.1;font-weight:800;letter-spacing:-0.5px}
+.stock-touch-link{display:block;color:inherit;text-decoration:none;border-radius:10px;touch-action:manipulation;-webkit-tap-highlight-color:rgba(56,189,248,.18)}
+.stock-touch-link:active{background:rgba(56,189,248,.08)}
 .stock-change{margin-top:6px;font-size:15px;font-weight:800}
 .stock-sep{margin:18px 0 12px;border-top:1px solid var(--line)}
 .samsung-compare{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;border-bottom:1px solid rgba(51,65,85,.55);margin-bottom:4px}
@@ -139,7 +141,7 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
 <body>
 <div class="wrap">
   <h1>🏠 myHome Dashboard</h1>
-  <div class="sub">시장 · 보유자산 · YouTube · 뉴스 · 바로가기 · <span id="appVersion">v35j</span></div>
+  <div class="sub">시장 · 보유자산 · YouTube · 뉴스 · 바로가기 · <span id="appVersion">v35l</span></div>
 
   <div class="grid">
 
@@ -173,17 +175,21 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
       <div class="samsung-compare">
         <div class="samsung-compare-side">
           <div class="stock-name">삼성전자우 <span class="stock-code">005935</span></div>
-          <div class="stock-quote">
-            <div id="samsungPrice" class="stock-price">-</div>
-            <div id="samsungChange" class="stock-change flat">-</div>
-          </div>
+          <a class="stock-touch-link" href="https://m.stock.naver.com/domestic/stock/005935/total" target="_blank" rel="noopener noreferrer" aria-label="삼성전자우 네이버 증권 열기">
+            <div class="stock-quote">
+              <div id="samsungPrice" class="stock-price">-</div>
+              <div id="samsungChange" class="stock-change flat">-</div>
+            </div>
+          </a>
         </div>
         <div class="samsung-compare-side right">
           <div class="stock-name">삼성전자 <span class="stock-code">005930</span></div>
-          <div class="stock-quote">
-            <div id="samsungCommonPrice" class="stock-price">-</div>
-            <div id="samsungCommonChange" class="stock-change flat">-</div>
-          </div>
+          <a class="stock-touch-link" href="https://m.stock.naver.com/domestic/stock/005930/total" target="_blank" rel="noopener noreferrer" aria-label="삼성전자 네이버 증권 열기">
+            <div class="stock-quote">
+              <div id="samsungCommonPrice" class="stock-price">-</div>
+              <div id="samsungCommonChange" class="stock-change flat">-</div>
+            </div>
+          </a>
         </div>
       </div>
       <div class="row"><span class="muted">시가</span><strong id="samsungOpen">-</strong></div>
@@ -202,10 +208,12 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
       <div class="stock-sep"></div>
 
       <div class="stock-name">SOL AI반도체TOP2플러스 <span class="stock-code">0167A0</span></div>
-      <div class="stock-quote">
-        <div id="solPrice" class="stock-price">-</div>
-        <div id="solChange" class="stock-change flat">-</div>
-      </div>
+      <a class="stock-touch-link" href="https://m.stock.naver.com/domestic/stock/0167A0/total" target="_blank" rel="noopener noreferrer" aria-label="SOL AI반도체TOP2플러스 네이버 증권 열기">
+        <div class="stock-quote">
+          <div id="solPrice" class="stock-price">-</div>
+          <div id="solChange" class="stock-change flat">-</div>
+        </div>
+      </a>
       <div class="row"><span class="muted">시가</span><strong id="solOpen">-</strong></div>
       <div class="row"><span class="muted">전일 종가</span><span id="solPrevClose">-</span></div>
       <div class="row"><span class="muted">고가 / 저가</span><span id="solHL">-</span></div>
@@ -812,7 +820,7 @@ const NAVER_SOX_NATION = 'https://api.stock.naver.com/index/nation/USA'; // SOX 
 const NAVER_SOX_CHART = 'https://api.stock.naver.com/chart/foreign/index/.SOX?periodType=dayCandle'; // 장마감 보조 검증
 const NAVER_KOSPI_PAGE = 'https://m.stock.naver.com/domestic/index/KOSPI';
 const NAVER_SOX_PAGE = 'https://m.stock.naver.com/worldstock/index/.SOX';
-const INDEX_CACHE_KEY = 'myHome_naverIndexCache_v25'; // SOX 단일 네이버 polling 경로 적용 후 이전 캐시 폐기
+const INDEX_CACHE_KEY = 'myHome_naverIndexCache_v28'; // SOX polling 직접조회 + AllOrigins raw fallback, 이전 캐시 폐기
 const SOX_MAX_STALE_MS = 5 * 24 * 60 * 60 * 1000; // 주말/휴장 고려, 5일 초과 SOX 값은 폐기
 
 // 네이버 공개 시세를 직접 확인한 마지막 안전 스냅샷.
@@ -1198,35 +1206,21 @@ function fetchSoxPollingViaJsonp(timeoutMs=9000){
 }
 
 async function getSoxNaver(){
-  // SOX는 네이버의 해외지수 실시간 목록 API 한 경로만 사용합니다.
-  // KOSPI와 동일하게 "네이버 현재값 -> 화면 표시" 구조이며,
-  // GitHub Pages 모바일에서 CORS로 직접조회가 막히는 경우에만
-  // 같은 네이버 URL을 AllOrigins raw로 1회 중계합니다.
-  // 값의 원천은 항상 NAVER_SOX_NATION(.SOX)입니다.
-
-  // 1) 네이버 직접조회
+  // SOX도 KOSPI처럼 단순하게 처리:
+  // 1) 네이버 실시간 polling 직접조회
+  // 2) 브라우저 CORS로 막히면 같은 polling URL을 AllOrigins raw로 1회 조회
   try{
-    const root = await fetchJsonDirect(NAVER_SOX_NATION, 6500);
-    const q = normalizeSoxNation(root);
-    if(!q || !Number.isFinite(Number(q.price))) throw new Error('SOX nation parse 실패');
-    q.source = '네이버 증권 실시간';
-    return q;
+    const root = await fetchJsonDirect(NAVER_SOX_POLLING, 7000);
+    const q = normalizeSoxPolling(root);
+    if(q) return q;
+    throw new Error('SOX polling parse 실패');
   }catch(e){
-    console.warn('[SOX] direct nation failed -> mobile fallback', e);
+    console.warn('[SOX] direct failed, AllOrigins raw fallback', e);
+    const root = await fetchJsonViaAllOriginsRaw(NAVER_SOX_POLLING, 10000);
+    const q = normalizeSoxPolling(root);
+    if(q) return q;
+    throw new Error('SOX fallback parse 실패');
   }
-
-  // 2) GitHub Pages 모바일 CORS 보조: 동일한 네이버 nation URL만 중계
-  try{
-    const root = await fetchJsonViaAllOriginsRaw(NAVER_SOX_NATION, 10000);
-    const q = normalizeSoxNation(root);
-    if(!q || !Number.isFinite(Number(q.price))) throw new Error('SOX mobile nation parse 실패');
-    q.source = '네이버 증권 실시간';
-    return q;
-  }catch(e){
-    console.warn('[SOX] mobile fallback failed', e);
-  }
-
-  throw new Error('SOX 최신 네이버 조회 실패');
 }
 
 function saveIndexCache(prefix, q){
