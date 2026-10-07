@@ -2,6 +2,7 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <time.h>
+#include <Preferences.h>
 #include <ctype.h>
 #include <string.h>
 #include <strings.h>
@@ -69,11 +70,14 @@ const char* TOPIC_IR_STATUS    = "tswell/ir/status";
 const char* TOPIC_433_CMD      = "tswell/433home/cmd";
 const char* TOPIC_433_STATUS   = "tswell/433home/status";
 const char* TOPIC_433_LOG      = "tswell/433home/log";
+const char* TOPIC_SCHEDULE_CMD = "tswell/schedule/cmd";
+const char* TOPIC_SCHEDULE_STATUS = "tswell/schedule/status";
 
 // ===================== Objects =====================
 WiFiClient espClient;
 PubSubClient mqtt(espClient);
 BleKeyboard bleKeyboard("ESP32_MiBox3_Remote", "TSWell", 100);
+Preferences schedulePrefs;
 
 // ===================== IR =====================
 const uint16_t IR_RECV_PIN    = 27;   // receiver not used now
@@ -90,21 +94,22 @@ IRsend irsend(IR_SEND_PIN);
 RCSwitch rf = RCSwitch();
 
 // ===================== Timing / intervals =====================
-static const uint32_t WIFI_RETRY_INTERVAL_MS = 10000;
-static const uint32_t WIFI_HARD_RESTART_MS = 60000UL;
-static const uint32_t MQTT_RETRY_INTERVAL_MS = 5000;
+static const uint32_t WIFI_HARD_RESTART_MS = 90000UL;  // trust ESP32 auto-reconnect first; hard restart only after 90 s
+static const uint32_t MQTT_RETRY_INTERVAL_MS = 3000;
 static const uint32_t BLE_STATUS_INTERVAL_MS = 1000;
-static const uint32_t BLE_HEARTBEAT_INTERVAL_MS = 2000;
-static const uint32_t BLE_HARD_RECOVER_MS = 300000UL;   // 5 min disconnected after a real link -> soft recover
+static const uint32_t BLE_HEARTBEAT_INTERVAL_MS = 10000;
 static const uint32_t RESET_SETTLE_MS = 700;
 static const uint32_t RESET_GUARD_MS  = 3000;
 
-uint32_t nextWiFiTryMs = 0;
 uint32_t wifiDisconnectedSinceMs = 0;
+uint32_t lastWiFiHardRestartMs = 0;
 wl_status_t lastWiFiStatus = WL_IDLE_STATUS;
 uint32_t nextMQTTTryMs = 0;
 bool lastMQTTConnected = false;
+uint32_t mqttConnectCount = 0;
+uint32_t mqttDisconnectedSinceMs = 0;
 uint32_t last433StatusMs = 0;
+uint32_t lastGatewayStatusMs = 0;
 uint32_t lastBleStatusMs = 0;
 uint32_t lastBleHeartbeatMs = 0;
 bool bleStableState = false;
@@ -193,6 +198,37 @@ struct CommandQueue {
 CommandQueue bleQueue;
 CommandQueue irQueue;
 CommandQueue rfQueue;
+
+// ===================== Daily schedules (persistent NVS) =====================
+enum ScheduleKind : uint8_t { SCHED_BLE = 0, SCHED_RF = 1, SCHED_IR = 2 };
+
+struct DailySchedule {
+  const char* id;
+  ScheduleKind kind;
+  const char* cmd;
+  bool enabled;
+  uint8_t hour;       // 0..23, Korea time
+  uint8_t minute;     // 0..59
+  uint32_t lastRunDate; // YYYYMMDD, persisted to prevent duplicate run after reboot
+};
+
+DailySchedule dailySchedules[] = {
+  {"mi_voldown", SCHED_BLE, "voldown", false, 0, 0, 0},
+  {"mi_power",   SCHED_BLE, "power",   false, 0, 0, 0},
+  {"mi_volup",   SCHED_BLE, "volup",   false, 0, 0, 0},
+  {"rf_light",   SCHED_RF,  "LIGHT",   false, 0, 0, 0},
+  {"rf_door",    SCHED_RF,  "DOOR",    false, 0, 0, 0},
+  {"ir_power1",  SCHED_IR,  "POWER1",  false, 0, 0, 0},
+  {"ir_power2",  SCHED_IR,  "POWER2",  false, 0, 0, 0},
+};
+const uint8_t DAILY_SCHEDULE_COUNT = sizeof(dailySchedules) / sizeof(dailySchedules[0]);
+uint32_t lastScheduleCheckMs = 0;
+
+// Scheduler forward declarations (keeps this sketch independent of Arduino auto-prototype quirks).
+void loadSchedules();
+void publishScheduleStatus();
+void handleScheduleCommand(const char* msg);
+void serviceDailySchedules();
 
 // ===================== Helpers =====================
 void trimInPlace(char* s){
@@ -348,7 +384,7 @@ void publish433Logf(const char* fmt, ...){
   publish433Log(buf);
 }
 
-void publishBleSnapshot(bool connected){
+void publishBleSnapshot(bool connected, bool retain = true){
   bleStableState = connected;
 
   // The web UI treats ts > 1700000000 as Unix epoch seconds and filters stale retained snapshots.
@@ -361,19 +397,24 @@ void publishBleSnapshot(bool connected){
            connected ? "true" : "false",
            (unsigned long)ts);
 
-  if(mqtt.connected()) mqtt.publish(TOPIC_MIBOX_STATUS, payload, true);
+  if(mqtt.connected()) mqtt.publish(TOPIC_MIBOX_STATUS, payload, retain);
 }
 
-void publishGatewayOnline(){
+void publishGatewayOnline(bool retain = true){
   if(!mqtt.connected()) return;
 
   const uint32_t ts = currentUnixTimestamp();
-  char payload[128];
+  const bool bleOk = bleKeyboard.isConnected();
+  char payload[220];
   snprintf(payload, sizeof(payload),
-           "{\"online\":true,\"ts\":%lu,\"rssi\":%d}",
+           "{\"online\":true,\"ts\":%lu,\"rssi\":%d,\"ble\":%s,\"uptime\":%lu,\"heap\":%lu,\"mqttConnects\":%lu}",
            (unsigned long)ts,
-           (WiFi.status() == WL_CONNECTED) ? WiFi.RSSI() : -999);
-  mqtt.publish(TOPIC_GATEWAY_STATUS, payload, true);
+           (WiFi.status() == WL_CONNECTED) ? WiFi.RSSI() : -999,
+           bleOk ? "true" : "false",
+           (unsigned long)millis(),
+           (unsigned long)ESP.getFreeHeap(),
+           (unsigned long)mqttConnectCount);
+  mqtt.publish(TOPIC_GATEWAY_STATUS, payload, retain);
 }
 
 void logConnectivityEdges(){
@@ -446,7 +487,9 @@ void publishBleStatus(){
   bool needRateTick = (now - lastBleStatusMs) >= BLE_STATUS_INTERVAL_MS;
 
   if(needEdgePublish || (needHeartbeat && needRateTick)){
-    publishBleSnapshot(real);
+    // Retain only real state changes. Periodic heartbeats are non-retained to
+    // avoid repeatedly rewriting retained records on the public MQTT broker.
+    publishBleSnapshot(real, needEdgePublish);
     lastBleStatusMs = now;
     if(needHeartbeat) lastBleHeartbeatMs = now;
 
@@ -457,79 +500,47 @@ void publishBleStatus(){
 }
 
 void bleHealthCheck(){
-  static uint32_t lastRecoverAttemptMs = 0;
-  static uint8_t recoverCount = 0;
-
-  const uint32_t now = millis();
+  // MiBox power-off / BLE disconnect is normal. Do not re-create the BLE stack.
+  // The BLE library keeps advertising after disconnect, while IR/433/Wi-Fi/MQTT
+  // must continue running independently.
   if(bleKeyboard.isConnected()){
-    bleLastRealConnMs = now;
-    recoverCount = 0;
-    return;
+    bleLastRealConnMs = millis();
   }
-
-  bool shouldRecover = false;
-  const char* reason = "";
-
-  // Before the first real BLE connection, keep advertising and leave the
-  // rest of the gateway (433 / IR / Wi-Fi / MQTT) undisturbed.
-  if(bleLastRealConnMs == 0){
-    return;
-  }
-
-  if((now - bleLastRealConnMs) >= BLE_HARD_RECOVER_MS){
-    shouldRecover = true;
-    reason = "long BLE disconnect";
-  }
-
-  if(!shouldRecover) return;
-
-  uint32_t backoffMs = 30000UL << (recoverCount < 4 ? recoverCount : 4);
-  if((now - lastRecoverAttemptMs) < backoffMs) return;
-
-  Serial.printf("[BLE] recover: %s (backoff=%lu ms)\n", reason, (unsigned long)backoffMs);
-  publish433Logf("BLE recover: %s", reason);
-
-  bleKeyboard.end();
-  delay(80);
-  bleKeyboard.begin();
-  delay(120);
-  bleKeyboard.setBatteryLevel(100);
-
-  publishBleSnapshot(false);
-  lastRecoverAttemptMs = now;
-  if(recoverCount < 10) recoverCount++;
 }
 
 // ===================== Connectivity =====================
 void startWiFiIfNeeded(){
   const uint32_t now = millis();
-  wl_status_t st = WiFi.status();
+  const wl_status_t st = WiFi.status();
 
   if(st == WL_CONNECTED){
     wifiDisconnectedSinceMs = 0;
     return;
   }
 
-  if(wifiDisconnectedSinceMs == 0) wifiDisconnectedSinceMs = now;
-  if((int32_t)(now - nextWiFiTryMs) < 0) return;
-  nextWiFiTryMs = now + WIFI_RETRY_INTERVAL_MS;
-
-  // Do not call WiFi.begin() every few seconds. Reconnect first so an in-progress
-  // association is not continuously reset. Only hard-restart Wi-Fi after a long outage.
-  if((now - wifiDisconnectedSinceMs) < WIFI_HARD_RESTART_MS){
-    Serial.println("[WiFi] reconnect()");
-    WiFi.reconnect();
+  if(wifiDisconnectedSinceMs == 0){
+    wifiDisconnectedSinceMs = now;
+    Serial.println("[WiFi] disconnected -> waiting for ESP32 auto-reconnect");
     return;
   }
 
-  Serial.println("[WiFi] hard reconnect: disconnect + begin");
+  // IMPORTANT: WiFi.setAutoReconnect(true) is already enabled. Do not also call
+  // WiFi.reconnect() every few seconds; repeated forced associations can disturb
+  // BLE/Wi-Fi coexistence. Only do a full Wi-Fi restart after a sustained outage.
+  if((now - wifiDisconnectedSinceMs) < WIFI_HARD_RESTART_MS) return;
+  if(lastWiFiHardRestartMs && (now - lastWiFiHardRestartMs) < WIFI_HARD_RESTART_MS) return;
+
+  Serial.printf("[WiFi] offline %lu ms -> one hard restart\n",
+                (unsigned long)(now - wifiDisconnectedSinceMs));
   WiFi.disconnect(false, false);
-  delay(50);
+  delay(100);
   WiFi.mode(WIFI_STA);
+  WiFi.setAutoReconnect(true);
 #if defined(HAS_ESP_WIFI_H)
   esp_wifi_set_ps(WIFI_PS_NONE);
 #endif
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  lastWiFiHardRestartMs = now;
   wifiDisconnectedSinceMs = now;
 }
 
@@ -541,12 +552,24 @@ void makeMqttClientId(char* out, size_t outSize){
 }
 
 void startMQTTIfNeeded(){
-  if(WiFi.status() != WL_CONNECTED) return;
-  if(mqtt.connected()) return;
-  if((int32_t)(millis() - nextMQTTTryMs) < 0) return;
+  if(WiFi.status() != WL_CONNECTED){
+    mqttDisconnectedSinceMs = 0;
+    return;
+  }
+  if(mqtt.connected()){
+    mqttDisconnectedSinceMs = 0;
+    return;
+  }
 
-  nextMQTTTryMs = millis() + MQTT_RETRY_INTERVAL_MS;
+  const uint32_t now = millis();
+  if(mqttDisconnectedSinceMs == 0) mqttDisconnectedSinceMs = now;
+  if((int32_t)(now - nextMQTTTryMs) < 0) return;
+
+  nextMQTTTryMs = now + MQTT_RETRY_INTERVAL_MS;
   mqtt.setServer(MQTT_BROKER, MQTT_PORT);
+
+  // Clear any half-open TCP socket before a fresh MQTT session.
+  espClient.stop();
 
   char cid[40];
   makeMqttClientId(cid, sizeof(cid));
@@ -555,19 +578,194 @@ void startMQTTIfNeeded(){
   // LWT belongs to gateway online/offline state, not to the MiBox BLE state topic.
   // This prevents a short MQTT loss from overwriting the retained BLE state with false.
   if(mqtt.connect(cid, TOPIC_GATEWAY_STATUS, 0, true, "{\"online\":false,\"ts\":0}")){
-    Serial.println("OK");
+    const uint32_t outageMs = mqttDisconnectedSinceMs ? (now - mqttDisconnectedSinceMs) : 0;
+    mqttConnectCount++;
+    mqttDisconnectedSinceMs = 0;
+    Serial.printf("OK (connect #%lu, outage=%lu ms)\n",
+                  (unsigned long)mqttConnectCount, (unsigned long)outageMs);
     mqtt.subscribe(TOPIC_MIBOX_CMD);
     mqtt.subscribe(TOPIC_IR_CMD);
     mqtt.subscribe(TOPIC_433_CMD);
-    Serial.println("[MQTT] subscribed 3 topics");
+    mqtt.subscribe(TOPIC_SCHEDULE_CMD);
+    Serial.println("[MQTT] subscribed 4 topics");
 
     publishGatewayOnline();
     publishBleSnapshot(bleKeyboard.isConnected());
     publish433Status();
     publishIrStatus("MQTT connected");
+    publishScheduleStatus();
   } else {
     Serial.print("FAIL rc=");
     Serial.println(mqtt.state());
+  }
+}
+
+// ===================== Persistent daily schedule =====================
+void scheduleKey(char prefix, uint8_t index, char* out, size_t outSize){
+  snprintf(out, outSize, "%c%u", prefix, (unsigned)index);
+}
+
+void saveScheduleSlot(uint8_t index){
+  if(index >= DAILY_SCHEDULE_COUNT) return;
+  char key[8];
+  scheduleKey('e', index, key, sizeof(key)); schedulePrefs.putBool(key, dailySchedules[index].enabled);
+  scheduleKey('h', index, key, sizeof(key)); schedulePrefs.putUChar(key, dailySchedules[index].hour);
+  scheduleKey('m', index, key, sizeof(key)); schedulePrefs.putUChar(key, dailySchedules[index].minute);
+  scheduleKey('d', index, key, sizeof(key)); schedulePrefs.putUInt(key, dailySchedules[index].lastRunDate);
+}
+
+void loadSchedules(){
+  if(!schedulePrefs.begin("unirmcSched", false)){
+    Serial.println("[SCHED] Preferences begin failed");
+    return;
+  }
+
+  for(uint8_t i=0;i<DAILY_SCHEDULE_COUNT;i++){
+    char key[8];
+    scheduleKey('e', i, key, sizeof(key)); dailySchedules[i].enabled = schedulePrefs.getBool(key, false);
+    scheduleKey('h', i, key, sizeof(key)); dailySchedules[i].hour = schedulePrefs.getUChar(key, 0);
+    scheduleKey('m', i, key, sizeof(key)); dailySchedules[i].minute = schedulePrefs.getUChar(key, 0);
+    scheduleKey('d', i, key, sizeof(key)); dailySchedules[i].lastRunDate = schedulePrefs.getUInt(key, 0);
+
+    if(dailySchedules[i].hour > 23) dailySchedules[i].hour = 0;
+    if(dailySchedules[i].minute > 59) dailySchedules[i].minute = 0;
+  }
+
+  Serial.println("[SCHED] persistent schedules loaded");
+}
+
+int findScheduleIndex(const char* id){
+  if(!id) return -1;
+  for(uint8_t i=0;i<DAILY_SCHEDULE_COUNT;i++){
+    if(strcmp(dailySchedules[i].id, id) == 0) return (int)i;
+  }
+  return -1;
+}
+
+void publishScheduleStatus(){
+  if(!mqtt.connected()) return;
+
+  StaticJsonDocument<512> doc;
+  JsonArray items = doc.createNestedArray("items");
+  for(uint8_t i=0;i<DAILY_SCHEDULE_COUNT;i++){
+    JsonObject o = items.createNestedObject();
+    o["id"] = dailySchedules[i].id;
+    o["e"] = dailySchedules[i].enabled ? 1 : 0;
+    o["h"] = dailySchedules[i].hour;
+    o["m"] = dailySchedules[i].minute;
+  }
+
+  char payload[430];
+  size_t n = serializeJson(doc, payload, sizeof(payload));
+  if(n > 0 && n < sizeof(payload)){
+    mqtt.publish(TOPIC_SCHEDULE_STATUS, payload, true);
+  }
+}
+
+void handleScheduleCommand(const char* msg){
+  StaticJsonDocument<256> doc;
+  if(deserializeJson(doc, msg)){
+    Serial.println("[SCHED] JSON parse failed");
+    return;
+  }
+
+  const char* op = doc["op"] | "";
+  if(strcmp(op, "get") == 0){
+    publishScheduleStatus();
+    return;
+  }
+
+  const char* id = doc["id"] | "";
+  int idx = findScheduleIndex(id);
+  if(idx < 0){
+    Serial.printf("[SCHED] unknown id: %s\n", id);
+    return;
+  }
+
+  if(strcmp(op, "cancel") == 0){
+    dailySchedules[idx].enabled = false;
+    dailySchedules[idx].lastRunDate = 0;
+    saveScheduleSlot((uint8_t)idx);
+    Serial.printf("[SCHED] cancel %s\n", dailySchedules[idx].id);
+    publishScheduleStatus();
+    return;
+  }
+
+  if(strcmp(op, "set") == 0){
+    int hour = doc["hour"] | -1;
+    int minute = doc["minute"] | -1;
+    if(hour < 0 || hour > 23 || minute < 0 || minute > 59){
+      Serial.printf("[SCHED] invalid time for %s\n", dailySchedules[idx].id);
+      return;
+    }
+
+    dailySchedules[idx].hour = (uint8_t)hour;
+    dailySchedules[idx].minute = (uint8_t)minute;
+    dailySchedules[idx].enabled = true;
+    dailySchedules[idx].lastRunDate = 0;
+    saveScheduleSlot((uint8_t)idx);
+    Serial.printf("[SCHED] set %s -> %02d:%02d KST daily\n", dailySchedules[idx].id, hour, minute);
+    publishScheduleStatus();
+  }
+}
+
+bool getKoreaLocalTime(struct tm* out){
+  if(!out || !validEpochTime()) return false;
+  time_t now = time(nullptr);
+  now += 9 * 60 * 60; // KST = UTC+9, no DST
+  gmtime_r(&now, out);
+  return true;
+}
+
+uint32_t koreaDateKey(const struct tm& t){
+  return (uint32_t)(t.tm_year + 1900) * 10000UL +
+         (uint32_t)(t.tm_mon + 1) * 100UL +
+         (uint32_t)t.tm_mday;
+}
+
+void runScheduledAction(uint8_t index, uint32_t dateKey){
+  if(index >= DAILY_SCHEDULE_COUNT) return;
+  DailySchedule& s = dailySchedules[index];
+
+  // Mark and persist first so a reboot in the same minute cannot execute twice.
+  s.lastRunDate = dateKey;
+  saveScheduleSlot(index);
+
+  if(s.kind == SCHED_BLE){
+    if(!bleKeyboard.isConnected()){
+      Serial.printf("[SCHED] %s skipped: BLE not connected\n", s.id);
+      publish433Logf("SCHED %s skipped: BLE OFF", s.id);
+      return;
+    }
+    enqueueCmd(bleQueue, s.cmd);
+  }else if(s.kind == SCHED_RF){
+    enqueueCmd(rfQueue, s.cmd);
+  }else if(s.kind == SCHED_IR){
+    char payload[64];
+    snprintf(payload, sizeof(payload), "{\"cmd\":\"%s\"}", s.cmd);
+    enqueueCmd(irQueue, payload);
+  }
+
+  Serial.printf("[SCHED] RUN %s (%s)\n", s.id, s.cmd);
+  publish433Logf("SCHED RUN %s", s.id);
+}
+
+void serviceDailySchedules(){
+  const uint32_t nowMs = millis();
+  if((nowMs - lastScheduleCheckMs) < 500) return;
+  lastScheduleCheckMs = nowMs;
+
+  struct tm local;
+  if(!getKoreaLocalTime(&local)) return;
+  const uint32_t today = koreaDateKey(local);
+
+  for(uint8_t i=0;i<DAILY_SCHEDULE_COUNT;i++){
+    DailySchedule& s = dailySchedules[i];
+    if(!s.enabled) continue;
+    if(s.lastRunDate == today) continue;
+    if(local.tm_hour == s.hour && local.tm_min == s.minute){
+      runScheduledAction(i, today);
+    }
   }
 }
 
@@ -718,6 +916,11 @@ void mqttCallback(char* topic, byte* payload, unsigned int length){
   copyPayloadToCString(payload, length, msg, sizeof(msg));
   if(!msg[0]) return;
 
+  if(strcmp(topic, TOPIC_SCHEDULE_CMD)==0){
+    handleScheduleCommand(msg);
+    return;
+  }
+
   if(strcmp(topic, TOPIC_MIBOX_CMD)==0){
     uint32_t droppedBefore = bleQueue.dropped;
     enqueueCmd(bleQueue, msg);
@@ -745,6 +948,8 @@ void setup(){
   Serial.begin(115200);
   delay(200);
   Serial.println("\n=== TSWell Universal Remote Gateway ===");
+
+  loadSchedules();
 
   pinMode(NOTIFY_LED_PIN, OUTPUT);
   digitalWrite(NOTIFY_LED_PIN, LOW);
@@ -785,9 +990,9 @@ void setup(){
 
   mqtt.setServer(MQTT_BROKER, MQTT_PORT);
   mqtt.setCallback(mqttCallback);
-  mqtt.setBufferSize(512);
-  mqtt.setKeepAlive(30);
-  mqtt.setSocketTimeout(5);
+  mqtt.setBufferSize(768);
+  mqtt.setKeepAlive(15);
+  mqtt.setSocketTimeout(2);
 
   publish433Log("Universal Remote Booting");
 }
@@ -797,6 +1002,7 @@ void loop(){
 
   startWiFiIfNeeded();
   serviceTimeSync();
+  serviceDailySchedules();
   startMQTTIfNeeded();
 
   if(mqtt.connected()) mqtt.loop();
@@ -805,14 +1011,20 @@ void loop(){
   publishBleStatus();
   bleHealthCheck();
 
-  processBleCmdIfAny();
+  // BLE availability must never delay IR / 433 processing.
   processIrCmdIfAny();
   processRfCmdIfAny();
+  processBleCmdIfAny();
   serviceResetIfPending();
 
-  if(millis() - last433StatusMs > 1500){
+  if(millis() - last433StatusMs > 5000){
     last433StatusMs = millis();
     publish433Status();
+  }
+  if(millis() - lastGatewayStatusMs > 10000){
+    lastGatewayStatusMs = millis();
+    // Heartbeat only; retained gateway state is written on MQTT connect.
+    publishGatewayOnline(false);
   }
 
   delay(1);

@@ -464,6 +464,45 @@ button:active,.btn:active,.logbtn:active,.pressed{
   box-shadow:inset 0 1px 8px rgba(0,0,0,.48);
 }
 
+
+
+/* === Daily schedule: long-press only on marked buttons === */
+button[data-schedule-id]{ position:relative; }
+button[data-schedule-id].schedule-active::after{
+  content:"⏰";
+  position:absolute;
+  top:5px;
+  right:7px;
+  font-size:12px;
+  line-height:1;
+  filter:none;
+}
+.sched-overlay{
+  position:fixed; inset:0; z-index:1000;
+  display:flex; align-items:center; justify-content:center;
+  padding:18px; background:rgba(0,0,0,.72);
+}
+.sched-overlay[hidden]{ display:none !important; }
+.sched-dialog{
+  width:min(360px, 94vw);
+  background:#111827; border:1px solid rgba(255,255,255,.22);
+  border-radius:18px; padding:16px;
+  box-shadow:0 24px 70px rgba(0,0,0,.78);
+}
+.sched-title{ font-size:18px; font-weight:850; margin-bottom:5px; }
+.sched-sub{ font-size:12px; color:#aebdce; margin-bottom:14px; line-height:1.45; }
+.sched-time-row{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+.sched-time-row select{
+  width:100%; padding:12px 8px; border-radius:12px;
+  border:1px solid rgba(255,255,255,.22);
+  background:#0b0f14; color:#fff; font-size:16px; font-weight:750;
+}
+.sched-current{ min-height:18px; margin:11px 0 4px; font-size:12px; color:#9fb1c5; }
+.sched-actions{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+.sched-actions .sched-wide{ grid-column:1/-1; }
+.sched-actions button{ padding:11px 8px; }
+.sched-delete{ border-color:rgba(248,113,113,.45) !important; }
+
 </style>
 </head>
 <body>
@@ -488,9 +527,9 @@ button:active,.btn:active,.logbtn:active,.pressed{
 <button onclick="sendMi('ok1')">OK</button>
 <button class="mi-repeat" data-mi-repeat="right">▶</button>
 <button class="wide mi-repeat" data-mi-repeat="down">▼</button>
-<button onclick="sendMi('voldown')">VOL-</button>
-<button onclick="sendMi('power')">POWER</button>
-<button onclick="sendMi('volup')">VOL+</button>
+<button data-schedule-id="mi_voldown" data-schedule-label="MiBox VOL-" onclick="sendMi('voldown')">VOL-</button>
+<button data-schedule-id="mi_power" data-schedule-label="MiBox POWER" onclick="sendMi('power')">POWER</button>
+<button data-schedule-id="mi_volup" data-schedule-label="MiBox VOL+" onclick="sendMi('volup')">VOL+</button>
 </div>
 <div style="height:6px"></div>
 <div class="grid2">
@@ -501,8 +540,8 @@ button:active,.btn:active,.logbtn:active,.pressed{
 <section>
 <h2>433 RMC</h2>
 <div class="grid2">
-<button onclick="send433('LIGHT')">LIGHT</button>
-<button onclick="send433('DOOR')">DOOR</button>
+<button data-schedule-id="rf_light" data-schedule-label="433 LIGHT" onclick="send433('LIGHT')">LIGHT</button>
+<button data-schedule-id="rf_door" data-schedule-label="433 DOOR" onclick="send433('DOOR')">DOOR</button>
 <button onclick="send433('SPK1')">SPK1</button>
 <button onclick="send433('SPK2')">SPK2</button>
 </div>
@@ -510,10 +549,10 @@ button:active,.btn:active,.logbtn:active,.pressed{
 <section>
 <h2>IR RMC</h2>
 <div class="grid">
-<button onclick="sendIR('POWER1')">POWER1</button>
+<button data-schedule-id="ir_power1" data-schedule-label="IR POWER1" onclick="sendIR('POWER1')">POWER1</button>
 <button onclick="sendIR('VOL-1')">VOL-</button>
 <button onclick="sendIR('VOL+1')">VOL+</button>
-<button onclick="sendIR('POWER2')">POWER2</button>
+<button data-schedule-id="ir_power2" data-schedule-label="IR POWER2" onclick="sendIR('POWER2')">POWER2</button>
 <button onclick="sendIR('VOL-2')">VOL-</button>
 <button onclick="sendIR('VOL+2')">VOL+</button>
 </div>
@@ -526,36 +565,54 @@ button:active,.btn:active,.logbtn:active,.pressed{
 <div class="log" id="log" style="display:none"></div>
 </section>
 </main>
+
+<div id="scheduleModal" class="sched-overlay" hidden>
+  <div class="sched-dialog" role="dialog" aria-modal="true" aria-labelledby="scheduleTitle">
+    <div id="scheduleTitle" class="sched-title">매일 자동 실행</div>
+    <div class="sched-sub">선택한 시각에 ESP32가 이 버튼을 매일 1회 실행합니다.</div>
+    <div class="sched-time-row">
+      <select id="scheduleAmpm" aria-label="AM PM">
+        <option value="AM">AM</option>
+        <option value="PM">PM</option>
+      </select>
+      <select id="scheduleHour" aria-label="시"></select>
+      <select id="scheduleMinute" aria-label="분"></select>
+    </div>
+    <div id="scheduleCurrent" class="sched-current">예약 없음</div>
+    <div class="sched-actions">
+      <button id="scheduleDelete" class="sched-delete" type="button">예약 삭제</button>
+      <button id="scheduleCancel" type="button">취소</button>
+      <button id="scheduleSave" class="sched-wide" type="button">매일 예약 저장</button>
+    </div>
+  </div>
+</div>
+
 <script>
   // Topics (ESP32 firmware와 동일)
   // IR: ESP32는 JSON {cmd}만 받음 (token 없음)
   const TOPIC = {
     miboxCmd: "tswell/mibox3/cmd",
     miboxStatus: "tswell/mibox3/status",
-    gatewayStatus: "tswell/gateway/status",
     irCmd: "tswell/ir/cmd",
     irStatus: "tswell/ir/status",
     r433Cmd: "tswell/433home/cmd",
     r433Status: "tswell/433home/status",
     r433Log: "tswell/433home/log",
+    scheduleCmd: "tswell/schedule/cmd",
+    scheduleStatus: "tswell/schedule/status",
   };
 
   let client = null;
   let gw = { wifi:null, mqtt:null, rssi:null };
   let gwLastTs = 0; // ms timestamp of last 433 status update (gateway heartbeat)
-  const GW_STALE_MS = 45000; // tolerate short broker / Wi-Fi jitter; ESP32 sends every ~1.5s
+  const GW_STALE_MS = 15000; // 5s gateway heartbeat + network jitter margin
 
   let ble = null;
-  let bleLastTs = 0; // ms timestamp of last live BLE status update
-  const BLE_STALE_MS = 45000; // ESP32 BLE heartbeat is ~2s; allow several missed packets
+  let bleLastTs = 0; // ms timestamp of last BLE status update
+  const BLE_STALE_MS = 25000; // 10s BLE heartbeat + network jitter margin
   let bleOffStart = 0; // UI-side OFF debounce start (ms)
-  const BLE_UI_OFF_CONFIRM_MS = 5000; // require continuous real OFF before showing OFF
-  const MQTT_UI_GRACE_MS = 30000; // do not erase Gateway/BLE on a brief browser MQTT reconnect
+  const BLE_UI_OFF_CONFIRM_MS = 4000; // require 4s continuous OFF before showing OFF
   let mqttOk = false;
-  let mqttLostTs = 0;
-  let gatewayOfflineTs = 0;
-  let lastGatewayUptime = null;
-  let lastGatewayMqttConnects = null;
 
 
   const $ = (id)=>document.getElementById(id);
@@ -588,96 +645,59 @@ button:active,.btn:active,.logbtn:active,.pressed{
     client = mqtt.connect(url, {
       clientId: cid,
       clean: true,
-      reconnectPeriod: 3000,
-      connectTimeout: 10000,
-      keepalive: 20,
-      resubscribe: true,
+      reconnectPeriod: 1500,
+      keepalive: 30,
     });
 
-    client.on("connect", ()=>{
-      mqttOk = true;
-      mqttLostTs = 0;
+    client.on("connect", ()=>{ mqttOk = true; 
       setPill(stMqtt, true, "MQTT: OK");
-      addLog("MQTT connected / UI stable-v4");
+      addLog("MQTT connected");
       // Browser only needs status/log topics. Do not subscribe to command
       // topics, which only creates needless echoed traffic on a public broker.
-      const statusTopics = [TOPIC.miboxStatus, TOPIC.gatewayStatus, TOPIC.irStatus, TOPIC.r433Status, TOPIC.r433Log];
+      const statusTopics = [TOPIC.miboxStatus, TOPIC.irStatus, TOPIC.r433Status, TOPIC.r433Log, TOPIC.scheduleStatus];
       client.subscribe(statusTopics, { qos:0 }, (err)=>{
         if(err) addLog("SUB ERR: " + err.message);
-        else addLog("Subscribed topics");
+        else{
+          addLog("Subscribed topics");
+          pub(TOPIC.scheduleCmd, JSON.stringify({op:"get"}));
+        }
       });
     });
 
-    function markMqttTransportLost(reason){
+    client.on("reconnect", ()=>{
       mqttOk = false;
-      if(!mqttLostTs) mqttLostTs = Date.now();
       setPill(stMqtt, false, "MQTT: --");
-      // IMPORTANT: do not clear Gateway/BLE here. A browser WebSocket reconnect
-      // does not mean the ESP32 or its BLE link went offline. The stale checker
-      // applies a grace period and evaluates each state independently.
-      if(reason) addLog(reason);
-    }
+      // MQTT가 흔들릴 때 Gateway/BLE는 판정 보류
+      gwLastTs = 0;
+      setPill(stGw, false, "Gateway: --");
+      stRssi.innerText = "RSSI: --";
+      bleLastTs = 0;
+      setPill(stBle, false, "BLE: --");
+    });
 
-    client.on("reconnect", ()=> markMqttTransportLost("MQTT reconnecting"));
-    client.on("close", ()=> markMqttTransportLost("MQTT socket closed"));
-    client.on("offline", ()=> markMqttTransportLost("MQTT offline"));
+    client.on("close", ()=>{
+      mqttOk = false;
+      setPill(stMqtt, false, "MQTT: --");
+      gwLastTs = 0;
+      setPill(stGw, false, "Gateway: --");
+      stRssi.innerText = "RSSI: --";
+      bleLastTs = 0;
+      setPill(stBle, false, "BLE: --");
+    });
+    client.on("offline", ()=>{
+      mqttOk = false;
+      setPill(stMqtt, false, "MQTT: --");
+      addLog("MQTT offline");
+    });
     client.on("error", (e)=> addLog("MQTT ERR: " + e.message));
 
-    client.on("message", (topic, payload, packet)=>{
+    client.on("message", (topic, payload)=>{
       const msg = payload.toString();
-
-      if(topic === TOPIC.gatewayStatus){
-        try{
-          const j = JSON.parse(msg);
-          const now = Date.now();
-          if(j.online === true){
-            gatewayOfflineTs = 0;
-            gwLastTs = now;
-            const rssi = (j.rssi ?? gw.rssi ?? "--");
-            setPill(stGw, true, "Gateway: OK");
-            stRssi.innerText = "RSSI: " + rssi;
-
-            // Diagnostic: distinguish an ESP32 reboot from a mere MQTT reconnect.
-            if(lastGatewayUptime !== null && Number.isFinite(j.uptime) && j.uptime < lastGatewayUptime){
-              addLog("ESP32 reboot detected (uptime reset)");
-            }
-            if(lastGatewayMqttConnects !== null && Number.isFinite(j.mqttConnects) && j.mqttConnects > lastGatewayMqttConnects){
-              addLog("ESP32 MQTT reconnected (#" + j.mqttConnects + ")");
-            }
-            if(Number.isFinite(j.uptime)) lastGatewayUptime = j.uptime;
-            if(Number.isFinite(j.mqttConnects)) lastGatewayMqttConnects = j.mqttConnects;
-
-            // Gateway heartbeat also carries the physical BLE state. This is a live
-            // device report, not an inference from missing MQTT packets.
-            if(typeof j.ble === "boolean"){
-              bleLastTs = now;
-              if(j.ble){
-                bleOffStart = 0;
-                ble = true;
-                setPill(stBle, true, "BLE: OK");
-              }else if(ble === true){
-                if(!bleOffStart) bleOffStart = now;
-                if((now - bleOffStart) >= BLE_UI_OFF_CONFIRM_MS){
-                  ble = false;
-                  setPill(stBle, false, "BLE: OFF");
-                }
-              }else{
-                ble = false;
-                setPill(stBle, false, "BLE: OFF");
-              }
-            }
-          }else if(j.online === false){
-            gatewayOfflineTs = now;
-          }
-        }catch(e){}
-      }
-
       if(topic === TOPIC.r433Status){
         try{
           const j = JSON.parse(msg);
           gw = j;
           gwLastTs = Date.now();
-          gatewayOfflineTs = 0;
           const ok = (j.wifi===1 && j.mqtt===1);
           setPill(stGw, ok, "Gateway: " + (ok ? "OK":"BAD"));
           stRssi.innerText = "RSSI: " + (j.rssi ?? "--");
@@ -688,16 +708,19 @@ button:active,.btn:active,.logbtn:active,.pressed{
           const j = JSON.parse(msg);
           const now = Date.now();
 
-          // Do not compare ESP32 Unix time with the tablet/browser clock. Clock skew
-          // can make a perfectly live BLE heartbeat look stale. Freshness is based
-          // only on receive-time in this browser.
-          if(packet && packet.retain && bleLastTs === 0){
-            // Retained snapshot may be old. Wait for the next live heartbeat (~2s).
-            return;
+          // ts==0 only means NTP time is not valid yet. It is NOT a BLE-off/LWT
+          // marker anymore (gateway LWT uses its own topic), so always trust j.ble.
+
+          // Ignore stale retained snapshots (prevents OFF/OK flicker on first load)
+          if(j.ts && j.ts > 1700000000){
+            const age = now - (j.ts*1000);
+            if(age > BLE_STALE_MS){
+              return;
+            }
           }
 
           const cand = !!j.ble;
-          bleLastTs = now; // authoritative receive-time
+          bleLastTs = now; // use receive-time
 
           if(cand){
             // ON: clear OFF debounce and reflect immediately
@@ -729,6 +752,9 @@ button:active,.btn:active,.logbtn:active,.pressed{
       }
       if(topic === TOPIC.irStatus){
         addLog("IR: " + msg);
+      }
+      if(topic === TOPIC.scheduleStatus){
+        try{ applyScheduleStatus(JSON.parse(msg)); }catch(e){ addLog("SCHEDULE status parse error"); }
       }
     });
   }
@@ -794,39 +820,47 @@ button:active,.btn:active,.logbtn:active,.pressed{
 
   // Gateway/BLE stale checker
   setInterval(()=>{
-    const now = Date.now();
-
-    // Browser MQTT transport can briefly reconnect even while the ESP32 is fine.
-    // Preserve the last known Gateway/BLE state during a short transport glitch.
+    // MQTT 끊김이면 전부 판정 보류
     if(!mqttOk){
-      if(!mqttLostTs) mqttLostTs = now;
-      if((now - mqttLostTs) > MQTT_UI_GRACE_MS){
-        setPill(stGw, false, "Gateway: ?");
-        stRssi.innerText = "RSSI: --";
-        setPill(stBle, false, "BLE: ?");
-      }
+      gwLastTs = 0;
+      setPill(stGw, false, "Gateway: --");
+      stRssi.innerText = "RSSI: --";
+
+      ble = false;
+      bleLastTs = 0;
+      setPill(stBle, false, "BLE: --");
       return;
     }
 
-    // Gateway and BLE are independent. Never clear BLE just because a 433/gateway
-    // heartbeat was delayed.
-    if(gatewayOfflineTs && (now - gatewayOfflineTs) > MQTT_UI_GRACE_MS){
-      setPill(stGw, false, "Gateway: ?");
-      stRssi.innerText = "RSSI: --";
-    }else if(!gwLastTs){
+    // Gateway(433 status) freshness
+    if(!gwLastTs){
       setPill(stGw, false, "Gateway: --");
       stRssi.innerText = "RSSI: --";
-    }else if((now - gwLastTs) > GW_STALE_MS){
-      setPill(stGw, false, "Gateway: ?");
-      stRssi.innerText = "RSSI: --";
+    }else{
+      const gwStale = (Date.now() - gwLastTs) > GW_STALE_MS;
+      if(gwStale){
+        gwLastTs = 0;
+        setPill(stGw, false, "Gateway: --");
+        stRssi.innerText = "RSSI: --";
+        // Gateway 오프라인이면 BLE도 -- 로
+        ble = false;
+        bleLastTs = 0;
+        setPill(stBle, false, "BLE: --");
+        return;
+      }
     }
 
+    // BLE freshness (Gateway가 살아있을 때만 의미 있음)
     if(!bleLastTs){
-      setPill(stBle, false, "BLE: ?");
-    }else if((now - bleLastTs) > BLE_STALE_MS){
-      // Missing MQTT heartbeat is not proof that the physical BLE link is OFF.
+      setPill(stBle, false, "BLE: --");
+      return;
+    }
+
+    const bleStale = (Date.now() - bleLastTs) > BLE_STALE_MS;
+    if(bleStale){
       ble = false;
-      setPill(stBle, false, "BLE: ?");
+      bleLastTs = 0;
+      setPill(stBle, false, "BLE: --");
     }
   }, 1000);
 
@@ -920,8 +954,179 @@ button:active,.btn:active,.logbtn:active,.pressed{
     });
   }
 
+
+
+  // ===================== Daily schedule UI =====================
+  const scheduleState = {};
+  let scheduleEditingId = null;
+  const SCHEDULE_LONG_PRESS_MS = 700;
+
+  function schedulePad2(v){ return String(v).padStart(2, '0'); }
+
+  function scheduleTo12(hour24){
+    const h = Number(hour24) || 0;
+    return { ampm: h >= 12 ? 'PM' : 'AM', hour: (h % 12) || 12 };
+  }
+
+  function scheduleTo24(ampm, hour12){
+    let h = Number(hour12) % 12;
+    if(ampm === 'PM') h += 12;
+    return h;
+  }
+
+  function scheduleDisplay(item){
+    if(!item || !item.enabled) return '예약 없음';
+    const t = scheduleTo12(item.hour);
+    return `현재 예약: 매일 ${t.ampm} ${t.hour}:${schedulePad2(item.minute)}`;
+  }
+
+  function updateScheduleButtonMarks(){
+    document.querySelectorAll('[data-schedule-id]').forEach(btn=>{
+      const item = scheduleState[btn.dataset.scheduleId];
+      btn.classList.toggle('schedule-active', !!(item && item.enabled));
+      if(item && item.enabled) btn.title = scheduleDisplay(item);
+      else btn.removeAttribute('title');
+    });
+  }
+
+  function applyScheduleStatus(root){
+    const items = Array.isArray(root?.items) ? root.items : [];
+    for(const x of items){
+      if(!x || !x.id) continue;
+      scheduleState[x.id] = {
+        enabled: !!(x.enabled ?? x.e),
+        hour: Number(x.hour ?? x.h ?? 0),
+        minute: Number(x.minute ?? x.m ?? 0)
+      };
+    }
+    updateScheduleButtonMarks();
+    if(scheduleEditingId){
+      const cur = scheduleState[scheduleEditingId];
+      $('scheduleCurrent').textContent = scheduleDisplay(cur);
+      $('scheduleDelete').disabled = !(cur && cur.enabled);
+    }
+  }
+
+  function fillScheduleSelects(){
+    const hour = $('scheduleHour');
+    const minute = $('scheduleMinute');
+    if(hour.options.length === 0){
+      for(let i=1;i<=12;i++) hour.add(new Option(`${i}시`, String(i)));
+    }
+    if(minute.options.length === 0){
+      for(let i=0;i<60;i++) minute.add(new Option(`${schedulePad2(i)}분`, String(i)));
+    }
+  }
+
+  function openScheduleModal(id, label){
+    fillScheduleSelects();
+    scheduleEditingId = id;
+    $('scheduleTitle').textContent = `${label} · 매일 자동 실행`;
+
+    const cur = scheduleState[id];
+    let h24, min;
+    if(cur && cur.enabled){
+      h24 = cur.hour;
+      min = cur.minute;
+    }else{
+      const now = new Date();
+      h24 = now.getHours();
+      min = now.getMinutes();
+    }
+    const t = scheduleTo12(h24);
+    $('scheduleAmpm').value = t.ampm;
+    $('scheduleHour').value = String(t.hour);
+    $('scheduleMinute').value = String(min);
+    $('scheduleCurrent').textContent = scheduleDisplay(cur);
+    $('scheduleDelete').disabled = !(cur && cur.enabled);
+    $('scheduleModal').hidden = false;
+  }
+
+  function closeScheduleModal(){
+    $('scheduleModal').hidden = true;
+    scheduleEditingId = null;
+  }
+
+  function saveDeviceSchedule(){
+    if(!scheduleEditingId) return;
+    if(!client || !client.connected){
+      addLog('예약 저장 실패: MQTT 연결 안 됨');
+      return;
+    }
+    const hour = scheduleTo24($('scheduleAmpm').value, $('scheduleHour').value);
+    const minute = Number($('scheduleMinute').value);
+    pub(TOPIC.scheduleCmd, JSON.stringify({op:'set', id:scheduleEditingId, hour, minute}));
+    addLog(`예약 저장 요청: ${scheduleEditingId} ${schedulePad2(hour)}:${schedulePad2(minute)}`);
+    closeScheduleModal();
+  }
+
+  function deleteDeviceSchedule(){
+    if(!scheduleEditingId) return;
+    if(!client || !client.connected){
+      addLog('예약 삭제 실패: MQTT 연결 안 됨');
+      return;
+    }
+    pub(TOPIC.scheduleCmd, JSON.stringify({op:'cancel', id:scheduleEditingId}));
+    addLog(`예약 삭제 요청: ${scheduleEditingId}`);
+    closeScheduleModal();
+  }
+
+  function initDeviceScheduleUI(){
+    fillScheduleSelects();
+
+    document.querySelectorAll('[data-schedule-id]').forEach(btn=>{
+      let timer = null;
+      let longPressed = false;
+      let suppressClick = false;
+
+      const clearTimer = ()=>{
+        if(timer){ clearTimeout(timer); timer = null; }
+      };
+
+      btn.addEventListener('pointerdown', ()=>{
+        clearTimer();
+        longPressed = false;
+        timer = setTimeout(()=>{
+          timer = null;
+          longPressed = true;
+          suppressClick = true;
+          if(navigator.vibrate) navigator.vibrate(30);
+          openScheduleModal(btn.dataset.scheduleId, btn.dataset.scheduleLabel || btn.textContent.trim());
+          setTimeout(()=>{ if(suppressClick) suppressClick = false; }, 1200);
+        }, SCHEDULE_LONG_PRESS_MS);
+      });
+
+      btn.addEventListener('pointerup', clearTimer);
+      btn.addEventListener('pointercancel', clearTimer);
+      btn.addEventListener('pointerleave', clearTimer);
+      btn.addEventListener('contextmenu', ev=>ev.preventDefault());
+
+      // Capture phase: after a long press, block the normal inline onclick once.
+      btn.addEventListener('click', ev=>{
+        if(suppressClick || longPressed){
+          ev.preventDefault();
+          ev.stopImmediatePropagation();
+          suppressClick = false;
+          longPressed = false;
+        }
+      }, true);
+    });
+
+    $('scheduleSave').addEventListener('click', saveDeviceSchedule);
+    $('scheduleDelete').addEventListener('click', deleteDeviceSchedule);
+    $('scheduleCancel').addEventListener('click', closeScheduleModal);
+    $('scheduleModal').addEventListener('click', ev=>{
+      if(ev.target === $('scheduleModal')) closeScheduleModal();
+    });
+    document.addEventListener('keydown', ev=>{
+      if(ev.key === 'Escape' && !$('scheduleModal').hidden) closeScheduleModal();
+    });
+  }
+
+
 window.addEventListener('load', ()=>{ connect(); });
 window.addEventListener('DOMContentLoaded', initMiAutoRepeatButtons);
+window.addEventListener('DOMContentLoaded', initDeviceScheduleUI);
 
   // Clock
   setInterval(()=>{$("clock").innerText=new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});}, 1000);
@@ -952,9 +1157,7 @@ window.addEventListener('DOMContentLoaded', initMiAutoRepeatButtons);
   // Android Chrome PWA install support
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then((reg) => {
-        reg.update().catch(()=>{});
-      }).catch((err) => {
+      navigator.serviceWorker.register('./sw.js').catch((err) => {
         console.warn('Service worker registration failed:', err);
       });
     });
