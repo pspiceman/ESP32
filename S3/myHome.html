@@ -49,6 +49,8 @@ h2{font-size:17px;margin:0 0 13px}
 .market-value{font-size:30px;font-weight:850;margin-top:8px}
 .market-change{font-size:15px;font-weight:800;margin-top:5px}
 .market-time{font-size:12px;color:var(--muted);margin-top:7px}
+.market-refresh-blink{animation:marketMetaBlink .24s ease-out}
+@keyframes marketMetaBlink{0%{opacity:1}45%{opacity:.28}100%{opacity:1}}
 
 
 .stock-name{font-size:16px;font-weight:800;margin-bottom:6px}
@@ -141,7 +143,7 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
 <body>
 <div class="wrap">
   <h1>🏠 myHome Dashboard</h1>
-  <div class="sub">시장 · 보유자산 · YouTube · 뉴스 · 바로가기 · <span id="appVersion">v35l</span></div>
+  <div class="sub">시장 · 보유자산 · YouTube · 뉴스 · 바로가기 · <span id="appVersion">v35o</span></div>
 
   <div class="grid">
 
@@ -164,7 +166,7 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
       <div class="btn-row">
         <button class="btn" type="button" onclick="loadMarketIndices()">↻ 지수 새로고침</button>
         <a class="btn" href="https://m.stock.naver.com/domestic/index/KOSPI" target="_blank" rel="noopener noreferrer">KOSPI 상세</a>
-        <a class="btn" href="https://m.stock.naver.com/worldstock/index/.SOX" target="_blank" rel="noopener noreferrer">SOX 상세</a>
+        <a class="btn" href="https://m.stock.naver.com/worldstock/index/.SOX" target="_blank" rel="noopener noreferrer" onclick="refreshSoxFromDetail()">SOX 상세</a>
       </div>
       <div class="small-note" style="margin-top:8px">주요 지수는 네이버 증권 기준으로 자동 조회합니다.</div>
     </section>
@@ -1240,7 +1242,9 @@ function loadIndexCache(prefix){
     if(row && row.q && Number.isFinite(Number(row.q.price))){
       // SOX만 날짜까지 검사합니다. 5일을 넘긴 값은 화면에 잠깐이라도 표시하지 않습니다.
       if(prefix === 'sox' && isSoxQuoteTooOld(row.q)) return null;
-      return {...row.q, source:'마지막 정상 조회값 · ' + new Date(row.savedAt).toLocaleString('ko-KR')};
+      // 캐시에서도 원래 출처/조회시각을 그대로 유지합니다.
+      // '마지막 정상 조회값 · ... · 조회 ...'처럼 조회 문구가 중복되지 않게 합니다.
+      return {...row.q, _fromCache:true};
     }
   }catch(e){}
   return null;
@@ -1284,7 +1288,13 @@ function renderIndex(prefix, q){
   ch.className = 'market-change ' + trend;
 
   const parts = [];
-  if(q.source) parts.push(q.source);
+  // 화면에 보이는 작은 출처 문구는 KOSPI와 SOX를 완전히 동일하게 통일합니다.
+  // 내부 조회 경로(JSONP/fallback/cache)는 사용자 화면에 길게 노출하지 않습니다.
+  if(prefix === 'kospi' || prefix === 'sox'){
+    parts.push('네이버 증권 실시간');
+  }else if(q.source){
+    parts.push(q.source);
+  }
 
   // KOSPI / SOX 모두 '실제 거래일'이 아니라 이 페이지가 네이버 금융을 조회한
   // 동일한 한국 시각을 표시합니다. SOX 값 자체의 조회 로직은 기존 안정판 그대로 유지합니다.
@@ -1311,9 +1321,8 @@ async function loadOneIndex(prefix, getter, options={}){
   if(cacheFirst){
     const cached = loadIndexCache(prefix);
     if(cached){
-      // SOX는 값이 캐시여도 '조회 시각'은 이번 새로고침 시각으로 표시합니다.
-      // 값의 마지막 정상 수신 시각은 source 문구에 그대로 남겨 사실관계를 구분합니다.
-      if(prefix === 'sox') cached.checkedAt = options.checkedAt || Date.now();
+      // KOSPI와 SOX 모두 저장된 기존 표시값을 그대로 한 번 다시 그린 뒤 최신값으로 교체합니다.
+      // SOX만 조회시각을 미리 덮어쓰지 않아 KOSPI와 같은 순간적인 재표시(깜박임)가 발생합니다.
       renderIndex(prefix, cached);
       hadVisibleValue = true;
     }
@@ -1335,21 +1344,11 @@ async function loadOneIndex(prefix, getter, options={}){
   }catch(e){
     console.error('[INDEX] ' + prefix + ' failed', e);
 
-    // 이미 캐시를 표시 중이어도 SOX의 '조회 시각'은 이번 갱신 시각으로 업데이트합니다.
-    if(hadVisibleValue){
-      if(prefix === 'sox'){
-        const cached = loadIndexCache(prefix);
-        if(cached){
-          cached.checkedAt = options.checkedAt || Date.now();
-          renderIndex(prefix, cached);
-        }
-      }
-      return false;
-    }
+    // 이미 마지막 정상값을 표시 중이면 그대로 유지합니다. KOSPI/SOX 동일 동작입니다.
+    if(hadVisibleValue) return false;
 
     const cached = loadIndexCache(prefix);
     if(cached){
-      if(prefix === 'sox') cached.checkedAt = options.checkedAt || Date.now();
       renderIndex(prefix, cached);
       return false;
     }
@@ -1380,6 +1379,27 @@ function waitForVisiblePaint(ms=110){
   return new Promise(resolve => {
     requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, ms)));
   });
+}
+
+function blinkIndexMeta(prefix){
+  // 문구는 그대로 유지하고 작은 글자만 KOSPI/SOX 동일하게 짧게 깜박입니다.
+  const els = [
+    document.getElementById(prefix + 'Change'),
+    document.getElementById(prefix + 'Time')
+  ].filter(Boolean);
+  for(const el of els){
+    el.classList.remove('market-refresh-blink');
+    void el.offsetWidth; // 동일 문구여도 animation 재시작
+    el.classList.add('market-refresh-blink');
+    setTimeout(() => el.classList.remove('market-refresh-blink'), 280);
+  }
+}
+
+function refreshSoxFromDetail(){
+  // SOX 상세 클릭도 KOSPI 자동 갱신과 같은 표시 방식으로 처리합니다.
+  // 기존 작은 글자를 지우거나 '실시간 조회 중...'으로 바꾸지 않고,
+  // 마지막 정상 표시를 유지한 채 최신 SOX 값을 요청하여 수신 즉시 교체합니다.
+  loadOneIndex('sox', getSoxNaver, {quiet:true, cacheFirst:true, checkedAt:Date.now()});
 }
 
 async function refreshIndexSameWay(prefix, getter, options={}){
@@ -1435,8 +1455,11 @@ async function loadMarketIndices(){
 }
 
 async function refreshMarketIndicesQuiet(){
-  // 자동 갱신도 두 지수를 같은 시각으로 갱신하되 화면을 깜빡이지 않습니다.
+  // 자동 갱신은 KOSPI와 SOX 모두 완전히 같은 표시/동작을 사용합니다.
+  // 기존 작은 글자는 유지한 채 두 카드가 동시에 짧게 깜박이고, 최신값 수신 시 교체됩니다.
   const checkedAt = Date.now();
+  blinkIndexMeta('kospi');
+  blinkIndexMeta('sox');
   await Promise.all([
     loadOneIndex('kospi', getKospiNaver, {quiet:true, cacheFirst:true, checkedAt}),
     loadOneIndex('sox', getSoxNaver, {quiet:true, cacheFirst:true, checkedAt})
