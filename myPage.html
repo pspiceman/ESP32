@@ -143,7 +143,7 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
 <body>
 <div class="wrap">
   <h1>🏠 myHome Dashboard</h1>
-  <div class="sub">시장 · 보유자산 · YouTube · 뉴스 · 바로가기 · <span id="appVersion">v35o</span></div>
+  <div class="sub">시장 · 보유자산 · YouTube · 뉴스 · 바로가기 · <span id="appVersion">v35t</span></div>
 
   <div class="grid">
 
@@ -168,7 +168,7 @@ details summary{cursor:pointer;color:#bae6fd;font-weight:700;padding:4px 0}
         <a class="btn" href="https://m.stock.naver.com/domestic/index/KOSPI" target="_blank" rel="noopener noreferrer">KOSPI 상세</a>
         <a class="btn" href="https://m.stock.naver.com/worldstock/index/.SOX" target="_blank" rel="noopener noreferrer" onclick="refreshSoxFromDetail()">SOX 상세</a>
       </div>
-      <div class="small-note" style="margin-top:8px">주요 지수는 네이버 증권 기준으로 자동 조회합니다.</div>
+      <div class="small-note" style="margin-top:8px">주요 지수는 PC와 모바일 모두 네이버 증권 실시간 시세를 기준으로 조회합니다.</div>
     </section>
 
     <section class="card full">
@@ -544,10 +544,11 @@ function naverNum(v){
 }
 
 function marketStatusText(s){
-  if(s === 'OPEN') return '장중';
-  if(s === 'CLOSE') return '정규장 마감';
-  if(s === 'PREOPEN') return '장 시작 전';
-  if(s === 'AFTER_HOURS') return '시간외';
+  const v = String(s || '').toUpperCase();
+  if(v === 'OPEN' || v === 'REGULAR' || v === 'TRADING') return '장중';
+  if(v === 'CLOSE' || v === 'CLOSED') return '정규장 마감';
+  if(v === 'PREOPEN' || v === 'PRE' || v === 'PRE_MARKET') return '장 시작 전';
+  if(v === 'AFTER_HOURS' || v === 'POST' || v === 'POST_MARKET') return '시간외';
   return s || '-';
 }
 
@@ -813,7 +814,7 @@ async function loadStocksDirect(){
 
 // =============================================================================
 // KOSPI / Philadelphia Semiconductor Index(SOX) - 네이버 증권
-// Index source revision: 2026-09-19 / KOSPI-SOX unified cache-first refresh
+// Index source revision: 2026-10-10 / v35s KOSPI-style SOX direct + single fallback flow
 // =============================================================================
 const NAVER_KOSPI_REALTIME = 'https://polling.finance.naver.com/api/realtime/domestic/index/KOSPI';
 const NAVER_KOSPI_LEGACY = 'https://polling.finance.naver.com/api/realtime';
@@ -822,8 +823,9 @@ const NAVER_SOX_NATION = 'https://api.stock.naver.com/index/nation/USA'; // SOX 
 const NAVER_SOX_CHART = 'https://api.stock.naver.com/chart/foreign/index/.SOX?periodType=dayCandle'; // 장마감 보조 검증
 const NAVER_KOSPI_PAGE = 'https://m.stock.naver.com/domestic/index/KOSPI';
 const NAVER_SOX_PAGE = 'https://m.stock.naver.com/worldstock/index/.SOX';
-const INDEX_CACHE_KEY = 'myHome_naverIndexCache_v28'; // SOX polling 직접조회 + AllOrigins raw fallback, 이전 캐시 폐기
-const SOX_MAX_STALE_MS = 5 * 24 * 60 * 60 * 1000; // 주말/휴장 고려, 5일 초과 SOX 값은 폐기
+const INDEX_CACHE_KEY = 'myHome_naverIndexCache_v34'; // v35t: SOX direct -> same Naver polling via mobile CORS fallback
+const SOX_MAX_STALE_MS = 5 * 24 * 60 * 60 * 1000; // 휴장/주말의 마지막 정상 종가 허용 범위
+const SOX_LIVE_MAX_LAG_MIN = 2.5; // 미국 정규장 중 2분30초 이상 뒤처진 SOX 응답은 캐시/지연값으로 간주
 
 // 네이버 공개 시세를 직접 확인한 마지막 안전 스냅샷.
 // 네트워크/CORS가 모두 막힐 때 빈 화면 대신 "최근 확인값"으로만 사용합니다.
@@ -861,6 +863,24 @@ async function fetchJsonDirect(url, timeoutMs=7000){
       cache:'no-store', mode:'cors', signal:ctl.signal
     });
     if(!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+
+async function fetchJsonViaCorsDev(url, timeoutMs=5500){
+  // v35t 모바일 SOX fallback.
+  // 다른 시세를 가져오는 것이 아니라 같은 네이버 URL을 CORS 중계해서 읽습니다.
+  // target에도 cache-buster를 붙여 중계 캐시에 남은 이전 SOX 값 사용을 방지합니다.
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), timeoutMs);
+  try{
+    const target = url + (url.includes('?') ? '&' : '?') + '_=' + Date.now();
+    const proxy = 'https://proxy.cors.dev/' + target;
+    const r = await fetch(proxy, {cache:'no-store', mode:'cors', signal:ctl.signal});
+    if(!r.ok) throw new Error('CORS fallback HTTP ' + r.status);
     return await r.json();
   } finally {
     clearTimeout(timer);
@@ -1069,6 +1089,7 @@ function normalizeSoxPolling(root){
     pct,
     tradedAt:d.localTradedAt || d.localDateTime || d.tradedAt || d.dateTime || '',
     state:d.marketStatus || d.marketState || '',
+    delayTime:indexNum(d.delayTime),
     source:'네이버 증권 SOX 실시간'
   };
 }
@@ -1090,8 +1111,28 @@ function normalizeSoxNation(root){
     pct,
     tradedAt:d.localTradedAt || d.localDateTime || d.tradedAt || d.dateTime || '',
     state:d.marketStatus || d.marketState || '',
-    source:'네이버 증권 해외지수'
+    delayTime:indexNum(d.delayTime),
+    source:'네이버 증권 SOX 실시간'
   };
+}
+
+function formatNyIsoFromEpoch(sec){
+  const n = Number(sec);
+  if(!Number.isFinite(n) || n <= 0) return '';
+  try{
+    const fmt = new Intl.DateTimeFormat('en-CA', {
+      timeZone:'America/New_York', year:'numeric', month:'2-digit', day:'2-digit',
+      hour:'2-digit', minute:'2-digit', second:'2-digit', hourCycle:'h23'
+    });
+    const p = {};
+    for(const x of fmt.formatToParts(new Date(n * 1000))){
+      if(x.type !== 'literal') p[x.type] = x.value;
+    }
+    if(!p.year || !p.month || !p.day || !p.hour || !p.minute) return '';
+    return p.year + '-' + p.month + '-' + p.day + 'T' + p.hour + ':' + p.minute + ':' + (p.second || '00');
+  }catch(e){
+    return '';
+  }
 }
 
 function normalizeSoxChart(root){
@@ -1160,6 +1201,141 @@ function isSoxQuoteTooOld(q){
   return (Date.now() - t) > SOX_MAX_STALE_MS;
 }
 
+function nyClockParts(ts=Date.now()){
+  // 미국 정규장 여부와 SOX 응답의 당일성 검증용.
+  // Date 객체의 로컬 타임존에 의존하지 않고 America/New_York 기준으로 계산합니다.
+  try{
+    const fmt = new Intl.DateTimeFormat('en-CA', {
+      timeZone:'America/New_York', year:'numeric', month:'2-digit', day:'2-digit',
+      weekday:'short', hour:'2-digit', minute:'2-digit', second:'2-digit', hourCycle:'h23'
+    });
+    const p = {};
+    for(const x of fmt.formatToParts(new Date(ts))){
+      if(x.type !== 'literal') p[x.type] = x.value;
+    }
+    const y=Number(p.year), mo=Number(p.month), d=Number(p.day);
+    const hh=Number(p.hour), mm=Number(p.minute), ss=Number(p.second);
+    return {
+      dateKey:Number(String(p.year)+String(p.month)+String(p.day)),
+      weekday:p.weekday || '',
+      minuteOfDay:hh*60+mm,
+      naiveUtc:Date.UTC(y,mo-1,d,hh,mm,ss)
+    };
+  }catch(e){
+    return {dateKey:0,weekday:'',minuteOfDay:-1,naiveUtc:0};
+  }
+}
+
+function isUsRegularSessionNow(ts=Date.now()){
+  const p = nyClockParts(ts);
+  if(!p.dateKey || p.weekday === 'Sat' || p.weekday === 'Sun') return false;
+  // 09:30~16:00 ET. 미국 공휴일은 응답 marketStatus가 CLOSE이면 아래 검증에서 제외됩니다.
+  return p.minuteOfDay >= (9*60+30) && p.minuteOfDay < (16*60);
+}
+
+function soxQuoteClock(q){
+  const s = String(q?.tradedAt || '').trim();
+  const m = s.match(/(20\d{2})[-\/.]?(\d{2})[-\/.]?(\d{2})(?:[T\s]?(\d{2}):?(\d{2})?:?(\d{2})?)?/);
+  if(!m) return {dateKey:0,naiveUtc:0};
+  const y=Number(m[1]), mo=Number(m[2]), d=Number(m[3]);
+  const hh=Number(m[4]||0), mm=Number(m[5]||0), ss=Number(m[6]||0);
+  return {
+    dateKey:Number(String(m[1])+String(m[2])+String(m[3])),
+    naiveUtc:Date.UTC(y,mo-1,d,hh,mm,ss),
+    hasTime:Boolean(m[4])
+  };
+}
+
+function isSoxCandidateFreshNow(q, ts=Date.now()){
+  if(!q || !Number.isFinite(Number(q.price)) || isSoxQuoteTooOld(q)) return false;
+  if(!isUsRegularSessionNow(ts)) return true;
+
+  // 미국 정규장 중에는 전일 종가/오래된 프록시 캐시를 '실시간'으로 채택하지 않습니다.
+  const nowNy = nyClockParts(ts);
+  const qc = soxQuoteClock(q);
+  if(qc.dateKey && nowNy.dateKey && qc.dateKey !== nowNy.dateKey) return false;
+
+  const state = String(q.state || '').toUpperCase();
+  if(state.includes('CLOSE')) return false;
+
+  // 장중에는 모바일 프록시 응답에 거래시각이 없으면 최신 여부를 검증할 수 없으므로 채택하지 않습니다.
+  if(!qc.hasTime){
+    const tr = String(q._transport || '').toLowerCase();
+    if(tr && !tr.includes('direct')) return false;
+  }
+
+  if(qc.hasTime && qc.naiveUtc && nowNy.naiveUtc){
+    const lagMin = (nowNy.naiveUtc - qc.naiveUtc) / 60000;
+    if(lagMin > SOX_LIVE_MAX_LAG_MIN || lagMin < -3) return false;
+  }
+  return true;
+}
+
+function isLikelyMobileBrowser(){
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(String(navigator.userAgent || ''));
+}
+
+function normalizeSoxJob(promise, normalizer, priority, transport){
+  return Promise.resolve(promise).then(root => {
+    const q = normalizer(root);
+    if(!q || !Number.isFinite(Number(q.price))) throw new Error('SOX parse 실패: ' + transport);
+    return {...q, _priority:priority, _transport:transport};
+  });
+}
+
+function pickFreshestSox(candidates){
+  const rows = candidates.filter(q => isSoxCandidateFreshNow(q));
+  if(!rows.length) return null;
+  rows.sort((a,b) => {
+    const f = soxFreshnessScore(b) - soxFreshnessScore(a);
+    if(f) return f;
+    return Number(b._priority||0) - Number(a._priority||0);
+  });
+  return rows[0];
+}
+
+function firstFreshSox(jobs, settleWindowMs=180, hardTimeoutMs=6200){
+  // 첫 정상 후보가 도착하면 아주 짧게(기본 180ms) 다른 후보를 더 받아
+  // 더 최신인 값을 고른 뒤 즉시 반환합니다. 모바일에서 프록시 하나가 늦다고 전체를 기다리지 않습니다.
+  return new Promise((resolve,reject) => {
+    let finished=0, done=false, settleTimer=null;
+    const candidates=[];
+
+    const finishSuccess = () => {
+      if(done) return;
+      const best = pickFreshestSox(candidates);
+      if(!best) return;
+      done=true;
+      clearTimeout(hardTimer);
+      if(settleTimer) clearTimeout(settleTimer);
+      resolve(best);
+    };
+    const finishFailure = () => {
+      if(done) return;
+      const best = pickFreshestSox(candidates);
+      if(best){ finishSuccess(); return; }
+      done=true;
+      clearTimeout(hardTimer);
+      if(settleTimer) clearTimeout(settleTimer);
+      reject(new Error('현재 SOX 실시간 후보 없음'));
+    };
+
+    const hardTimer=setTimeout(finishFailure, hardTimeoutMs);
+    for(const job of jobs){
+      Promise.resolve(job).then(q => {
+        if(done || !isSoxCandidateFreshNow(q)) return;
+        candidates.push(q);
+        if(!settleTimer) settleTimer=setTimeout(finishSuccess, settleWindowMs);
+      }).catch(() => {}).finally(() => {
+        finished++;
+        if(finished === jobs.length){
+          if(candidates.length) finishSuccess(); else finishFailure();
+        }
+      });
+    }
+  });
+}
+
 function fetchSoxPollingViaJsonp(timeoutMs=9000){
   // 모바일/file://에서 네이버 polling fetch가 CORS로 막힐 때에도
   // "같은 NAVER_SOX_POLLING URL"의 응답만 JSONP 중계로 가져옵니다.
@@ -1207,22 +1383,139 @@ function fetchSoxPollingViaJsonp(timeoutMs=9000){
   });
 }
 
-async function getSoxNaver(){
-  // SOX도 KOSPI처럼 단순하게 처리:
-  // 1) 네이버 실시간 polling 직접조회
-  // 2) 브라우저 CORS로 막히면 같은 polling URL을 AllOrigins raw로 1회 조회
-  try{
-    const root = await fetchJsonDirect(NAVER_SOX_POLLING, 7000);
-    const q = normalizeSoxPolling(root);
-    if(q) return q;
-    throw new Error('SOX polling parse 실패');
-  }catch(e){
-    console.warn('[SOX] direct failed, AllOrigins raw fallback', e);
-    const root = await fetchJsonViaAllOriginsRaw(NAVER_SOX_POLLING, 10000);
-    const q = normalizeSoxPolling(root);
-    if(q) return q;
-    throw new Error('SOX fallback parse 실패');
+function soxLagMinutes(q, ts=Date.now()){
+  const qc = soxQuoteClock(q);
+  const nowNy = nyClockParts(ts);
+  if(!qc.hasTime || !qc.naiveUtc || !nowNy.naiveUtc) return NaN;
+  return (nowNy.naiveUtc - qc.naiveUtc) / 60000;
+}
+
+function isNaverSoxRealtimeCandidate(q, ts=Date.now()){
+  if(!q || !Number.isFinite(Number(q.price)) || isSoxQuoteTooOld(q)) return false;
+  if(!isUsRegularSessionNow(ts)) return true;
+
+  const nowNy = nyClockParts(ts);
+  const qc = soxQuoteClock(q);
+  if(qc.dateKey && nowNy.dateKey && qc.dateKey !== nowNy.dateKey) return false;
+
+  const state = String(q.state || '').toUpperCase();
+  if(state.includes('CLOSE')) return false;
+
+  // 네이버 nation/USA 응답은 거래시각이 없을 수 있지만 delayTime=0이면 네이버가 실시간으로 명시한 값입니다.
+  if(!qc.hasTime){
+    const delay = Number(q.delayTime);
+    return Number.isFinite(delay) ? delay <= 0 : true;
   }
+
+  const lag = soxLagMinutes(q, ts);
+  if(Number.isFinite(lag) && (lag > 4 || lag < -2)) return false;
+  return true;
+}
+
+function pickBestNaverSox(candidates, ts=Date.now()){
+  const rows = candidates.filter(q => isNaverSoxRealtimeCandidate(q, ts));
+  if(!rows.length) return null;
+
+  const polling = rows.filter(q => String(q._transport || '').includes('polling'));
+  const nation = rows.filter(q => String(q._transport || '').includes('nation'));
+
+  // 1) 네이버 polling이 현재 미국시각과 75초 이내면 상세페이지와 같은 실시간 소스로 최우선 사용합니다.
+  const freshPolling = polling.filter(q => {
+    const lag = soxLagMinutes(q, ts);
+    return !Number.isFinite(lag) || lag <= 1.25;
+  }).sort((a,b) => {
+    const ta=soxQuoteClock(a).naiveUtc || 0, tb=soxQuoteClock(b).naiveUtc || 0;
+    if(tb !== ta) return tb-ta;
+    return Number(b._priority||0)-Number(a._priority||0);
+  });
+  if(freshPolling.length) return freshPolling[0];
+
+  // 2) polling이 1분 이상 늦으면 delayTime=0인 네이버 nation/USA 현재값을 우선합니다.
+  const liveNation = nation.filter(q => {
+    const d=Number(q.delayTime);
+    return !Number.isFinite(d) || d <= 0;
+  }).sort((a,b) => Number(b._priority||0)-Number(a._priority||0));
+  if(liveNation.length) return liveNation[0];
+
+  // 3) 그 외에는 네이버 후보 중 거래시각이 가장 최신인 값만 사용합니다.
+  rows.sort((a,b) => {
+    const ta=soxQuoteClock(a).naiveUtc || 0, tb=soxQuoteClock(b).naiveUtc || 0;
+    if(tb !== ta) return tb-ta;
+    return Number(b._priority||0)-Number(a._priority||0);
+  });
+  return rows[0];
+}
+
+function firstBestNaverSox(jobs, settleWindowMs=700, hardTimeoutMs=6200){
+  // 모바일에서도 모든 네이버 경로를 동시에 시작합니다.
+  // 첫 정상 응답이 온 뒤 잠깐만 더 기다려 더 좋은 네이버 후보를 고르므로
+  // 직접 CORS timeout을 다 기다린 후 프록시를 시작하는 지연을 없앴습니다.
+  return new Promise((resolve,reject) => {
+    let finished=0, done=false, settleTimer=null;
+    const candidates=[];
+
+    const finish = () => {
+      if(done) return;
+      const best=pickBestNaverSox(candidates);
+      if(best){
+        done=true;
+        clearTimeout(hardTimer);
+        if(settleTimer) clearTimeout(settleTimer);
+        resolve(best);
+      }else if(finished >= jobs.length){
+        done=true;
+        clearTimeout(hardTimer);
+        reject(new Error('네이버 SOX 정상 후보 없음'));
+      }
+    };
+
+    const hardTimer=setTimeout(() => {
+      if(done) return;
+      const best=pickBestNaverSox(candidates);
+      done=true;
+      if(settleTimer) clearTimeout(settleTimer);
+      if(best) resolve(best); else reject(new Error('네이버 SOX 조회 timeout'));
+    }, hardTimeoutMs);
+
+    for(const job of jobs){
+      Promise.resolve(job).then(q => {
+        if(done || !isNaverSoxRealtimeCandidate(q)) return;
+        candidates.push(q);
+        if(!settleTimer) settleTimer=setTimeout(finish, settleWindowMs);
+      }).catch(()=>{}).finally(()=>{
+        finished++;
+        if(finished >= jobs.length) finish();
+      });
+    }
+  });
+}
+
+async function getSoxNaver(){
+  // v35t: KOSPI와 동일한 2단계 프로세스.
+  //   1) 네이버 상세 화면이 실제 사용하는 .SOX polling URL 직접조회
+  //   2) 모바일 CORS 차단 시 '같은 네이버 polling URL'을 단일 CORS fallback으로 조회
+  // nation/USA, Yahoo, 오래된 AllOrigins JSONP 등 다른 값 후보를 섞지 않습니다.
+  const directTimeout = isLikelyMobileBrowser() ? 2200 : 4200;
+
+  try{
+    const root = await fetchJsonDirect(NAVER_SOX_POLLING, directTimeout);
+    const q = normalizeSoxPolling(root);
+    if(q && Number.isFinite(Number(q.price)) && isNaverSoxRealtimeCandidate(q)){
+      q._transport = 'naver-polling-direct';
+      return q;
+    }
+    throw new Error('SOX direct polling 값이 없거나 최신값 아님');
+  }catch(e){
+    console.warn('[SOX] direct polling failed, same Naver URL CORS fallback', e);
+  }
+
+  const root = await fetchJsonViaCorsDev(NAVER_SOX_POLLING, 5500);
+  const q = normalizeSoxPolling(root);
+  if(q && Number.isFinite(Number(q.price)) && isNaverSoxRealtimeCandidate(q)){
+    q._transport = 'naver-polling-cors-fallback';
+    return q;
+  }
+  throw new Error('SOX 네이버 polling fallback 값이 없거나 최신값 아님');
 }
 
 function saveIndexCache(prefix, q){
@@ -1291,7 +1584,7 @@ function renderIndex(prefix, q){
   // 화면에 보이는 작은 출처 문구는 KOSPI와 SOX를 완전히 동일하게 통일합니다.
   // 내부 조회 경로(JSONP/fallback/cache)는 사용자 화면에 길게 노출하지 않습니다.
   if(prefix === 'kospi' || prefix === 'sox'){
-    parts.push('네이버 증권 실시간');
+    parts.push('실시간 시세');
   }else if(q.source){
     parts.push(q.source);
   }
@@ -1310,25 +1603,27 @@ function renderIndex(prefix, q){
   document.getElementById(prefix + 'Time').textContent = parts.filter(Boolean).join(' · ') || '네이버 증권';
 }
 
+const INDEX_REQUEST_SEQ = {kospi:0, sox:0};
+
 async function loadOneIndex(prefix, getter, options={}){
   const ch = document.getElementById(prefix + 'Change');
+  const valueEl = document.getElementById(prefix + 'Value');
   const quiet = options.quiet === true;
   const cacheFirst = options.cacheFirst !== false;
+  const requestId = (INDEX_REQUEST_SEQ[prefix] || 0) + 1;
+  INDEX_REQUEST_SEQ[prefix] = requestId;
 
-  // KOSPI/SOX 공통: 저장된 마지막 정상값이 있으면 즉시 먼저 표시합니다.
-  // 따라서 네트워크가 몇 초 걸려도 카드가 '-' / '조회 중...' 상태로 비어 있지 않습니다.
-  let hadVisibleValue = false;
+  // 현재 화면 값이 이미 있으면 수동/자동 갱신 중에도 지우지 않습니다.
+  let hadVisibleValue = Boolean(valueEl && valueEl.textContent && valueEl.textContent.trim() !== '-');
   if(cacheFirst){
     const cached = loadIndexCache(prefix);
     if(cached){
-      // KOSPI와 SOX 모두 저장된 기존 표시값을 그대로 한 번 다시 그린 뒤 최신값으로 교체합니다.
-      // SOX만 조회시각을 미리 덮어쓰지 않아 KOSPI와 같은 순간적인 재표시(깜박임)가 발생합니다.
       renderIndex(prefix, cached);
       hadVisibleValue = true;
     }
   }
 
-  // 캐시가 전혀 없는 첫 실행에서만 조회 중 문구를 표시합니다.
+  // 최초 실행에서 캐시도 화면값도 없을 때만 조회 중을 표시합니다.
   if(!quiet && !hadVisibleValue){
     ch.textContent = '네이버 조회 중...';
     ch.className = 'market-change flat';
@@ -1336,15 +1631,17 @@ async function loadOneIndex(prefix, getter, options={}){
 
   try{
     const q = await getter();
+    if(requestId !== INDEX_REQUEST_SEQ[prefix]) return false; // 더 최근 새로고침 결과가 있으면 늦은 응답 폐기
     if(!q || !Number.isFinite(Number(q.price))) throw new Error('유효한 지수값 없음');
-    q.checkedAt = options.checkedAt || Date.now();
+    q.checkedAt = Date.now(); // 실제 최신 응답을 받은 완료 시각. SOX 조회시각 고정 문제 방지
     renderIndex(prefix, q);
     saveIndexCache(prefix, q);
     return true;
   }catch(e){
+    if(requestId !== INDEX_REQUEST_SEQ[prefix]) return false;
     console.error('[INDEX] ' + prefix + ' failed', e);
 
-    // 이미 마지막 정상값을 표시 중이면 그대로 유지합니다. KOSPI/SOX 동일 동작입니다.
+    // 이미 정상값이 보이면 네트워크 실패 때문에 과거 캐시로 되돌리지 않습니다.
     if(hadVisibleValue) return false;
 
     const cached = loadIndexCache(prefix);
@@ -1396,10 +1693,9 @@ function blinkIndexMeta(prefix){
 }
 
 function refreshSoxFromDetail(){
-  // SOX 상세 클릭도 KOSPI 자동 갱신과 같은 표시 방식으로 처리합니다.
-  // 기존 작은 글자를 지우거나 '실시간 조회 중...'으로 바꾸지 않고,
-  // 마지막 정상 표시를 유지한 채 최신 SOX 값을 요청하여 수신 즉시 교체합니다.
-  loadOneIndex('sox', getSoxNaver, {quiet:true, cacheFirst:true, checkedAt:Date.now()});
+  // 상세 버튼을 누르는 순간 화면값은 유지하고 최신 SOX 네트워크 조회를 강제합니다.
+  blinkIndexMeta('sox');
+  loadOneIndex('sox', getSoxNaver, {quiet:true, cacheFirst:false});
 }
 
 async function refreshIndexSameWay(prefix, getter, options={}){
@@ -1445,24 +1741,25 @@ async function refreshIndexSameWay(prefix, getter, options={}){
   }
 }
 
-async function loadMarketIndices(){
-  // 한 번의 수동 새로고침에서 KOSPI와 SOX에 완전히 동일한 한국 조회시각을 부여합니다.
-  const checkedAt = Date.now();
+async function loadMarketIndices(initial=false){
+  // KOSPI/SOX 모두 동일: 기존 표시 유지 -> 네이버 direct 조회 -> 필요 시 단일 fallback -> 성공 즉시 반영.
+  if(!initial){
+    blinkIndexMeta('kospi');
+    blinkIndexMeta('sox');
+  }
   await Promise.all([
-    refreshIndexSameWay('kospi', getKospiNaver, {visibleRefresh:true, checkedAt}),
-    refreshIndexSameWay('sox', getSoxNaver, {visibleRefresh:true, checkedAt})
+    loadOneIndex('kospi', getKospiNaver, {quiet:!initial, cacheFirst:initial}),
+    loadOneIndex('sox', getSoxNaver, {quiet:!initial, cacheFirst:initial})
   ]);
 }
 
 async function refreshMarketIndicesQuiet(){
-  // 자동 갱신은 KOSPI와 SOX 모두 완전히 같은 표시/동작을 사용합니다.
-  // 기존 작은 글자는 유지한 채 두 카드가 동시에 짧게 깜박이고, 최신값 수신 시 교체됩니다.
-  const checkedAt = Date.now();
+  // 자동 갱신도 KOSPI/SOX 동일한 2단계 흐름을 사용합니다.
   blinkIndexMeta('kospi');
   blinkIndexMeta('sox');
   await Promise.all([
-    loadOneIndex('kospi', getKospiNaver, {quiet:true, cacheFirst:true, checkedAt}),
-    loadOneIndex('sox', getSoxNaver, {quiet:true, cacheFirst:true, checkedAt})
+    loadOneIndex('kospi', getKospiNaver, {quiet:true, cacheFirst:false}),
+    loadOneIndex('sox', getSoxNaver, {quiet:true, cacheFirst:false})
   ]);
 }
 
@@ -1760,8 +2057,8 @@ function startDashboard(){
   loadAnalogSettingsToUI();
   loadStocksDirect();
 
-  // 최초 로드부터 KOSPI와 SOX를 같은 한국 조회시각으로 표시합니다.
-  loadMarketIndices();
+  // 최초 로드는 캐시가 있으면 즉시 보여주고, 뒤에서 최신 네트워크 값으로 교체합니다.
+  loadMarketIndices(true);
 
   loadAnalogChannelStats();
 
