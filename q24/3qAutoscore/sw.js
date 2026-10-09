@@ -1,4 +1,4 @@
-const CACHE = '3q-autoscore-v1';
+const CACHE = 'q24-autoscore-v1';
 const ASSETS = [
   './3qAutoscore.html',
   './manifest.webmanifest',
@@ -15,5 +15,5 @@ self.addEventListener('activate', event => {
 });
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-  event.respondWith(fetch(event.request).catch(() => caches.match(event.request).then(r => r || caches.match('./3qAutoscore.html'))));
+  event.respondWith(caches.match(event.request).then(hit => hit || fetch(event.request)));
 });

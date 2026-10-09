@@ -1,7 +1,6 @@
 {
-  "name": "3쿠션 AI AUTO SCORE",
-  "short_name": "AI AUTO SCORE",
-  "id": "./3qAutoscore.html",
+  "name": "Q24 AI AUTO SCORE",
+  "short_name": "Q24 SCORE",
   "start_url": "./3qAutoscore.html",
   "scope": "./",
   "display": "standalone",
