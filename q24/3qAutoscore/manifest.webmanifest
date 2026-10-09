@@ -1,25 +1,24 @@
 {
-  "name": "3쿠션 자동 득점",
-  "short_name": "3Q Auto Score",
-  "description": "3쿠션 영상 자동 득점 판정",
+  "name": "3쿠션 AI AUTO SCORE",
+  "short_name": "AI AUTO SCORE",
+  "id": "./3qAutoscore.html",
   "start_url": "./3qAutoscore.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0c1119",
   "theme_color": "#0c1119",
-  "orientation": "any",
   "icons": [
     {
       "src": "./icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "./icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ]
 }
