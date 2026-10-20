@@ -301,7 +301,7 @@ body>main{max-width:none!important;width:100%!important;min-height:100dvh;margin
  .stage{max-height:78dvh!important}
 }
 :fullscreen main{max-width:none!important;width:100%!important}
-</style></head><body><main>
+</style><style id="remove-recovery-ui">#recoverNowBtn,#recoveryHint{display:none!important}div:has(> #recoverNowBtn){display:none!important}</style></head><body><main>
 <header><div><h1>3Q Score <span class="sub">v52.42 Fullscreen + Replay · 재생/Worker 분리 자동 복구·시작 프레임 확인·코너 쿠션 검증 · 이닝 재검증 · 짧은 가짜 샷 제외 · 원래 규칙 유지</span></h1><div class="sub">모든 MP4 공통 · 실제 수구 타격·목적구 지속 이동 검증 · 결과 CSV 저장</div></div><div class="status-chip" id="mode">영상 선택 대기</div></header>
 <div class="layout"><section class="panel"><div class="head video-head"><div class="video-head-left"><h2>경기 영상</h2><span class="video-status" id="videoInfo" role="status" aria-live="polite">MP4 / CAMERA</span></div><span class="sub" id="fileName">MP4 또는 카메라를 선택하세요</span></div>
 <div class="stage" id="stage"><video id="video" muted playsinline preload="metadata"></video><canvas id="overlay"></canvas></div>
