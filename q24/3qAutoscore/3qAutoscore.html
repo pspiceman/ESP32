@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="dark"><title>3Q Score v52.42 · Fullscreen + Replay</title>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="dark"><title>3Q Score v52.43 · Fullscreen Replay & Causal Contact Audit</title>
 <style>
 :root{--bg:#0b111b;--panel:#142030;--edge:#294056;--text:#e8f1fa;--sub:#9eb2c5;--good:#6be3bd;--bad:#ffa2ad;--warn:#ffd28a}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,"Noto Sans KR",sans-serif;font-size:14px}button,select{font:inherit;min-height:42px;cursor:pointer}button{background:#22384d;border:1px solid #435a73;color:var(--text);border-radius:9px;padding:8px 14px}button:disabled{opacity:.42;cursor:default}.primary{background:var(--good);border-color:var(--good);color:#06352b;font-weight:800}main{max-width:1240px;padding:18px;margin:auto}h1{font-size:23px;margin:0 0 5px}h2{font-size:16px;margin:0}p{line-height:1.5}.sub{color:var(--sub);font-size:12px}header{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:6px 0 16px}.layout{display:grid;grid-template-columns:minmax(0,1fr) 292px;gap:15px}.panel{background:var(--panel);border:1px solid var(--edge);border-radius:15px;overflow:hidden}.panel .head{padding:14px 16px;border-bottom:1px solid var(--edge);display:flex;justify-content:space-between;align-items:center;gap:12px}.stage{position:relative;background:black;aspect-ratio:16/9;max-height:74vh}.stage video,.stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}.stage canvas{touch-action:none}.status-chip{font-size:11px;color:#b8e9d9;background:#133d36;border-radius:7px;padding:4px 7px}.toolbar{padding:13px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}.toolbar select{background:#132332;color:var(--text);border:1px solid #40556d;border-radius:7px;padding:5px 8px}.toolbar .stretch{flex:1}#seek{width:100%;accent-color:var(--good)}.time{display:flex;align-items:center;gap:12px;padding:0 15px;color:var(--sub);font-variant-numeric:tabular-nums;font-size:12px}.score-banner{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px}.score{background:#0d1725;border-radius:12px;padding:14px;text-align:center;border:1px solid var(--edge)}.score strong{font-size:42px;display:block;line-height:1.4;color:var(--good);font-variant-numeric:tabular-nums}.score small{color:var(--sub)}.hero-result{margin:0 14px 14px;background:#0e1a28;padding:15px;border-radius:11px;text-align:center}.hero-result strong{font-size:29px;display:block}.hero-result.score strong{color:var(--good)}.hero-result.miss strong{color:var(--bad)}.hero-result.review strong{color:var(--warn)}.hero-result .sub{margin-top:4px}.flags{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px 14px}.flag{background:#0d1725;padding:10px;border:1px solid var(--edge);border-radius:9px}.flag b{font-size:23px;display:block}.notice{margin:13px 0;padding:11px 12px;background:#182937;color:#c0d5e3;border-left:3px solid var(--good);border-radius:6px;font-size:12px}.notice.warn{border-left-color:var(--warn)}.progress{height:5px;background:#0b141f;margin:11px 14px 4px;border-radius:9px;overflow:hidden}.progress div{background:var(--good);height:100%;width:0}.progress-info{padding:0 15px 13px;color:var(--sub);font-size:12px}.records{margin-top:16px}.scroll{overflow:auto}.scroll table{width:100%;border-collapse:collapse;min-width:630px;font-size:12px}.scroll th,.scroll td{padding:10px 13px;border-bottom:1px solid #28384e;text-align:left}.scroll th{color:var(--sub);font-weight:500}tr:hover{background:#1b3042}.chip{font-weight:700;border-radius:6px;padding:4px 8px;font-size:11px}.chip.score{color:var(--good);background:#14382f}.chip.miss{color:var(--bad);background:#3a232d}.chip.review{color:var(--warn);background:#403526}.row-actions{display:flex;gap:6px}details.panel{margin-top:12px}summary{padding:13px;cursor:pointer;font-weight:700}.settings{padding:14px;border-top:1px solid var(--edge);display:grid;gap:13px}.settings label{color:var(--sub);font-size:12px}.setting-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.settings small{color:var(--sub)}.setting-row select{padding:7px;background:#0d1c2b;color:var(--text);border:1px solid #43596b}.tiny{font-size:11px;color:var(--sub)}.video-chip{position:absolute;left:10px;top:10px;background:#09131bdc;border-radius:7px;padding:6px 10px;font-size:11px;pointer-events:none}.corner-instructions{padding:8px 13px;color:var(--warn);font-size:12px}.footer{color:var(--sub);font-size:11px;margin-top:15px}#overlay{pointer-events:none}#overlay.dragging{pointer-events:auto}#fileName{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#exportBtn{float:right}@media(max-width:800px){.layout{grid-template-columns:1fr}.scores{order:0}.stage{max-height:none}main{padding:10px}.score strong{font-size:39px}header{display:block}h1{font-size:20px}.toolbar button{flex:1}#runBtn{flex:2}}@media(max-width:420px){.toolbar{padding:10px;gap:6px}.toolbar #fileBtn,.toolbar #runBtn{flex:1 1 138px}.toolbar #pauseBtn,.toolbar #stopBtn{flex:1 1 95px}.toolbar .stretch{display:none}.toolbar button{padding:6px 8px}.panel .head{padding:12px}button,select{min-height:40px}}
@@ -253,56 +253,36 @@
 .first-cue-picker{font-size:11px;display:flex;gap:5px;align-items:center;white-space:nowrap;color:#b8d9ee}
 .first-cue-picker select{color:#f1f7ff;background:#142739;border:1px solid #51748b;border-radius:5px;padding:6px 3px;max-width:132px}
 @media(max-width:700px){.inning-panel .head{flex-wrap:wrap}.first-cue-picker{order:2}.quick-actions button{font-size:11px}}
-</style><style data-screen-version="v52.42-full-replay">
-/* v52.42: responsive full-viewport layout, preserving the original analysis engine */
+
+/* v52.42 PC/tablet full-width layout. The engine and Replay use their original video nodes. */
 html,body{width:100%;min-height:100%;overflow-x:hidden}
 body{min-height:100dvh}
-body>main{max-width:none!important;width:100%!important;min-height:100dvh;margin:0 auto!important;padding:clamp(7px,1vw,17px)!important}
-.layout{display:grid!important;grid-template-columns:minmax(0,1fr) clamp(300px,25vw,465px)!important;gap:clamp(8px,1vw,17px)!important;align-items:start;width:100%}
+body>main{width:100%!important;max-width:none!important;min-height:100dvh;margin:0 auto!important;padding:clamp(7px,1vw,18px)!important}
+.layout{width:100%;display:grid;grid-template-columns:minmax(0,1fr) clamp(300px,25vw,460px);gap:clamp(8px,1vw,18px);align-items:start}
 .layout>*{min-width:0}
-.stage{width:100%!important;aspect-ratio:16/9!important;max-height:78dvh!important;background:black}
-.stage video,.stage canvas{object-fit:contain!important;width:100%!important;height:100%!important}
-.toolbar{gap:7px!important;flex-wrap:wrap!important}
-.toolbar button{white-space:normal}
-.records .scroll{width:100%;max-width:100%;overflow-x:auto!important}
-#rv42fullscreen,#rv42latest{min-height:41px;border-radius:8px;padding:8px 13px;font-weight:800;cursor:pointer;white-space:nowrap}
-#rv42fullscreen{color:#eafff6;background:#135f4c;border:1px solid #4aab8b}
-#rv42latest{color:#eaf5ff;background:#215479;border:1px solid #5792be}
-#rows button.rv42-replay{display:block!important;visibility:visible!important;opacity:1!important;margin:4px auto 2px!important;min-height:33px!important;padding:5px 9px!important;border-radius:7px!important;background:#205f52!important;border:1px solid #55a995!important;color:white!important;font-weight:750!important;font-size:11px!important;cursor:pointer!important}
-#rows button.rv42-replay.rv42-uncertain{background:#795428!important;border-color:#c5a365!important;color:#fff1ce!important}
-#rows td:nth-child(2){min-width:137px!important}
-#rv42modal[hidden]{display:none!important}
-#rv42modal{position:fixed;inset:0;z-index:2147483000;background:#061018f5;display:flex;align-items:center;justify-content:center;padding:10px;color:#eaf5ff;overflow-y:auto}
-#rv42modal .rv42-pane{width:min(100%,1200px);max-height:98dvh;overflow-y:auto;background:#132437;border:1px solid #587085;border-radius:12px;padding:12px}
-#rv42modal .rv42-head,#rv42modal .rv42-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:space-between;margin-bottom:9px}
-#rv42modal .rv42-head strong{font-size:16px}
-#rv42modal button{min-height:40px;padding:8px 12px;border-radius:8px;background:#274158;border:1px solid #67849a;color:#f0f8ff;cursor:pointer;font:inherit}
-#rv42modal .rv42-video-wrap{background:#000;aspect-ratio:16/9;width:100%;max-height:69dvh;overflow:hidden;border-radius:8px;touch-action:none;position:relative}
-#rv42modal video{width:100%;height:100%;object-fit:contain;background:#000;display:block;transform-origin:50% 50%}
-#rv42modal .rv42-info{color:#c2d5e4;font-size:12px;line-height:1.55;margin:9px 0}
-#rv42modal .rv42-actions button{flex:1 1 140px}
-#rv42modal #rv42score{background:#17644d;border-color:#52a98a;font-weight:800}
-#rv42modal #rv42miss{background:#743b48;border-color:#ac6b7d;font-weight:800}
-@media(max-width:1100px){
- .layout{grid-template-columns:minmax(0,1fr)!important}
- .stage{max-height:none!important}
-}
+.stage{width:100%;aspect-ratio:16/9;max-height:79dvh}
+.stage video,.stage canvas{width:100%;height:100%;object-fit:contain}
+.toolbar{flex-wrap:wrap;gap:7px}
+.records .scroll{max-width:100%;overflow-x:auto}
+#recoverNowBtn,#recoveryHint{display:none!important}
+div:has(> #recoverNowBtn){display:none!important}
+#r42fullscreen,#r42recent{border-radius:8px;min-height:41px;font-weight:800;padding:7px 13px;white-space:nowrap}
+#r42fullscreen{background:#145e4d;border-color:#55ac8f;color:white}
+#r42recent{background:#245771;border-color:#6b9bb8;color:white}
+#rows button.r41shotbtn{visibility:visible!important;display:inline-block!important;min-height:33px!important}
+#rows td:nth-child(2){min-width:133px}
+@media(max-width:1100px){.layout{grid-template-columns:minmax(0,1fr)}.stage{max-height:none}}
 @media(max-width:650px){
  body>main{padding:7px!important}
- header{display:flex!important;flex-wrap:wrap!important;margin-bottom:7px!important}
- header h1{font-size:18px!important}
- .toolbar button{flex:1 1 118px;min-width:0}
- #rv42fullscreen,#rv42latest{flex:1 1 135px;font-size:12px}
- #rv42modal{padding:3px}
- #rv42modal .rv42-pane{padding:7px}
- #rv42modal .rv42-actions button{min-height:38px;flex:1 1 100px;font-size:12px}
+ header{display:flex!important;flex-wrap:wrap}
+ .toolbar button{flex:1 1 120px;min-width:0}
+ #r42fullscreen,#r42recent{flex:1 1 125px;font-size:12px}
 }
-@media(orientation:landscape) and (max-width:1100px){
- .stage{max-height:78dvh!important}
-}
-:fullscreen main{max-width:none!important;width:100%!important}
-</style><style id="remove-recovery-ui">#recoverNowBtn,#recoveryHint{display:none!important}div:has(> #recoverNowBtn){display:none!important}</style></head><body><main>
-<header><div><h1>3Q Score <span class="sub">v52.42 Fullscreen + Replay · 재생/Worker 분리 자동 복구·시작 프레임 확인·코너 쿠션 검증 · 이닝 재검증 · 짧은 가짜 샷 제외 · 원래 규칙 유지</span></h1><div class="sub">모든 MP4 공통 · 실제 수구 타격·목적구 지속 이동 검증 · 결과 CSV 저장</div></div><div class="status-chip" id="mode">영상 선택 대기</div></header>
+@media(orientation:landscape) and (max-width:1100px){.stage{max-height:78dvh}}
+:fullscreen body>main{max-width:none!important;width:100%!important}
+
+</style></head><body><main>
+<header><div><h1>3Q Score <span class="sub">v52.43 Tablet · Fullscreen + Replay · 목적구 누락 검증 · 재생/Worker 분리 자동 복구·시작 프레임 확인·코너 쿠션 검증 · 이닝 재검증 · 짧은 가짜 샷 제외 · 원래 규칙 유지</span></h1><div class="sub">모든 MP4 공통 · 실제 수구 타격·목적구 지속 이동 검증 · 결과 CSV 저장</div></div><div class="status-chip" id="mode">영상 선택 대기</div></header>
 <div class="layout"><section class="panel"><div class="head video-head"><div class="video-head-left"><h2>경기 영상</h2><span class="video-status" id="videoInfo" role="status" aria-live="polite">MP4 / CAMERA</span></div><span class="sub" id="fileName">MP4 또는 카메라를 선택하세요</span></div>
 <div class="stage" id="stage"><video id="video" muted playsinline preload="metadata"></video><canvas id="overlay"></canvas></div>
 <div class="corner-instructions" id="dragNote" hidden>안쪽 쿠션 접촉선의 네 모서리 ①→④를 손가락/마우스로 끌어 맞춘 뒤 [보정 완료]를 누르세요.</div>
@@ -1185,6 +1165,105 @@ function v5237FastOpeningImpacts(shot){
   }
  }
  return out;
+}
+
+
+// v52.42: Cross-check a previously motionless OBJECT ball that may disappear
+// from the 30fps colour track at the moment of a fast opening collision.
+// This is general physics-based evidence, NOT a timestamp/video/score lookup.
+// A proximity-only pass or a one-frame HSV-coordinate jump is never a hit.
+function v5242OpeningCausalObjectResponse(shot){
+ const events=[],audits=[];
+ const D=shot?.diameter||21.6, start=shot?.start, cue=shot?.cue;
+ const pose=shot?.preShotPose||[], path=shot?.path||[];
+ if(!Number.isFinite(start)||!Number.isInteger(cue)||!pose[cue]||path.length<8)
+   return {events,audits};
+ const valid=(f,id)=>{const p=f?.p?.[id];return p&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&(p.q??1)>=.30;};
+ const horizon=Math.min(Number(shot.end??start+4),start+3.3);
+ for(const target of [0,1,2]){
+  if(target===cue||!pose[target])continue;
+  const present=(shot.events||[]).some(e=>e.type==='ball'&&e.target===target&&e.confirmed&&
+   (e._responseFinal?.status==='supported'||verifyObjectResponse({...shot,finished:true},e).status==='supported'));
+  if(present)continue;
+  const baseline=pose[target],initialCue=pose[cue];
+  const obs=path.filter(f=>f.t>=start-.10&&f.t<=horizon+.78&&valid(f,target));
+  if(obs.length<6){audits.push({target,status:'insufficient-target-frames',count:obs.length});continue;}
+  let confirmed=null,nearMiss=null;
+  for(let i=0;i<obs.length-3;i++){
+   const first=obs[i],begin=first.t;
+   if(begin<start-.06||begin>horizon)continue;
+   const offset=dist(first.p[target],baseline);
+   // Observed target must depart its independently established pre-shot pose.
+   if(offset<D*.18||offset>D*9.5)continue;
+   const preceding=obs.slice(Math.max(0,i-5),i);
+   const oldStill=preceding.filter(f=>begin-f.t<=.38&&dist(f.p[target],baseline)<D*.30);
+   const openingOccluded=(begin-start<.36&&offset<D*6.5&&preceding.length<=2);
+   if(!oldStill.length&&!openingOccluded)continue;
+   const post=obs.slice(i).filter(f=>f.t<=begin+.75);
+   if(post.length<4||post.at(-1).t-begin<.14)continue;
+   const finalP=post.at(-1).p[target],travel=dist(finalP,baseline);
+   if(travel<D*.76)continue;
+   const outward=sub(finalP,baseline),outwardLen=norm(outward);
+   let coherentSteps=0,positiveTravel=0,validSteps=0,teleport=false;
+   for(let j=1;j<post.length;j++){
+    const a=post[j-1],b=post[j],dt=b.t-a.t;
+    if(dt<=.015||dt>.17)continue;
+    const step=sub(b.p[target],a.p[target]),len=norm(step);
+    if(len>Math.max(D*3.5,3200*dt)){teleport=true;break;}
+    validSteps++;
+    if(len>D*.075&&dot(step,outward)>.40*len*outwardLen){coherentSteps++;positiveTravel+=len;}
+   }
+   if(teleport||validSteps<3||coherentSteps<3||positiveTravel<D*.57)continue;
+   // Locate the actual striker near the STILL target position. Require a
+   // continuous cue-ball segment; colour overlap may hide a single impact frame.
+   let nearest=Infinity,hitAt=null,approach=null;
+   for(let j=1;j<path.length;j++){
+    const a=path[j-1],b=path[j],dt=b.t-a.t;
+    if(b.t<begin-.26||a.t>begin+.10||dt<=.012||dt>.17||!valid(a,cue)||!valid(b,cue))continue;
+    const motion=dist(a.p[cue],b.p[cue]);
+    if(motion>Math.max(92,3500*dt))continue;
+    const sw=swept(a.p[cue],b.p[cue],baseline,baseline),when=a.t+sw.u*dt;
+    if(when<begin-.25||when>begin+.085)continue;
+    if(sw.d<nearest){nearest=sw.d;hitAt=when;approach=sw.a;}
+   }
+   let method='verified-cue-sweep-and-object-launch';
+   if(!(nearest<=D*1.22)){
+    // First collision may happen inside a merged cue/target blob before a
+    // separate cue segment exists. Permit this ONLY for a clearly nearby
+    // pre-shot pair AND sustained motion of both balls in causal directions.
+    const separation=dist(initialCue,baseline);
+    if(!openingOccluded||begin-start>.36||separation>D*3.0||separation<D*.80)continue;
+    const nearCue=path.filter(f=>f.t>=start-.02&&f.t<=begin+.34&&valid(f,cue));
+    if(nearCue.length<3)continue;
+    const displacement=dist(nearCue.at(-1).p[cue],initialCue);
+    const cueMotion=sub(nearCue.at(-1).p[cue],initialCue);
+    const fromCue=sub(baseline,initialCue);
+    const toward=dot(cueMotion,fromCue)/Math.max(norm(cueMotion)*norm(fromCue),1);
+    const away=dot(outward,fromCue)/Math.max(outwardLen*norm(fromCue),1);
+    if(displacement<D*.65||toward<.10||away<.12)continue;
+    method='opening-overlap-dual-ball-departure';
+    nearest=separation;hitAt=begin;
+   }else{
+    const radial=sub(baseline,approach||initialCue);
+    if(norm(radial)>D*.18&&dot(outward,radial)<.075*outwardLen*norm(radial))continue;
+   }
+   const candidate={target,t:Math.max(start,Math.min(begin,hitAt??begin)),method,
+      travel:+travel.toFixed(2),coherentSteps,near:+nearest.toFixed(2),onset:+begin.toFixed(3)};
+   if(!confirmed||candidate.t<confirmed.t)confirmed=candidate;
+  }
+  if(confirmed){
+   const proof={status:'supported',reason:'v52.42-'+confirmed.method,target,t:confirmed.t,
+    response:confirmed.travel,threshold:+(D*.76).toFixed(2),cueNearest:confirmed.near,
+    postAdvances:confirmed.coherentSteps,observedOnset:confirmed.onset,
+    source:'pre-shot-stillness-plus-independent-cue-and-target-motion'};
+   events.push({type:'ball',target,t:confirmed.t,confirmed:true,
+     distance:confirmed.near,evidence:proof.reason,_responseFinal:proof});
+   audits.push({target,status:'supported',...confirmed});
+  }else{
+   audits.push({target,status:'not-proven',reason:'no-causal-two-body-trajectory'});
+  }
+ }
+ return {events,audits};
 }
 
 function evaluateShot(shot){
@@ -3396,6 +3475,22 @@ class ShotEngine{
       if(s.fastOpeningAuditV5237.length)s.events.sort((a,b)=>a.t-b.t);
     }
     if(complete)this.recoverCausalContactsV5227(true);
+    // Independently prove missed fast/occluded object-ball launch at shot end.
+    // Do not add any ball from mere proximity or relaxed cushion thresholds.
+    if(complete){
+      const recovery=v5242OpeningCausalObjectResponse(s);
+      s.objectLaunchAuditV5242=recovery.audits;
+      for(const ev of recovery.events){
+        const already=s.events.some(e=>e.type==='ball'&&e.target===ev.target&&e.confirmed&&
+          (e._responseFinal?.status==='supported'||verifyObjectResponse({...s,finished:true},e).status==='supported'));
+        if(already)continue;
+        s.events.push(ev);
+        s.contactRecoveryV5227=s.contactRecoveryV5227||[];
+        s.contactRecoveryV5227.push({t:ev.t,target:ev.target,method:ev.evidence,proof:ev._responseFinal});
+        this.issue('v52.42 · 정지한 상대 목적구의 연속 출발과 수구 접근 동시 입증');
+      }
+      if(recovery.events.length)s.events.sort((a,b)=>a.t-b.t);
+    }
     if(complete)s.contactChronologyAuditV5229=v5229RefineCloseChronology(s);
     // Only after full three-ball settling, run the independent missing-contact
     // verification BEFORE issuing a miss or sounding the miss bell.
@@ -4267,6 +4362,9 @@ function normalizeAutoShot(s){
     cues.push('목적구 충격 반응 자료 부족 · 득점 보존 (영상 확인 권장)');
   if((s.missing||0)>=8&&(s.autoResult==='score'))
     cues.push('공 추적 누락 다수 · 득점 확인 권장');
+  if(s.autoResult==='miss'&&s.cushionsTotal>=3&&(s.objects?.length||0)===1&&
+      (s.issues||[]).some(x=>/프레임 간격 누락|공 가림|추적 손실/.test(String(x))))
+    cues.push('3쿠션 이상 · 상대 목적구 접촉 누락 가능성 · Replay 확인 권장');
   if((s.objectResponseAudit||[]).some(x=>x.status==='no-response'))
     cues.push('목적구 근접 통과 · 지속적 충격 반응 없음 → 접촉 불인정 (AI 무득점)');
   if((s.objectResponseAudit||[]).some(x=>x.status==='insufficient'))
@@ -4950,7 +5048,7 @@ if(d.type==='finish'){
  self.postMessage({type:'done',session,frames,total:engine.shots.length});
 }
 }catch(e){if(d.bitmap)try{d.bitmap.close()}catch(_){}self.postMessage({type:'error',session,message:String(e?.stack||e)});}};
-function compact(s){const v=s.verdict||evaluateShot(s);return {id:s.id,start:s.start,end:s.end,cue:s.cue,cueRoleAudit:s.cueRoleAudit||null,cueRoleCorrected:s.cueRoleCorrected||null,cueRoleAuditV5226:s.cueRoleAuditV5226||null,cueRoleAuditV5227:s.cueRoleAuditV5227||null,contactRecoveryV5227:s.contactRecoveryV5227||[],briefShotAuditV5229:s.briefShotAuditV5229||null,contactChronologyAuditV5229:s.contactChronologyAuditV5229||null,independentLaunchAuditV5230:s.independentLaunchAuditV5230||null,negativeResponseV5227:s.negativeResponseV5227||[],stopEvidenceV5227:s.stopEvidenceV5227||null,cueEvidence:s.cueEvidence,cueStickEvidence:s.cueStickEvidence,cueStartMethod:s.cueStartMethod,result:v.result,reviewCause:v.reviewCause,cushions:v.cushionsTotal,cushionsTotal:v.cushionsTotal,cushionsAtSecond:v.completed?.cushions??null,orderMismatch:v.orderMismatch,proofKept:v.proofKept,chronologyCorrected:s.chronologyCorrected||null,scoreLocked:Boolean(s.certifiedProof?.score),thirdCushionT:v.thirdCushionT,secondObjectT:v.secondObjectT,objects:v.objects,railAuditV5237:s.railAuditV5237||[],fastOpeningAuditV5237:s.fastOpeningAuditV5237||[],issues:s.issues,missing:s.missing,observations:s.observations,stopConfirmed:s.stopConfirmed,engineRuleResult:v.ruleResult,missRecheck:s.missRecheck,stableProof:s.stableProof||null,contactAudit:s.contactAudit||[],objectResponseAudit:v.objectResponses||[],preShotPose:s.preShotPose?.map(p=>p?{x:p.x,y:p.y}:null)||null,events:s.events.filter(x=>x.confirmed).map(x=>({t:x.t,type:x.type,side:x.side,target:x.target,evidence:x.evidence}))};}
+function compact(s){const v=s.verdict||evaluateShot(s);return {id:s.id,start:s.start,end:s.end,cue:s.cue,cueRoleAudit:s.cueRoleAudit||null,cueRoleCorrected:s.cueRoleCorrected||null,cueRoleAuditV5226:s.cueRoleAuditV5226||null,cueRoleAuditV5227:s.cueRoleAuditV5227||null,contactRecoveryV5227:s.contactRecoveryV5227||[],briefShotAuditV5229:s.briefShotAuditV5229||null,contactChronologyAuditV5229:s.contactChronologyAuditV5229||null,independentLaunchAuditV5230:s.independentLaunchAuditV5230||null,negativeResponseV5227:s.negativeResponseV5227||[],stopEvidenceV5227:s.stopEvidenceV5227||null,cueEvidence:s.cueEvidence,cueStickEvidence:s.cueStickEvidence,cueStartMethod:s.cueStartMethod,result:v.result,reviewCause:v.reviewCause,cushions:v.cushionsTotal,cushionsTotal:v.cushionsTotal,cushionsAtSecond:v.completed?.cushions??null,orderMismatch:v.orderMismatch,proofKept:v.proofKept,chronologyCorrected:s.chronologyCorrected||null,scoreLocked:Boolean(s.certifiedProof?.score),thirdCushionT:v.thirdCushionT,secondObjectT:v.secondObjectT,objects:v.objects,railAuditV5237:s.railAuditV5237||[],fastOpeningAuditV5237:s.fastOpeningAuditV5237||[],objectLaunchAuditV5242:s.objectLaunchAuditV5242||[],issues:s.issues,missing:s.missing,observations:s.observations,stopConfirmed:s.stopConfirmed,engineRuleResult:v.ruleResult,missRecheck:s.missRecheck,stableProof:s.stableProof||null,contactAudit:s.contactAudit||[],objectResponseAudit:v.objectResponses||[],preShotPose:s.preShotPose?.map(p=>p?{x:p.x,y:p.y}:null)||null,events:s.events.filter(x=>x.confirmed).map(x=>({t:x.t,type:x.type,side:x.side,target:x.target,evidence:x.evidence}))};}
 `;
 let v5220Diagnostics=[];
 let v5221Events=[];
@@ -5650,289 +5748,6 @@ $('rows').addEventListener('change',e=>{
  if(shot.manualCue===null)cueOverrides.delete(shot.id);else cueOverrides.set(shot.id,shot.manualCue);
  render();msg(`SHOT #${shot.id} 선수 ${shot.manualCue===null?'AI 인식 복원':shot.manualCue+1+'P 직접 확정'} · 연결된 앞 샷의 득점과 이닝 기록을 다시 계산했습니다.`);
 });
-(function nativeReplayV5242(){
-'use strict';
-const q=id=>document.getElementById(id);
-const rowElement=q('rows'),mainVideo=q('video');
-if(!rowElement||!mainVideo)return;
-if(q('rv42modal'))return;
-let activeId=null,clipEnd=Infinity,zoom=1,origin=[50,50],autoPaused=false,blobURL=null,activeSource='';
-let clipSerial=0;
-const modal=document.createElement('div');
-modal.id='rv42modal';modal.hidden=true;
-modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
-modal.setAttribute('aria-label','샷 Replay');
-modal.innerHTML=`
-<div class="rv42-pane">
- <div class="rv42-head"><strong id="rv42title">Replay</strong><button type="button" id="rv42close">닫기 ✕</button></div>
- <div class="rv42-video-wrap" id="rv42wrap"><video id="rv42player" controls playsinline muted preload="metadata"></video></div>
- <div id="rv42info" class="rv42-info">완료된 샷 기록은 Replay 시청으로 변경되지 않습니다.</div>
- <div class="rv42-actions">
-  <button type="button" id="rv42whole">전체 샷 · 1배속</button>
-  <button type="button" id="rv42focus">의심 구간 확대 · 0.5배속</button>
-  <button type="button" id="rv42minus">축소 −</button>
-  <button type="button" id="rv42plus">확대 +</button>
- </div>
- <div class="rv42-actions">
-  <button type="button" id="rv42score">✓ 득점 확정 +1</button>
-  <button type="button" id="rv42miss">✕ 무득점 확정</button>
-  <button type="button" id="rv42auto">AI 판정 복원</button>
- </div>
-</div>`;
-document.body.appendChild(modal);
-const player=q('rv42player');
-function getShot(){return shots.find(s=>s.id===activeId)||null;}
-function uncertain(s){return Boolean(s?.reviewRecommended||(s?.reviewReasons||[]).length||s?.orderMismatch);}
-function timeLabel(t){
- const n=Math.max(0,Math.floor(Number(t)||0));
- return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
-}
-function eventData(s){
- const audit=[...(s.railAuditV5237||[]),...(s.contactAudit||[])].filter(e=>Number.isFinite(Number(e.t))&&Number(e.t)>=s.start&&Number(e.t)<=s.end);
- const events=(audit.length?audit:s.events||[]).filter(e=>Number.isFinite(Number(e.t))&&Number(e.t)>=s.start&&Number(e.t)<=s.end);
- events.sort((a,b)=>Number(a.t)-Number(b.t));
- const e=events.length?events[Math.floor(events.length/2)]:null;
- const fallback=Number(s.secondObjectT);
- const time=e?Number(e.t):(Number.isFinite(fallback)&&fallback>s.start&&fallback<s.end?fallback:(s.start+s.end)/2);
- return {time,event:e};
-}
-function mapPosition(s,e,t){
- const side=String(e?.side||'');
- if(side==='상'||side==='top')return [50,17];
- if(side==='하'||side==='bottom')return [50,83];
- if(side==='좌'||side==='left')return [12,50];
- if(side==='우'||side==='right')return [88,50];
- const target=Number.isInteger(e?.target)?e.target:s.cue;
- const frame=(s.path||[]).filter(f=>f?.p?.[target]&&Number.isFinite(f.t)).sort((a,b)=>Math.abs(a.t-t)-Math.abs(b.t-t))[0];
- const point=frame?.p?.[target]||s.preShotPose?.[target];
- const corners=cfg?.corners;
- if(!point||!Array.isArray(corners)||corners.length!==4)return [50,50];
- const x=Math.min(1,Math.max(0,point.x/1000)),y=Math.min(1,Math.max(0,point.y/500));
- const top=[corners[0][0]*(1-x)+corners[1][0]*x,corners[0][1]*(1-x)+corners[1][1]*x];
- const bottom=[corners[3][0]*(1-x)+corners[2][0]*x,corners[3][1]*(1-x)+corners[2][1]*x];
- return [Math.max(10,Math.min(90,100*(top[0]*(1-y)+bottom[0]*y))),Math.max(10,Math.min(90,100*(top[1]*(1-y)+bottom[1]*y)))];
-}
-function applyZoom(){
- player.style.transformOrigin=origin[0]+'% '+origin[1]+'%';
- player.style.transform='scale('+zoom+')';
-}
-function mp4Source(){
- const uri=(typeof fileURL!=='undefined'&&fileURL)||mainVideo.currentSrc||mainVideo.src;
- return uri&&/^(blob:|data:|https?:|file:)/.test(uri)?uri:null;
-}
-async function playRange(begin,end,rate){
- const serial=++clipSerial;
- player.pause();clipEnd=end;
- const seek=()=>{
-  if(serial!==clipSerial||activeId==null)return;
-  try{
-   const duration=player.duration;
-   player.currentTime=Number.isFinite(duration)?Math.max(0,Math.min(begin,duration-.1)):Math.max(0,begin);
-  }catch(_){}
-  player.playbackRate=rate;
-  void player.play().catch(()=>{q('rv42info').textContent+=' · 재생 버튼을 눌러주세요.';});
- };
- if(player.readyState>=1)seek();
- else player.addEventListener('loadedmetadata',seek,{once:true});
-}
-function setMode(mode,segment=null){
- const s=getShot();if(!s)return;
- const detail=mode==='focus',event=eventData(s);
- const t=event.time;
- zoom=detail?2.2:1;origin=detail?mapPosition(s,event.event,t):[50,50];applyZoom();
- q('rv42title').textContent='SHOT #'+s.id+' · '+(detail?'의심 구간 확대 · 0.5배속':'전체 샷 · 1배속');
- let begin=detail?Math.max(0,s.start-.4,t-1.3):Math.max(0,s.start-.3);
- let end=detail?Math.min(s.end+.6,t+2):Math.max(s.start+1,s.end+.4);
- q('rv42info').textContent=detail?
-  '의심 접촉 구간 '+timeLabel(t)+' 전후 약 3초 · 확대 위치는 추정치이며 드래그로 조정할 수 있습니다.':
-  '전체 샷 1배속 · 시청만으로 득점과 이닝 기록은 변경되지 않습니다.';
- if(segment){
-  begin=Math.max(0,begin-segment.start);
-  end=Math.max(begin+.1,end-segment.start);
- }else if(cameraActive){
-  q('rv42info').textContent+=' · 카메라 클립 준비 중';
-  return;
- }
- void playRange(begin,end,detail?.5:1);
-}
-function close(){
- const resume=autoPaused;
- modal.hidden=true;
- clipSerial++;
- player.pause();player.removeAttribute('src');player.load();
- if(blobURL){URL.revokeObjectURL(blobURL);blobURL=null;}
- activeSource='';activeId=null;clipEnd=Infinity;autoPaused=false;
- if(resume&&running&&paused)q('pauseBtn')?.click();
-}
-function confirmResult(result){
- const s=getShot();if(!s)return;
- s.manualResult=['score','miss'].includes(result)?result:null;
- s.manualSource=s.manualResult?'human-replay-confirmation':null;
- s.manualEditedAt=s.manualResult?new Date().toISOString():null;
- s.discrepancyChecked=false;s.discrepancyCheckedAt=null;
- const id=s.id;
- close();render();
- const notice=q('notice');
- if(notice)notice.textContent='SHOT #'+id+' · '+(result==='score'?'득점':result==='miss'?'무득점':'AI 원판정')+' 확정 반영 · 누적 점수/이닝 재계산 · 기존 샷 기록 유지';
-}
-q('rv42close').onclick=close;
-q('rv42score').onclick=()=>confirmResult('score');
-q('rv42miss').onclick=()=>confirmResult('miss');
-q('rv42auto').onclick=()=>confirmResult('auto');
-q('rv42whole').onclick=()=>setMode('whole',activeSource?.segment||null);
-q('rv42focus').onclick=()=>setMode('focus',activeSource?.segment||null);
-q('rv42minus').onclick=()=>{zoom=Math.max(1,zoom-.4);applyZoom();};
-q('rv42plus').onclick=()=>{zoom=Math.min(4,zoom+.4);applyZoom();};
-player.addEventListener('timeupdate',()=>{if(player.currentTime>=clipEnd-.04)player.pause();});
-modal.addEventListener('click',e=>{if(e.target===modal)close();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!modal.hidden)close();});
-let drag=null;
-q('rv42wrap').addEventListener('pointerdown',e=>{
- if(e.target!==player||zoom<=1)return;
- drag={x:e.clientX,y:e.clientY,ox:origin[0],oy:origin[1]};
- q('rv42wrap').setPointerCapture(e.pointerId);
-});
-q('rv42wrap').addEventListener('pointermove',e=>{
- if(!drag)return;
- const box=q('rv42wrap');
- origin=[
-  Math.max(5,Math.min(95,drag.ox-(e.clientX-drag.x)*100/Math.max(1,box.clientWidth)/zoom)),
-  Math.max(5,Math.min(95,drag.oy-(e.clientY-drag.y)*100/Math.max(1,box.clientHeight)/zoom))
- ];
- applyZoom();
-});
-q('rv42wrap').addEventListener('pointerup',()=>drag=null);
-q('rv42wrap').addEventListener('pointercancel',()=>drag=null);
-
-// Camera: keep short, independent MediaRecorder clips without changing the scoring stream.
-let rec=null,startWall=0,segments=[],liveStream=null;
-function startRecorder(){
- if(!cameraActive||!(mainVideo.srcObject instanceof MediaStream)||rec||!window.MediaRecorder)return;
- const stream=mainVideo.srcObject;
- try{
-  const mime=['video/webm;codecs=vp8','video/webm','video/mp4'].find(m=>MediaRecorder.isTypeSupported(m));
-  const mr=new MediaRecorder(stream,mime?{mimeType:mime,videoBitsPerSecond:950000}:{videoBitsPerSecond:950000});
-  const begin=Number(mainVideo.currentTime)||0,created=performance.now(),chunks=[];
-  mr.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data);};
-  mr.onstop=()=>{
-   const end=Number(mainVideo.currentTime)||begin+(performance.now()-created)/1000;
-   if(chunks.length){
-    segments.push({start:begin,end:Math.max(end,begin+.1),blob:new Blob(chunks,{type:mr.mimeType||'video/webm'})});
-    segments=segments.slice(-7);
-   }
-   rec=null;
-   if(cameraActive&&mainVideo.srcObject===stream)startRecorder();
-  };
-  mr.onerror=()=>{rec=null;};
-  mr.start(1000);rec=mr;startWall=performance.now();liveStream=stream;
- }catch(_){}
-}
-async function cameraSegment(s){
- startRecorder();
- if(rec?.state==='recording'){
-  const cur=rec;
-  await Promise.race([
-   new Promise(resolve=>{cur.addEventListener('stop',resolve,{once:true});try{cur.stop();}catch(_){resolve();}}),
-   new Promise(resolve=>setTimeout(resolve,1500))
-  ]);
- }
- const matches=segments.filter(x=>s.start<=x.end+1&&s.end>=x.start-1);
- return matches.at(-1)||segments.at(-1)||null;
-}
-setInterval(()=>{
- if(!cameraActive||!(mainVideo.srcObject instanceof MediaStream)){
-  if(rec?.state==='recording')try{rec.stop();}catch(_){}
-  return;
- }
- if(liveStream!==mainVideo.srcObject){
-  if(rec?.state==='recording')try{rec.stop();}catch(_){}
-  segments=[];liveStream=mainVideo.srcObject;
- }
- if(!rec)startRecorder();
- else if(rec.state==='recording'&&performance.now()-startWall>12000)try{rec.stop();}catch(_){}
-},1500);
-async function openReplay(id){
- const s=shots.find(x=>x.id===id);
- if(!s)return;
- if(activeId!=null)close();
- activeId=id;modal.hidden=false;
- autoPaused=Boolean(!cameraActive&&running&&!paused);
- if(autoPaused)q('pauseBtn')?.click();
- const source=!cameraActive?mp4Source():null;
- if(source){
-  activeSource={url:source,segment:null};
-  player.src=source;player.load();
-  setMode(uncertain(s)?'focus':'whole');
-  return;
- }
- if(cameraActive){
-  q('rv42title').textContent='SHOT #'+id+' · 카메라 Replay 준비';
-  q('rv42info').textContent='카메라 녹화 구간을 준비하고 있습니다.';
-  const clip=await cameraSegment(s);
-  if(activeId!==id)return;
-  if(!clip){
-   q('rv42info').textContent='현재 카메라 녹화 구간을 사용할 수 없습니다. 수동 점수 확정은 가능합니다.';
-   return;
-  }
-  blobURL=URL.createObjectURL(clip.blob);
-  activeSource={url:blobURL,segment:clip};
-  player.src=blobURL;player.load();
-  setMode(uncertain(s)?'focus':'whole',clip);
-  return;
- }
- q('rv42info').textContent='선택한 샷의 영상 소스를 찾지 못했습니다. MP4가 불러와진 상태인지 확인하세요.';
-}
-function updateButtons(){
- const old=Array.from(rowElement.querySelectorAll('button.shot-replay[data-replay]'));
- for(const b of old){
-  const cell=b.closest('td');
-  if(!cell||cell.querySelector('button.rv42-replay'))continue;
-  const id=Number(b.dataset.replay),s=shots.find(x=>x.id===id);
-  const btn=document.createElement('button');
-  btn.type='button';btn.dataset.replay=String(id);
-  btn.className='rv42-replay'+(uncertain(s)?' rv42-uncertain':'');
-  btn.textContent=uncertain(s)?'▶ Replay ⚠':'▶ Replay';
-  btn.title=uncertain(s)?'의심 구간 확대 · 0.5배속':'전체 샷 · 1배속';
-  b.insertAdjacentElement('afterend',btn);
-  b.title='샷 영상 확인 · 기록은 변경되지 않음';
- }
-}
-new MutationObserver(updateButtons).observe(rowElement,{childList:true});
-updateButtons();
-// Capture phase: do NOT allow the original timestamp handler to call replayShot()
-// and restart the scoring worker or delete later shot records.
-rowElement.addEventListener('click',e=>{
- const b=e.target.closest('button[data-replay]');
- if(!b||!rowElement.contains(b))return;
- e.preventDefault();e.stopImmediatePropagation();e.stopPropagation();
- void openReplay(Number(b.dataset.replay));
-},true);
-const toolbar=q('pauseBtn')?.parentElement||document.querySelector('.toolbar');
-if(toolbar){
- const last=document.createElement('button');
- last.id='rv42latest';last.type='button';last.textContent='▶ 최근 샷 Replay';
- last.onclick=()=>{
-  const s=shots.at(-1);
-  if(s)void openReplay(s.id);
-  else alert('완료된 샷 기록이 없습니다.');
- };
- const fs=document.createElement('button');
- fs.id='rv42fullscreen';fs.type='button';
- const refresh=()=>{fs.textContent=document.fullscreenElement?'⤢ 전체화면 해제':'⛶ 전체화면';};
- fs.onclick=async()=>{
-  try{
-   if(document.fullscreenElement)await document.exitFullscreen();
-   else if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();
-   else alert('전체화면 전환을 지원하지 않습니다. PC에서는 F11을 사용해 주세요.');
-  }catch(_){alert('브라우저가 전체화면 전환을 허용하지 않았습니다.');}
- };
- document.addEventListener('fullscreenchange',refresh);
- const pause=q('pauseBtn');
- if(pause?.parentElement===toolbar){pause.insertAdjacentElement('afterend',last);last.insertAdjacentElement('afterend',fs);}
- else toolbar.append(last,fs);
- refresh();
-}
-})();
 $('rows').addEventListener('click',e=>{
  const confirm=e.target.closest('button[data-turn-confirm]');
  if(confirm){const shot=shots.find(s=>s.id===Number(confirm.dataset.turnConfirm));if(!shot||!['score','miss'].includes(shot.turnResult))return;shot.manualResult=shot.turnResult;shot.manualSource='human-turn-confirmation';shot.manualEditedAt=new Date().toISOString();render();msg(`SHOT #${shot.id} · ${resultName(shot.turnResult)}을 경기 확인 결과로 수동 확정했습니다. AI 최초 판정은 변경하지 않았습니다.`);return;}
@@ -6016,14 +5831,14 @@ let normalLastDisplayAt=0;
 v.addEventListener('timeupdate',()=>{if(inningPreviewEnd!==null&&!running&&v.currentTime>=inningPreviewEnd-.025){v.pause();inningPreviewEnd=null;uiMode('이닝 영상 미리보기 완료');}if(running&&!paused&&performance.now()-normalLastDisplayAt>850){normalLastDisplayAt=performance.now();updateProgress();}if(!running&&!replayActive){$('now').textContent=format(v.currentTime);$('seek').value=v.currentTime;}});
 $('exportBtn').onclick=()=>{
  const csvScore=[0,0];
- const rows=[['샷','시작초','종료초','수구','쿠션','목적구','v46엔진 원판정','자동판정','검토 권장','검토 사유','수동 확정','최종판정','득점 누적(1P:2P)','이닝 번호','실제 선수 지정','턴 우선 판정','다음 타격 선수','판정 근거','엔진 이슈','2번째 목적구 당시 쿠션','세번째 쿠션 접촉초','두번째 목적구 접촉초','공 추적 누락수','공 정지 확인','재검사 정보','시작 전 3공 정지 확인(초)','v52.1 목적구 접촉 참고검증','상대 턴 누락 경계','턴 경계 출처','AI 최초 판정','턴 추정(참고)','실제 수동 확정','AI 대 실제 불일치','검토 체크','검토 시각','샷 수동 복구','목적구 충격반응 검증','큐대 샷 감지 방식','큐대 방향/수구가속도 증거','1차 AI 판정','2차 재분석 결과','2차 복구샷 여부','2차 검사 근거','2차 자동채택','2차 채택 증거','v52.27 수구 출발 재검증','수구 자동 보정','이닝 변경 원인','v52.27 contact onset proof','v52.27 stationary negative evidence','v52.27 settle proof','v52.27 pass2 correction','v52.29 short-shot validity','v52.29 near-chronology proof','v52.30 independent cue launch validity','v52.37 duplicate tracking echo audit','v52.37 cushion-event proof','v52.37 high-speed opening impact proof']];
+ const rows=[['샷','시작초','종료초','수구','쿠션','목적구','v46엔진 원판정','자동판정','검토 권장','검토 사유','수동 확정','최종판정','득점 누적(1P:2P)','이닝 번호','실제 선수 지정','턴 우선 판정','다음 타격 선수','판정 근거','엔진 이슈','2번째 목적구 당시 쿠션','세번째 쿠션 접촉초','두번째 목적구 접촉초','공 추적 누락수','공 정지 확인','재검사 정보','시작 전 3공 정지 확인(초)','v52.1 목적구 접촉 참고검증','상대 턴 누락 경계','턴 경계 출처','AI 최초 판정','턴 추정(참고)','실제 수동 확정','AI 대 실제 불일치','검토 체크','검토 시각','샷 수동 복구','목적구 충격반응 검증','큐대 샷 감지 방식','큐대 방향/수구가속도 증거','1차 AI 판정','2차 재분석 결과','2차 복구샷 여부','2차 검사 근거','2차 자동채택','2차 채택 증거','v52.27 수구 출발 재검증','수구 자동 보정','이닝 변경 원인','v52.27 contact onset proof','v52.27 stationary negative evidence','v52.27 settle proof','v52.27 pass2 correction','v52.29 short-shot validity','v52.29 near-chronology proof','v52.30 independent cue launch validity','v52.37 duplicate tracking echo audit','v52.37 cushion-event proof','v52.37 high-speed opening impact proof','v52.42 causal object launch verification']];
  const innings=buildInnings(),byShotId=new Map();
  for(const i of innings)for(const trn of i.turns)if(trn)for(const id of trn.shotIds)byShotId.set(id,i.number);
  for(const s of shots){const p=playerForShot(s),res=effectiveResult(s);if(res==='score'&&p!==null)csvScore[p]++;
   rows.push([s.id,Number(s.start).toFixed(3),Number(s.end||0).toFixed(3),CUE_NAMES[s.cue]||'?',s.cushions,s.objects?.length||0,
    s.engineResult||s.result,resultName(s.autoResult),s.reviewRecommended?'Y':'N',(s.reviewReasons||[]).join(' / '),
    s.manualResult?(s.manualResult==='score'?'득점':'무득점'):'',res==='score'?'득점':res==='miss'?'무득점':'턴 대기',`${csvScore[0]}:${csvScore[1]}`,byShotId.get(s.id)||'',s.manualCue==null?'AI':`${s.manualCue+1}P`,resultName(s.turnResult),s.turnNextCue==null?'':`${s.turnNextCue+1}P`,s.manualResult?'경기자 득점 확정':(manualPriority?(s.turnEvidence||'다음 선수 대기'):'AI 득점 판정'),
-   (s.issues||[]).join(' / '),s.cushionsAtSecond??'',s.thirdCushionT??'',s.secondObjectT??'',s.missing||0,s.stopConfirmed?'Y':'N',s.missRecheck?.status||'',s.stableProof?.seconds?.toFixed(2)||'',(s.contactAudit||[]).map(x=>'공'+x.target+' '+x.status+' / '+x.reason+' / 근접 '+(x.near??'?')+' / 반응 '+(x.response??'?')+' / '+x.evidence).join(' / '),s.turnBridge?'Y':'N',s.turnGapKind||'',resultName(s.autoResult),resultName(s.turnResult),s.manualResult?resultName(s.manualResult):'',aiHumanDifference(s)?'Y':'',aiHumanDifference(s)&&s.discrepancyChecked&&s.discrepancySignature===aiHumanDifference(s).signature?'Y':'',s.discrepancyCheckedAt||'',s.manualRecovered?'Y':'',(s.objectResponseAudit||[]).map(x=>'공'+x.target+' '+x.status+' / '+(x.reason||'')+' / 변위 '+(x.response??'?')+' / 최소 '+(x.threshold??'?')).join(' ; '),s.cueStartMethod||'unknown',s.cueEvidence||'',s.firstPassAutoResult==='not-detected'?'1차 미검출':resultName(s.firstPassAutoResult??s.autoResult),s.pass2Evidence?.detected||s.pass2MachineResult||'',s.pass2Recovered?'Y':'N',s.pass2Evidence?.frames||'',s.pass2AutoAccepted?'Y':'N',s.pass2AutoReason||'',JSON.stringify(s.cueRoleAuditV5227||s.cueRoleAuditV5226||s.cueRoleAudit||{}),s.cueRoleCorrected?JSON.stringify(s.cueRoleCorrected):'',s.manualCue!=null?'실제 선수 수동 확인':s.cueRoleCorrected?'첫 타격 수구 보정':(['conflict-review','certified-score-protected'].includes(s.cueRoleAuditV5226?.status)?'수구 검토 필요':''),JSON.stringify(s.contactRecoveryV5227||[]),JSON.stringify(s.negativeResponseV5227||[]),s.stopEvidenceV5227||'',s.pass2AppliedReason||'',JSON.stringify(s.briefShotAuditV5229||{}),JSON.stringify(s.contactChronologyAuditV5229||{}),JSON.stringify(s.independentLaunchAuditV5230||{}),JSON.stringify(s.duplicateEchoAuditV5236||{}),JSON.stringify(s.railAuditV5237||[]),JSON.stringify(s.fastOpeningAuditV5237||[])]);
+   (s.issues||[]).join(' / '),s.cushionsAtSecond??'',s.thirdCushionT??'',s.secondObjectT??'',s.missing||0,s.stopConfirmed?'Y':'N',s.missRecheck?.status||'',s.stableProof?.seconds?.toFixed(2)||'',(s.contactAudit||[]).map(x=>'공'+x.target+' '+x.status+' / '+x.reason+' / 근접 '+(x.near??'?')+' / 반응 '+(x.response??'?')+' / '+x.evidence).join(' / '),s.turnBridge?'Y':'N',s.turnGapKind||'',resultName(s.autoResult),resultName(s.turnResult),s.manualResult?resultName(s.manualResult):'',aiHumanDifference(s)?'Y':'',aiHumanDifference(s)&&s.discrepancyChecked&&s.discrepancySignature===aiHumanDifference(s).signature?'Y':'',s.discrepancyCheckedAt||'',s.manualRecovered?'Y':'',(s.objectResponseAudit||[]).map(x=>'공'+x.target+' '+x.status+' / '+(x.reason||'')+' / 변위 '+(x.response??'?')+' / 최소 '+(x.threshold??'?')).join(' ; '),s.cueStartMethod||'unknown',s.cueEvidence||'',s.firstPassAutoResult==='not-detected'?'1차 미검출':resultName(s.firstPassAutoResult??s.autoResult),s.pass2Evidence?.detected||s.pass2MachineResult||'',s.pass2Recovered?'Y':'N',s.pass2Evidence?.frames||'',s.pass2AutoAccepted?'Y':'N',s.pass2AutoReason||'',JSON.stringify(s.cueRoleAuditV5227||s.cueRoleAuditV5226||s.cueRoleAudit||{}),s.cueRoleCorrected?JSON.stringify(s.cueRoleCorrected):'',s.manualCue!=null?'실제 선수 수동 확인':s.cueRoleCorrected?'첫 타격 수구 보정':(['conflict-review','certified-score-protected'].includes(s.cueRoleAuditV5226?.status)?'수구 검토 필요':''),JSON.stringify(s.contactRecoveryV5227||[]),JSON.stringify(s.negativeResponseV5227||[]),s.stopEvidenceV5227||'',s.pass2AppliedReason||'',JSON.stringify(s.briefShotAuditV5229||{}),JSON.stringify(s.contactChronologyAuditV5229||{}),JSON.stringify(s.independentLaunchAuditV5230||{}),JSON.stringify(s.duplicateEchoAuditV5236||{}),JSON.stringify(s.railAuditV5237||[]),JSON.stringify(s.fastOpeningAuditV5237||[]),JSON.stringify(s.objectLaunchAuditV5242||[])]);
  }
  rows.push([]);rows.push(['이닝별 기록']);rows.push(['이닝','1P 득점','1P 누적','2P 누적','2P 득점','1P 샷 번호','2P 샷 번호','1P 시작초','2P 시작초']);
  for(const i of innings)rows.push([i.number,i.points[0],i.total[0],i.total[1],i.points[1],i.turns[0]?.missing?'상대 턴 미검출 (영상확인)':i.turns[0]?.shotIds.join(' / ')||'',i.turns[1]?.missing?'상대 턴 미검출 (영상확인)':i.turns[1]?.shotIds.join(' / ')||'',i.turns[0]?.start??'',i.turns[1]?.start??'']);
@@ -6246,4 +6061,310 @@ render();status('저장된 분석 기록을 불러왔습니다. MP4를 선택해
   const blob=new Blob([build(data)],{type:'text/html;charset=utf-8'}),u=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=u;a.download='3Q_경기분석_v52_17_'+new Date().toISOString().slice(0,10)+'.html';a.click();setTimeout(()=>URL.revokeObjectURL(u),15000);
  };
+})();</script><script data-replay-addon="v52.41">(function addon(){
+ 'use strict';
+ const rt=window.ScoreRuntime;
+ const original=document.getElementById('video');
+ const rows=document.getElementById('rows');
+ if(!rt||!original||!rows)return;
+
+ const style=document.createElement('style');
+ style.textContent=`
+ #r41modal{position:fixed;inset:0;background:rgba(4,10,16,.96);z-index:999999;color:#edf6fc;display:none;flex-direction:column;align-items:center;padding:9px;overflow-y:auto;font-family:system-ui,sans-serif}
+ #r41modal.open{display:flex}
+ #r41modal .r41panel{width:min(100%,1080px)}
+ #r41modal .r41head,#r41modal .r41actions{display:flex;align-items:center;flex-wrap:wrap;justify-content:space-between;gap:8px;margin:6px 0}
+ #r41modal button{padding:9px 12px;min-height:42px;border-radius:8px;border:1px solid #61758b;background:#21364a;color:white;font:inherit;cursor:pointer}
+ #r41modal button.confirm-score{background:#11765e;border-color:#11765e;font-weight:750}
+ #r41modal button.confirm-miss{background:#763945;border-color:#763945;font-weight:750}
+ #r41modal .r41screen{width:100%;aspect-ratio:16/9;max-height:69vh;overflow:hidden;background:black;border:1px solid #4b6376;border-radius:9px;position:relative;touch-action:pan-y}
+ #r41modal video{width:100%;height:100%;object-fit:contain;background:black;transform-origin:50% 50%;display:block}
+ #r41modal .r41hint{font-size:12px;line-height:1.55;color:#b6cddd;margin:8px 0}
+ #r41modal .r41head strong{font-size:16px}
+ #r41modal .r41head small{font-size:12px;color:#b6cddd}
+ .r41shotbtn{display:inline-block;min-height:31px;font-size:11px;padding:5px 8px;background:#245d53;border:1px solid #4c9b87;border-radius:7px;color:white;margin:3px 0;cursor:pointer}
+ .r41shotbtn.r41risk{background:#684b20;border-color:#a78243}
+ #r41latest{width:100%;margin-top:6px;background:#254d62;border:1px solid #5c899c;color:white;border-radius:8px;padding:9px}
+ `;
+ document.head.appendChild(style);
+ const modal=document.createElement('div');
+ modal.id='r41modal';
+ modal.setAttribute('role','dialog');
+ modal.setAttribute('aria-modal','true');
+ modal.setAttribute('aria-label','경기 Replay');
+ modal.innerHTML=`
+ <div class="r41panel">
+  <div class="r41head"><strong id="r41title">Replay</strong><button type="button" id="r41close">닫기 ✕</button></div>
+  <div class="r41screen" id="r41screen"><video id="r41video" controls playsinline muted preload="auto"></video></div>
+  <div class="r41hint" id="r41info"></div>
+  <div class="r41actions">
+   <button type="button" id="r41whole">전체 샷 · 1배속</button>
+   <button type="button" id="r41detail">의심 구간 · 확대 · 0.5배속</button>
+   <button type="button" id="r41minus">축소 −</button>
+   <button type="button" id="r41plus">확대 +</button>
+  </div>
+  <div class="r41actions">
+   <button type="button" class="confirm-score" id="r41score">✓ 득점 확정 +1</button>
+   <button type="button" class="confirm-miss" id="r41miss">✕ 무득점 확정</button>
+   <button type="button" id="r41ai">AI 판정 복원</button>
+  </div>
+ </div>`;
+ document.body.appendChild(modal);
+ const q=id=>document.getElementById(id);
+ const video=q('r41video'),screen=q('r41screen');
+ let activeShot=null,mode='normal',clipEnd=0,zoom=1,originX=50,originY=50;
+ let mp4File=null,mp4URL=null,tempURL=null;
+
+ function suspicious(s){
+  if(!s)return false;
+  return !!(s.reviewRecommended||
+    (s.reviewReasons||[]).length||
+    s.autoResult==='pending'||
+    s.orderMismatch||
+    s.turnGapKind==='suspected-gap'||
+    ['conflict-review','certified-score-protected'].includes(s.cueRoleAuditV5226?.status)||
+    (s.issues||[]).some(x=>/접촉 불확실|프레임 누락|판정 불확실|재검증 필요|수구 충돌/.test(String(x))));
+ }
+ function eventSpot(s){
+  const ev=(s.events||[]).filter(e=>Number.isFinite(Number(e.t)) && Number(e.t)>=s.start && Number(e.t)<=s.end);
+  let target=null;
+  let event=null;
+  const preferred=Number(s.secondObjectT);
+  if(Number.isFinite(preferred)&&preferred>s.start&&preferred<s.end){
+   event=ev.reduce((a,b)=>!a||Math.abs(b.t-preferred)<Math.abs(a.t-preferred)?b:a,null);
+  }
+  if(!event&&ev.length)event=ev[ev.length-1];
+  const t=event?.t??(Number.isFinite(preferred)&&preferred>s.start&&preferred<s.end?preferred:s.start+Math.min(2,(s.end-s.start)/2));
+  target=event?.target;
+  const point=s.preShotPose?.[Number(target)];
+  const pos=point&&Number.isFinite(point.x)&&Number.isFinite(point.y)?
+   [Math.min(88,Math.max(12,point.x/10)),Math.min(85,Math.max(15,point.y/5))]:[50,50];
+  return {t,x:pos[0],y:pos[1]};
+ }
+ function applyZoom(){
+  video.style.transformOrigin=originX+'% '+originY+'%';
+  video.style.transform='scale('+zoom+')';
+ }
+ function removeTemp(){
+  if(tempURL){URL.revokeObjectURL(tempURL);tempURL=null;}
+ }
+ function close(){
+  modal.classList.remove('open');
+  video.pause();video.removeAttribute('src');video.load();
+  removeTemp();activeShot=null;
+ }
+ q('r41close').onclick=close;
+ modal.addEventListener('click',e=>{if(e.target===modal)close();});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('open'))close();});
+ function openVideo(url,start,end,rate){
+  video.pause();
+  clipEnd=end;
+  video.src=url;
+  video.playbackRate=rate;
+  video.onloadedmetadata=()=>{
+   const duration=video.duration;
+   const where=Number.isFinite(duration)?Math.max(0,Math.min(start,Math.max(0,duration-.1))):0;
+   try{video.currentTime=where;}catch(e){}
+   video.playbackRate=rate;
+   void video.play().catch(()=>{q('r41info').textContent+=' · 재생 버튼을 눌러주세요.';});
+  };
+  video.ontimeupdate=()=>{
+   if(Number.isFinite(clipEnd)&&clipEnd>0&&video.currentTime>=clipEnd-.04)video.pause();
+  };
+ }
+ function startPlay(kind){
+  if(!activeShot)return;
+  mode=kind;
+  const s=activeShot,detail=kind==='detail';
+  const focus=eventSpot(s);
+  zoom=detail?2:1;originX=detail?focus.x:50;originY=detail?focus.y:50;
+  applyZoom();
+  const fullA=Math.max(0,Number(s.start)||0);
+  const fullB=Math.max(fullA+1,Number(s.end)||fullA+6);
+  const begin=detail?Math.max(fullA,focus.t-1.2):Math.max(0,fullA-.25);
+  const end=detail?Math.min(fullB+.3,focus.t+1.8):fullB+.35;
+  q('r41title').textContent=`SHOT #${s.id} · ${detail?'의심 접촉 확대 0.5배속':'전체 샷 1배속'}`;
+  const source=rt.sourceFile;
+  if(source instanceof File){
+   if(mp4File!==source){
+    if(mp4URL)URL.revokeObjectURL(mp4URL);
+    mp4URL=URL.createObjectURL(source);mp4File=source;
+   }
+   q('r41info').textContent=detail?
+     'AI 검토 권장 · 접촉 의심 전후 약 3초 · 확대 화면을 손가락으로 움직여 위치를 조정할 수 있습니다. 확대 중심은 추정 위치입니다.':
+     '일반 샷 · 전체 화면 1배속 · 경기 판정 기록은 Replay를 재생하는 것만으로 변경되지 않습니다.';
+   openVideo(mp4URL,begin,end,detail?.5:1);
+   return;
+  }
+  void openCameraReplay(s,begin,end,detail);
+ }
+ async function openCameraReplay(s,begin,end,detail){
+  q('r41info').textContent='실시간 카메라 리플레이 버퍼 준비 중…';
+  const seg=await cameraClipFor(s);
+  if(!seg){
+   q('r41info').textContent='카메라 녹화 버퍼에 해당 샷이 없습니다. 카메라가 연결되고 MediaRecorder 녹화가 시작돼야 이전 영상을 볼 수 있습니다. 이 경우에도 수동 득점·무득점 확정은 가능합니다.';
+   video.pause();video.removeAttribute('src');video.load();return;
+  }
+  removeTemp();
+  tempURL=URL.createObjectURL(new Blob(seg.chunks,{type:seg.mime||'video/webm'}));
+  const localStart=Math.max(0,begin-seg.start);
+  const localEnd=Math.max(localStart+.1,end-seg.start);
+  q('r41info').textContent=detail?
+   '카메라 순환 녹화 구간 · 0.5배속 확대. 기기/코덱에 따라 세밀한 시간 탐색이 지원되지 않을 수 있습니다.':
+   '카메라 순환 녹화 구간 · 1배속. 최근 구간을 저장하는 방식이며 별도 서버를 사용하지 않습니다.';
+  openVideo(tempURL,localStart,localEnd,detail?.5:1);
+ }
+ function launch(id){
+  const s=rt.shots.find(x=>x.id===id);
+  if(!s)return;
+  activeShot=s;
+  modal.classList.add('open');
+  startPlay(suspicious(s)?'detail':'normal');
+ }
+ function confirm(result){
+  if(!activeShot)return;
+  const s=rt.shots.find(x=>x===activeShot||x.id===activeShot.id);
+  if(!s)return;
+  s.manualResult=result==='auto'?null:result;
+  s.manualSource=s.manualResult?'human-replay-confirmation':null;
+  s.manualEditedAt=s.manualResult?new Date().toISOString():null;
+  s.discrepancyChecked=false;s.discrepancyCheckedAt=null;
+  const id=s.id;
+  close();
+  rt.render();
+  const notice=document.getElementById('notice');
+  if(notice)notice.textContent=`SHOT #${id} · ${result==='score'?'득점':result==='miss'?'무득점':'AI'} 확정 반영 · 점수/이닝 재계산 완료 · AI 원판정 보존`;
+ }
+ q('r41score').onclick=()=>confirm('score');
+ q('r41miss').onclick=()=>confirm('miss');
+ q('r41ai').onclick=()=>confirm('auto');
+ q('r41whole').onclick=()=>startPlay('normal');
+ q('r41detail').onclick=()=>startPlay('detail');
+ q('r41plus').onclick=()=>{zoom=Math.min(4,zoom+.4);applyZoom();};
+ q('r41minus').onclick=()=>{zoom=Math.max(1,zoom-.4);applyZoom();};
+ let drag=null;
+ screen.onpointerdown=e=>{
+  if(e.target!==video)return;
+  drag={x:e.clientX,y:e.clientY,ox:originX,oy:originY};
+  screen.setPointerCapture(e.pointerId);
+ };
+ screen.onpointermove=e=>{
+  if(!drag)return;
+  const w=screen.clientWidth||1,h=screen.clientHeight||1;
+  originX=Math.min(95,Math.max(5,drag.ox-(e.clientX-drag.x)*100/w/Math.max(1,zoom)));
+  originY=Math.min(95,Math.max(5,drag.oy-(e.clientY-drag.y)*100/h/Math.max(1,zoom)));
+  applyZoom();
+ };
+ screen.onpointerup=screen.onpointercancel=()=>{drag=null;};
+
+ // The original timestamp replay restarts scoring and discards later records.
+ // Intercept it so a tap opens read-only video replay instead.
+ rows.addEventListener('click',e=>{
+  const b=e.target.closest('[data-replay],[data-r41-replay]');
+  if(!b)return;
+  e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+  launch(Number(b.dataset.r41Replay||b.dataset.replay));
+ },true);
+ function injectButtons(){
+  for(const tr of rows.querySelectorAll('tr')){
+   const time=tr.querySelector('button[data-replay]');
+   if(!time||tr.querySelector('button[data-r41-replay]'))continue;
+   const id=Number(time.dataset.replay),s=rt.shots.find(x=>x.id===id);
+   const btn=document.createElement('button');
+   btn.type='button';btn.dataset.r41Replay=id;
+   btn.className='r41shotbtn'+(suspicious(s)?' r41risk':'');
+   btn.textContent=suspicious(s)?'▶ Replay ⚠':'▶ Replay';
+   btn.title=suspicious(s)?'의심 구간 확대 0.5배속':'전체 샷 1배속';
+   time.insertAdjacentElement('afterend',btn);
+   time.title='영상을 확인하는 Replay · 판정기록 유지';
+  }
+ }
+ new MutationObserver(injectButtons).observe(rows,{childList:true});
+ injectButtons();
+
+ // v52.42 persistent toolbar shortcuts, using the ORIGINAL v52.41 Replay dialog.
+ const toolbar=document.getElementById('pauseBtn')?.parentElement||document.querySelector('.toolbar');
+ if(toolbar){
+  const recent=document.createElement('button');recent.type='button';recent.id='r42recent';
+  recent.textContent='▶ 최근 샷 Replay';
+  recent.onclick=()=>{const last=rt.shots.at(-1);if(last)launch(last.id);else alert('완료된 샷이 없습니다.');};
+  const fullscreen=document.createElement('button');fullscreen.type='button';fullscreen.id='r42fullscreen';
+  const update=()=>{fullscreen.textContent=document.fullscreenElement?'⤢ 전체화면 해제':'⛶ 전체화면';};
+  fullscreen.onclick=async()=>{try{
+   if(document.fullscreenElement)await document.exitFullscreen();
+   else if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();
+   else alert('전체화면을 지원하지 않습니다. PC에서는 F11을 사용하세요.');
+  }catch(_){alert('전체화면 전환이 제한되었습니다. PC에서는 F11을 사용하세요.');}};
+  document.addEventListener('fullscreenchange',update);update();
+  const anchor=document.getElementById('pauseBtn');
+  if(anchor?.parentElement===toolbar){anchor.insertAdjacentElement('afterend',recent);recent.insertAdjacentElement('afterend',fullscreen);}
+  else toolbar.append(recent,fullscreen);
+ }
+
+ const box=document.querySelector('.quick-verdict');
+ if(box){
+  const b=document.createElement('button');
+  b.type='button';b.id='r41latest';b.textContent='▶ 최근 샷 Replay';
+  b.onclick=()=>{const s=rt.shots.at(-1);if(s)launch(s.id);else alert('완료된 샷 기록이 없습니다.');};
+  box.appendChild(b);
+ }
+
+ // Best-effort live camera circular recorder: two <=30-second segments.
+ // Keeps live video/AI capture unchanged.
+ let watchedStream=null,recorder=null,current=null,previous=null,startedAt=0;
+ const MIME=['video/webm;codecs=vp8','video/webm','video/mp4'];
+ function mime(){
+  if(!window.MediaRecorder)return null;
+  return MIME.find(m=>MediaRecorder.isTypeSupported(m))||'';
+ }
+ function startSegment(){
+  const stream=original.srcObject;
+  if(!(stream instanceof MediaStream)||!stream.getVideoTracks().length||!window.MediaRecorder)return;
+  try{
+   const m=mime(),options={videoBitsPerSecond:850000};
+   if(m)options.mimeType=m;
+   const r=new MediaRecorder(stream,options);
+   const s={start:Number(original.currentTime)||0,chunks:[],mime:r.mimeType||m};
+   r.ondataavailable=e=>{if(e.data?.size)s.chunks.push(e.data);};
+   r.onerror=()=>{};
+   r.start(1000);recorder=r;current=s;startedAt=Date.now();
+  }catch(e){}
+ }
+ function endSegment(){
+  const old=recorder,seg=current;
+  recorder=null;current=null;
+  if(!old)return;
+  const finish=()=>{
+   if(seg?.chunks?.length)previous=seg;
+   if(original.srcObject===watchedStream)startSegment();
+  };
+  old.onstop=finish;
+  try{if(old.state!=='inactive')old.stop();else finish();}catch(e){finish();}
+ }
+ async function cameraClipFor(s){
+  if(!window.MediaRecorder||!recorder)return null;
+  if(previous&&s.start<current.start&&previous.chunks.length)return previous;
+  if(!current)return previous;
+  if(recorder.state==='recording'){
+   try{
+    await new Promise(resolve=>{
+     const onData=()=>{clearTimeout(to);resolve();};
+     const to=setTimeout(()=>resolve(),800);
+     recorder.addEventListener('dataavailable',onData,{once:true});
+     recorder.requestData();
+    });
+   }catch(e){}
+  }
+  return current.chunks.length?current:(previous?.chunks.length?previous:null);
+ }
+ setInterval(()=>{
+  const stream=original.srcObject instanceof MediaStream?original.srcObject:null;
+  if(stream!==watchedStream){
+   try{if(recorder&&recorder.state!=='inactive')recorder.stop();}catch(e){}
+   recorder=null;current=null;previous=null;watchedStream=stream;
+   if(stream)startSegment();
+  }else if(stream&&recorder&&Date.now()-startedAt>29000){
+   endSegment();
+  }else if(stream&&!recorder)startSegment();
+ },1200);
 })();</script></body></html>
