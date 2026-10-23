@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="dark"><title>3Q Score v52.50 - PC Mobile Optimizer</title>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="dark"><title>3Q Score v52.50 - Mobile First Shot Fix</title>
 <style>
 :root{--bg:#0b111b;--panel:#142030;--edge:#294056;--text:#e8f1fa;--sub:#9eb2c5;--good:#6be3bd;--bad:#ffa2ad;--warn:#ffd28a}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,"Noto Sans KR",sans-serif;font-size:14px}button,select{font:inherit;min-height:42px;cursor:pointer}button{background:#22384d;border:1px solid #435a73;color:var(--text);border-radius:9px;padding:8px 14px}button:disabled{opacity:.42;cursor:default}.primary{background:var(--good);border-color:var(--good);color:#06352b;font-weight:800}main{max-width:1240px;padding:18px;margin:auto}h1{font-size:23px;margin:0 0 5px}h2{font-size:16px;margin:0}p{line-height:1.5}.sub{color:var(--sub);font-size:12px}header{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:6px 0 16px}.layout{display:grid;grid-template-columns:minmax(0,1fr) 292px;gap:15px}.panel{background:var(--panel);border:1px solid var(--edge);border-radius:15px;overflow:hidden}.panel .head{padding:14px 16px;border-bottom:1px solid var(--edge);display:flex;justify-content:space-between;align-items:center;gap:12px}.stage{position:relative;background:black;aspect-ratio:16/9;max-height:74vh}.stage video,.stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}.stage canvas{touch-action:none}.status-chip{font-size:11px;color:#b8e9d9;background:#133d36;border-radius:7px;padding:4px 7px}.toolbar{padding:13px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}.toolbar select{background:#132332;color:var(--text);border:1px solid #40556d;border-radius:7px;padding:5px 8px}.toolbar .stretch{flex:1}#seek{width:100%;accent-color:var(--good)}.time{display:flex;align-items:center;gap:12px;padding:0 15px;color:var(--sub);font-variant-numeric:tabular-nums;font-size:12px}.score-banner{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px}.score{background:#0d1725;border-radius:12px;padding:14px;text-align:center;border:1px solid var(--edge)}.score strong{font-size:42px;display:block;line-height:1.4;color:var(--good);font-variant-numeric:tabular-nums}.score small{color:var(--sub)}.hero-result{margin:0 14px 14px;background:#0e1a28;padding:15px;border-radius:11px;text-align:center}.hero-result strong{font-size:29px;display:block}.hero-result.score strong{color:var(--good)}.hero-result.miss strong{color:var(--bad)}.hero-result.review strong{color:var(--warn)}.hero-result .sub{margin-top:4px}.flags{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px 14px}.flag{background:#0d1725;padding:10px;border:1px solid var(--edge);border-radius:9px}.flag b{font-size:23px;display:block}.notice{margin:13px 0;padding:11px 12px;background:#182937;color:#c0d5e3;border-left:3px solid var(--good);border-radius:6px;font-size:12px}.notice.warn{border-left-color:var(--warn)}.progress{height:5px;background:#0b141f;margin:11px 14px 4px;border-radius:9px;overflow:hidden}.progress div{background:var(--good);height:100%;width:0}.progress-info{padding:0 15px 13px;color:var(--sub);font-size:12px}.records{margin-top:16px}.scroll{overflow:auto}.scroll table{width:100%;border-collapse:collapse;min-width:630px;font-size:12px}.scroll th,.scroll td{padding:10px 13px;border-bottom:1px solid #28384e;text-align:left}.scroll th{color:var(--sub);font-weight:500}tr:hover{background:#1b3042}.chip{font-weight:700;border-radius:6px;padding:4px 8px;font-size:11px}.chip.score{color:var(--good);background:#14382f}.chip.miss{color:var(--bad);background:#3a232d}.chip.review{color:var(--warn);background:#403526}.row-actions{display:flex;gap:6px}details.panel{margin-top:12px}summary{padding:13px;cursor:pointer;font-weight:700}.settings{padding:14px;border-top:1px solid var(--edge);display:grid;gap:13px}.settings label{color:var(--sub);font-size:12px}.setting-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.settings small{color:var(--sub)}.setting-row select{padding:7px;background:#0d1c2b;color:var(--text);border:1px solid #43596b}.tiny{font-size:11px;color:var(--sub)}.video-chip{position:absolute;left:10px;top:10px;background:#09131bdc;border-radius:7px;padding:6px 10px;font-size:11px;pointer-events:none}.corner-instructions{padding:8px 13px;color:var(--warn);font-size:12px}.footer{color:var(--sub);font-size:11px;margin-top:15px}#overlay{pointer-events:none}#overlay.dragging{pointer-events:auto}#fileName{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#exportBtn{float:right}@media(max-width:800px){.layout{grid-template-columns:1fr}.scores{order:0}.stage{max-height:none}main{padding:10px}.score strong{font-size:39px}header{display:block}h1{font-size:20px}.toolbar button{flex:1}#runBtn{flex:2}}@media(max-width:420px){.toolbar{padding:10px;gap:6px}.toolbar #fileBtn,.toolbar #runBtn{flex:1 1 138px}.toolbar #pauseBtn,.toolbar #stopBtn{flex:1 1 95px}.toolbar .stretch{display:none}.toolbar button{padding:6px 8px}.panel .head{padding:12px}button,select{min-height:40px}}
@@ -239,7 +239,7 @@
 @media(max-width:600px){.records .scroll table{min-width:870px!important}.comparison-col{min-width:135px}}
 
 
-#twoPassPanel .scroll table{min-width:740px}#twoPassPanel td{vertical-align:middle}#twoPassPanel .p2flag{color:#ffcf7c;font-weight:700}#twoPassPanel .p2ok{color:#9ee9cd}#twoPassPanel .p2meta{display:block;font-size:10px;color:#a8bfd3;margin-top:3px}#twoPassPanel .p2actions{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}#twoPassPanel .p2actions button{min-height:30px;padding:5px 8px}#twoPassPanel #pass2Summary{font-size:11px;max-width:450px}#twoPassPanel select{min-height:30px;background:#16283b;color:#e3f1ff;border:1px solid #53718d;border-radius:5px}#twoPassPanel .p2notice{background:#483923;color:#ffdc9a;font-size:11px;padding:5px;border-radius:5px}
+
 
 /* v52.21 nonblocking live score confirmation & independent first-cue selection */
 .quick-verdict{padding:10px 13px;margin:5px 12px 12px;background:#16273a;border:1px solid #4e6e88;border-radius:9px}
@@ -282,7 +282,7 @@ div:has(> #recoverNowBtn){display:none!important}
 :fullscreen body>main{max-width:none!important;width:100%!important}
 
 </style><style id="v5245-hide-recovery">#recoverNowBtn,#recoveryHint{display:none!important}div:has(> #recoverNowBtn){display:none!important}</style><style id="v5246-hide-recover">#recoverNowBtn,#recoveryHint{display:none!important}div:has(> #recoverNowBtn){display:none!important}</style></head><body><main>
-<header><div><h1>3Q Score <span class="sub">v52.50 PC/Mobile Optimizer · Tablet · Fullscreen + Replay · 목적구 누락 검증 · 재생/Worker 분리 자동 복구·시작 프레임 확인·코너 쿠션 검증 · 이닝 재검증 · 짧은 가짜 샷 제외 · 원래 규칙 유지</span></h1><div class="sub">모든 MP4 공통 · 실제 수구 타격·목적구 지속 이동 검증 · 결과 CSV 저장</div></div><div class="status-chip" id="mode">영상 선택 대기</div></header>
+<header><div><h1>3Q Score <span class="sub">v52.55 PC 제2목적구 득점 복구 · 공통 저부하 · Tablet · Fullscreen + Replay · 목적구 누락 검증 · 재생/Worker 분리 자동 복구·시작 프레임 확인·코너 쿠션 검증 · 이닝 재검증 · 짧은 가짜 샷 제외 · 원래 규칙 유지</span></h1><div class="sub">모든 MP4 공통 · 실제 수구 타격·목적구 지속 이동 검증 · 결과 CSV 저장</div></div><div class="status-chip" id="mode">영상 선택 대기</div></header>
 <div class="layout"><section class="panel"><div class="head video-head"><div class="video-head-left"><h2>경기 영상</h2><span class="video-status" id="videoInfo" role="status" aria-live="polite">MP4 / CAMERA</span></div><span class="sub" id="fileName">MP4 또는 카메라를 선택하세요</span></div>
 <div class="stage" id="stage"><video id="video" muted playsinline preload="metadata"></video><canvas id="overlay"></canvas></div>
 <div class="corner-instructions" id="dragNote" hidden>안쪽 쿠션 접촉선의 네 모서리 ①→④를 손가락/마우스로 끌어 맞춘 뒤 [보정 완료]를 누르세요.</div>
@@ -305,15 +305,11 @@ div:has(> #recoverNowBtn){display:none!important}
 </div>
 <div class="current-shot-note" id="reason">새 샷이 시작되면 수치가 0부터 표시됩니다.</div>
 <div style="padding:0 14px 15px"><span class="sub" id="workerState">영상과 판정은 독립 실행됩니다.</span></div></aside></div>
-<div class="notice" id="notice">v52.50: PC 기본 640px 단일 디코더·30fps 목표, 폰 기본 480px 단일 디코더·30fps 목표. PC 정밀 30fps는 전프레임/고부하, 초절전 20fps는 판정 누락 위험이 있습니다. <b>초절전 결과는 정밀 검증 전 확정하지 마세요.</b><hr style="border:0;border-top:1px solid #345063;margin:7px 0">표준 AI 자동득점 전용: 영상별 고정 시간·정답 데이터·샷 자동 삽입 없이 모든 MP4에 동일한 물리 조건을 적용합니다. 빠른 충돌은 짧은 관찰, 매우 느린 충돌은 약 1.1초까지 목적구의 방향성 있는 이동을 검증합니다. 큐대가 가려지면 공 출발 움직임으로 샷을 판단하며 닦기 등 넓은 화면 변화는 샷 감지에서 제외합니다.</div>
+<div class="notice" id="notice">v52.55: PC 득점 확정 Worker 오류 수정 · 두 목적구 접촉 증거를 매 입력 프레임 검사. PC·모바일·카메라 기본 판정은 640×360, 최대 30fps로 통일합니다. 별도 2단계 영상 재검사와 20fps 절전 판정은 제거했습니다. MP4는 단일 영상 디코더 + Worker로 첫 프레임부터 판정합니다. <b>기기가 실제로 놓친 입력 프레임은 복구할 수 없으며, 누락 시 상태창에 표시됩니다.</b> 쿠션·목적구 접촉 및 득점 규칙은 원본과 같습니다. 애매한 샷은 수동 판정이 최우선입니다.</div>
 <section class="panel records"><div class="head"><h2>샷별 자동 판정 기록</h2><div class="setting-row"><span class="sub" id="totals">득점 0 · 무득점 0 · 검토 권장 0</span><button id="exportBtn" disabled>CSV 저장</button></div></div><div class="scroll"><table><thead><tr><th>샷</th><th class="shot-time-head" title="시작~종료 시간을 터치하면 그 샷부터 자동 재판정"><span class="wide-label">시작 ~ 종료 · 터치 시 재생</span><span class="narrow-label">시간↺</span></th><th>수구/선수</th><th>쿠션</th><th>목적구</th><th>자동 판정</th><th class="player-score">득점<small>1P:2P</small></th><th class="shot-edit-head">점수 수정</th></tr></thead><tbody id="rows"><tr><td colspan="8" class="sub">분석 기록이 없습니다.</td></tr></tbody></table></div></section>
 
 
-<section class="panel records" id="twoPassPanel">
-<div class="head"><h2>2단계 영상 재검증</h2><div class="setting-row"><span class="sub" id="pass2Summary">1차 영상 분석 후 누락·중복·접촉 불확실 구간을 검사합니다.</span><button type="button" id="pass2Run" disabled>▶ 2차 전체 검사</button><button type="button" id="pass2Cancel" disabled>검사 중지</button></div></div>
-<p class="sub" style="padding:8px 14px">모든 MP4 공통. 1차 판정과 수동 확정은 보존하고, 기존 샷의 완전한 물리 증거가 확인되면 AI 판정과 이닝을 자동 보정합니다. 두 샷 사이의 공백이나 수구·점수 충돌, 접촉 불확실 샷만 원본 영상을 별도로 재검사합니다. <b>2차 후보는 자동으로 점수에 넣지 않으며</b>, 실제 타격을 확인한 경우에만 [타격 채택]하고 점수를 확정합니다. 분석 종료 시 우선 위험 구간 7건을 자동 검증하며, 나머지는 [2차 전체 검사]를 누르면 전수 검사합니다. 샷 사이 4.5초 이상 공백도 후보로 포함합니다.</p>
-<div class="scroll"><table class="pass2-table"><thead><tr><th>유형</th><th>검사 구간</th><th>근거</th><th>2차 결과</th><th>확인</th></tr></thead><tbody id="pass2Rows"><tr><td colspan="5" class="sub">영상 분석을 완료하면 2차 검사 대상이 나타납니다.</td></tr></tbody></table></div>
-</section>
+
 
 <!-- v52.30: Inning counts come exclusively from independently detected strokes, never from a reference-score lookup. -->
 <section class="panel inning-panel" id="inningPanel" aria-labelledby="inningTitle">
@@ -321,7 +317,7 @@ div:has(> #recoverNowBtn){display:none!important}
   <p class="inning-help">제1 수구·제2 수구 모두 현재 이닝에 포함됩니다. 제2 수구의 무득점 샷까지 현재 이닝으로 기록하고, <b>다음 제1 수구 샷이 시작될 때만</b> 이닝 +1 합니다. 선공 수구는 자동 또는 직접 지정할 수 있습니다. 샷 누락은 추정 표시만 하며 자동으로 점수를 만들지 않습니다.</p>
   <div class="inning-columns" id="inningColumns"><p class="sub inning-empty">샷이 기록되면 이닝별 점수가 표시됩니다.</p></div>
 </section>
-<details class="panel" id="settings"><summary>테이블 보정 · 분석 옵션</summary><div class="settings"><div class="setting-row"><button id="dragBtn" disabled>4점 드래그 보정</button><button id="dragDone" hidden>보정 완료</button><button id="resetBtn" disabled>현재 화면 기준선 다시 잡기</button><span class="tiny" id="calibStatus">시작 프레임과 인접 프레임의 3공 위치 검증 · 실패 시 4점 드래그</span></div><div class="setting-row"><label>분석 방식 <select id="analysisMode"><option value="auto" selected>자동 추천 · PC 균형 / 폰 경량 (30fps 목표)</option><option value="mobile">저부하 30fps 목표 · 단일 디코더</option><option value="eco20">PC 초절전 20fps 목표 · 오판 위험 증가</option><option value="fixed">정밀 30fps · 전프레임 · 별도 디코더 (고부하)</option></select></label><label>분석 크기 <select id="resolution"><option value="480">480px · 폰 경량 (정확도 차이 가능)</option><option value="640" selected>640px · 정밀 (PC 공통)</option></select></label><label>수구 <select id="cue"><option value="auto" selected>자동: 먼저 움직인 공</option><option value="0">흰 공</option><option value="1">노란 공</option></select></label></div><small><b>v52.50 PC/모바일 최적화:</b> PC 기본은 화면용 MP4 1개에서 프레임을 추출해 Worker로 넘기는 저부하 균형 모드(640px, 최대 30fps 목표)입니다. 폰 기본도 단일 디코더(480px)입니다. AI가 밀리더라도 화면 재생은 강제로 정지하지 않습니다. PC 초절전 모드는 최대 20fps를 분석하므로 충돌/쿠션 판정과 이닝이 달라질 위험이 큽니다. <b>모든 프레임을 30fps로 검사하는 결과 대조는 정밀 모드를 선택하세요.</b> 균형·초절전 모드에서는 디코더 콜백 지연, Worker 과부하로 미검사 프레임이 생길 수 있습니다. 이를 ‘프레임 누락’으로 표시하며 점수를 보정해 만들지 않습니다.</small><small>세 번째 공은 빨간색과 파란색을 자동으로 구분합니다. 파란 공은 파란 천보다 채도가 높은 영역을 검출합니다. 초기 공 3개 표시를 확인하세요.</small><small>v52.27: Worker 응답이 멈추면 마지막 완료 샷의 점수를 보존하고 현재 샷의 타격 전 구간부터 자동 재분석합니다. 반복 실패 시 분석을 멈추고 점수 기록은 유지합니다. v52.23: 먼저 출발한 수구의 독립적인 궤적과 목적구의 연속 이동을 교차검증합니다. 증거 없는 접촉·득점은 추가하지 않으며 3쿠션과 2번째 목적구의 시간순 판정은 그대로 유지합니다. v52.22: 장시간 조준 중 검증된 3공 정지 자세를 보존하고 일시 가림 후 수구 출발을 복구합니다. 2차 검사는 샷 사이 공백을 폭넓게 검사합니다. v52.21: 큐대의 가느다란 선형 후보와 수구 출발 방향을 교차 검증하고, 검출 실패 시 수구 움직임만으로도 새 샷을 인정합니다. 1장의 초기 화면만으로 샷을 준비하지 않으며, 공을 들어 올려 발생한 가짜 샷은 기록 전 취소합니다. 이닝 ▶는 샷 시간으로 이동합니다.</small><small>v48: 보수적 HIGH만 확정하는 게이트를 적용하지 않습니다. v46 자동판정을 유지하고 예외에만 검토 권장을 표시합니다. 검토 권장도 점수/이닝 집계에 포함됩니다. 2차 검증에서 증거 부족 시 판정보류하고 샷별로 수정할 수 있습니다.</small><small>v35: 빨간 공과 파란 공의 픽셀 마스크를 분리해 파란 천 때문에 빨간 공이 누락되는 문제를 수정했습니다.</small><small>v34: 샷 시간을 클릭/터치하면 이전 샷의 누적 점수와 기록을 유지하고 선택한 샷 이후를 새 분석 결과로 교체합니다.</small><small>v33: 득점은 두 번째 목적구 접촉 순간 즉시 반영합니다. 무득점은 세 공의 정지 확인 후 샷 전체 궤적에서 누락된 목적구 접촉을 독립적으로 한 번 더 검사한 뒤 확정합니다. 극히 얇아 판단이 어려운 접촉만 확인 필요로 표시합니다.</small><small>분석 시작 시 현재 프레임에서 테이블 외곽/쿠션 기준을 자동 검출하며 실제 판정선은 쿠션 천과 평면 천의 안쪽 접촉선입니다. 자동 검출이 틀린 경우 네 모서리를 드래그하면 됩니다. 시작 버튼 이전 프레임은 샷·점수·턴 계산에 사용하지 않습니다.</small></div></details>
+<details class="panel" id="settings"><summary>테이블 보정 · 분석 옵션</summary><div class="settings"><div class="setting-row"><button id="dragBtn" disabled>4점 드래그 보정</button><button id="dragDone" hidden>보정 완료</button><button id="resetBtn" disabled>현재 화면 기준선 다시 잡기</button><span class="tiny" id="calibStatus">시작 프레임과 인접 프레임의 3공 위치 검증 · 실패 시 4점 드래그</span></div><div class="setting-row"><label>분석 방식 <select id="analysisMode"><option value="auto" selected>자동 · PC/모바일 동일 640px·30fps 목표</option><option value="mobile">저부하 · 640px·30fps (동일 판정 입력)</option><option value="fixed">정밀 검증 · 고정 30Hz 프레임 (고부하)</option></select></label><label>분석 크기 <select id="resolution"><option value="480">480px · 카메라 저부하 (MP4는 640 고정)</option><option value="640" selected>640px · MP4 기기 공통</option></select></label><label>수구 <select id="cue"><option value="auto" selected>자동: 먼저 움직인 공</option><option value="0">흰 공</option><option value="1">노란 공</option></select></label></div><small><b>기기 공통 기본 판정:</b> PC·모바일 모두 동일한 640×360 분석 크기와 최대 30fps 시간 간격을 사용합니다. MP4 기본 경로는 원본의 단일 재생 디코더와 첫 프레임 Worker 확인 방식을 유지합니다. 이중 디코더는 사용자가 정밀 검증을 명시적으로 선택한 경우에만 사용합니다. 20fps 절전 판정은 접촉 누락 우려로 제거했습니다. 실시간 카메라에서 실제로 수신되지 않은 프레임은 복구할 수 없으므로 누락 수를 별도로 표시합니다.</small><small>세 번째 공은 빨간색과 파란색을 자동으로 구분합니다. 파란 공은 파란 천보다 채도가 높은 영역을 검출합니다. 초기 공 3개 표시를 확인하세요.</small><small>v52.27: Worker 응답이 멈추면 마지막 완료 샷의 점수를 보존하고 현재 샷의 타격 전 구간부터 자동 재분석합니다. 반복 실패 시 분석을 멈추고 점수 기록은 유지합니다. v52.23: 먼저 출발한 수구의 독립적인 궤적과 목적구의 연속 이동을 교차검증합니다. 증거 없는 접촉·득점은 추가하지 않으며 3쿠션과 2번째 목적구의 시간순 판정은 그대로 유지합니다. v52.22: 장시간 조준 중 검증된 3공 정지 자세를 보존하고 일시 가림 후 수구 출발을 복구합니다. v52.21: 큐대의 가느다란 선형 후보와 수구 출발 방향을 교차 검증하고, 검출 실패 시 수구 움직임만으로도 새 샷을 인정합니다. 1장의 초기 화면만으로 샷을 준비하지 않으며, 공을 들어 올려 발생한 가짜 샷은 기록 전 취소합니다. 이닝 ▶는 샷 시간으로 이동합니다.</small><small>v48: 보수적 HIGH만 확정하는 게이트를 적용하지 않습니다. v46 자동판정을 유지하고 예외에만 검토 권장을 표시합니다. 검토 권장도 점수/이닝 집계에 포함됩니다. 샷별로 사용자가 판정을 수정할 수 있습니다.</small><small>v35: 빨간 공과 파란 공의 픽셀 마스크를 분리해 파란 천 때문에 빨간 공이 누락되는 문제를 수정했습니다.</small><small>v34: 샷 시간을 클릭/터치하면 이전 샷의 누적 점수와 기록을 유지하고 선택한 샷 이후를 새 분석 결과로 교체합니다.</small><small>v33: 득점은 두 번째 목적구 접촉 순간 즉시 반영합니다. 무득점은 세 공의 정지 확인 후 샷 전체 궤적에서 누락된 목적구 접촉을 독립적으로 한 번 더 검사한 뒤 확정합니다. 극히 얇아 판단이 어려운 접촉만 확인 필요로 표시합니다.</small><small>분석 시작 시 현재 프레임에서 테이블 외곽/쿠션 기준을 자동 검출하며 실제 판정선은 쿠션 천과 평면 천의 안쪽 접촉선입니다. 자동 검출이 틀린 경우 네 모서리를 드래그하면 됩니다. 시작 버튼 이전 프레임은 샷·점수·턴 계산에 사용하지 않습니다.</small></div></details>
 <div class="footer">영상은 외부 서버로 전송하지 않습니다. 단일 HTML 내 로컬 처리 시험판입니다. 자동 판정은 공식 심판 판정을 보증하지 않습니다.</div>
 <input type="file" id="fileInput" accept="video/*,.mp4" hidden>
 <canvas id="capture" hidden></canvas>
@@ -3459,7 +3455,11 @@ class ShotEngine{
       for(let k=first;k<=last;k++){
         const f=path[k];if(!valid(f))continue;
         const point=f.p[cue],near=inward(point);
-        if(near < -r*.65 || near > r*.66)continue;
+        // v52.56: Restore evidence-backed slow glancing cushions despite small
+        // table-line calibration offsets. A multi-frame IN/OUT rebound and
+        // continuing tangential motion below are still compulsory; mere
+        // proximity to a cushion never adds a scoring event.
+        if(near < -r*.65 || near > r*1.16)continue;
         // Do not count the same impact repeatedly when its low point remains
         // in the sliding window; recovered rail events have an event timestamp.
         if(s.events.some(e=>e.confirmed&&e.type==='cushion'&&e.side===side&&Math.abs(e.t-f.t)<.42))continue;
@@ -4114,27 +4114,37 @@ const TABLET_TARGET_FPS=30, TABLET_QUEUE_LIMIT=4; // v52.49: bound main-thread m
 const v5249MobileUA=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 let mobileMP4Mode=false;
 const v5250Mode=()=>String($('analysisMode')?.value||'auto');
-const v5250EcoMode=()=>!cameraActive&&v5250Mode()==='eco20';
-const v5250CaptureRate=()=>v5250EcoMode()?20:30;
+const v5250EcoMode=()=>false; // No device-dependent 20fps verdict path.
+const v5250CaptureRate=()=>TABLET_TARGET_FPS;
 let v5250EcoSkipped=0,v5250CaptureMs=0,v5250WorkerMs=0,v5250SentWall=0;
 function v5249UseSingleDecoder(){
+ // Both PC and Android default to the exact same single-decoder, 640px,
+ // 30Hz-capped frame input. Preserve mobile's proven opening-frame ACK.
+ // A separate decoder is strictly opt-in for offline, frame-exact audits.
  return !cameraActive&&v5250Mode()!=='fixed';
 }
 function v5250Profile(){
- if(cameraActive)return '카메라 LIVE';
- if(!mobileMP4Mode)return '30fps 전프레임 정밀';
- if(v5250EcoMode())return 'PC 초절전 20fps';
- return v5249MobileUA?'모바일 경량 30fps':'PC 균형 30fps';
+ if(cameraActive)return '카메라 LIVE 30fps';
+ if(!mobileMP4Mode)return 'MP4 고정 30Hz 정밀';
+ return 'MP4 PC/모바일 공통 30fps';
 }
 function v5249RefreshHint(){
  const el=$('mobileAccuracyNote');if(!el)return;
  if(mobileMP4Mode){
   el.style.display='block';
-  el.textContent=v5250Profile()+' · 표시 영상/AI Worker 분리 · 영상은 AI ACK를 기다리지 않음 · 분석 프레임 누락 시 판정·이닝 차이가 생길 수 있으므로 정밀모드로 확인 필요'+(v5250EcoMode()?' · 초절전은 의도적 프레임 감축':'' );
+  el.textContent=v5250Profile()+' · Worker가 별도로 판정 · 카메라/브라우저에서 입력 프레임이 누락되면 경고 표시';
  }else el.style.display='none';
 }
-if(v5249MobileUA){$('resolution').value='480';}
-$('analysisMode').onchange=()=>{if(!running){if(v5250Mode()==='fixed')$('resolution').value='640';else if(v5249MobileUA)$('resolution').value='480';v5249RefreshHint();}};
+// MP4 scoring has one canonical resolution on every device. Do not force
+// Android to 480px before calibration; camera-only presets are untouched.
+$('analysisMode').onchange=()=>{if(!running){
+  // Recorded-video options all share identical evidence. Preserve camera's
+  // performance presets when it is the active input.
+  if(!cameraActive)$('resolution').value='640';
+  else if(v5250Mode()==='fixed')$('resolution').value='640';
+  else $('resolution').value='640';
+  v5249RefreshHint();
+ }};
 
 let tabletMode=false,cameraActive=false,cameraStream=null,tabletQueue=[],tabletCaptureT=-1;
 let tabletLastSentT=-1,tabletInFlight=false,tabletCaptured=0,tabletDropFrames=0;
@@ -4235,7 +4245,7 @@ async function tabletWaitReady(sess,ms=16000){
 }
 async function tabletVerifyOpeningPose(serial,origin){
  if(serial!==fileLoadSerial||!loaded)return null;
- const input=Number($('resolution').value)||640,w=input,h=Math.round(w*9/16);
+ const input=cameraActive?(Number($('resolution').value)||640):640,w=input,h=Math.round(w*9/16);
  const c=capture.getContext('2d',{alpha:false,willReadFrequently:true});
  if(capture.width!==w||capture.height!==h){capture.width=w;capture.height=h;}
  const times=cameraActive?[null,null,null]:[origin,origin+.085,origin+.170].map(t=>Math.min(sourceTime()-.08,t));
@@ -4313,7 +4323,7 @@ function tabletStatus(){
  const lag=lastT>=0?Math.max(0,(v.currentTime||0)-lastT):0;
  const risk=missed>0 || tabletCallbackGaps>0 || tabletDropFrames>0 || tabletQueue.length>=TABLET_QUEUE_LIMIT-1 || lag>1.5;
  el.style.color=risk?'#ffda95':'#a8f1d6';
- el.textContent=v5250Profile()+' · AI '+tabletMeasuredFPS.toFixed(1)+'fps · 프레임처리 '+v5250WorkerMs.toFixed(0)+'ms · 추출 '+v5250CaptureMs.toFixed(0)+'ms · 분석지연 '+lag.toFixed(2)+'초 · 누락 '+missed+' (부하생략 '+tabletDropFrames+', 절전생략 '+v5250EcoSkipped+')'+(risk||v5250EcoSkipped>0?' · ⚠ 정밀 검토 필요':' · 정상');
+ el.textContent=v5250Profile()+' · AI '+tabletMeasuredFPS.toFixed(1)+'fps · 프레임처리 '+v5250WorkerMs.toFixed(0)+'ms · 추출 '+v5250CaptureMs.toFixed(0)+'ms · 분석지연 '+lag.toFixed(2)+'초 · 누락 '+missed+' (부하생략 '+tabletDropFrames+')'+(risk?' · ⚠ 프레임 누락 확인':' · 정상');
 }
 function tabletCapture(t,metadata){
  if(!tabletMode||!running||paused||finishPending||!v5228WorkerReady||!Number.isFinite(t)||t<=tabletCaptureT+0.001)return;
@@ -4327,16 +4337,14 @@ function tabletCapture(t,metadata){
     tabletCallbackGaps+=seq-tabletLastMetaFrames-1;
   tabletLastMetaFrames=seq;
  }
- // Optional deliberate PC-only low-power sampling (lossy; prominently reported).
- // Quantize video timestamps to 20fps bins rather than naive 50ms spacing,
- // which would accidentally sample at 15fps on ordinary 30fps videos.
- if(v5250EcoMode()&&tabletCaptureT>=0&&
-    Math.floor(t*20+1e-4)<=Math.floor(tabletCaptureT*20+1e-4)){
-  v5250EcoSkipped++;return;
- }
- // v52.50: never copy pixels if the Worker already owns a frame + one pending.
- // This avoids a second decode/seek and caps CPU/memory on both PC and phone.
- if(mobileMP4Mode&&tabletInFlight&&tabletQueue.length>=1){
+ // Use identical 30Hz source-time bins on phones and PCs; a 60fps camera
+ // must NOT cost twice as much nor produce a different number of collision
+ // observations. Do not count intentional >30fps decimation as lost evidence.
+ if(tabletCaptureT>=0&&
+    Math.floor(t*TABLET_TARGET_FPS+1e-3)<=Math.floor(tabletCaptureT*TABLET_TARGET_FPS+1e-3))return;
+ // Store a short burst of decoded frames before dropping new input. Memory is
+ // still bounded to four frames, but brief CPU stalls no longer skip impacts.
+ if(tabletInFlight&&tabletQueue.length>=TABLET_QUEUE_LIMIT){
   tabletCaptureT=t;tabletDropFrames++;v5228LastFrameWall=performance.now();
   return;
  }
@@ -4436,7 +4444,7 @@ async function loadCamera(){
  const serial=++fileLoadSerial;reset();await stopCameraStream();
  loaded=false;calibrationWorking=true;cameraActive=false;controls();
  try{
-  const stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30,max:30},facingMode:{ideal:'environment'}}});
+  const stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{width:{ideal:640},height:{ideal:360},aspectRatio:{ideal:16/9},frameRate:{ideal:30,max:30},facingMode:{ideal:'environment'}}});
   if(serial!==fileLoadSerial){stream.getTracks().forEach(t=>t.stop());return;}
   cameraStream=stream;videoFile=null;cameraActive=true;
   stream.getVideoTracks().forEach(tr=>{tr.addEventListener('ended',()=>{if(running&&cameraActive){msg('카메라 입력이 끊겼습니다. 연결을 확인하세요.',true);stop();}});});
@@ -4513,270 +4521,15 @@ function msg(t,warn=false){$('notice').textContent=t;$('notice').classList.toggl
 function uiMode(t){$('mode').textContent=t;}
 
 // v52.21 two-pass review: preserve stage-1 evidence, independently rescan suspicious windows.
-let pass2Token=0,pass2Busy=false,pass2RunGeneration=0,pass2Regions=[],pass2Candidates=[],pass2ShotReviews=[];
-const pass2Valid=x=>Number.isFinite(Number(x))&&Number(x)>=0;
-function pass2RiskRegions(){
- const list=[];const ordered=shots.slice().sort((a,b)=>a.start-b.start);
- for(let i=0;i<ordered.length-1;i++){
-  const left=ordered[i],right=ordered[i+1],start=Number(left.end??left.start),end=Number(right.start);
-  const gap=end-start,lp=playerForShot(left),rp=playerForShot(right);
-  if(!(gap>=4.5)||!pass2Valid(start)||!pass2Valid(end))continue;
-  const sameShooter=lp!==null&&lp===rp;
-  // v52.44: prioritize an unrecorded cue launch rejected by the stage-1 start gate.
-  const rejectedLaunch=Array.isArray(v5220Diagnostics)&&v5220Diagnostics.some(d=>
-    d.t>=start&&d.t<=end&&d.status==='샷시작 거절'&&
-    Number(d.peak)>=70&&Number(d.displacement)>=Math.max(10,(cfg.radius||10)*.9));
-  const suspiciousTurn=sameShooter&&left.autoResult!=='score';
-  const extendedRepeat=sameShooter&&gap>=18;
-  const largeGap=gap>=25;
-  const priority=rejectedLaunch?-5:(suspiciousTurn||extendedRepeat)?0:largeGap?1:2;
-  const reason=rejectedLaunch?'샷 시작 거절 기록과 공 이동 증거 발견: 누락 타격 우선 재검증':
-    suspiciousTurn?'같은 수구 연속·직전 무득점: 상대 타격 누락 의심':
-    extendedRepeat?'같은 수구가 다시 등장한 긴 공백: 중간 타격 재검증':
-    largeGap?'긴 조준/샷 사이 공백: 양쪽 수구 출발 재검사':
-      '일반 샷 사이 공백: 숨은 타격 전수 검사';
-  // Very long waits are split into manageable, overlapping video intervals.
-  // No section is omitted merely because the player measured a line for 90s+.
-  const a=Math.max(0,start+.12),b=end-.12;
-  if(b-a<2)return;
-  let section=0;
-  for(let x=a;x<b-.2;){
-    const y=Math.min(b,x+48);
-    list.push({id:`gap-${left.id}-${right.id}-${section}`,kind:'gap',start:x,end:y,
-      leftId:left.id,rightId:right.id,priority,interval:gap,
-      reason:reason+(gap>48?' · 긴 구간 분할 검사':''),state:'대기',notes:'',found:0});
-    if(y>=b)break;
-    x=y-1.6;section++;
-  }
- }
- return list.sort((a,b)=>a.priority-b.priority||b.interval-a.interval||a.start-b.start);
-}
-function preparePass2(){if(cameraActive)return;
- const gap=pass2RiskRegions();
- pass2Regions=gap;
- pass2ShotReviews=shots.filter(s=>s.reviewRecommended||s.autoResult==='pending'||
-    (s.cushionsTotal>=3&&Array.isArray(s.objects)&&s.objects.length<2)||
-    // 2 verified objects but 2 apparent cushions after a frame-gap rail echo
-    // check can also hide a real score.  Include in optional independent pass2.
-    ((s.cushionsAtSecond===2||s.cushionsTotal===2)&&Array.isArray(s.objects)&&s.objects.length===2&&
-      (s.issues||[]).some(z=>/프레임 간격 누락/.test(z)))||
-    s.cueRoleAudit?.status==='possible-conflict-score-preserved'||
-    ['conflict-review','certified-score-protected'].includes(s.cueRoleAuditV5226?.status)||
-    s.turnResult&&['score','miss'].includes(s.autoResult)&&s.turnResult!==s.autoResult)
-  .slice(0,100).map(s=>({id:'shot-'+s.id,kind:'shot',shotId:s.id,start:s.start,end:s.end,state:'대기',reason:(s.reviewReasons||[]).join(' / ')||'턴 추정 및 AI 결과 불일치',notes:''}));
- pass2Candidates=[];
- for(const s of shots){if(s.firstPassAutoResult==null)s.firstPassAutoResult=s.autoResult;s.pass2Reviewed=false;}
- renderPass2();
-}
-function pass2CandidatesByRegion(id){return pass2Candidates.filter(c=>c.regionId===id)}
-function renderPass2(){
- const body=$('pass2Rows');if(!body)return;
- const all=[...pass2Regions,...pass2ShotReviews];
- const audited=all.filter(r=>r.state==='확인 완료'||r.state==='후보 발견'||r.state==='차이 확인').length;
- $('pass2Run').disabled=running||pass2Busy||!loaded||!shots.length;
- $('pass2Cancel').disabled=!pass2Busy;
- const risk=all.filter(r=>r.state==='대기'||r.state==='실패').length;
- $('pass2Summary').textContent=`샷 사이 전수 공백 검증 ${pass2Regions.length}건 · 접촉 재검증 ${pass2ShotReviews.length}건 · 검사완료 ${audited}건 · 대기 ${risk}건 · 복구 후보 ${pass2Candidates.length}개${pass2Busy?' · 검사 진행 중':''}`;
- if(!all.length){body.innerHTML='<tr><td colspan="5" class="sub">검토 대상이 없습니다. 1차 분석 완료 후 다시 확인하세요.</td></tr>';return;}
- const display=all.map(region=>{
-  const candidates=pass2CandidatesByRegion(region.id);
-  const result=region.state==='후보 발견'?`<span class="p2flag">${candidates.length}개 타격 후보</span>`:
-   region.state==='실패'?`<span class="p2flag">재검사 실패</span>`:
-   region.state==='대기'?'<span class="sub">검사 대기</span>':
-   region.state==='검사 중'?'<span class="sub">원본 프레임 검사 중</span>':
-   `<span class="p2ok">${escHTML(region.state)}</span>`;
-  const choices=candidates.map(c=>{
-   const mark=c.accepted?' · 채택됨':'';
-   const details=`<small class="p2meta">${formatPrecise(c.start)} · ${c.cue+1}P · 2차 ${c.machineResult==='score'?'득점':c.machineResult==='miss'?'무득점':'판정 대기'}${mark}</small>`;
-   return `<div class="p2actions"><button type="button" data-p2-preview="${c.key}">구간 보기</button>${c.accepted?'':`<button type="button" data-p2-accept="${c.key}">타격 채택</button>`}</div>${details}`;
-  }).join('');
-  return `<tr><td>${region.kind==='gap'?'샷 누락':'판정 재검사'}</td><td>${format(region.start)}~${format(region.end)}</td><td style="min-width:180px;font-size:11px">${escHTML(region.reason)}<span class="p2meta">${escHTML(region.notes||'')}</span></td><td>${result}</td><td><div class="p2actions"><button type="button" data-p2-region="${region.id}" ${pass2Busy?'disabled':''}>다시 검사</button><button type="button" data-p2-region-preview="${region.id}">영상 보기</button></div>${choices}</td></tr>`;
- });
- body.innerHTML=display.join('');
-}
-function pass2VideoPreview(start,end){
- if(!loaded||running){msg('영상 분석이 끝난 후 구간을 확인하세요.',true);return;}
- reviewGeneration++;reviewActive=false;
- const t=Math.max(0,Number(start)||0);v.pause();void seekTo(t).then(()=>{inningPreviewEnd=Math.min(sourceTime(),Math.max(t+.4,Number(end)||t+10));v.play().catch(()=>{});}).catch(e=>msg('구간 재생 실패: '+e.message,true));
-}
-function pass2AcceptCandidate(key,auto=false){
- if(running||(pass2Busy&&!auto)){msg('분석/검사가 끝난 뒤 채택하세요.',true);return false;}
- const item=pass2Candidates.find(c=>c.key===key);if(!item||item.accepted)return false;
- if(shots.some(s=>Math.abs(s.start-item.start)<1.1||Math.max(s.start,item.start)<Math.min(s.end??s.start,item.end??item.start)-.7)){msg('이미 있는 샷과 겹칩니다. 이 후보를 중복 채택할 수 없습니다.',true);return;}
- const source=item.shot;
- // A pass-2 detection is evidence of a strike, NOT evidence of the final score.
- // Mark as pending until human verifies the rules and status.
- const rec={...source,id:0,manualCue:auto?null:item.cue,manualResult:null,autoResult:'pending',firstPassAutoResult:'not-detected',pass2MachineResult:item.machineResult,pass2Recovered:true,pass2AutoAccepted:auto,pass2AutoReason:item.autoReason||'',pass2Source:item.regionId,pass2Reviewed:true,reviewRecommended:true,
-   reviewReasons:['1차 샷 미검출 · 2차 실제 수구 출발 후보 · 점수는 별도 확인'],issues:[...(source.issues||[]),'2차 검사에서 발견된 새 타격 후보'],turnResult:null,gapOverride:'auto'};
- shots.push(rec);shots.sort((a,b)=>a.start-b.start);shots.forEach((s,i)=>s.id=i+1);
- cueOverrides.clear();for(const s of shots)if(s.manualCue===0||s.manualCue===1)cueOverrides.set(s.id,s.manualCue);
- item.accepted=true;item.autoAccepted=auto;item.acceptedAt=new Date().toISOString();
- // Persist missing-shot evidence as pending and rebuild inning order from real cues.
- if(!auto){render();renderPass2();msg(`2차 타격 후보 ${format(item.start)} ${item.cue+1}P가 샷 기록에 추가됐습니다. 점수는 판정보류입니다. 샷별 [점수 수정]으로 확정하세요.`);} return true;
-}
-async function pass2ScanRegion(region,token){
- const vv=document.createElement('video');vv.muted=true;vv.preload='auto';vv.playsInline=true;
- vv.style.cssText='position:fixed;left:-9999px;top:-9999px;width:2px;height:2px;opacity:0;pointer-events:none;';
- vv.src=fileURL;document.body.appendChild(vv);
- const cw=Number($('resolution').value),ch=Math.round(cw*9/16),canvas=document.createElement('canvas');canvas.width=cw;canvas.height=ch;
- const ctx=canvas.getContext('2d',{willReadFrequently:true,alpha:false});
- const tempURL=URL.createObjectURL(new Blob([$('engineCode').textContent,workerTail],{type:'text/javascript'}));
- const w=new Worker(tempURL),session=500000+Math.floor(Math.random()*1000000);
- const queue=[],waiters=[],found=[];
- const emit=d=>{if(waiters.length)waiters.shift()(d);else queue.push(d)};
- const next=()=>queue.length?Promise.resolve(queue.shift()):new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('2차 검사 워커 응답 시간 초과')),20000);waiters.push(d=>{clearTimeout(timer);resolve(d)})});
- w.onmessage=e=>{if(e.data.session===session){if(e.data.type==='shot')found.push(e.data.shot);emit(e.data);}};
- w.onerror=e=>emit({type:'error',message:e.message});
- let frames=0;
- try{
-  await awaitMetadata(vv);if(token!==pass2Token)throw Error('취소됨');
-  w.postMessage({type:'init',session,config:{...cfg,pass2:true},width:cw,height:ch});
-  const init=await next();if(init.type!=='ready')throw Error(init.message||'워커 초기화 실패');
-  const scanFrom=Math.max(0,Number(region.start)-2.4),scanTo=Math.min(vv.duration-.05,Number(region.end)+.28);
-  if(scanTo<=scanFrom+.2)return {found:[],frames:0};
-  // Priority regions use denser temporal samples; normal intervals remain lighter.
-  const sampleFps=region.priority<=1?24:18;
-  const startIdx=Math.floor(scanFrom*sampleFps),endIdx=Math.floor(scanTo*sampleFps);
-  for(let k=startIdx;k<=endIdx;k++){
-   if(token!==pass2Token||running||!loaded)throw Error('취소됨');
-   const t=(k+.12)/sampleFps;if(t>scanTo)break;
-   await waitFrameSeek(vv,t);
-   ctx.drawImage(vv,0,0,cw,ch);
-   const pix=ctx.getImageData(0,0,cw,ch).data;
-   w.postMessage({type:'frame',session,t,pixels:pix.buffer,dropped:0},[pix.buffer]);
-   let evt;do{evt=await next();if(evt.type==='error')throw Error(evt.message)}while(evt.type!=='ack');
-   frames++;
-   if(frames%24===0){$('auditStatus').textContent=`2차 원본 영상 재검사 · ${format(t)} · ${frames}프레임 · ${Math.round((k-startIdx)/(endIdx-startIdx+1)*100)}%`;await sleepAudit(0);}
-  }
-  w.postMessage({type:'finish',session,t:scanTo});
-  let e;do{e=await next();if(e.type==='error')throw Error(e.message);}while(e.type!=='done');
-  return {found:found.filter(s=>s.start>=region.start+.2&&s.start<region.end-.2),frames};
- }finally{w.terminate();URL.revokeObjectURL(tempURL);vv.pause();vv.removeAttribute('src');vv.load();vv.remove();}
-}
-async function pass2ScanShot(region,token){
- const shot=shots.find(s=>Math.abs(s.start-region.start)<.3);if(!shot)return {done:false,error:'샷이 변경됐습니다.'};
- const r=await auditOneShot(shot,reviewGeneration);
- if(token!==pass2Token)return {done:false,error:'취소됨'};
- shot.pass2Reviewed=true;shot.pass2Evidence={original:shot.firstPassAutoResult??shot.autoResult,detected:r.best?.result||'not-detected',frames:r.frames,observedAt:new Date().toISOString(),cue:r.best?.cue??null};
- const best=r.best;
- const samePhysical=best&&Math.abs(best.start-shot.start)<.75&&best.stopConfirmed&&
-   Math.abs((best.end??0)-(shot.end??0))<2.5;
- const roleOK=best?.cue===observedCue(shot)||best?.cueRoleCorrected?.proof?.status==='confirmed';
- const targets=new Set((best?.objectResponseAudit||[]).filter(x=>x.status==='supported').map(x=>x.target));
- const strongScore=best?.result==='score'&&targets.size===2&&best.cushionsAtSecond>=3&&
-   best.thirdCushionT<best.secondObjectT-.001;
- const strongMiss=best?.result==='miss'&&(best.negativeResponseV5227||[]).length>0;
- const oldAuto=shot.autoResult;
- const strongRole=best?.cueRoleCorrected?.proof?.status==='confirmed'&&best.result===oldAuto;
- if(samePhysical&&roleOK&&(strongScore||strongMiss||strongRole)&&
-    (shot.manualCue==null||shot.manualCue===best.cue)&&!(oldAuto==='score'&&best.result!=='score')){
-   const preserve={id:shot.id,start:shot.start,end:shot.end,manualCue:shot.manualCue,
-     manualResult:shot.manualResult,manualSource:shot.manualSource,manualEditedAt:shot.manualEditedAt,
-     firstPassAutoResult:shot.firstPassAutoResult??oldAuto,pass2Evidence:shot.pass2Evidence};
-   Object.assign(shot,best,preserve);normalizeAutoShot(shot);
-   shot.pass2Reviewed=true;shot.pass2AutoApplied=true;
-   shot.pass2AppliedReason='v52.27 independent full-shot physical evidence; manual override preserved';
-   return {done:true,difference:false,notes:'Physical-evidence correction applied; innings rebuilt (manual values preserved)'};
- }
- shot.pass2EvidenceDetail=r.best?`추가 공 확인 ${r.best.objects?.length??0}/2 · 쿠션 ${r.best.cushionsAtSecond??'?'}회`: '타격 감지/접촉 증거 부족';
- if(r.best&&(r.best.cue===0||r.best.cue===1)&&r.best.cue!==observedCue(shot)){
-  shot.reviewRecommended=true;
-  shot.reviewReasons=[...new Set([...(shot.reviewReasons||[]),'2차 검사에서 수구가 다르게 검출됨 · 선수 직접 확인 필요'])];
-  return {done:true,difference:true,notes:'2차 수구 불일치 · 1차 기록 보존 / 수동 확인 필요'};
- }
- if(r.best?.result==='score'&&shot.autoResult!=='score'){
-  // A second opinion does not replace the original verdict without review.
-  shot.reviewRecommended=true;shot.reviewReasons=[...new Set([...(shot.reviewReasons||[]),'2차 검사에서 득점 가능성 발견 · 수동확정 필요'])];
-  return {done:true,difference:true,notes:'2차 득점 증거 발견 · 수동확정 필요'};
- }
- if(r.best&&r.best.result!==shot.autoResult)return {done:true,difference:true,notes:`2차 ${resultName(r.best.result)} / 1차 ${resultName(shot.autoResult)} · 수동확정 필요`};
- return {done:true,difference:false,notes:r.best?'1·2차 판정 동일':'2차 재검출 증거 부족 · 수동확인 권장'};
-}
-function v5218TrustPass2(candidate,region){
- const sh=candidate.shot;
- if(!sh||region.kind!=='gap'||!sh.finished||!sh.stopConfirmed)return {ok:false,reason:'샷 종료 확인 부족'};
- const l=shots.find(x=>x.id===region.leftId),r=shots.find(x=>x.id===region.rightId);
- if(!l||!r||observedCue(l)!==observedCue(r)||observedCue(l)===sh.cue)return {ok:false,reason:'전후 수구 관계 불일치'};
- const dur=Number(sh.end)-Number(sh.start);
- if(!Number.isFinite(dur)||dur<1.0||Number(sh.start)<=region.start+.18||Number(sh.end)>=region.end-.05)return {ok:false,reason:'타격 구간 경계 불확실'};
- if(!sh.stableProof?.allThreeInside||Number(sh.stableProof.frames)<3)return {ok:false,reason:'3공 정지 증거 부족'};
- if(Number(sh.observations||0)<7||Number(sh.missing||0)>Math.max(5,Number(sh.observations||0)*.28))return {ok:false,reason:'연속 추적 부족'};
- const samples=(sh.path||[]).filter(f=>f.p?.[sh.cue]&&Number.isFinite(f.p[sh.cue].x)&&Number.isFinite(f.p[sh.cue].y));
- if(samples.length<6)return {ok:false,reason:'수구 궤적 부족'};
- const origin=sh.preShotPose?.[sh.cue]||samples[0].p[sh.cue],rad=Number(cfg.radius)||9;
- let move=0;
- for(const f of samples)move=Math.max(move,Math.hypot(f.p[sh.cue].x-origin.x,f.p[sh.cue].y-origin.y));
- if(move<Math.max(8,rad*1.05))return {ok:false,reason:'수구 출발 변위 부족'};
- return {ok:true,reason:'전후 동일 수구·반대편 타격, 3공 정지, 수구 연속 출발, 정지 확인'};
-}
-async function runPass2(selectedId=null,automatic=false){
- if(running||pass2Busy||!loaded||!shots.length)return;
- const token=++pass2Token,runId=++pass2RunGeneration;pass2Busy=true;const autoQueue=[];
- const pending=[...pass2ShotReviews,...pass2Regions]
-  .filter(r=>selectedId==null?r.state==='대기'||r.state==='실패':r.id===selectedId)
-  .sort((a,b)=>{
-    const priority=r=>{if(r.kind==='shot'){
-      const sh=shots.find(x=>x.id===r.shotId);
-      return sh?.cueRoleAuditV5226?.status==='conflict-review'?-2:sh&&(sh.autoResult==='review'||sh.autoResult==='pending')?-1:1;
-    }return 2+(r.priority||0);};
-    return priority(a)-priority(b)||a.start-b.start;
-  });
- const list=automatic?pending.slice(0,7):pending;
- renderPass2();uiMode('2차 검증 중');
- try{
-  for(let i=0;i<list.length;i++){
-   if(token!==pass2Token)break;
-   const region=list[i];region.state='검사 중';renderPass2();
-   $('auditStatus').textContent=`2차 검사 ${i+1}/${list.length} · ${format(region.start)}~${format(region.end)}`;
-   try{
-    if(region.kind==='gap'){
-     const outcome=await pass2ScanRegion(region,token);
-     if(token!==pass2Token)break;
-     const unique=[];
-     for(const s of outcome.found){
-      if(shots.some(a=>Math.abs(a.start-s.start)<1.15||Math.max(a.start,s.start)<Math.min(a.end??a.start,s.end??s.start)-.4))continue;
-      if(unique.some(a=>Math.abs(a.start-s.start)<1.2))continue;
-      if(s.cue!==0&&s.cue!==1)continue;
-      unique.push(s);
-     }
-     for(const s of unique){
- const item={key:`p2-${region.id}-${pass2Candidates.length}`,regionId:region.id,start:s.start,end:s.end,cue:s.cue,machineResult:s.result,shot:s,accepted:false};
- const proof=unique.length===1?v5218TrustPass2(item,region):{ok:false,reason:'복수 타격 후보 · 수동 확인'};
- item.autoApproved=proof.ok;item.autoReason=proof.reason;
- pass2Candidates.push(item);
- if(proof.ok)autoQueue.push(item.key);
-}
-     region.state=unique.length?'후보 발견':'확인 필요';region.found=unique.length;
-     region.notes=unique.length?`${outcome.frames}프레임 · 타격 후보 ${unique.length}개 · 확인 후 채택`:`${outcome.frames}프레임 재분석에서 새 타격 미검출. 누락 부정 증거는 아닙니다.`;
-    }else{
-     const result=await pass2ScanShot(region,token);
-     region.state=result.difference?'차이 확인':result.done?'확인 완료':'확인 필요';region.notes=result.notes||result.error||'';
-    }
-   }catch(e){if(token!==pass2Token)break;region.state='실패';region.notes=e.message;}
-   render();renderPass2();await sleepAudit(0);
-  }
- }finally{
-  if(runId===pass2RunGeneration){pass2Busy=false;
- let adopted=0;
- // v52.22: Newly detected shots remain review candidates (no silent insert).
- // User explicitly confirms the strike; its score remains pending afterwards.
- // Old autoQueue evidence is retained for inspection but is not inserted here.
- for(const r of pass2Regions){const cc=pass2Candidates.filter(c=>c.regionId===r.id);if(cc.length&&cc.every(c=>c.accepted)){r.state='확인 완료';r.notes+=' · 샷 목록 및 이닝 재계산 완료';}}
- if(adopted)msg(`2차 타격 채택 ${adopted}건 · 득점은 판정보류 · 기존 샷 점수 보존`);
- if(token!==pass2Token){for(const r of [...pass2Regions,...pass2ShotReviews])if(r.state==='검사 중')r.state='대기';}$('auditStatus').textContent='2차 검사 종료 · 후보 샷은 영상 확인 후 채택하고 점수를 확정하세요.';uiMode('1·2차 검증 완료');render();renderPass2();}
- }
-}
-function installPass2(){
- $('pass2Run').addEventListener('click',()=>{if(!pass2Regions.length&&!pass2ShotReviews.length)preparePass2();for(const r of [...pass2Regions,...pass2ShotReviews])if(r.state!=='후보 발견')r.state='대기';void runPass2();});
- $('pass2Cancel').addEventListener('click',()=>{pass2Token++;$('auditStatus').textContent='2차 검사 중지 요청 · 검사 워커를 정리하고 있습니다.';renderPass2();});
- $('pass2Rows').addEventListener('click',e=>{
-  const accept=e.target.closest('[data-p2-accept]');if(accept){pass2AcceptCandidate(accept.dataset.p2Accept);return;}
-  const preview=e.target.closest('[data-p2-preview]');if(preview){const c=pass2Candidates.find(x=>x.key===preview.dataset.p2Preview);if(c)pass2VideoPreview(Math.max(0,c.start-2),c.end+2);return;}
-  const single=e.target.closest('[data-p2-region]');if(single){void runPass2(single.dataset.p2Region);return;}
-  const reg=e.target.closest('[data-p2-region-preview]');if(reg){const r=[...pass2Regions,...pass2ShotReviews].find(x=>x.id===reg.dataset.p2Region);if(r)pass2VideoPreview(Math.max(0,r.start-1),r.end);}
- });
- renderPass2();
-}
+// v52.54: the optional two-pass video reinspection is removed. Scoring is
+// single-pass, one worker and manual confirmation keeps precedence.
+let pass2Token=0,pass2Busy=false,pass2RunGeneration=0;
+let pass2Regions=[],pass2Candidates=[],pass2ShotReviews=[];
+function pass2RiskRegions(){return [];}
+function pass2CandidatesByRegion(){return [];}
+function preparePass2(){}
+function renderPass2(){}
+async function runPass2(){return;}
 
 function reset(){sync5248Stop();mobileMP4Mode=false;v5249RefreshHint();tabletMode=false;tabletQueueReset();fixedCancel();fixedCloseDecoder();fixedMode=false;fixedSessionUsed=false;fixedFrameFingerprints=[];fixedNextFrame=0;fixedLastSample=0;fixedRetry=0;lastWorkerAckWall=performance.now();recoveryActive=false;recoveryAttempts=0;recoveryMediaAt=-Infinity;recoveryLogs=[];
  v5228LastFrameWall=performance.now();v5228WorkerBornWall=0;v5228WorkerReady=false;
@@ -5038,7 +4791,7 @@ function render(){
 
 }
 
-function controls(){for(const id of ['dragBtn','resetBtn'])$(id).disabled=!loaded||running||calibrationWorking;$('runBtn').disabled=!loaded||running||calibrationWorking;$('fromZeroBtn').disabled=true;$('pauseBtn').disabled=$('stopBtn').disabled=!running;$('fileBtn').disabled=running;$('cameraBtn').disabled=running;$('resolution').disabled=$('cue').disabled=running;$('speed').disabled=running&&(fixedMode||tabletMode);$('runBtn').textContent=calibrationWorking?'기준선 확인 중…':'▶ 지금부터 분석 시작';$('seek').disabled=running||cameraActive;}
+function controls(){for(const id of ['dragBtn','resetBtn'])$(id).disabled=!loaded||running||calibrationWorking;$('runBtn').disabled=!loaded||running||calibrationWorking;$('fromZeroBtn').disabled=true;$('pauseBtn').disabled=$('stopBtn').disabled=!running;$('fileBtn').disabled=running;$('cameraBtn').disabled=running;$('resolution').disabled=$('cue').disabled=$('analysisMode').disabled=running;$('speed').disabled=running&&(fixedMode||tabletMode);$('runBtn').textContent=calibrationWorking?'기준선 확인 중…':'▶ 지금부터 분석 시작';$('seek').disabled=running||cameraActive;}
 function cornersDefault(){return origCfg.corners.map(p=>p.slice());}
 function syncCanvas(){const rect=v.getBoundingClientRect(),st=$('stage').getBoundingClientRect();const width=640,height=360;if(overlay.width!==width)overlay.width=width;if(overlay.height!==height)overlay.height=height;
 const videoWidth=v.videoWidth||1280,videoHeight=v.videoHeight||720,viewRatio=rect.width/rect.height,sourceRatio=videoWidth/videoHeight;
@@ -5480,7 +5233,7 @@ function measureBroadWipe(pix,w,h,spans){
 }
 let detector=null,engine=null,cueStickDetector=null,frames=0,session=0,lastShot=0,activeId=0,liveKey='';
 self.onmessage=function(ev){const d=ev.data;try{
-if(d.type==='init'){session=d.session;detector=new BallDetector(d.config,d.width,d.height);detector.fastTrack=true;cueStickDetector=new CueStickDetector();engine=new ShotEngine(d.config);engine.shotNumberBase=Math.max(0,Math.floor(Number(d.shotNumberBase)||0));frames=0;lastShot=0;activeId=0;liveKey='';self._auditScored=false;self._liveCertifiedId=0;
+if(d.type==='init'){session=d.session;detector=new BallDetector(d.config,d.width,d.height);detector.fastTrack=true;cueStickDetector=new CueStickDetector();engine=new ShotEngine(d.config);engine.shotNumberBase=Math.max(0,Math.floor(Number(d.shotNumberBase)||0));frames=0;lastShot=0;activeId=0;liveKey='';self._auditScored=false;self._liveCertifiedId=0;self._idleWipe={wiping:false};self._lastLiveEvalAt=-Infinity;self._lastLiveEvalSignature='';
  // v49: seed only colour tracking, never fake the 1.35s 3-ball rest proof.
  // Genuine rest must be verified from consecutive decoded video frames.
  if(Array.isArray(d.seedPoints)&&d.seedPoints.length===3&&d.seedPoints.every(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y))){
@@ -5499,8 +5252,12 @@ if(d.type==='frame'){
  const points=detector.detect(pix,d.t);
  // Cue tracking runs only while waiting for the next hit, not while balls roll.
  // Avoid a new mandatory gate if the cue shaft is hidden or crosses the rail.
- const wipeHint=!engine.active?measureBroadWipe(pix,detector.w,detector.h,detector.spans):{wiping:false};
- const stickHints=!engine.active&&cueStickDetector?cueStickDetector.scan(pix,detector.w,detector.h,detector.inv,detector.rpix,detector.spans,points,d.t):null;
+ // During idle frames the expensive wipe/cue advisory scanners run at
+ // 10Hz/15Hz respectively. Ball tracking and actual shot inference still run
+ // on every admitted frame; the cached wipe result blocks false stroke starts.
+ const idle=!engine.active;
+ const wipeHint=idle?(frames%3===0?(self._idleWipe=measureBroadWipe(pix,detector.w,detector.h,detector.spans)):self._idleWipe):{wiping:false};
+ const stickHints=idle&&frames%2===0&&cueStickDetector?cueStickDetector.scan(pix,detector.w,detector.h,detector.inv,detector.rpix,detector.spans,points,d.t):null;
  engine.feed(d.t,points,{dropped:d.dropped||0,cueSticks:stickHints,wiping:!!wipeHint.wiping});frames++;
  if(engine.v5220Pending?.length){
    for(const item of engine.v5220Pending.splice(0)){
@@ -5521,21 +5278,23 @@ if(d.type==='frame'){
  // Send a new-shot event immediately; remove the previous shot counters.
  const active=engine.active;
  if(active&&active.id!==activeId){activeId=active.id;liveKey='';self.postMessage({type:'shotStart',session,id:active.id,start:active.start,preShotPose:active.preShotPose?.map(p=>p?{x:p.x,y:p.y}:null)||null,cue:active.cue,cueEvidence:active.cueEvidence,cueStickEvidence:active.cueStickEvidence,cueStartMethod:active.cueStartMethod});}
- if(active){const liveVerdict=evaluateShot(active);
+ if(active){
+  // v52.55: Refresh the per-frame live verdict as in the stable original.
+  // v52.54's 100ms throttle limited live UI feedback and scoped liveVerdict
+  // inside a nested block. The immediate positive score message later used it
+  // outside that block, throwing a ReferenceError exactly when certification
+  // succeeded. This could interrupt the Worker ACK and frame processing.
+  const liveVerdict=evaluateShot(active);
   const rail=liveVerdict.cushionsTotal;
   const obj=liveVerdict.objects.length;
   const k=active.id+':'+rail+':'+obj+':'+(liveVerdict.completed?.cushions??'-');
   if(k!==liveKey){liveKey=k;self.postMessage({type:'shotLive',session,id:active.id,cushions:rail,objects:obj,
     cushionsAtSecond:liveVerdict.completed?.cushions??null,orderMismatch:liveVerdict.orderMismatch,
     thirdCushionT:liveVerdict.thirdCushionT,secondObjectT:liveVerdict.secondObjectT});}
-  // v30: scoring is irreversible once the second distinct object ball is hit
-  // after at least three cushions. Publish that positive result immediately;
-  // waiting for all balls to stop is only needed to close the shot record.
-  if(self._liveCertifiedId!==active.id){
-    if(active.certifiedProof?.score){
-      self._liveCertifiedId=active.id;
-      self.postMessage({type:'scoreCertified',session,id:active.id,cue:active.cue,cushions:active.certifiedProof.cushions,objects:liveVerdict.objects,t:active.certifiedProof.t});
-    }
+  // The confirmed score is immutable; publish it on the same worker frame.
+  if(self._liveCertifiedId!==active.id&&active.certifiedProof?.score){
+    self._liveCertifiedId=active.id;
+    self.postMessage({type:'scoreCertified',session,id:active.id,cue:active.cue,cushions:active.certifiedProof.cushions,objects:liveVerdict.objects,t:active.certifiedProof.t});
   }
  }
  if(d.audit&&!self._auditScored){
@@ -5639,7 +5398,7 @@ if(d.type==='shot'){
  $('workerState').textContent=`SHOT #${d.shot.id} · ${manualPriority?'다음 타격 선수 판정 대기':(d.shot.autoResult==='score'?'득점':'무득점')}${d.shot.reviewRecommended?' · ⚠ AI 검토 권장':''}`;
  return;}
 if(d.type==='progress'){processed=d.frames;const now=performance.now();if(now-lastPaint>300){lastPaint=now;updateProgress();}return;}
-if(d.type==='done'){sync5248Stop();fixedCancel();fixedCloseDecoder();fixedMode=false;v5228FinishSentAt=0;v5228Log('finish-confirmed');running=false;paused=false;finishPending=false;controls();if(!cameraActive){preparePass2();$('pass2Summary').textContent='실시간 영상 판정이 완료됐습니다. 필요한 경우 [2차 전체 검사]를 눌러 원본 영상을 별도 재검증하세요.';}else $('twoPassPanel').style.display='none';$('bar').style.width='100%';uiMode('자동 판정 완료');updateProgress();const flagged=shots.filter(s=>s.reviewRecommended&&!s.manualResult).length;$('workerState').textContent=`자동 판정 완료 · 득점/무득점 집계 완료 · 검토 권장 ${flagged}샷`;msg(manualPriority?`수동우선 분석 완료 · ${shots.length}샷 · 다음 타격 선수가 없는 마지막 샷은 직접 점수를 확정해야 합니다. [점수 수정] 또는 실제 선수 선택으로 기록을 검증하세요.`:`자동 판정 완료 · ${shots.length}샷 · 검토 권장 ${flagged}샷 · 필요하면 샷별 [점수 수정]을 이용하세요.`);return;}
+if(d.type==='done'){sync5248Stop();fixedCancel();fixedCloseDecoder();fixedMode=false;v5228FinishSentAt=0;v5228Log('finish-confirmed');running=false;paused=false;finishPending=false;controls();$('bar').style.width='100%';uiMode('자동 판정 완료');updateProgress();const flagged=shots.filter(s=>s.reviewRecommended&&!s.manualResult).length;$('workerState').textContent=`자동 판정 완료 · 득점/무득점 집계 완료 · 검토 권장 ${flagged}샷`;msg(manualPriority?`수동우선 분석 완료 · ${shots.length}샷 · 다음 타격 선수가 없는 마지막 샷은 직접 점수를 확정해야 합니다. [점수 수정] 또는 실제 선수 선택으로 기록을 검증하세요.`:`자동 판정 완료 · ${shots.length}샷 · 검토 권장 ${flagged}샷 · 필요하면 샷별 [점수 수정]을 이용하세요.`);return;}
 if(d.type==='error'){hasWorkerError=true;void recoverFrozenWorker('작업 엔진 오류: '+d.message);}
 };worker.onerror=e=>{hasWorkerError=true;void recoverFrozenWorker('작업 엔진 오류: '+e.message);};}
 
@@ -5975,6 +5734,10 @@ async function start(atTime=null){
  endReplay();if(!loaded||running||dragging||calibrationWorking)return;
  const serial=fileLoadSerial;
  const startFrame=cameraActive?Math.max(0,v.currentTime):Math.max(0,Math.min(Math.max(0,sourceTime()-.03),Number(atTime===null?v.currentTime:atTime)||0));
+ // Align calibration, opening-pose detection and every scoring frame to
+ // the same 640x360 input on PC, Android and other browsers. Low-spec CPUs
+ // take longer, but do not change the verdict by silently losing frames.
+ if(!cameraActive)$('resolution').value='640';
  armBell();if(!cameraActive)v.pause();
  let calibrated=false;
  if(manualCalibrationLocked&&calibrationReady){
@@ -6053,7 +5816,9 @@ async function start(atTime=null){
    void fixedRun();
    const firstOK=await sync5248FirstAck(serial,firstSession,firstGen,firstIndex);
    if(!firstOK)return;
-   sync5248Start();
+   // Do not pause the visible MP4 to catch a slower decoder. The scorer
+   // remains lossless and finishes after playback, even on low-end devices.
+   sync5248Stop();
    void v.play().catch(e=>{
     v.controls=true;
     msg('화면 재생을 눌러주세요: '+String(e.message||e),true);
@@ -6113,117 +5878,8 @@ function onEnded(){
 }
 
 
-// v16 mobile recovery: a non-scoring verdict is provisional until the
-// relevant *video frames* have been decoded in temporal order again.
-// Only the hidden analysis video seeks; the viewer's screen never rewinds.
-const sleepAudit=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-function awaitMetadata(video,timeout=10000){return new Promise((resolve,reject)=>{
- if(video.readyState>=1){resolve();return;}
- const timer=setTimeout(()=>{clean();reject(Error('정밀검사 영상 로드 시간 초과'));},timeout);
- function clean(){clearTimeout(timer);video.removeEventListener('loadedmetadata',ok);video.removeEventListener('error',bad)}
- function ok(){clean();resolve()}function bad(){clean();reject(Error('정밀검사 코덱 디코딩 실패'))}
- video.addEventListener('loadedmetadata',ok);video.addEventListener('error',bad);
- });}
-function waitFrameSeek(video,target){return new Promise((resolve,reject)=>{
- const t=Math.max(0,Math.min(video.duration-0.035,target));
- if(Math.abs(video.currentTime-t)<0.0006&&video.readyState>=2){resolve();return;}
- const timer=setTimeout(()=>{clean();reject(Error('프레임 탐색 시간 초과'));},8500);
- const clean=()=>{clearTimeout(timer);video.removeEventListener('seeked',ok);video.removeEventListener('error',bad)};
- const ok=()=>{clean();resolve()};const bad=()=>{clean();reject(Error('정밀검사 탐색 오류'))};
- video.addEventListener('seeked',ok);video.addEventListener('error',bad);video.currentTime=t;
- });}
-async function auditOneShot(shot,token){
- const vv=document.createElement('video');vv.muted=true;vv.playsInline=true;vv.preload='auto';
- vv.style.cssText='position:fixed;left:-9999px;top:-9999px;width:2px;height:2px;opacity:0;pointer-events:none;';
- vv.src=fileURL;document.body.appendChild(vv);
- const cw=Number($('resolution').value),ch=Math.round(cw*9/16),cc=document.createElement('canvas');cc.width=cw;cc.height=ch;
- const cx=cc.getContext('2d',{willReadFrequently:true,alpha:false});
- if(!workerURL)workerURL=URL.createObjectURL(new Blob([$('engineCode').textContent,workerTail],{type:'text/javascript'}));
- const w=new Worker(workerURL);const mySession=900000+shot.id;
- let buffer=[],done=false,failed=null;
- const queue=[],waiters=[];const found=[];let certified=null;
- const emit=x=>{if(waiters.length)waiters.shift()(x);else queue.push(x)};
- const next=()=>queue.length?Promise.resolve(queue.shift()):new Promise((resolve,reject)=>{const tm=setTimeout(()=>reject(Error('Audit worker timeout')),15000);waiters.push(x=>{clearTimeout(tm);resolve(x);});});
- w.onmessage=e=>{if(e.data.session===mySession){if(e.data.type==='shot')found.push(e.data.shot);emit(e.data)}};
- w.onerror=e=>emit({type:'error',message:e.message});
- try{
- await awaitMetadata(vv);
- if(token!==reviewGeneration)throw Error('취소됨');
- w.postMessage({type:'init',session:mySession,config:{...cfg},width:cw,height:ch});
- let e=await next();if(e.type!=='ready')throw Error(e.message||'검증 워커 준비 실패');
- // A short pre-roll ensures a stationary pose is available before the strike.
- // Output sampling targets 29.97 fps, matching the supplied high-run MP4.
- const fps=29.97,first=Math.max(0,shot.start-2),last=Math.min(vv.duration-.05,shot.end+0.6);
- const firstIdx=Math.floor(first*fps),lastIdx=Math.ceil(last*fps);
- let frames=0;
- for(let k=firstIdx;k<=lastIdx;k++){
-   if(token!==reviewGeneration)throw Error('취소됨');
-   const t=(k+.20)/fps;if(t>=vv.duration-.02)break;
-   await waitFrameSeek(vv,t);
-   cx.drawImage(vv,0,0,cw,ch);
-   const data=cx.getImageData(0,0,cw,ch).data;
-   // Only one decoded frame in flight. No background queue overflow.
-   w.postMessage({type:'frame',session:mySession,t,pixels:data.buffer,dropped:0,audit:true},[data.buffer]);
-   do{e=await next();if(e.type==='error')throw Error(e.message);if(e.type==='auditScore'&&Math.abs(e.start-shot.start)<4.5&&e.cue===shot.cue)certified=e;}while(e.type!=='ack');
-   // Continue through settling; preserve full evidence for safe automatic reconciliation.
-   frames++;
-   if(frames%24===0){$('auditStatus').textContent=`SHOT #${shot.id} 정밀 분석 중 · ${Math.round(frames/(lastIdx-firstIdx+1)*100)}% (원본 영상은 정지 상태)`;await sleepAudit(0);}
- }
- w.postMessage({type:'finish',session:mySession,t:last});
- while(!done){e=await next();if(e.type==='error')throw Error(e.message);if(e.type==='done')done=true;}
- const best=found.filter(x=>Math.abs(x.start-shot.start)<4.5).sort((a,b)=>Math.abs(a.start-shot.start)-Math.abs(b.start-shot.start))[0];
- return {best,frames,found:found.length};
- }finally{w.terminate();vv.pause();vv.removeAttribute('src');vv.load();vv.remove();}
-}
-async function auditUnscored(){
- const token=reviewGeneration;const todo=shots.filter(s=>s.result==='audit');
- if(!todo.length){uiMode('분석 완료');const n=shots.filter(s=>s.result==='score').length;
-   const m=shots.filter(s=>s.result==='miss').length;
-   $('auditStatus').textContent=`무득점 ${m}샷 · 공 정지 후 목적구 접촉 추가 검사 완료`;
-   msg(`분석 완료 · ${shots.length}샷 중 득점 ${n} · 무득점 ${m} (정지 후 접촉 재확인 완료) · 얇은 접촉 정밀검사 대상 없음.`);return;}
- reviewActive=true;uiMode('정밀 판정 검증 중');
- $('auditStatus').textContent=`접촉 순서 불일치/얇은 접촉 ${todo.length}개 샷 원본 프레임 재검사`;
- for(let i=0;i<todo.length;i++){
-  if(token!==reviewGeneration)break;
-  const shot=todo[i];
-  $('workerState').textContent=`정밀 검사 ${i+1}/${todo.length} · SHOT #${shot.id} (${format(shot.start)})`;
-  try{
-   const r=await auditOneShot(shot,token);if(token!==reviewGeneration)break;
-   const before=shot.originalResult;
-   if(r.best?.result==='score'){
-     shot.result='score';shot.cushions=r.best.cushions;shot.cushionsAtSecond=r.best.cushionsAtSecond??r.best.cushions;
-     shot.cushionsTotal=r.best.cushionsTotal??r.best.cushions;shot.objects=r.best.objects;
-     shot.orderMismatch=false;
-     shot.issues=[...(shot.issues||[]),'원본 프레임 시간순 재검사로 득점 복원'];
-     shot.auditDetail=`${r.frames}프레임 재검사로 득점 확정 · 2번째 목적구 당시 ${shot.cushionsAtSecond}쿠션`;
-     playBell('score');
-   }else if(shot.auditCause==='event-order'&&r.best?.result==='miss'&&
-       r.best.stopConfirmed===true&&r.best.cushionsAtSecond!=null&&
-       r.best.cushionsAtSecond<3&&r.best.objects?.length===2){
-     // Verified true miss: the 3rd cushion was after the second object.
-     shot.result='miss';shot.cushions=r.best.cushions;shot.objects=r.best.objects;
-     shot.cushionsAtSecond=r.best.cushionsAtSecond;shot.cushionsTotal=r.best.cushionsTotal;
-     shot.thirdCushionT=r.best.thirdCushionT;shot.secondObjectT=r.best.secondObjectT;
-     shot.auditDetail=`원본 재검사: 두 번째 목적구 당시 ${shot.cushionsAtSecond}쿠션 → 무득점`;
-     playBell('miss');
-   }else{
-     // Do not fabricate a score: retain observed evidence. A non-scorer can
-     // be confirmed only when its own data actually supports that outcome.
-     shot.result='review';
-     shot.auditDetail=`${r.frames}프레임 원본 정밀 재분석 · ${r.best?.result||'샷 미검출'} · 접촉 순서 확인 필요`;
-     // An undetermined thin touch is never announced as a MISS.
-   }
-  }catch(e){if(token!==reviewGeneration)break;shot.result='review';shot.auditDetail=`정밀 재검증 실패: ${e.message}`;}
-  render();
- }
- if(token!==reviewGeneration)return;
- reviewActive=false;uiMode('분석/정밀 판정 완료');render();
- const n=shots.filter(s=>s.result==='score').length,m=shots.filter(s=>s.result==='miss').length,u=shots.filter(s=>s.result==='review').length;
- $('auditStatus').textContent=`시간순 원본 프레임 재검증 완료 · 득점 ${n} · 무득점 ${m} · 확인 필요 ${u}`;
- $('workerState').textContent='검증 완료 · 숨겨진 분석 영상만 탐색 · 원본 화면은 되감지 않음';
- msg(`최종 결과: 득점 ${n} · 무득점 ${m} · 확인 필요 ${u}. 쿠션/목적구 수치와 판정이 어긋난 샷은 원본 프레임을 시간순으로 다시 분석했습니다.`,u>0);
-}
-
+// The separate post-processing video-decoder audit has been removed.
+// ShotEngine's in-shot collision evidence and ordinary manual correction remain.
 
 function stop(){sync5248Stop();
  if(fixedMode&&running){
@@ -6450,7 +6106,7 @@ $('exportBtn').onclick=()=>{
  }
  rows.push([]);rows.push(['이닝별 기록']);rows.push(['이닝','1P 득점','1P 누적','2P 누적','2P 득점','1P 샷 번호','2P 샷 번호','1P 시작초','2P 시작초']);
  for(const i of innings)rows.push([i.number,i.points[0],i.total[0],i.total[1],i.points[1],i.turns[0]?.missing?'상대 턴 미검출 (영상확인)':i.turns[0]?.shotIds.join(' / ')||'',i.turns[1]?.missing?'상대 턴 미검출 (영상확인)':i.turns[1]?.shotIds.join(' / ')||'',i.turns[0]?.start??'',i.turns[1]?.start??'']);
- rows.push([]);rows.push(['v52.28 재생/Worker 안정성 진단']);rows.push(['종류','영상초','시각','대기프레임','사용자일시정지','백프레셔일시정지','상세']);for(const e of v5228Trace)rows.push([e.type,e.media??'',e.when,e.pending,e.paused?'Y':'N',e.flowPaused?'Y':'N',e.reason]);rows.push([]);rows.push(['2차 검사 요약']);rows.push(['유형','시작초','종료초','검사 상태','의심 사유','재분석 근거','후보 샷']);for(const r of [...pass2Regions,...pass2ShotReviews])rows.push([r.kind,Number(r.start).toFixed(3),Number(r.end).toFixed(3),r.state,r.reason,r.notes,pass2CandidatesByRegion(r.id).map(c=>`${c.start.toFixed(3)} ${c.cue+1}P ${c.accepted?'채택':'대기'}`).join(' / ')]);
+ rows.push([]);rows.push(['v52.28 재생/Worker 안정성 진단']);rows.push(['종류','영상초','시각','대기프레임','사용자일시정지','백프레셔일시정지','상세']);for(const e of v5228Trace)rows.push([e.type,e.media??'',e.when,e.pending,e.paused?'Y':'N',e.flowPaused?'Y':'N',e.reason]);
  rows.push([]);
  rows.push(['v52.21 샷 시작 검출 진단']);
  rows.push(['영상시각초','수구','검사결과','시작 실패 또는 복구 근거','수구 이동량','최대 관측속도','연속 관측프레임','검출된 공 수','정지자세 마지막 확인 후 초']);
@@ -6485,7 +6141,7 @@ $('exportBtn').onclick=()=>{
  const csv='\uFEFF'+rows.map(r=>r.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='3Q_Score_AutoScore_v52_38_Tablet_Realtime.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),15000);
 };
-installPass2();controls();render();setInterval(()=>{if(tabletMode&&running){const now=performance.now(),dt=(now-tabletLastRateT)/1000;if(dt>=1){tabletMeasuredFPS=(processed-tabletLastRateFrames)/dt;tabletLastRateT=now;tabletLastRateFrames=processed;tabletStatus();}}},1000);
+controls();render();setInterval(()=>{if(tabletMode&&running){const now=performance.now(),dt=(now-tabletLastRateT)/1000;if(dt>=1){tabletMeasuredFPS=(processed-tabletLastRateFrames)/dt;tabletLastRateT=now;tabletLastRateFrames=processed;tabletStatus();}}},1000);
 window.ScoreRuntime={get v5228Trace(){return v5228Trace},recoverFrozenWorker,replayShot,previewInning,buildInnings,preparePass2,runPass2,pass2RiskRegions,get pass2Regions(){return pass2Regions},get pass2ShotReviews(){return pass2ShotReviews},get pass2Candidates(){return pass2Candidates},get pass2Busy(){return pass2Busy},getTurnBridge,normalizeAutoShot,effectiveResult,aiHumanDifference,reconcileTurnPriority,render,get manualPriority(){return manualPriority},get firstCueRole(){return $('firstCueRole').value},get reviewActive(){return reviewActive},get v5220Diagnostics(){return v5220Diagnostics},get sourceFile(){return videoFile},get shots(){return shots},get currentShot(){return currentShot},get config(){return cfg},get state(){return {running,pending,processed,missed,tabletMode,cameraActive,tabletCaptured,tabletQueueLength:tabletQueue.length,tabletQueuePeak,tabletDropFrames,tabletCallbackGaps,tabletBitmapFrames,tabletReadyWaitMs,tabletSeedSamples,tabletSeedStable,tabletOpeningAcked,tabletOpeningAckMs,tabletOpeningFrameT,tabletWorkerBlocked,tabletWorkerFault:tabletLastWorkerFault,tabletWorkerRestarts:recoveryAttempts,tabletManualRecoveries,tabletDisplayRecoveries,tabletDecodingFaults,tabletDisplayGuardBusy,tabletPreferRAF,tabletRVFCFailures,videoPaused:v.paused,videoReadyState:v.readyState,videoError:v.error?.code??null,videoTime:v.currentTime,analysisTime:lastT,displayAnalysisLag:Math.max(0,v.currentTime-Math.max(0,lastT)),analysisVideoReady:!!fixedDecoder,mobileMP4Mode,profile:v5250Profile(),captureTargetFPS:v5250CaptureRate(),tabletProcessingSkipped:tabletDropFrames,ecoSkipped:v5250EcoSkipped,frameCaptureMs:v5250CaptureMs,frameWorkerMs:v5250WorkerMs,playbackRate:v.playbackRate,worker:!!worker,calibrationReady,calibrationWorking,fixedMode,fixedNextFrame,fixedLastSample,fixedLoopBusy,syncHeld:sync5248Held,syncTimerActive:sync5248Timer!==null,frameFingerprints:fixedFrameFingerprints.slice()}}};
 </script></main><script data-version="__q52zipaddon__">(function addon(){
  const rt=window.ScoreRuntime,old=document.getElementById('exportBtn');
@@ -6592,8 +6248,6 @@ const verdict=x=>x==='score'?'득점':x==='miss'?'무득점':'대기';
    return rows.map(r=>({n:r.number,points:r.points,total:r.total,boundaryReason:r.boundaryReason,firstPlayer:r.firstPlayer,secondPlayer:r.secondPlayer,turns:r.turns.map(t=>t?{...t,ids:t.shotIds}:null)}));
   }
   function render(){
-   const pass2Body=$('reportPass2Rows');
-   if(pass2Body){pass2Body.innerHTML=(data.pass2Regions||[]).concat(data.pass2ShotReviews||[]).map(r=>`<tr><td>${fmt(r.start)}~${fmt(r.end)}</td><td>${esc(r.kind)}</td><td>${esc(r.state)} · ${esc(r.notes||'')}</td><td>${(data.pass2Candidates||[]).filter(c=>c.regionId===r.id).map(c=>fmt(c.start)+' '+(c.cue+1)+'P '+(c.accepted?'채택':'대기')).join(' / ')||'−'}</td></tr>`).join('')||'<tr><td colspan="4">기록 없음</td></tr>';}
    const list=innings(),last=list.at(-1),total=last?.total||[0,0];
    const rawTotals=[0,0];const unknownTurns=list.filter(x=>x.turns[x.firstPlayer]?.missing).length;for(const s of data.shots){const p=which({cue:s.cue,manualCue:null});if(p!==null&&rawScore(s)==='score')rawTotals[p]++;}
    $('summary').textContent=`${list.length}이닝 · AI 최초 ${rawTotals[0]} : ${rawTotals[1]} · 반영 점수 ${total[0]} : ${total[1]} · ${data.shots.length}샷${unknownTurns?' · 첫 수구 미검출 의심 '+unknownTurns+'이닝 (잠정)':''} · 선공 수구 ${list[0]?.firstPlayer===1?'노란 공':'흰 공'} / 제2 수구 ${list[0]?.firstPlayer===1?'흰 공':'노란 공'}`; 
@@ -6659,7 +6313,7 @@ render();status('저장된 분석 기록을 불러왔습니다. MP4를 선택해
  function build(data){
   const css=`*{box-sizing:border-box}body{margin:0;background:#101b2a;color:#e9f1fb;font:13px system-ui,sans-serif}main{max-width:1280px;margin:auto;padding:14px}h1{font-size:23px}h2{font-size:16px}.panel{background:#162438;border:1px solid #35465b;border-radius:11px;padding:13px;margin:12px 0}.ctrl{display:flex;gap:10px;align-items:center;flex-wrap:wrap}button,select,input{font:inherit}button{background:#24394f;border:1px solid #758596;color:white;cursor:pointer;padding:6px 9px;border-radius:6px}button:hover{background:#355c74}input[type=number]{width:50px}video{width:100%;max-height:65vh;background:#000}.scroll{overflow:auto}table{width:100%;border-collapse:collapse;min-width:620px}th,td{border:1px solid #34475c;padding:6px;text-align:center}th{background:#24354a}.total{font-weight:800}.gold{background:#f7d451;color:#28230d;font-weight:800}.sub{color:#b9c7d5;font-size:12px}.status{background:#223f50;padding:10px;border-radius:7px;margin:8px 0}#shotRows td:last-child{max-width:210px;overflow-wrap:anywhere;text-align:left}.inning-ref-preview{max-width:100%;border:1px solid #37506a;border-radius:10px;background:#0b1521;margin-top:8px}.inning-ref-text{min-height:150px;width:100%;resize:vertical;background:#0d1b2b;color:#eef5ff;border:1px solid #3a526c;border-radius:8px;padding:10px;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.inning-compare-table tr.cmp-diff td{background:rgba(179,74,74,.22)}.inning-compare-table tr.cmp-missing td{background:rgba(133,94,24,.22)}.inning-compare-table tr.cmp-match td{background:rgba(42,105,62,.10)}`;
   const close='</scr'+'ipt>';
-  return '<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>3Q 경기 분석 보고서</title><style>'+css+'</style></head><body><main><h1>3Q 경기 분석 보고서</h1><p id="videoName" class="sub"></p><section class="panel"><h2 id="summary">기록 불러오는 중</h2><div class="ctrl"><label>원본 MP4 <input id="videoFile" type="file" accept="video/*,.mp4"></label><label>앞 <input id="pre" type="number" min="0" max="30" value="2">초</label><label>뒤 <input id="post" type="number" min="0" max="30" value="2">초</label><button id="resave">수정 기록 HTML 저장</button></div><video id="clipVideo" controls playsinline preload="metadata"></video><div id="status" class="status"></div></section><section class="panel"><h2>2차 재검사 기록</h2><p class="sub">1차 AI 판정은 보존합니다. 후보 샷은 영상 확인 후 채택한 경우에만 최종 이닝에 반영됩니다.</p><div class="scroll"><table><thead><tr><th>구간</th><th>유형</th><th>검사 결과</th><th>2차 후보</th></tr></thead><tbody id="reportPass2Rows"></tbody></table></div></section><section class="panel"><h2>이닝별 득점 기록</h2><div class="scroll"><table><thead><tr><th>이닝</th><th>1P ▶</th><th>득점</th><th>1P 스코어</th><th>2P 스코어</th><th>득점</th><th>2P ▶</th></tr></thead><tbody id="inningRows"></tbody></table></div></section><section class="panel"><h2>샷별 판정 기록</h2><div class="scroll"><table><thead><tr><th>샷</th><th>이닝</th><th>시간 ▶</th><th>선수</th><th>쿠션</th><th>목적구</th><th>판정</th><th>수정</th><th>검토 사유</th></tr></thead><tbody id="shotRows"></tbody></table></div></section><p class="sub">표준 테스트: 실제 영상에서 자동 인식한 샷만 이닝/점수 계산에 사용합니다. 누락 샷을 시간값으로 삽입하지 않습니다. 수동 점수/선수 수정은 AI 최초 판정과 분리해 보존하고, 선공 수구 지정과 이닝 경계·점수를 수정할 수 있습니다. MP4 선택 후 구간 재생이 가능합니다.</p></main><scr'+'ipt id="matchData" type="application/json">'+safe(data)+close+'<scr'+'ipt>('+viewer.toString()+')();'+close+'</body></html>';
+  return '<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>3Q 경기 분석 보고서</title><style>'+css+'</style></head><body><main><h1>3Q 경기 분석 보고서</h1><p id="videoName" class="sub"></p><section class="panel"><h2 id="summary">기록 불러오는 중</h2><div class="ctrl"><label>원본 MP4 <input id="videoFile" type="file" accept="video/*,.mp4"></label><label>앞 <input id="pre" type="number" min="0" max="30" value="2">초</label><label>뒤 <input id="post" type="number" min="0" max="30" value="2">초</label><button id="resave">수정 기록 HTML 저장</button></div><video id="clipVideo" controls playsinline preload="metadata"></video><div id="status" class="status"></div></section><section class="panel"><h2>이닝별 득점 기록</h2><div class="scroll"><table><thead><tr><th>이닝</th><th>1P ▶</th><th>득점</th><th>1P 스코어</th><th>2P 스코어</th><th>득점</th><th>2P ▶</th></tr></thead><tbody id="inningRows"></tbody></table></div></section><section class="panel"><h2>샷별 판정 기록</h2><div class="scroll"><table><thead><tr><th>샷</th><th>이닝</th><th>시간 ▶</th><th>선수</th><th>쿠션</th><th>목적구</th><th>판정</th><th>수정</th><th>검토 사유</th></tr></thead><tbody id="shotRows"></tbody></table></div></section><p class="sub">표준 테스트: 실제 영상에서 자동 인식한 샷만 이닝/점수 계산에 사용합니다. 누락 샷을 시간값으로 삽입하지 않습니다. 수동 점수/선수 수정은 AI 최초 판정과 분리해 보존하고, 선공 수구 지정과 이닝 경계·점수를 수정할 수 있습니다. MP4 선택 후 구간 재생이 가능합니다.</p></main><scr'+'ipt id="matchData" type="application/json">'+safe(data)+close+'<scr'+'ipt>('+viewer.toString()+')();'+close+'</body></html>';
  }
  button.onclick=()=>{
   const shots=rt.shots||[];
