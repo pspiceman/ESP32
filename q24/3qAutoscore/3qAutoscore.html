@@ -303,7 +303,7 @@ div:has(> #recoverNowBtn){display:none!important}
 .learning-table input[type=checkbox]{width:16px;height:16px;accent-color:#6be3bd}
 @media(max-width:700px){.learning-actions button{flex:1 1 135px}.learning-mode-label{display:flex;gap:5px;align-items:center;width:100%}.learning-mode-label select{flex:1}}
 </style><style id="v5245-hide-recovery">#recoverNowBtn,#recoveryHint{display:none!important}div:has(> #recoverNowBtn){display:none!important}</style><style id="v5246-hide-recover">#recoverNowBtn,#recoveryHint{display:none!important}div:has(> #recoverNowBtn){display:none!important}</style></head><body><main>
-<header><div><h1>3Q Score <span class="sub">v52.65.1 샷 병합·이닝 누락 최소 수정 · v52.65.2 · 14.mp4 02:47 무득점 영상 정정 · v52.65 노란/빨간 공 추적 ID 자동 복구 · 경기자 최우선·오판 학습자료 누적 · 14.mp4 사용자 확인 표기 · 빠른 충돌 복구 · 천 색상 자동 보정 · 공별 분리 지수% · 독립 수구 판정 · 무반응 목적구 제외 · 허위 가림/짧은 샷 보완 · v52.58 기반 · 공통 저부하 · Tablet · Fullscreen + Replay · 목적구 누락 검증 · 재생/Worker 분리 자동 복구·시작 프레임 확인·코너 쿠션 검증 · 이닝 재검증 · 짧은 가짜 샷 제외 · 원래 규칙 유지</span></h1><div class="sub">실시간/MP4 공통 판정 우선: ① 수동/사용자 확인 → ② 실제 타격 수구·턴 → ③ AI 충돌 · CSV 보존</div></div><div class="status-chip" id="mode">영상 선택 대기</div></header>
+<header><div><h1>3Q Score <span class="sub">v52.65.1 샷 병합·이닝 누락 최소 수정 · v52.65.2 · 14.mp4 02:47 무득점 영상 정정 · v52.65.3 파란 목적구 검출 누락 해결 · v52.65 노란/빨간 공 추적 ID 자동 복구 · 경기자 최우선·오판 학습자료 누적 · 14.mp4 사용자 확인 표기 · 빠른 충돌 복구 · 천 색상 자동 보정 · 공별 분리 지수% · 독립 수구 판정 · 무반응 목적구 제외 · 허위 가림/짧은 샷 보완 · v52.58 기반 · 공통 저부하 · Tablet · Fullscreen + Replay · 목적구 누락 검증 · 재생/Worker 분리 자동 복구·시작 프레임 확인·코너 쿠션 검증 · 이닝 재검증 · 짧은 가짜 샷 제외 · 원래 규칙 유지</span></h1><div class="sub">실시간/MP4 공통 판정 우선: ① 수동/사용자 확인 → ② 실제 타격 수구·턴 → ③ AI 충돌 · CSV 보존</div></div><div class="status-chip" id="mode">영상 선택 대기</div></header>
 <div class="layout"><section class="panel"><div class="head video-head"><div class="video-head-left"><h2>경기 영상</h2><span class="video-status" id="videoInfo" role="status" aria-live="polite">MP4 / CAMERA</span></div><span class="sub" id="fileName">MP4 또는 카메라를 선택하세요</span></div>
 <div class="stage" id="stage"><video id="video" muted playsinline preload="metadata"></video><canvas id="overlay"></canvas></div>
 <div class="corner-instructions" id="dragNote" hidden>안쪽 쿠션 접촉선의 네 모서리 ①→④를 손가락/마우스로 끌어 맞춘 뒤 [보정 완료]를 누르세요.</div>
@@ -326,7 +326,7 @@ div:has(> #recoverNowBtn){display:none!important}
 </div>
 <div class="current-shot-note" id="reason">새 샷이 시작되면 수치가 0부터 표시됩니다.</div>
 <div style="padding:0 14px 15px"><span class="sub" id="workerState">영상과 판정은 독립 실행됩니다.</span></div></aside></div>
-<div class="notice" id="notice">v52.65.1: 정지한 두 공의 근접으로 발생하는 미확정 목적구 후보가 샷 종료를 영구 차단하지 않도록 수정. 12~30fps에서 동일하게 0.95초 이상 실제 정지 확인 뒤 샷을 종료하고 다음 타격을 별도 인식합니다. MP4·실시간 동일 적용, AI 원판정/수동 우선/색 보정/학습실 유지. v52.62: 15~20fps 상당의 프레임 누락에서 빠른 첫 목적구의 연속 이동·수구 근접 경로·쿠션 직후 반사를 교차 확인합니다. 13.mp4 사용자 확인 득점은 AI 원판정과 분리된 「영상 검증 자동보정」으로 표기하며 다른 MP4/실시간 카메라에는 적용하지 않습니다. v52.60: 회색·파란색 천 자동 분석, 공별 색 분리 지수(%) 및 수동 색 보정 버튼 추가 · v52.59: v52.58 파이널 기반 · 수구 독립 출발/큐대 접근 검증, 목적구 정지 시 득점 차단, 추적 공백 경고 명확화, 독립 타격 없는 짧은 샷 제외, 수동 수구 변경 시 물리 이벤트 재계산. v52.63: 실제 인간 경기 진행 기준 · 매 샷 타격한 수구를 독립 확인하고 다음 수구 전환으로 AI 득점/무득점을 교정합니다. 수동 판정 및 사용자 확인 영상 기록이 최우선이고, 원본 AI 결과는 별도 보존합니다. PC 득점 확정 Worker 오류 수정 · 두 목적구 접촉 증거를 매 입력 프레임 검사. PC·모바일·카메라 기본 판정은 640×360, 최대 30fps로 통일합니다. 별도 2단계 영상 재검사와 20fps 절전 판정은 제거했습니다. MP4는 단일 영상 디코더 + Worker로 첫 프레임부터 판정합니다. <b>기기가 실제로 놓친 입력 프레임은 복구할 수 없으며, 누락 시 상태창에 표시됩니다.</b> 쿠션·목적구 접촉 및 득점 규칙은 원본과 같습니다. 애매한 샷은 수동 판정이 최우선입니다.</div>
+<div class="notice" id="notice">v52.65.3: 빨간색 유사 후보가 있어도 파란 목적구 검색을 생략하지 않도록 수정. 실제 파란 목적구 후보는 파란색 마스크의 별도 원형·크기 검사를 통과해야 합니다. 이전 수구·턴·득점·이닝·수동판정 알고리즘은 그대로 유지합니다. v52.65.1: 정지한 두 공의 근접으로 발생하는 미확정 목적구 후보가 샷 종료를 영구 차단하지 않도록 수정. 12~30fps에서 동일하게 0.95초 이상 실제 정지 확인 뒤 샷을 종료하고 다음 타격을 별도 인식합니다. MP4·실시간 동일 적용, AI 원판정/수동 우선/색 보정/학습실 유지. v52.62: 15~20fps 상당의 프레임 누락에서 빠른 첫 목적구의 연속 이동·수구 근접 경로·쿠션 직후 반사를 교차 확인합니다. 13.mp4 사용자 확인 득점은 AI 원판정과 분리된 「영상 검증 자동보정」으로 표기하며 다른 MP4/실시간 카메라에는 적용하지 않습니다. v52.60: 회색·파란색 천 자동 분석, 공별 색 분리 지수(%) 및 수동 색 보정 버튼 추가 · v52.59: v52.58 파이널 기반 · 수구 독립 출발/큐대 접근 검증, 목적구 정지 시 득점 차단, 추적 공백 경고 명확화, 독립 타격 없는 짧은 샷 제외, 수동 수구 변경 시 물리 이벤트 재계산. v52.63: 실제 인간 경기 진행 기준 · 매 샷 타격한 수구를 독립 확인하고 다음 수구 전환으로 AI 득점/무득점을 교정합니다. 수동 판정 및 사용자 확인 영상 기록이 최우선이고, 원본 AI 결과는 별도 보존합니다. PC 득점 확정 Worker 오류 수정 · 두 목적구 접촉 증거를 매 입력 프레임 검사. PC·모바일·카메라 기본 판정은 640×360, 최대 30fps로 통일합니다. 별도 2단계 영상 재검사와 20fps 절전 판정은 제거했습니다. MP4는 단일 영상 디코더 + Worker로 첫 프레임부터 판정합니다. <b>기기가 실제로 놓친 입력 프레임은 복구할 수 없으며, 누락 시 상태창에 표시됩니다.</b> 쿠션·목적구 접촉 및 득점 규칙은 원본과 같습니다. 애매한 샷은 수동 판정이 최우선입니다.</div>
 <section class="panel records"><div class="head"><h2>샷별 자동 판정 기록</h2><div class="setting-row"><span class="sub" id="totals">득점 0 · 무득점 0 · 검토 권장 0</span><button id="exportBtn" disabled>CSV 저장</button></div></div><div class="scroll"><table><thead><tr><th>샷</th><th class="shot-time-head" title="시작~종료 시간을 터치하면 그 샷부터 자동 재판정"><span class="wide-label">시작 ~ 종료 · 터치 시 재생</span><span class="narrow-label">시간↺</span></th><th>수구/선수</th><th>쿠션</th><th>목적구</th><th>자동 판정</th><th class="player-score">득점<small>1P:2P</small></th><th class="shot-edit-head">점수 수정</th></tr></thead><tbody id="rows"><tr><td colspan="8" class="sub">분석 기록이 없습니다.</td></tr></tbody></table></div></section>
 
 
@@ -717,7 +717,10 @@ class BallDetector{
       // when no credible red-ball component was found in this frame.
       // This avoids flooding red into bright-blue felt and preserves both colors.
       for(const bit of (id===2?[4,8]:[1<<id])){
-        if(id===2&&bit===8&&all[2].length)break;
+        // v52.65.3: a red-like artifact (e.g. yellow-ball edge) must NOT disable
+        // the blue third-ball search. Search both colour masks when the blue
+        // alternative exists; red-only calibrated matches skip unused blue work.
+        if(id===2&&bit===8&&!Number.isFinite(models[id].altH))break;
       for(let y=0;y<h;y++){
         const scan=rows?rows[y]:null;
         if(rows&&!scan)continue;
