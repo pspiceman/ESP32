@@ -22,22 +22,25 @@ input[type=checkbox]{width:22px;min-height:22px;margin:0;flex-shrink:0}
 .consent{display:flex;gap:10px;align-items:flex-start;line-height:1.6;font-size:14px;font-weight:400;margin:6px 0 16px}
 .camera{background:#102c37;border-radius:14px;overflow:hidden;position:relative;margin-bottom:15px}
 video{width:100%;aspect-ratio:4/3;object-fit:contain;display:block}video.mirror{transform:scaleX(-1)}
+#overlayCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .overlay{position:absolute;inset:0;display:grid;place-content:center;text-align:center;color:#e1eeee;pointer-events:none}
 .oval{width:120px;height:150px;border:2px dashed #8ba6ad;border-radius:48%;margin:0 auto 20px}
 .welcome{position:absolute;left:0;right:0;bottom:0;background:rgba(8,127,112,.94);color:#fff;padding:22px 16px;text-align:center}
-.welcome strong{display:block;font-size:34px;overflow-wrap:anywhere}.welcome span{display:block;margin-top:6px;color:#d7f2ec}
+.welcome.already{background:rgba(176,96,18,.95)}
+.welcome strong{display:block;font-size:32px;overflow-wrap:anywhere}.welcome span{display:block;margin-top:6px;color:#f1f7f5}
 .status{padding:14px;background:#e9f3f0;border-radius:10px;line-height:1.6;margin:14px 0;white-space:pre-line}
 .status.error{background:#fff0ec;color:#a83732}
 .pill{background:#e0eeea;border-radius:20px;padding:6px 10px;font-size:13px;color:#176657}
 .result{background:#edf6f2;border:1px solid #d3e9df;border-radius:14px;padding:22px;margin-bottom:18px;min-height:140px}
-.result strong{display:block;font-size:32px;overflow-wrap:anywhere}.result p{margin:8px 0 0}
+.result strong{display:block;font-size:30px;overflow-wrap:anywhere}.result p{margin:8px 0 0}
 .metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .metric{background:#f6f8f8;border-radius:10px;padding:13px}.metric span{display:block;color:var(--muted);font-size:12px}.metric b{display:block;font-size:20px;margin-top:5px}
 details{margin-top:18px;line-height:1.7}summary{font-weight:650;cursor:pointer}
 dl{display:grid;grid-template-columns:110px 1fr;font-size:13px;gap:8px}dt{color:var(--muted)}dd{margin:0;overflow-wrap:anywhere}
 .item{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding:12px 0}
 .item strong,.item small{display:block;overflow-wrap:anywhere}.item small{color:var(--muted);margin-top:4px}
-#members{max-height:300px;overflow:auto}.wide{width:100%}
+.item small.checked{color:#176657;font-weight:650}
+#members{max-height:300px;overflow:auto}
 dialog{border:none;border-radius:20px;padding:26px;width:min(520px,92vw);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
 dialog::backdrop{background:rgba(10,30,36,.55)}
 dialog h2{font-size:24px;margin-bottom:6px}
@@ -55,26 +58,28 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <header><div><strong>FACE CHECK-IN</strong><small>얼굴 인식 · 자동 회원 등록</small></div><div class="row"><span id="clock"></span><span class="pill" id="engine">준비 중</span></div></header>
 <main><div class="grid"><div>
 <section class="card">
- <div class="camera"><video id="video" autoplay playsinline muted></video>
+ <div class="camera" id="cameraBox"><video id="video" autoplay playsinline muted></video><canvas id="overlayCanvas"></canvas>
   <div class="overlay" id="placeholder"><div class="oval"></div>카메라를 준비하고 있습니다…</div>
   <div class="welcome" id="welcome" hidden><strong id="welcomeText"></strong><span id="welcomeSub"></span></div>
  </div>
  <div id="status" class="status" role="status" aria-live="polite">카메라를 자동으로 시작합니다. 권한 요청이 뜨면 허용해 주세요.</div>
  <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
  <div class="row" style="margin-top:14px"><label class="consent" style="margin:0"><input id="voiceEnabled" type="checkbox" checked> 음성 안내</label><label for="voiceVolume">볼륨</label><input id="voiceVolume" type="range" min="0" max="1" step="0.1" value="0.8" style="width:110px;margin:0"><button id="voiceTest" type="button">음성 테스트</button></div>
- <p id="voiceHint" class="hint">한 분씩 정면을 바라봐 주세요. 미등록 얼굴이 확인되면 회원 등록 창이 자동으로 열립니다.</p>
+ <p id="voiceHint" class="hint">흰 점선 안내선 안에 얼굴을 맞추고 정면을 바라봐 주세요. 표준 거리·정면 조건을 만족할 때만 인식합니다.</p>
 </section></div>
 <div><section class="card"><h2>현재 인식 결과</h2>
  <div class="result" aria-live="polite"><strong id="resultName">인식 대기</strong><p id="resultId">카메라 앞에 서 주세요.</p></div>
  <div class="metrics">
   <div class="metric"><span>검출 얼굴</span><b id="faceCount">—</b></div>
   <div class="metric"><span>연속 확인</span><b id="streakCount">0 / 3</b></div>
+  <div class="metric"><span>얼굴 크기 (표준 20~65%)</span><b id="faceSize">—</b></div>
+  <div class="metric"><span>정면도 (기준 62% 이상)</span><b id="frontal">—</b></div>
   <div class="metric"><span>최근접 매칭 거리</span><b id="distance">—</b></div>
   <div class="metric"><span>1·2순위 거리 차이</span><b id="gap">—</b></div>
   <div class="metric"><span>인식 처리 시간</span><b id="latency">—</b></div>
   <div class="metric"><span>등록 회원 수</span><b id="memberCount">0명</b></div>
  </div>
- <p class="hint">매칭 거리는 낮을수록 유사합니다(확률 % 아님).<br>회원 인정: 거리 ≤ 0.48 · 2순위와 차이 ≥ 0.07 · 연속 3회 일치<br>미등록 판정: 모든 회원과 거리 &gt; 0.55 · 연속 3회 같은 얼굴</p>
+ <p class="hint">표준 영역: 얼굴이 안내선 안 · 크기 20~65% · 정면(옆모습·고개 기울임 제외)일 때만 인식합니다.<br>회원 인정: 거리 ≤ 0.48 · 2순위와 차이 ≥ 0.07 · 연속 3회 일치<br>신규 등록: 모든 회원과 거리 &gt; 0.55 · 정면도 72% 이상 · 연속 5회 같은 얼굴</p>
  <details><summary>실행 정보</summary><dl>
   <dt>실행 주소</dt><dd id="protocol">—</dd><dt>보안 연결</dt><dd id="secure">—</dd>
   <dt>카메라 권한</dt><dd id="permission">확인 중</dd><dt>영상 해상도</dt><dd id="resolution">—</dd>
@@ -82,15 +87,15 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <dt>화면 꺼짐 방지</dt><dd id="wake">확인 중</dd><dt>최근 분석 시각</dt><dd id="lastAnalysis">—</dd>
  </dl></details>
 </section>
-<section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">등록된 회원</h2><button id="clearAll" class="danger" type="button">전체 삭제</button></div><div id="members"></div><p class="hint">회원번호는 1번부터 자동 부여됩니다. 삭제하면 얼굴 특징값도 함께 삭제되며, 전체 삭제 시 번호가 1번부터 다시 시작합니다.</p></section>
+<section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">등록된 회원</h2><button id="clearAll" class="danger" type="button">전체 삭제</button></div><div id="members"></div><p class="hint">회원번호는 Q001부터 자동 부여됩니다. 체크 기록은 하루 단위로 초기화됩니다. 전체 삭제 시 번호가 Q001부터 다시 시작합니다.</p></section>
 </div></div>
 <section class="card"><details><summary>실행 방법 · 상시 운영 안내</summary>
 <p>이 파일을 GitHub Pages 등 <b>HTTPS</b> 주소에 올려 태블릿 Chrome에서 여세요. 첫 실행 때 카메라 권한을 한 번 허용하면 이후에는 페이지를 열 때마다 카메라가 자동으로 켜집니다.</p>
-<p>상시 운영: 화면 꺼짐 방지(Wake Lock)를 자동 요청하고, 카메라가 끊기거나 인식이 멈추면 자동으로 다시 시작합니다. 메모리 정리를 위해 매일 새벽 4시경 페이지를 자동 새로고침합니다(등록 창이 열려 있으면 미룸).</p>
+<p>상시 운영: 화면 꺼짐 방지(Wake Lock)를 자동 요청하고, 카메라가 끊기거나 인식이 멈추면 자동으로 다시 시작합니다. 매일 새벽 4시경 페이지를 자동 새로고침합니다(등록 창이 열려 있으면 미룸).</p>
 <p>Chrome 정책상 음성 안내는 화면을 한 번 터치해야 켜질 수 있습니다. 전원을 연결한 상태로 두고, 태블릿의 화면 고정(앱 고정) 기능을 함께 쓰면 좋습니다.</p>
-<p>인식 라이브러리와 모델은 인터넷에서 내려받습니다. 얼굴 분석은 기기에서 수행하며 사진·영상·얼굴 특징값을 서버로 전송하지 않습니다. 브라우저 데이터를 삭제하면 회원 정보도 삭제됩니다. 생체 위조(사진) 검출 기능은 없습니다.</p>
+<p>얼굴 분석은 기기에서 수행하며 사진·영상·얼굴 특징값을 서버로 전송하지 않습니다. 브라우저 데이터를 삭제하면 회원 정보와 체크 기록도 삭제됩니다. 생체 위조(사진) 검출 기능은 없습니다.</p>
 </details></section></main>
-<footer>FACE CHECK-IN 2.0 · face-api.js 0.22.2 · 카메라 영상과 얼굴 사진은 저장하지 않습니다.</footer>
+<footer>FACE CHECK-IN 2.1 · face-api.js 0.22.2 · 카메라 영상과 얼굴 사진은 저장하지 않습니다.</footer>
 
 <dialog id="regDialog"><form id="regForm" method="dialog">
  <h2>처음 오셨네요!</h2><p class="hint" style="margin-top:0">이름을 입력하면 회원으로 등록됩니다.</p>
@@ -108,15 +113,28 @@ const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 const T={match:.48,gap:.07,unknown:.55,same:.45,dup:.53};
-const WELCOME_GAP=10000;      // 화면에서 10초 이상 벗어났다가 다시 오면 다시 환영
+/* 표준 인식 영역 — 현장에 맞게 조정 가능
+   size: 얼굴 폭 ÷ 영상 짧은 변 (0.20 ≈ 약 60~70cm 이내, 0.65 ≈ 너무 가까움)
+   yaw: 좌우 정면도(1=완전 정면), roll: 고개 기울기(도), pitch: 위/아래 숙임 비율 */
+const STD={minSize:.20,maxSize:.65,yaw:.62,regYaw:.72,roll:15,pitchMin:.25,pitchMax:.85,score:.7,guide:{x:.2,y:.06,w:.6,h:.88}};
+const UNKNOWN_FRAMES=5;
+const WELCOME_GAP=10000;      // 화면에서 10초 이상 벗어났다가 다시 오면 다시 안내
 const DISMISS_COOLDOWN=30000; // 등록 취소한 얼굴은 30초 동안 다시 묻지 않음
 const REG_TIMEOUT=60000;      // 등록 창 60초 동안 입력 없으면 닫기
-const NEXT_KEY='faceCheckinNextId',FACING_KEY='faceCheckinFacing',BOOT=Date.now();
+const NEXT_KEY='faceCheckinNextQ',FACING_KEY='faceCheckinFacing',LOG_KEY='faceCheckinLog',BOOT=Date.now();
 let db=null,members=[],stream=null,ready=false,modelPromise=null,libraryPromise=null,starting=false,mutating=false,generation=0;
-let streakId='',hits=0,unknownSet=[],pending=null,dismissed=[],lastSeen={},detectQueue=Promise.resolve();
-let lastLoopAt=0,nextRetryAt=0,wakeLock=null,wakeRequesting=false,regTimer=null,welcomeTimer=null;
+let streakId='',hits=0,unknownSet=[],pending=null,dismissed=[],lastSeen={},greetMode={},detectQueue=Promise.resolve();
+let lastLoopAt=0,nextRetryAt=0,wakeLock=null,wakeRequesting=false,regTimer=null,welcomeTimer=null,lastDraw=[];
 let needTouch=false,lastVoiceKey='',lastVoiceTime=0;
 const store={get(k){try{return localStorage.getItem(k)}catch{return null}},set(k,v){try{localStorage.setItem(k,v)}catch{}}};
+const hhmm=t=>new Date(t).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+
+/* ---------- 오늘 체크 기록 ---------- */
+function today(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+let checkLog=(()=>{try{const o=JSON.parse(store.get(LOG_KEY));if(o&&o.date===today()&&o.ids)return o}catch{}return{date:today(),ids:{}}})();
+function rollDay(){if(checkLog.date!==today()){checkLog={date:today(),ids:{}};greetMode={};store.set(LOG_KEY,JSON.stringify(checkLog));renderMembers()}}
+function checkedAt(id){rollDay();return checkLog.ids[id]||0}
+function markChecked(id,t){rollDay();checkLog.ids[id]=t;store.set(LOG_KEY,JSON.stringify(checkLog));renderMembers()}
 
 /* ---------- 음성 ---------- */
 function showTouchHint(on){needTouch=on;$('touchHint').hidden=!on}
@@ -142,22 +160,62 @@ $('voiceEnabled').onchange=()=>{if(!$('voiceEnabled').checked)window.speechSynth
 function status(message,error=false){$('status').textContent=message;$('status').classList.toggle('error',error)}
 function showResult(title,detail){$('resultName').textContent=title;$('resultId').textContent=detail}
 function resetStreaks(){streakId='';hits=0;unknownSet=[];$('streakCount').textContent='0 / 3'}
-function clearMetrics(){for(const id of ['faceCount','distance','gap','latency','lastAnalysis'])$(id).textContent='—'}
+function clearMetrics(){for(const id of ['faceCount','faceSize','frontal','distance','gap','latency','lastAnalysis'])$(id).textContent='—'}
 function controls(){$('restart').disabled=starting;$('clearAll').disabled=!db||mutating||!members.length;for(const b of $('members').querySelectorAll('button'))b.disabled=mutating}
 function renderMembers(){
  $('memberCount').textContent=members.length+'명';$('members').replaceChildren();
  if(!members.length){const p=document.createElement('p');p.className='hint';p.textContent='아직 등록된 회원이 없습니다. 카메라 앞에 서면 등록 창이 열립니다.';$('members').append(p)}
- const sorted=[...members].sort((a,b)=>(Number(a.id)||1e9)-(Number(b.id)||1e9)||String(a.id).localeCompare(String(b.id)));
- for(const m of sorted){const row=document.createElement('div');row.className='item';const info=document.createElement('div'),name=document.createElement('strong'),id=document.createElement('small'),button=document.createElement('button');name.textContent=m.name;id.textContent='회원번호 '+m.id+(m.createdAt?' · '+new Date(m.createdAt).toLocaleDateString('ko-KR'):'');info.append(name,id);button.type='button';button.textContent='삭제';button.className='danger';button.onclick=()=>removeMember(m.id);row.append(info,button);$('members').append(row)}
+ const sorted=[...members].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+ for(const m of sorted){
+  const row=document.createElement('div');row.className='item';
+  const info=document.createElement('div'),name=document.createElement('strong'),id=document.createElement('small'),chk=document.createElement('small'),button=document.createElement('button');
+  name.textContent=m.name;id.textContent='회원번호 '+m.id;
+  const t=checkLog.date===today()?checkLog.ids[m.id]:0;chk.textContent=t?'오늘 체크 '+hhmm(t):'오늘 미체크';if(t)chk.className='checked';
+  info.append(name,id,chk);button.type='button';button.textContent='삭제';button.className='danger';button.onclick=()=>removeMember(m.id);
+  row.append(info,button);$('members').append(row);
+ }
  controls();
 }
-function welcome(m,isNew=false){
- $('welcomeText').textContent=m.name+' 님 환영합니다';
- $('welcomeSub').textContent=(isNew?'회원 등록 완료 · ':'')+'회원번호 '+m.id;
- $('welcome').hidden=false;clearTimeout(welcomeTimer);welcomeTimer=setTimeout(()=>$('welcome').hidden=true,4000);
- speak(isNew?m.name+' 님, 등록되었습니다. 환영합니다.':m.name+' 님 환영합니다.','welcome:'+m.id,0);
+function announce(m,mode,t){
+ const box=$('welcome');box.classList.toggle('already',mode==='already');
+ if(mode==='already'){$('welcomeText').textContent=m.name+' 님, 이미 체크되었습니다';$('welcomeSub').textContent='회원번호 '+m.id+' · 체크 시각 '+hhmm(t);speak(m.name+' 님, 이미 체크 되었습니다.','already:'+m.id,0)}
+ else{$('welcomeText').textContent=m.name+' 님 환영합니다';$('welcomeSub').textContent=(mode==='new'?'회원 등록 완료 · ':'')+'회원번호 '+m.id;speak(mode==='new'?m.name+' 님, 등록되었습니다. 환영합니다.':m.name+' 님 환영합니다.','welcome:'+m.id,0)}
+ box.hidden=false;clearTimeout(welcomeTimer);welcomeTimer=setTimeout(()=>box.hidden=true,4000);
 }
 setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})},1000);
+
+/* ---------- 얼굴 테두리 (빨간 ㄱ자 4구역) ---------- */
+function guideRect(vw,vh){const g=STD.guide;return{x:vw*g.x,y:vh*g.y,w:vw*g.w,h:vh*g.h}}
+function corners(ctx,b,color,lw){
+ const L=Math.min(b.w,b.h)*.24;ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();
+ ctx.moveTo(b.x,b.y+L);ctx.lineTo(b.x,b.y);ctx.lineTo(b.x+L,b.y);
+ ctx.moveTo(b.x+b.w-L,b.y);ctx.lineTo(b.x+b.w,b.y);ctx.lineTo(b.x+b.w,b.y+L);
+ ctx.moveTo(b.x+b.w,b.y+b.h-L);ctx.lineTo(b.x+b.w,b.y+b.h);ctx.lineTo(b.x+b.w-L,b.y+b.h);
+ ctx.moveTo(b.x+L,b.y+b.h);ctx.lineTo(b.x,b.y+b.h);ctx.lineTo(b.x,b.y+b.h-L);ctx.stroke();
+}
+function drawOverlay(faces){
+ lastDraw=faces;
+ const c=$('overlayCanvas'),ctx=c.getContext('2d'),r=c.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+ const W=Math.round(r.width*dpr),H=Math.round(r.height*dpr);if(c.width!==W||c.height!==H){c.width=W;c.height=H}
+ ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,W,H);
+ const vw=video.videoWidth,vh=video.videoHeight;if(!stream||!vw||!vh)return;
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+ const s=Math.min(r.width/vw,r.height/vh),ox=(r.width-vw*s)/2,oy=(r.height-vh*s)/2,mirror=video.classList.contains('mirror');
+ const map=(x,y,w,h)=>({x:ox+(mirror?vw-x-w:x)*s,y:oy+y*s,w:w*s,h:h*s});
+ const g=guideRect(vw,vh),gr=map(g.x,g.y,g.w,g.h);
+ ctx.setLineDash([10,8]);ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=2;ctx.strokeRect(gr.x,gr.y,gr.w,gr.h);ctx.setLineDash([]);
+ for(const f of faces){
+  const b=map(f.box.x,f.box.y,f.box.width,f.box.height);
+  corners(ctx,b,f.ok?'#ff2020':'rgba(255,70,70,.5)',f.ok?4:3);
+  if(f.label){
+   ctx.font='bold 15px system-ui,"Noto Sans KR",sans-serif';const tw=ctx.measureText(f.label).width+14,th=24;
+   let ly=b.y-th-6;if(ly<2)ly=b.y+b.h+6;
+   ctx.fillStyle=f.ok?'rgba(220,20,20,.88)':'rgba(120,30,30,.7)';ctx.fillRect(b.x,ly,tw,th);
+   ctx.fillStyle='#fff';ctx.textBaseline='middle';ctx.fillText(f.label,b.x+7,ly+th/2);
+  }
+ }
+}
+window.addEventListener('resize',()=>drawOverlay(lastDraw));
 
 /* ---------- 저장소 ---------- */
 async function initDB(){
@@ -169,14 +227,17 @@ async function initDB(){
  }catch(e){db=null;$('storage').textContent='사용 불가: '+e.message;status('회원 저장소를 열 수 없습니다. 시크릿 창이 아닌 일반 Chrome 창에서 실행해 주세요.',true);controls()}
 }
 function writeDB(action){return new Promise((resolve,reject)=>{const tx=db.transaction('members','readwrite');action(tx.objectStore('members'));tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||Error('저장 오류'));tx.onabort=()=>reject(tx.error||Error('저장 취소'))})}
-function nextId(){let n=1;for(const m of members){const v=Number(m.id);if(Number.isInteger(v)&&v>=n)n=v+1}const saved=Number(store.get(NEXT_KEY));return String(Number.isInteger(saved)&&saved>n?saved:n)}
+const fmtId=n=>'Q'+String(n).padStart(3,'0');
+function nextNum(){let n=1;for(const m of members){const x=/^Q(\d+)$/i.exec(m.id);if(x&&Number(x[1])>=n)n=Number(x[1])+1}const saved=Number(store.get(NEXT_KEY));return Number.isInteger(saved)&&saved>n?saved:n}
 async function removeMember(id){
  if(mutating||!db)return;
  if(!confirm(id===null?'등록된 회원을 모두 삭제할까요?':'회원번호 '+id+' 정보를 삭제할까요?'))return;
  mutating=true;controls();
  try{
   await writeDB(s=>id===null?s.clear():s.delete(id));
-  if(id===null){members=[];lastSeen={};store.set(NEXT_KEY,'1')}else{members=members.filter(m=>m.id!==id);delete lastSeen[id]}
+  if(id===null){members=[];lastSeen={};greetMode={};checkLog.ids={};store.set(NEXT_KEY,'1')}
+  else{members=members.filter(m=>m.id!==id);delete lastSeen[id];delete greetMode[id];delete checkLog.ids[id]}
+  store.set(LOG_KEY,JSON.stringify(checkLog));
   resetStreaks();renderMembers();speak('회원 정보가 삭제되었습니다.','deleted',0);status('회원 정보가 삭제되었습니다.');
  }catch(e){status('삭제 실패: '+e.message,true)}finally{mutating=false;controls()}
 }
@@ -200,7 +261,7 @@ async function permissionInfo(){try{const p=await navigator.permissions.query({n
 function stopCamera(message){
  generation++;stream?.getTracks().forEach(t=>t.stop());stream=null;video.srcObject=null;lastLoopAt=0;detectQueue=Promise.resolve();
  $('placeholder').hidden=false;$('resolution').textContent='—';$('engine').textContent='중지';
- resetStreaks();clearMetrics();if(message)status(message);controls();
+ resetStreaks();clearMetrics();drawOverlay([]);if(message)status(message);controls();
 }
 async function startCamera(){
  if(starting||stream||document.hidden||Date.now()<nextRetryAt)return;
@@ -213,14 +274,14 @@ async function startCamera(){
   if(run!==generation||document.hidden){s.getTracks().forEach(t=>t.stop());return}
   stream=s;video.srcObject=s;video.classList.toggle('mirror',$('facing').value==='user');await video.play();
   if(run!==generation)return;
-  $('placeholder').hidden=true;$('permission').textContent='허용됨';$('resolution').textContent=video.videoWidth+' × '+video.videoHeight;
+  $('placeholder').hidden=true;$('permission').textContent='허용됨';$('resolution').textContent=video.videoWidth+' × '+video.videoHeight;drawOverlay([]);
   s.getVideoTracks()[0].addEventListener('ended',()=>{if(stream===s){stopCamera('카메라 연결이 끊어져 다시 시작합니다.');nextRetryAt=Date.now()+2000}});
   status('카메라 연결됨. 얼굴 모델을 준비합니다…');$('engine').textContent='모델 로딩 중';
   await loadModels();
   if(run!==generation||document.hidden)return;
   $('engine').textContent='인식 중';
   speak('얼굴 체크인을 시작합니다.','ready',60000);
-  status(members.length?'한 분씩 카메라 정면을 바라봐 주세요.':'등록된 회원이 없습니다. 카메라 앞에 서면 회원 등록 창이 열립니다.');
+  status(members.length?'안내선 안에서 정면을 바라봐 주세요.':'등록된 회원이 없습니다. 안내선 안에서 정면을 바라보면 회원 등록 창이 열립니다.');
   loop(run);
  }catch(e){
   if(run!==generation)return;
@@ -233,60 +294,94 @@ async function startCamera(){
 $('restart').onclick=()=>{stopCamera('카메라를 다시 시작합니다.');nextRetryAt=0;startCamera()};
 $('facing').onchange=()=>{store.set(FACING_KEY,$('facing').value);stopCamera();nextRetryAt=0;startCamera()};
 
+/* ---------- 표준 영역 · 정면 판정 ---------- */
+function avgPt(p,a,b){let x=0,y=0;for(let i=a;i<=b;i++){x+=p[i].x;y+=p[i].y}const n=b-a+1;return{x:x/n,y:y/n}}
+function pose(landmarks){
+ const p=landmarks.positions,eA=avgPt(p,36,41),eB=avgPt(p,42,47),nose=p[30],mouth=avgPt(p,48,67);
+ const l=Math.abs(nose.x-eA.x),r=Math.abs(eB.x-nose.x),between=nose.x>Math.min(eA.x,eB.x)&&nose.x<Math.max(eA.x,eB.x);
+ const yaw=between&&Math.max(l,r)>0?Math.min(l,r)/Math.max(l,r):0;
+ const roll=Math.abs(Math.atan2(eB.y-eA.y,eB.x-eA.x)*180/Math.PI);
+ const eyeY=(eA.y+eB.y)/2,pitch=mouth.y>eyeY?(nose.y-eyeY)/(mouth.y-eyeY):0;
+ return{yaw,roll:Math.min(roll,180-roll),pitch};
+}
+function evaluate(r){
+ const b=r.detection.box,vw=video.videoWidth,vh=video.videoHeight,size=b.width/Math.min(vw,vh),g=guideRect(vw,vh),p=pose(r.landmarks);
+ const ev={size,yaw:p.yaw,ok:false,msg:'',key:''};
+ if(size<STD.minSize){ev.msg='카메라에 조금 더 가까이 와 주세요.';ev.key='near';ev.label='더 가까이'}
+ else if(size>STD.maxSize){ev.msg='조금 뒤로 물러나 주세요.';ev.key='far';ev.label='조금 뒤로'}
+ else if(b.x<g.x||b.y<g.y||b.x+b.width>g.x+g.w||b.y+b.height>g.y+g.h){ev.msg='흰 점선 안내선 안으로 얼굴을 맞춰 주세요.';ev.key='guide';ev.label='안내선 안으로'}
+ else if(r.detection.score<STD.score){ev.msg='얼굴이 선명하지 않습니다. 정면을 바라봐 주세요.';ev.key='blur';ev.label='정면을 봐 주세요'}
+ else if(p.yaw<STD.yaw||p.roll>STD.roll||p.pitch<STD.pitchMin||p.pitch>STD.pitchMax){ev.msg='고개를 돌리지 말고 정면을 바라봐 주세요.';ev.key='side';ev.label='정면을 봐 주세요'}
+ else ev.ok=true;
+ return ev;
+}
+const VOICE={near:'카메라에 조금 더 가까이 와 주세요.',far:'조금 뒤로 물러나 주세요.',guide:'안내선 안으로 얼굴을 맞춰 주세요.',side:'정면을 바라봐 주세요.',blur:'정면을 바라봐 주세요.'};
+
 /* ---------- 인식 ---------- */
 function detect(){const task=detectQueue.catch(()=>{}).then(async()=>{if(!stream||video.readyState<2)throw Error('카메라 영상을 기다리고 있습니다.');const started=performance.now();const results=await faceapi.detectAllFaces(video,new faceapi.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:.6})).withFaceLandmarks(true).withFaceDescriptors();return {results,ms:performance.now()-started}});detectQueue=task;return task}
-function quality(results){if(!results.length)return 'none';if(results.length!==1)return '한 분씩 카메라 앞에 서 주세요.';const b=results[0].detection.box;if(b.width<video.videoWidth*.15||b.height<video.videoHeight*.19)return '카메라에 조금 가까이 와 주세요.';if(b.x<4||b.y<4||b.x+b.width>video.videoWidth-4||b.y+b.height>video.videoHeight-4)return '얼굴 전체가 화면 안에 들어오도록 해 주세요.';return ''}
 function distance(a,b){let s=0;for(let i=0;i<a.length;i++)s+=(a[i]-b[i])**2;return Math.sqrt(s)}
 function rank(d){return members.map(m=>({member:m,d:Math.min(...m.descriptors.map(x=>distance(x,d)))})).sort((a,b)=>a.d-b.d)}
-function metrics(results,ms){$('faceCount').textContent=results.length+'명';$('latency').textContent=Math.round(ms)+' ms';$('lastAnalysis').textContent=new Date().toLocaleTimeString('ko-KR');$('distance').textContent='—';$('gap').textContent='—'}
+function metrics(results,ms){$('faceCount').textContent=results.length+'명';$('latency').textContent=Math.round(ms)+' ms';$('lastAnalysis').textContent=new Date().toLocaleTimeString('ko-KR');for(const id of ['faceSize','frontal','distance','gap'])$(id).textContent='—'}
 
 function handle(results){
- const now=Date.now(),problem=quality(results);
- if(problem){
-  resetStreaks();if(pending)return;
-  if(problem==='none'){showResult('어서 오세요','카메라 정면에 서 주세요.');return}
-  showResult('확인 대기',problem);
-  if(problem.includes('한 분씩'))speak('한 분씩 카메라를 바라봐 주세요.','multiple',15000);
-  else if(problem.includes('가까이'))speak('카메라에 조금 가까이 와 주세요.','close',15000);
+ if(!results.length){resetStreaks();drawOverlay([]);if(!pending)showResult('어서 오세요','안내선 안에 얼굴을 맞추고 정면을 바라봐 주세요.');return}
+ if(results.length>1){
+  resetStreaks();drawOverlay(results.map(r=>({box:r.detection.box,ok:false,label:'한 분씩'})));
+  if(!pending){showResult('확인 대기','한 분씩 카메라 앞에 서 주세요.');speak('한 분씩 카메라를 바라봐 주세요.','multiple',15000)}
   return;
  }
- const d=results[0].descriptor,list=rank(d),top=list[0],gap=list.length>1?list[1].d-top.d:null;
+ const r=results[0],ev=evaluate(r);
+ $('faceSize').textContent=Math.round(ev.size*100)+'%';$('frontal').textContent=Math.round(ev.yaw*100)+'%';
+ if(!ev.ok){
+  resetStreaks();drawOverlay([{box:r.detection.box,ok:false,label:ev.label}]);
+  if(!pending){showResult('표준 영역 밖 · 인식 안 함',ev.msg);speak(VOICE[ev.key],'std:'+ev.key,15000)}
+  return;
+ }
+ const label=recognize(r.descriptor,ev);
+ drawOverlay([{box:r.detection.box,ok:true,label}]);
+}
+function recognize(d,ev){
+ const now=Date.now(),list=rank(d),top=list[0],gap=list.length>1?list[1].d-top.d:null;
  if(top){$('distance').textContent=top.d.toFixed(3);$('gap').textContent=gap===null?'해당 없음':gap.toFixed(3)}
  // 1) 등록 회원
  if(top&&top.d<=T.match&&(gap===null||gap>=T.gap)){
-  unknownSet=[];hits=streakId===top.member.id?hits+1:1;streakId=top.member.id;
-  $('streakCount').textContent=Math.min(hits,3)+' / 3';
-  if(hits>=3){const prev=lastSeen[top.member.id]||0;lastSeen[top.member.id]=now;if(now-prev>WELCOME_GAP)welcome(top.member);showResult(top.member.name+' 님 환영합니다','회원번호 '+top.member.id)}
-  else showResult('회원 확인 중…','잠시 정면을 바라봐 주세요.');
-  return;
+  const m=top.member,id=m.id;
+  unknownSet=[];hits=streakId===id?hits+1:1;streakId=id;$('streakCount').textContent=Math.min(hits,3)+' / 3';
+  if(hits<3){if(!pending)showResult('회원 확인 중…','잠시 정면을 바라봐 주세요.');return '확인 중…'}
+  const prev=lastSeen[id]||0;lastSeen[id]=now;
+  if(now-prev>WELCOME_GAP){const t=checkedAt(id);if(!t){markChecked(id,now);greetMode[id]='welcome';announce(m,'welcome')}else{greetMode[id]='already';announce(m,'already',t)}}
+  if(greetMode[id]==='already'){showResult(m.name+' 님, 이미 체크되었습니다','회원번호 '+id+' · 오늘 체크 '+hhmm(checkedAt(id)));return m.name+' · 이미 체크됨'}
+  showResult(m.name+' 님 환영합니다','회원번호 '+id+' · 체크 '+hhmm(checkedAt(id)||now));return m.name+' 님'
  }
  streakId='';hits=0;$('streakCount').textContent='0 / 3';
  // 2) 애매한 경우 — 등록 창을 열지 않음
- if(top&&top.d<=T.unknown){unknownSet=[];if(!pending)showResult('확인 중',top.d<=T.match?'비슷한 회원이 있어 구분이 어렵습니다. 정면을 바라봐 주세요.':'정면을 바라봐 주세요.');return}
- // 3) 미등록 얼굴 → 등록 창
- if(pending||!db)return;
- if(dismissed.some(x=>x.until>now&&distance(x.d,d)<T.same)){showResult('미등록 얼굴','등록을 취소하셨습니다. 잠시 후 다시 안내합니다.');return}
+ if(top&&top.d<=T.unknown){unknownSet=[];if(!pending)showResult('확인 중',top.d<=T.match?'비슷한 회원이 있어 구분이 어렵습니다. 정면을 바라봐 주세요.':'정면을 바라봐 주세요.');return '확인 중…'}
+ // 3) 미등록 얼굴 → 등록 창 (더 엄격한 정면 조건)
+ if(pending||!db)return '등록 진행 중';
+ if(dismissed.some(x=>x.until>now&&distance(x.d,d)<T.same)){showResult('미등록 얼굴','등록을 취소하셨습니다. 잠시 후 다시 안내합니다.');return '미등록'}
+ if(ev.yaw<STD.regYaw){unknownSet=[];showResult('미등록 얼굴 확인 중','등록하려면 카메라를 똑바로 정면으로 바라봐 주세요.');return '정면을 봐 주세요'}
  const arr=Array.from(d);
  if(unknownSet.length&&distance(unknownSet[0],arr)>T.same)unknownSet=[];
  unknownSet.push(arr);
- showResult('처음 오셨네요','회원 등록을 준비합니다 '+unknownSet.length+'/3 · 잠시 정면을 바라봐 주세요.');
- if(unknownSet.length>=3){const descs=unknownSet.slice(0,3);unknownSet=[];openRegister(descs)}
+ showResult('처음 오셨나요?','확인 중 '+unknownSet.length+'/'+UNKNOWN_FRAMES+' · 잠시 정면을 바라봐 주세요.');
+ if(unknownSet.length>=UNKNOWN_FRAMES){const descs=[unknownSet[0],unknownSet[Math.floor(UNKNOWN_FRAMES/2)],unknownSet[UNKNOWN_FRAMES-1]];unknownSet=[];openRegister(descs)}
+ return '미등록 얼굴';
 }
 async function loop(run){
  while(stream&&run===generation){
   lastLoopAt=Date.now();
   if(!mutating){
    try{const {results,ms}=await detect();if(run!==generation)break;metrics(results,ms);handle(results)}
-   catch(e){if(run===generation){showResult('인식 오류',e.message);clearMetrics();await wait(1000)}}
+   catch(e){if(run===generation){showResult('인식 오류',e.message);clearMetrics();drawOverlay([]);await wait(1000)}}
   }
-  await wait(400);
+  await wait(350);
  }
 }
 
 /* ---------- 회원 등록 창 ---------- */
 function openRegister(descs){
  if(pending||!db)return;
- pending={descs};$('regId').textContent=nextId();$('regName').value='';$('regConsent').checked=false;$('regError').textContent='';
+ pending={descs};$('regId').textContent=fmtId(nextNum());$('regName').value='';$('regConsent').checked=false;$('regError').textContent='';
  if(!$('regDialog').open)$('regDialog').showModal();setTimeout(()=>$('regName').focus(),150);
  showResult('회원 등록','이름을 입력해 주세요.');
  speak('처음 오셨네요. 이름을 입력해 회원 등록을 해 주세요.','register-open',0);
@@ -306,14 +401,14 @@ $('regForm').onsubmit=async e=>{
  const name=$('regName').value.trim();
  if(!name){$('regError').textContent='이름을 입력해 주세요.';$('regName').focus();return}
  if(!$('regConsent').checked){$('regError').textContent='저장 동의에 체크해 주세요.';return}
- const near=rank(pending.descs[0])[0];
- if(near&&near.d<T.dup){$('regError').textContent='이미 등록된 '+near.member.name+' 님(회원번호 '+near.member.id+')과 매우 비슷합니다.';return}
+ for(const d of pending.descs){const near=rank(d)[0];if(near&&near.d<T.dup){$('regError').textContent='이미 등록된 '+near.member.name+' 님(회원번호 '+near.member.id+')과 매우 비슷합니다.';return}}
  mutating=true;controls();$('regSave').disabled=true;
- const id=nextId(),member={id,name,descriptors:pending.descs,createdAt:Date.now()};
+ const n=nextNum(),id=fmtId(n),now=Date.now(),member={id,name,descriptors:pending.descs,createdAt:now};
  try{
-  await writeDB(s=>s.add(member));members.push(member);store.set(NEXT_KEY,String(Number(id)+1));lastSeen[id]=Date.now();
-  closeRegister(false);renderMembers();welcome(member,true);showResult(name+' 님 환영합니다','회원번호 '+id+' · 등록 완료');
-  status(name+' 님을 회원번호 '+id+'번으로 등록했습니다.');
+  await writeDB(s=>s.add(member));members.push(member);store.set(NEXT_KEY,String(n+1));
+  lastSeen[id]=now;greetMode[id]='welcome';closeRegister(false);markChecked(id,now);
+  announce(member,'new');showResult(name+' 님 환영합니다','회원번호 '+id+' · 등록 완료');
+  status(name+' 님을 회원번호 '+id+'(으)로 등록했습니다.');
  }catch(err){$('regError').textContent='저장 실패: '+err.message}
  finally{mutating=false;$('regSave').disabled=false;controls()}
 };
@@ -332,11 +427,11 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('pagehide',()=>stopCamera());
 setInterval(()=>{
  if(document.hidden)return;
+ rollDay();
  if(!stream&&!starting)startCamera();
  else if(stream&&lastLoopAt&&Date.now()-lastLoopAt>20000){stopCamera('인식이 멈춰 카메라를 다시 시작합니다.');nextRetryAt=0;startCamera()}
  if(!wakeLock)requestWakeLock();
- const h=new Date().getHours();
- if(h===4&&Date.now()-BOOT>20*3600e3&&!pending&&!mutating)location.reload();
+ if(new Date().getHours()===4&&Date.now()-BOOT>20*3600e3&&!pending&&!mutating)location.reload();
 },5000);
 
 /* ---------- 시작 ---------- */
