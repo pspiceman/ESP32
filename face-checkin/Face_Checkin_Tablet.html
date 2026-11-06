@@ -24,6 +24,7 @@ input[type=checkbox]{width:22px;min-height:22px;margin:0;flex-shrink:0}
 video{width:100%;aspect-ratio:4/3;object-fit:contain;display:block}video.mirror{transform:scaleX(-1)}
 #overlayCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .overlay{position:absolute;inset:0;display:grid;place-content:center;text-align:center;color:#e1eeee;pointer-events:none}
+.camBtn{pointer-events:auto;margin-top:16px;background:#e8402f;border-color:#e8402f;color:#fff;font-size:18px;min-height:54px;padding:12px 22px;border-radius:30px}
 .oval{width:120px;height:150px;border:2px dashed #8ba6ad;border-radius:48%;margin:0 auto 20px}
 .welcome{position:absolute;left:0;right:0;bottom:0;background:rgba(8,127,112,.94);color:#fff;padding:22px 16px;text-align:center}
 .welcome.already{background:rgba(176,96,18,.95)}
@@ -66,7 +67,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <main><div class="grid"><div>
 <section class="card">
  <div class="camera" id="cameraBox"><video id="video" autoplay playsinline muted></video><canvas id="overlayCanvas"></canvas>
-  <div class="overlay" id="placeholder"><div class="oval"></div>카메라를 준비하고 있습니다…</div>
+  <div class="overlay" id="placeholder"><div class="oval"></div><span id="phText">카메라를 준비하고 있습니다…</span><div><button id="camBtn" class="camBtn" type="button" hidden>📷 카메라 켜기</button></div></div>
   <div class="welcome" id="welcome" hidden><strong id="welcomeText"></strong><span id="welcomeSub"></span></div>
  </div>
  <div id="inapp" class="status error" hidden><span id="inappText"></span><div class="row" style="margin-top:10px"><button id="openExternal" class="primary" type="button">Chrome / Safari로 열기</button><button id="copyUrl" type="button">주소 복사</button></div></div>
@@ -92,8 +93,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <dt>브라우저</dt><dd id="browser">—</dd><dt>실행 주소</dt><dd id="protocol">—</dd><dt>보안 연결</dt><dd id="secure">—</dd>
   <dt>카메라 권한</dt><dd id="permission">확인 중</dd><dt>영상 해상도</dt><dd id="resolution">—</dd>
   <dt>얼굴 모델</dt><dd id="model">로딩 전</dd><dt>기기 저장소</dt><dd id="storage">확인 중</dd>
-  <dt>화면 꺼짐 방지</dt><dd id="wake">확인 중</dd><dt>최근 분석 시각</dt><dd id="lastAnalysis">—</dd><dt>카메라 오류</dt><dd id="camError">없음</dd>
- </dl></details>
+  <dt>화면 꺼짐 방지</dt><dd id="wake">확인 중</dd><dt>최근 분석 시각</dt><dd id="lastAnalysis">—</dd><dt>카메라 오류</dt><dd id="camError">없음</dd><dt>카메라 장치</dt><dd id="devices">—</dd>
+ </dl><div class="row" style="margin-top:10px"><button id="diagBtn" type="button">진단 정보 복사</button><span class="hint" id="diagMsg"></span></div></details>
 </section>
 <section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">등록된 회원</h2><button id="clearAll" class="danger" type="button">전체 삭제</button></div><div id="members"></div><p class="hint">회원번호는 Q001부터 자동 부여됩니다. 체크 기록은 하루 단위로 초기화됩니다. 전체 삭제 시 번호가 Q001부터 다시 시작합니다.</p></section>
 </div></div>
@@ -103,7 +104,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <p>똑똑 버튼을 누르면 15초 동안만 얼굴을 확인하고 음성 안내를 합니다. 회원 확인·신규 등록이 끝나거나 시간이 지나면 다시 대기 상태가 됩니다. 전원을 연결한 상태로 두고, 태블릿의 화면 고정(앱 고정) 기능을 함께 쓰면 좋습니다.</p>
 <p>얼굴 분석은 기기에서 수행하며 사진·영상·얼굴 특징값을 서버로 전송하지 않습니다. 브라우저 데이터를 삭제하면 회원 정보와 체크 기록도 삭제됩니다. 생체 위조(사진) 검출 기능은 없습니다.</p>
 </details></section></main>
-<footer>FACE CHECK-IN 2.3 · face-api.js 0.22.2 · 카메라 영상과 얼굴 사진은 저장하지 않습니다.</footer>
+<footer>FACE CHECK-IN 2.4 · face-api.js 0.22.2 · 카메라 영상과 얼굴 사진은 저장하지 않습니다.</footer>
 
 <dialog id="regDialog"><form id="regForm" method="dialog">
  <h2>처음 오셨네요!</h2><p class="hint" style="margin-top:0">이름을 입력하면 회원으로 등록됩니다.</p>
@@ -115,6 +116,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 </form></dialog>
 <button id="bell" class="bell" type="button" disabled aria-label="똑똑 초인종 — 누르면 얼굴 확인을 시작합니다"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm7-6v-5a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2z"/></svg><span id="bellText">똑똑</span><small id="bellSub">준비 중</small></button>
 
+<script>
+window.onerror=function(m,src,l){var e=document.getElementById('status');if(e){e.className='status error';e.textContent='스크립트 오류: '+m+' (줄 '+l+')\n브라우저가 너무 오래되었을 수 있습니다. Chrome 또는 Safari를 최신으로 업데이트해 주세요.'}};
+</script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -287,7 +291,8 @@ function loadLibrary(){
 function loadModels(){
  if(ready)return Promise.resolve();if(modelPromise)return modelPromise;
  $('model').textContent='로딩 중';
- modelPromise=(async()=>{await loadLibrary();let timer;try{await Promise.race([Promise.all([faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)]),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('모델 로딩 시간 초과. 인터넷 연결을 확인하세요.')),60000)})]);ready=true;$('model').textContent='준비 완료 · face-api.js 0.22.2'}finally{clearTimeout(timer)}})().catch(e=>{modelPromise=null;$('model').textContent='로딩 실패';throw e});
+ modelPromise=(async()=>{await loadLibrary();try{await faceapi.tf.ready();faceapi.tf.tidy(()=>faceapi.tf.ones([2,2]).matMul(faceapi.tf.ones([2,2])).dataSync())}catch(be){try{await faceapi.tf.setBackend('cpu');await faceapi.tf.ready()}catch{}}
+ let timer;try{await Promise.race([Promise.all([faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)]),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('모델 로딩 시간 초과. 인터넷 연결을 확인하세요.')),60000)})]);ready=true;let be='';try{be=faceapi.tf.getBackend()}catch{}$('model').textContent='준비 완료 · face-api.js 0.22.2 · '+(be||'?')}finally{clearTimeout(timer)}})().catch(e=>{modelPromise=null;$('model').textContent='로딩 실패';throw e});
  return modelPromise;
 }
 
@@ -298,6 +303,19 @@ function stopCamera(message){
  $('placeholder').hidden=false;$('resolution').textContent='—';$('engine').textContent='중지';
  resetStreaks();clearMetrics();drawOverlay([]);if(message)status(message);controls();
 }
+let startAt=0;
+function showCamBtn(text){if(stream)return;$('camBtn').hidden=false;$('phText').textContent=text||'카메라가 켜지지 않았습니다';}
+$('camBtn').onclick=e=>{e.stopPropagation();if(starting&&Date.now()-startAt>6000){generation++;starting=false}nextRetryAt=0;startCamera()};
+function retryModels(run){setTimeout(async()=>{if(run!==generation||ready)return;try{await loadModels();if(run!==generation)return;$('engine').textContent='인식 중';status('준비 완료. 입장하시려면 똑똑 버튼을 눌러 주세요.');showResult('입장하시려면','오른쪽 똑똑 버튼을 눌러 주세요.');controls()}catch(e){if(run===generation){status('얼굴 모델 로딩 재시도 실패: '+e.message+'\n인터넷 연결을 확인해 주세요. 계속 재시도합니다.',true);retryModels(run)}}},10000)}
+async function listDevices(){try{const d=await navigator.mediaDevices.enumerateDevices();const v=d.filter(x=>x.kind==='videoinput');$('devices').textContent=v.length+'개'+(v.length&&v[0].label?' · '+v.map(x=>x.label).join(', '):'');return v.length}catch(e){$('devices').textContent='확인 불가';return -1}}
+$('diagBtn').onclick=async()=>{
+ await listDevices();
+ const rows=['FACE CHECK-IN 2.4 진단','시각: '+new Date().toLocaleString('ko-KR'),'UA: '+navigator.userAgent];
+ for(const dt of document.querySelectorAll('dl dt'))rows.push(dt.textContent+': '+dt.nextElementSibling.textContent);
+ rows.push('상태: '+$('status').textContent.replace(/\n/g,' / '));
+ const text=rows.join('\n');
+ try{await navigator.clipboard.writeText(text);$('diagMsg').textContent='복사됨 · 채팅에 붙여 넣어 주세요'}catch{prompt('아래 내용을 복사해 주세요',text)}
+};
 async function openStream(){
  const f=$('facing').value,tries=[
   {video:{facingMode:{ideal:f},width:{ideal:640},height:{ideal:480},frameRate:{ideal:15}},audio:false},
@@ -324,7 +342,8 @@ function setupInApp(){
 async function startCamera(){
  if(starting||stream||document.hidden||Date.now()<nextRetryAt)return;
  if(!isSecureContext||!navigator.mediaDevices?.getUserMedia){status(IN_APP?IN_APP+' 안의 브라우저에서는 카메라를 쓸 수 없습니다. 위의 [Chrome / Safari로 열기]를 눌러 주세요.':!isSecureContext?'보안(HTTPS) 주소가 아니라 카메라가 차단됩니다. 현재 주소: '+location.protocol+'\n폰에 내려받은 파일을 직접 열지 말고 https:// 주소로 열어 주세요.':'이 브라우저는 카메라를 지원하지 않습니다. Chrome(안드로이드) 또는 Safari(아이폰)에서 열어 주세요.',true);$('camError').textContent=!isSecureContext?'보안 컨텍스트 아님':'getUserMedia 없음';$('engine').textContent='HTTPS 필요';nextRetryAt=Date.now()+60000;return}
- starting=true;controls();const run=++generation;$('engine').textContent='카메라 시작 중';
+ starting=true;startAt=Date.now();controls();const run=++generation;$('engine').textContent='카메라 시작 중';$('camBtn').hidden=true;$('phText').textContent='카메라를 준비하고 있습니다…';
+ const hang=setTimeout(()=>{if(starting&&run===generation){status('카메라 권한 창이 보이지 않나요?\n아래 [📷 카메라 켜기]를 눌러 주세요. 그래도 안 되면 주소창의 권한 설정에서 카메라를 허용해 주세요.',true);showCamBtn('권한 창이 보이지 않으면 눌러 주세요')}},8000);
  try{
   status('카메라를 시작합니다. 권한 요청이 뜨면 허용해 주세요.');
   loadModels().catch(()=>{});
@@ -334,10 +353,14 @@ async function startCamera(){
   await new Promise(r=>{if(video.readyState>=1)return r();const t=setTimeout(r,4000);video.onloadedmetadata=()=>{clearTimeout(t);r()}});
   try{await video.play();needPlay=false}catch(pe){needPlay=true;$('camError').textContent='영상 재생 차단('+pe.name+') · 터치 필요'}
   if(run!==generation)return;
-  $('placeholder').hidden=true;$('permission').textContent='허용됨';if(!needPlay)$('camError').textContent='없음';$('resolution').textContent=video.videoWidth+' × '+video.videoHeight;drawOverlay([]);
+  $('placeholder').hidden=true;$('permission').textContent='허용됨';if(!needPlay)$('camError').textContent='없음';$('resolution').textContent=video.videoWidth+' × '+video.videoHeight;drawOverlay([]);listDevices();
   s.getVideoTracks()[0].addEventListener('ended',()=>{if(stream===s){stopCamera('카메라 연결이 끊어져 다시 시작합니다.');nextRetryAt=Date.now()+2000}});
   status(needPlay?'화면을 한 번 터치하면 카메라 화면이 켜집니다. (절전 모드에서는 자동 재생이 막힐 수 있습니다)':'카메라 연결됨. 얼굴 모델을 준비합니다…',needPlay);$('engine').textContent='모델 로딩 중';
-  await loadModels();
+  try{await loadModels()}catch(me){
+   if(run!==generation)return;
+   status('카메라는 켜졌지만 얼굴 모델을 불러오지 못했습니다.\n'+me.message+'\n10초 후 자동으로 다시 시도합니다.',true);$('engine').textContent='모델 재시도';
+   retryModels(run);loop(run);return;
+  }
   if(run!==generation||document.hidden)return;
   $('engine').textContent='인식 중';
   if(!needPlay)status('준비 완료. 입장하시려면 똑똑 버튼을 눌러 주세요.');showResult('입장하시려면','오른쪽 똑똑 버튼을 눌러 주세요.');controls();
@@ -348,8 +371,8 @@ async function startCamera(){
   $('camError').textContent=e.name+(e.message?' · '+e.message:'')+(e.constraint?' · '+e.constraint:'');
   const messages={NotAllowedError:IS_IOS?'카메라 권한이 거부되었습니다. 아이폰 설정 > Safari(또는 Chrome) > 카메라를 "허용"으로 바꾸고, 주소창의 aA 메뉴 > 웹 사이트 설정 > 카메라도 허용해 주세요.':'카메라 권한이 거부되었습니다. 휴대폰 설정 > 애플리케이션 > Chrome > 권한 > 카메라 허용, 그리고 주소창 왼쪽 자물쇠 > 권한 > 카메라 허용을 확인해 주세요.',SecurityError:'보안 정책으로 카메라가 차단되었습니다. https:// 주소를 Chrome 또는 Safari에서 직접 열어 주세요.',OverconstrainedError:'이 카메라가 요청한 설정을 지원하지 않습니다. 카메라 방향을 바꿔 보세요.',AbortError:'카메라를 여는 중 중단되었습니다. 다시 시도합니다.',NotFoundError:'사용 가능한 카메라를 찾지 못했습니다.',NotReadableError:'카메라를 열 수 없습니다. 다른 카메라 앱을 종료해 주세요.'};
   status((messages[e.name]||e.message||'카메라 오류')+'\n오류 코드: '+e.name+' · 잠시 후 자동으로 다시 시도합니다.',true);$('engine').textContent='재시도 대기';
-  nextRetryAt=Date.now()+(e.name==='NotAllowedError'?15000:5000);permissionInfo();
- }finally{starting=false;controls()}
+  nextRetryAt=Date.now()+(e.name==='NotAllowedError'?15000:5000);permissionInfo();showCamBtn(e.name==='NotAllowedError'?'권한을 허용한 뒤 눌러 주세요':'다시 시도하려면 눌러 주세요');
+ }finally{clearTimeout(hang);starting=false;controls();if(!stream)showCamBtn()}
 }
 $('restart').onclick=()=>{stopCamera('카메라를 다시 시작합니다.');nextRetryAt=0;startCamera()};
 $('facing').onchange=()=>{store.set(FACING_KEY,$('facing').value);stopCamera();nextRetryAt=0;startCamera()};
