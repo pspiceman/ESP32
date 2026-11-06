@@ -3,10 +3,6 @@ html파일
 manifest.json  
 sw.js  
 ///////////////////////////////////////////////////////  
-// ===== WiFi =====  
-#define WIFI_SSID     "Backhome"  
-#define WIFI_PASSWORD "1700note"  
-
 // ===== MQTT =====  
 const char*    MQTT_BROKER = "broker.hivemq.com";  
 const uint16_t MQTT_PORT   = 1883;
