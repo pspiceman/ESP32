@@ -1,5 +1,13 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>얼굴 체크인</title><style>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>얼굴 체크인</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#15333e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="얼굴 체크인">
+<link rel="icon" type="image/png" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<script src="./pwa.js" defer></script><style>
 :root{--ink:#17313b;--muted:#64777d;--green:#087f70;--line:#d9e5e3;--bg:#f2f6f5}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px system-ui,-apple-system,'Noto Sans KR',sans-serif}
@@ -64,7 +72,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 @media(max-width:800px){.bell{top:auto;bottom:20px;right:16px;transform:none;width:120px;height:120px;font-size:22px}.bell svg{width:38px;height:38px}.bell:active:not(:disabled){transform:scale(.94)}.grid{grid-template-columns:1fr}main{padding:16px}.card{padding:18px}header{padding:17px}.metrics{gap:8px}}
 </style></head><body>
 <header><div><strong>FACE CHECK-IN</strong><small>얼굴 인식 · 자동 회원 등록</small></div><div class="row"><span id="clock"></span><span class="pill" id="engine">준비 중</span></div></header>
-<main><div class="grid"><div>
+<main>
+<section id="pwaInstallPanel" class="card" aria-label="앱 설치">
+ <div class="row"><button id="pwaInstall" class="primary" type="button">홈 화면에 설치</button><span id="pwaMessage" class="hint" role="status" aria-live="polite">설치 후 홈 화면 아이콘으로 열면 주소창 없이 실행됩니다.</span></div>
+</section>
+<div class="grid"><div>
 <section class="card">
  <div class="camera" id="cameraBox"><video id="video" autoplay playsinline muted></video><canvas id="overlayCanvas"></canvas>
   <div class="overlay" id="placeholder"><div class="oval"></div><span id="phText">카메라를 준비하고 있습니다…</span><div><button id="camBtn" class="camBtn" type="button" hidden>📷 카메라 켜기</button></div></div>
