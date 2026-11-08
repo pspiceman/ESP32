@@ -30,8 +30,8 @@ input[type=checkbox]{width:22px;min-height:22px;margin:0;flex-shrink:0}
 .consent{display:flex;gap:10px;align-items:flex-start;line-height:1.6;font-size:14px;font-weight:400;margin:6px 0 16px}
 .camera{background:#102c37;border-radius:14px;overflow:hidden;position:relative;margin-bottom:15px}
 video{width:100%;aspect-ratio:4/3;object-fit:contain;display:block}video.mirror{transform:scaleX(-1)}
-#overlayCanvas{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;pointer-events:none}
-.overlay{position:absolute;top:0;right:0;bottom:0;left:0;display:grid;place-content:center;text-align:center;color:#e1eeee;pointer-events:none}
+#overlayCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.overlay{position:absolute;inset:0;display:grid;place-content:center;text-align:center;color:#e1eeee;pointer-events:none}
 .camBtn{pointer-events:auto;margin-top:16px;background:#e8402f;border-color:#e8402f;color:#fff;font-size:18px;min-height:54px;padding:12px 22px;border-radius:30px}
 .oval{width:120px;height:150px;border:2px dashed #8ba6ad;border-radius:48%;margin:0 auto 20px}
 .welcome{position:absolute;left:0;right:0;bottom:0;background:rgba(8,127,112,.94);color:#fff;padding:22px 16px;text-align:center}
@@ -85,7 +85,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .settings label{font-weight:500;font-size:14px}.settings select{min-height:40px;padding:6px 10px}
 .log{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}.log td,.log th{border-top:1px solid var(--line);padding:5px 4px;text-align:left;vertical-align:top}
 .log th{color:var(--muted);font-weight:600}
-body.filllight::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;pointer-events:none;box-shadow:inset 0 0 0 10vmin #fff;z-index:3}
+body.filllight::after{content:'';position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 0 10vmin #fff;z-index:3}
 body.filllight .camera{box-shadow:0 0 0 6px #fff}
 </style></head><body>
 <header><div><strong>FACE CHECK-IN</strong><small>똑똑 → 얼굴 인식 → 환영 · 처음이면 자동 등록</small></div><div class="row"><span id="clock"></span><span class="pill" id="engine">준비 중</span></div></header>
@@ -148,7 +148,7 @@ body.filllight .camera{box-shadow:0 0 0 6px #fff}
 <p><b>정확도:</b> 등록 때 정면 8장, 확인 때 4장을 평균하고, 두 눈이 수평이 되도록 얼굴을 정렬한 뒤 비교합니다. 1순위와 2순위 차이가 작으면 자동으로 환영하지 않고 비슷한 분들만 골라 보여 줍니다. 어두우면 화면 가장자리를 흰색으로 밝혀 조명을 보조합니다.</p>
 <p>얼굴 분석은 기기에서만 수행하며 사진·영상을 저장하거나 서버로 보내지 않습니다(얼굴 특징값 숫자만 이 기기에 저장). 생체 위조(사진) 검출 기능은 없습니다.</p>
 </details></section></main>
-<footer>FACE CHECK-IN 3.3 · face-api.js 0.22.2 (Tiny 검출 + 68점 랜드마크 + 정렬) · 카메라 영상과 얼굴 사진은 저장하지 않습니다.</footer>
+<footer>FACE CHECK-IN 3.2 · face-api.js 0.22.2 (Tiny 검출 + 68점 랜드마크 + 정렬) · 카메라 영상과 얼굴 사진은 저장하지 않습니다.</footer>
 
 <dialog id="regDialog"><form id="regForm" method="dialog">
  <h2 id="regTitle">처음 오셨네요!</h2><p class="hint" style="margin-top:0" id="regSub">이름을 입력하면 방금 확인한 얼굴로 등록됩니다.</p>
@@ -163,1495 +163,699 @@ body.filllight .camera{box-shadow:0 0 0 6px #fff}
  <div class="btns"><button type="button" id="simCancel">취소</button><button class="primary" type="button" id="simOk">다른 사람이 맞음 · 등록</button></div>
 </form></dialog>
 <button id="bell" class="bell" type="button" disabled aria-label="똑똑 초인종 — 누르면 체크인을 시작합니다"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm7-6v-5a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2z"/></svg><span id="bellText">똑똑</span><small id="bellSub">준비 중</small></button>
-<script>window.onerror = function (m, src, l) { var e = document.getElementById('status'); if (e) {
-    e.className = 'status error';
-    e.textContent = '스크립트 오류: ' + m + ' (줄 ' + l + ')\n브라우저가 너무 오래되었을 수 있습니다. Chrome을 최신으로 업데이트해 주세요.';
-} };
+<script>
+window.onerror=function(m,src,l){var e=document.getElementById('status');if(e){e.className='status error';e.textContent='스크립트 오류: '+m+' (줄 '+l+')\n브라우저가 너무 오래되었을 수 있습니다. Chrome을 최신으로 업데이트해 주세요.'}};
 </script>
-<script>'use strict';
-const $ = id => document.getElementById(id), video = $('video'), wait = ms => new Promise(r => setTimeout(r, ms));
-const VERSION = '3.3', PIPE = 'v3-align150';
-const LIB = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
-const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
+<script>
+'use strict';
+const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
+const VERSION='3.2',PIPE='v3-align150';
+const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
+const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
-const STD = { minSize: .18, maxSize: .70, yaw: .60, roll: 18, pitchMin: .22, pitchMax: .88, score: .5,
-    guide: { x: .15, y: .04, w: .70, h: .92 }, minLum: 45, darkLum: 90, minSharp: 10 };
+const STD={minSize:.18,maxSize:.70,yaw:.60,roll:18,pitchMin:.22,pitchMax:.88,score:.5,
+ guide:{x:.15,y:.04,w:.70,h:.92},minLum:45,darkLum:90,minSharp:10};
 /* 판정 기준 (5프레임 평균 얼굴 ↔ 회원 평균 얼굴 거리) */
-const LEVELS = { strict: { verify: .36 }, normal: { verify: .40 }, loose: { verify: .45 } };
-const MARGIN = .03; // 선택 회원이 다른 가족보다 이만큼 더 가까워야 통과
-const UNIQUE_GAP = .08; // 1순위가 2순위보다 이만큼 가까워야 바로 환영
-const UNKNOWN = .50; // 모든 회원과 이 이상 멀면 처음 오신 분 → 자동 등록 창
-const UNKNOWN_FRAMES = 8; // 처음 오신 분 판단·등록에 쓰는 정면 프레임 수
-const CAND_RANGE = .08; // 1순위와 이 범위 안의 비슷한 분만 후보로(최대 3명)
-const LEGACY_BONUS = .03; // 2.x에서 등록된 얼굴(다른 전처리)은 기준 완화
-const SAME = .45; // 같은 사람 프레임으로 볼 최대 거리(이상치 제거)
-const VERIFY_FRAMES = 4, VERIFY_MS = 12000, SCAN_MS = 12000, PICK_MS = 20000, ENROLL_MS = 30000;
-const MAX_SAMPLES = 30, KEEP_ENROLL = 8, SIMILAR_WARN = .25; // 거의 같은 얼굴(중복 등록 의심)일 때만 확인 창
+const LEVELS={strict:{verify:.36},normal:{verify:.40},loose:{verify:.45}};
+const MARGIN=.03;          // 선택 회원이 다른 가족보다 이만큼 더 가까워야 통과
+const UNIQUE_GAP=.08;     // 1순위가 2순위보다 이만큼 가까워야 바로 환영
+const UNKNOWN=.50;        // 모든 회원과 이 이상 멀면 처음 오신 분 → 자동 등록 창
+const UNKNOWN_FRAMES=8;   // 처음 오신 분 판단·등록에 쓰는 정면 프레임 수
+const CAND_RANGE=.08;     // 1순위와 이 범위 안의 비슷한 분만 후보로(최대 3명)
+const LEGACY_BONUS=.03;    // 2.x에서 등록된 얼굴(다른 전처리)은 기준 완화
+const SAME=.45;            // 같은 사람 프레임으로 볼 최대 거리(이상치 제거)
+const VERIFY_FRAMES=4,VERIFY_MS=12000,SCAN_MS=12000,PICK_MS=20000,ENROLL_MS=30000;
+const MAX_SAMPLES=30,KEEP_ENROLL=8,SIMILAR_WARN=.25;  // 거의 같은 얼굴(중복 등록 의심)일 때만 확인 창
 // 등록은 정면만 8장 (약 2초)
-const ENROLL_PLAN = [{ key: 'front', label: '정면', n: 8, say: '정면을 바라봐 주세요.', min: .65, max: 1 }];
-const NEXT_KEY = 'faceCheckinNextQ', FACING_KEY = 'faceCheckinFacing', LOG_KEY = 'faceCheckinLog', SET_KEY = 'faceCheckinSettings', VLOG_KEY = 'faceCheckinVerifyLog', BOOT = Date.now();
-const UA = navigator.userAgent, IS_IOS = /iPhone|iPad|iPod/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1), IS_ANDROID = /Android/i.test(UA);
-const IN_APP = (/KAKAOTALK/i.test(UA) && '카카오톡') || (/NAVER\(inapp|NAVER\//i.test(UA) && '네이버 앱') || (/\bLine\//i.test(UA) && '라인') || (/Instagram/i.test(UA) && '인스타그램') || (/FBAN|FBAV|FB_IAB/i.test(UA) && '페이스북') || (/DaumApps/i.test(UA) && '다음 앱') || (/BAND\//i.test(UA) && '밴드') || (/; wv\)/.test(UA) && '앱 내장 브라우저') || '';
-let db = null, members = [], stream = null, ready = false, useSSD = true, modelPromise = null, libraryPromise = null, starting = false, mutating = false, generation = 0, needPlay = false, startAt = 0;
-let session = null, sessionTick = null, idleTimer = null, lastGuideAt = 0, audioCtx = null, detectBusy = false, lastDraw = [], lastLum = 255, brightSince = 0;
-let lastLoopAt = 0, nextRetryAt = 0, wakeLock = null, wakeRequesting = false, welcomeTimer = null, lastVoiceKey = '', lastVoiceTime = 0;
-const chip = document.createElement('canvas');
-chip.width = chip.height = 150;
-const cctx = chip.getContext('2d', { willReadFrequently: true });
-const store = { get(k) { try {
-        return localStorage.getItem(k);
-    }
-    catch (_a) {
-        return null;
-    } }, set(k, v) { try {
-        localStorage.setItem(k, v);
-    }
-    catch (_a) { } } };
-const hhmm = t => new Date(t).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-const settings = Object.assign({ level: 'normal', adapt: true, fill: true }, (() => { try {
-    return JSON.parse(store.get(SET_KEY)) || {};
-}
-catch (_a) {
-    return {};
-} })());
-function saveSettings() { store.set(SET_KEY, JSON.stringify(settings)); }
-function level() { return LEVELS[settings.level] || LEVELS.normal; }
+const ENROLL_PLAN=[{key:'front',label:'정면',n:8,say:'정면을 바라봐 주세요.',min:.65,max:1}];
+const NEXT_KEY='faceCheckinNextQ',FACING_KEY='faceCheckinFacing',LOG_KEY='faceCheckinLog',SET_KEY='faceCheckinSettings',VLOG_KEY='faceCheckinVerifyLog',BOOT=Date.now();
+const UA=navigator.userAgent,IS_IOS=/iPhone|iPad|iPod/i.test(UA)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),IS_ANDROID=/Android/i.test(UA);
+const IN_APP=(/KAKAOTALK/i.test(UA)&&'카카오톡')||(/NAVER\(inapp|NAVER\//i.test(UA)&&'네이버 앱')||(/\bLine\//i.test(UA)&&'라인')||(/Instagram/i.test(UA)&&'인스타그램')||(/FBAN|FBAV|FB_IAB/i.test(UA)&&'페이스북')||(/DaumApps/i.test(UA)&&'다음 앱')||(/BAND\//i.test(UA)&&'밴드')||(/; wv\)/.test(UA)&&'앱 내장 브라우저')||'';
+let db=null,members=[],stream=null,ready=false,useSSD=true,modelPromise=null,libraryPromise=null,starting=false,mutating=false,generation=0,needPlay=false,startAt=0;
+let session=null,sessionTick=null,idleTimer=null,lastGuideAt=0,audioCtx=null,detectBusy=false,lastDraw=[],lastLum=255,brightSince=0;
+let lastLoopAt=0,nextRetryAt=0,wakeLock=null,wakeRequesting=false,welcomeTimer=null,lastVoiceKey='',lastVoiceTime=0;
+const chip=document.createElement('canvas');chip.width=chip.height=150;const cctx=chip.getContext('2d',{willReadFrequently:true});
+const store={get(k){try{return localStorage.getItem(k)}catch{return null}},set(k,v){try{localStorage.setItem(k,v)}catch{}}};
+const hhmm=t=>new Date(t).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+const settings=Object.assign({level:'normal',adapt:true,fill:true},(()=>{try{return JSON.parse(store.get(SET_KEY))||{}}catch{return {}}})());
+function saveSettings(){store.set(SET_KEY,JSON.stringify(settings))}
+function level(){return LEVELS[settings.level]||LEVELS.normal}
+
 /* ---------- 오늘 체크 기록 ---------- */
-function today() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
-let checkLog = (() => { try {
-    const o = JSON.parse(store.get(LOG_KEY));
-    if (o && o.date === today() && o.ids)
-        return o;
-}
-catch (_a) { } return { date: today(), ids: {} }; })();
-function rollDay() { if (checkLog.date !== today()) {
-    checkLog = { date: today(), ids: {} };
-    store.set(LOG_KEY, JSON.stringify(checkLog));
-    renderMembers();
-} }
-function checkedAt(id) { rollDay(); return checkLog.ids[id] || 0; }
-function markChecked(id, t) { rollDay(); checkLog.ids[id] = t; store.set(LOG_KEY, JSON.stringify(checkLog)); renderMembers(); }
+function today(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+let checkLog=(()=>{try{const o=JSON.parse(store.get(LOG_KEY));if(o&&o.date===today()&&o.ids)return o}catch{}return{date:today(),ids:{}}})();
+function rollDay(){if(checkLog.date!==today()){checkLog={date:today(),ids:{}};store.set(LOG_KEY,JSON.stringify(checkLog));renderMembers()}}
+function checkedAt(id){rollDay();return checkLog.ids[id]||0}
+function markChecked(id,t){rollDay();checkLog.ids[id]=t;store.set(LOG_KEY,JSON.stringify(checkLog));renderMembers()}
+
 /* ---------- 판정 기록 (기준값 조정용) ---------- */
-let vlog = (() => { try {
-    return JSON.parse(store.get(VLOG_KEY)) || [];
+let vlog=(()=>{try{return JSON.parse(store.get(VLOG_KEY))||[]}catch{return []}})();
+function addLog(e){vlog.unshift({t:Date.now(),...e});vlog=vlog.slice(0,50);store.set(VLOG_KEY,JSON.stringify(vlog));renderLog()}
+function renderLog(){
+ const tb=$('logTable');tb.replaceChildren();
+ const head=document.createElement('tr');for(const h of ['시각','방식','선택','결과','본인 거리','다른 가족(최소)'])head.append(Object.assign(document.createElement('th'),{textContent:h}));tb.append(head);
+ for(const e of vlog.slice(0,12)){const tr=document.createElement('tr');
+  for(const v of [hhmm(e.t),e.mode,e.sel||'—',e.result,e.dSel!=null?e.dSel.toFixed(3):'—',e.dOther!=null?(e.other+' '+e.dOther.toFixed(3)):'—'])tr.append(Object.assign(document.createElement('td'),{textContent:v}));
+  tb.append(tr);}
 }
-catch (_a) {
-    return [];
-} })();
-function addLog(e) { vlog.unshift(Object.assign({ t: Date.now() }, e)); vlog = vlog.slice(0, 50); store.set(VLOG_KEY, JSON.stringify(vlog)); renderLog(); }
-function renderLog() {
-    const tb = $('logTable');
-    tb.replaceChildren();
-    const head = document.createElement('tr');
-    for (const h of ['시각', '방식', '선택', '결과', '본인 거리', '다른 가족(최소)'])
-        head.append(Object.assign(document.createElement('th'), { textContent: h }));
-    tb.append(head);
-    for (const e of vlog.slice(0, 12)) {
-        const tr = document.createElement('tr');
-        for (const v of [hhmm(e.t), e.mode, e.sel || '—', e.result, e.dSel != null ? e.dSel.toFixed(3) : '—', e.dOther != null ? (e.other + ' ' + e.dOther.toFixed(3)) : '—'])
-            tr.append(Object.assign(document.createElement('td'), { textContent: v }));
-        tb.append(tr);
-    }
-}
-$('logClear').onclick = () => { vlog = []; store.set(VLOG_KEY, '[]'); renderLog(); };
+$('logClear').onclick=()=>{vlog=[];store.set(VLOG_KEY,'[]');renderLog()};
+
 /* ---------- 음성 ---------- */
-function speak(text, key = text, interval = 8000) {
-    if (!$('voiceEnabled').checked || !window.speechSynthesis || document.hidden)
-        return;
-    const now = Date.now();
-    if (key === lastVoiceKey && now - lastVoiceTime < interval)
-        return;
-    lastVoiceKey = key;
-    lastVoiceTime = now;
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'ko-KR';
-    u.rate = 1;
-    u.volume = Number($('voiceVolume').value);
-    const ko = speechSynthesis.getVoices().find(v => v.lang.toLowerCase().replace('_', '-').startsWith('ko'));
-    if (ko)
-        u.voice = ko;
-    u.onerror = e => { if (!['interrupted', 'canceled', 'not-allowed'].includes(e.error))
-        $('voiceHint').textContent = '음성 재생 실패. 기기의 한국어 TTS와 미디어 볼륨을 확인하세요.'; };
-    speechSynthesis.speak(u);
+function speak(text,key=text,interval=8000){
+ if(!$('voiceEnabled').checked||!window.speechSynthesis||document.hidden)return;
+ const now=Date.now();if(key===lastVoiceKey&&now-lastVoiceTime<interval)return;
+ lastVoiceKey=key;lastVoiceTime=now;speechSynthesis.cancel();
+ const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';u.rate=1;u.volume=Number($('voiceVolume').value);
+ const ko=speechSynthesis.getVoices().find(v=>v.lang.toLowerCase().replace('_','-').startsWith('ko'));if(ko)u.voice=ko;
+ u.onerror=e=>{if(!['interrupted','canceled','not-allowed'].includes(e.error))$('voiceHint').textContent='음성 재생 실패. 기기의 한국어 TTS와 미디어 볼륨을 확인하세요.'};
+ speechSynthesis.speak(u);
 }
-function guide(text) { const now = Date.now(); if (now - lastGuideAt < 5000)
-    return; lastGuideAt = now; speak(text, 'guide:' + text, 0); }
-function chime() {
-    var _a;
-    const v = Number($('voiceVolume').value) * .45;
-    if (!(v > 0))
-        return;
-    try {
-        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-        (_a = audioCtx.resume) === null || _a === void 0 ? void 0 : _a.call(audioCtx);
-        for (const [f, t] of [[784, 0], [622, .38]]) {
-            const o = audioCtx.createOscillator(), g = audioCtx.createGain(), st = audioCtx.currentTime + t;
-            o.type = 'sine';
-            o.frequency.value = f;
-            g.gain.setValueAtTime(.0001, st);
-            g.gain.linearRampToValueAtTime(v, st + .02);
-            g.gain.exponentialRampToValueAtTime(.0001, st + .7);
-            o.connect(g).connect(audioCtx.destination);
-            o.start(st);
-            o.stop(st + .75);
-        }
-    }
-    catch (_b) { }
+function guide(text){const now=Date.now();if(now-lastGuideAt<5000)return;lastGuideAt=now;speak(text,'guide:'+text,0)}
+function chime(){
+ const v=Number($('voiceVolume').value)*.45;if(!(v>0))return;
+ try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();audioCtx.resume?.();
+  for(const [f,t] of [[784,0],[622,.38]]){const o=audioCtx.createOscillator(),g=audioCtx.createGain(),st=audioCtx.currentTime+t;o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.0001,st);g.gain.linearRampToValueAtTime(v,st+.02);g.gain.exponentialRampToValueAtTime(.0001,st+.7);o.connect(g).connect(audioCtx.destination);o.start(st);o.stop(st+.75)}
+ }catch{}
 }
-document.addEventListener('pointerdown', () => {
-    if (needPlay && video.srcObject)
-        video.play().then(() => { needPlay = false; status('카메라 화면이 켜졌습니다. 똑똑 버튼을 눌러 주세요.'); }).catch(() => { });
-    if (!stream && !starting) {
-        nextRetryAt = 0;
-        startCamera();
-    }
-    requestWakeLock();
-}, true);
-$('voiceTest').onclick = () => speak('안녕하세요. 똑똑을 누르고 카메라를 바라봐 주세요.', 'test', 0);
-$('voiceEnabled').onchange = () => { var _a; if (!$('voiceEnabled').checked)
-    (_a = window.speechSynthesis) === null || _a === void 0 ? void 0 : _a.cancel();
-else
-    speak('음성 안내를 켰습니다.', 'on', 0); };
+document.addEventListener('pointerdown',()=>{
+ if(needPlay&&video.srcObject)video.play().then(()=>{needPlay=false;status('카메라 화면이 켜졌습니다. 똑똑 버튼을 눌러 주세요.')}).catch(()=>{});
+ if(!stream&&!starting){nextRetryAt=0;startCamera()}
+ requestWakeLock();
+},true);
+$('voiceTest').onclick=()=>speak('안녕하세요. 똑똑을 누르고 카메라를 바라봐 주세요.','test',0);
+$('voiceEnabled').onchange=()=>{if(!$('voiceEnabled').checked)window.speechSynthesis?.cancel();else speak('음성 안내를 켰습니다.','on',0)};
+
 /* ---------- 화면 표시 ---------- */
-function status(message, error = false) { $('status').textContent = message; $('status').classList.toggle('error', error); }
-function showResult(title, detail) { $('resultName').textContent = title; $('resultId').textContent = detail; }
-function clearMetrics() { for (const id of ['faceCount', 'faceSize', 'frontal', 'distance', 'gap', 'latency', 'lastAnalysis', 'light'])
-    $(id).textContent = '—'; $('streakCount').textContent = '0 / ' + VERIFY_FRAMES; }
-function avatarColor(s) { let h = 0; for (const c of String(s))
-    h = (h * 31 + c.charCodeAt(0)) % 360; return 'hsl(' + h + ' 45% 42%)'; }
-function memberLegacy(m) { return !String(m.pipeline || '').startsWith('v3'); }
-function controls() { updateBell(); $('restart').disabled = starting; $('clearAll').disabled = !db || mutating || !members.length || !!session; for (const b of $('members').querySelectorAll('button'))
-    b.disabled = mutating || !!session; }
-function renderMembers() {
-    var _a, _b;
-    $('members').replaceChildren();
-    $('memberCount').textContent = members.length;
-    if (!members.length) {
-        const p = document.createElement('p');
-        p.className = 'hint';
-        p.textContent = '아직 등록된 회원이 없습니다. 똑똑을 누르고 카메라를 보면 등록 창이 열립니다.';
-        $('members').append(p);
-    }
-    const qy = (((_a = $('memberSearch')) === null || _a === void 0 ? void 0 : _a.value) || '').trim().toLowerCase();
-    const list = [...members].filter(m => !qy || m.name.toLowerCase().includes(qy) || String(m.id).toLowerCase().includes(qy)).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-    if (qy && !list.length) {
-        const p = document.createElement('p');
-        p.className = 'hint';
-        p.textContent = '검색 결과가 없습니다.';
-        $('members').append(p);
-    }
-    for (const m of list) {
-        const row = document.createElement('div');
-        row.className = 'item';
-        const info = document.createElement('div'), name = document.createElement('strong'), id = document.createElement('small'), chk = document.createElement('small');
-        name.textContent = m.name;
-        const badge = document.createElement('span');
-        badge.className = 'badge ' + (memberLegacy(m) ? 'legacy' : 'ok');
-        badge.textContent = memberLegacy(m) ? '재등록 권장' : '표본 ' + (((_b = m.descriptors) === null || _b === void 0 ? void 0 : _b.length) || 0);
-        name.append(badge);
-        id.textContent = '회원번호 ' + m.id;
-        const t = checkLog.date === today() ? checkLog.ids[m.id] : 0;
-        chk.textContent = t ? '오늘 체크 ' + hhmm(t) : '오늘 미체크';
-        if (t)
-            chk.className = 'checked';
-        info.append(name, id, chk);
-        const btns = document.createElement('div');
-        btns.className = 'row';
-        const re = document.createElement('button');
-        re.type = 'button';
-        re.textContent = '얼굴 재등록';
-        re.onclick = () => openRegister(m);
-        const del = document.createElement('button');
-        del.type = 'button';
-        del.textContent = '삭제';
-        del.className = 'danger';
-        del.onclick = () => removeMember(m.id);
-        btns.append(re, del);
-        row.append(info, btns);
-        $('members').append(row);
-    }
-    controls();
+function status(message,error=false){$('status').textContent=message;$('status').classList.toggle('error',error)}
+function showResult(title,detail){$('resultName').textContent=title;$('resultId').textContent=detail}
+function clearMetrics(){for(const id of ['faceCount','faceSize','frontal','distance','gap','latency','lastAnalysis','light'])$(id).textContent='—';$('streakCount').textContent='0 / '+VERIFY_FRAMES}
+function avatarColor(s){let h=0;for(const c of String(s))h=(h*31+c.charCodeAt(0))%360;return 'hsl('+h+' 45% 42%)'}
+function memberLegacy(m){return !String(m.pipeline||'').startsWith('v3')}
+function controls(){updateBell();$('restart').disabled=starting;$('clearAll').disabled=!db||mutating||!members.length||!!session;for(const b of $('members').querySelectorAll('button'))b.disabled=mutating||!!session}
+function renderMembers(){
+ $('members').replaceChildren();$('memberCount').textContent=members.length;
+ if(!members.length){const p=document.createElement('p');p.className='hint';p.textContent='아직 등록된 회원이 없습니다. 똑똑을 누르고 카메라를 보면 등록 창이 열립니다.';$('members').append(p)}
+ const qy=($('memberSearch')?.value||'').trim().toLowerCase();
+ const list=[...members].filter(m=>!qy||m.name.toLowerCase().includes(qy)||String(m.id).toLowerCase().includes(qy)).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+ if(qy&&!list.length){const p=document.createElement('p');p.className='hint';p.textContent='검색 결과가 없습니다.';$('members').append(p)}
+ for(const m of list){
+  const row=document.createElement('div');row.className='item';
+  const info=document.createElement('div'),name=document.createElement('strong'),id=document.createElement('small'),chk=document.createElement('small');
+  name.textContent=m.name;const badge=document.createElement('span');badge.className='badge '+(memberLegacy(m)?'legacy':'ok');badge.textContent=memberLegacy(m)?'재등록 권장':'표본 '+(m.descriptors?.length||0);name.append(badge);
+  id.textContent='회원번호 '+m.id;
+  const t=checkLog.date===today()?checkLog.ids[m.id]:0;chk.textContent=t?'오늘 체크 '+hhmm(t):'오늘 미체크';if(t)chk.className='checked';
+  info.append(name,id,chk);
+  const btns=document.createElement('div');btns.className='row';
+  const re=document.createElement('button');re.type='button';re.textContent='얼굴 재등록';re.onclick=()=>openRegister(m);
+  const del=document.createElement('button');del.type='button';del.textContent='삭제';del.className='danger';del.onclick=()=>removeMember(m.id);
+  btns.append(re,del);row.append(info,btns);$('members').append(row);
+ }
+ controls();
 }
-function announce(m, mode, t) {
-    const box = $('welcome');
-    box.classList.toggle('already', mode === 'already');
-    if (mode === 'already') {
-        $('welcomeText').textContent = m.name + ' 님, 이미 체크되었습니다';
-        $('welcomeSub').textContent = '회원번호 ' + m.id + ' · 체크 시각 ' + hhmm(t);
-        speak(m.name + ' 님, 이미 체크 되었습니다.', 'already:' + m.id, 0);
-    }
-    else if (mode === 'reenroll') {
-        $('welcomeText').textContent = m.name + ' 님 얼굴을 다시 등록했습니다';
-        $('welcomeSub').textContent = '회원번호 ' + m.id;
-        speak(m.name + ' 님, 얼굴을 다시 등록했습니다.', 're:' + m.id, 0);
-    }
-    else {
-        $('welcomeText').textContent = m.name + ' 님 환영합니다';
-        $('welcomeSub').textContent = (mode === 'new' ? '회원 등록 완료 · ' : '') + '회원번호 ' + m.id;
-        speak(mode === 'new' ? m.name + ' 님, 등록되었습니다. 환영합니다.' : m.name + ' 님 환영합니다.', 'welcome:' + m.id, 0);
-    }
-    box.hidden = false;
-    clearTimeout(welcomeTimer);
-    welcomeTimer = setTimeout(() => box.hidden = true, 6500);
+function announce(m,mode,t){
+ const box=$('welcome');box.classList.toggle('already',mode==='already');
+ if(mode==='already'){$('welcomeText').textContent=m.name+' 님, 이미 체크되었습니다';$('welcomeSub').textContent='회원번호 '+m.id+' · 체크 시각 '+hhmm(t);speak(m.name+' 님, 이미 체크 되었습니다.','already:'+m.id,0)}
+ else if(mode==='reenroll'){$('welcomeText').textContent=m.name+' 님 얼굴을 다시 등록했습니다';$('welcomeSub').textContent='회원번호 '+m.id;speak(m.name+' 님, 얼굴을 다시 등록했습니다.','re:'+m.id,0)}
+ else{$('welcomeText').textContent=m.name+' 님 환영합니다';$('welcomeSub').textContent=(mode==='new'?'회원 등록 완료 · ':'')+'회원번호 '+m.id;speak(mode==='new'?m.name+' 님, 등록되었습니다. 환영합니다.':m.name+' 님 환영합니다.','welcome:'+m.id,0)}
+ box.hidden=false;clearTimeout(welcomeTimer);welcomeTimer=setTimeout(()=>box.hidden=true,6500);
 }
-setInterval(() => { $('clock').textContent = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }); }, 1000);
+setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})},1000);
+
 /* ---------- 얼굴 테두리 (빨간 ㄱ자) ---------- */
-function guideRect(vw, vh) { const g = STD.guide; return { x: vw * g.x, y: vh * g.y, w: vw * g.w, h: vh * g.h }; }
-function corners(ctx, b, color, lw) {
-    const L = Math.min(b.w, b.h) * .24;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lw;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
-    ctx.moveTo(b.x, b.y + L);
-    ctx.lineTo(b.x, b.y);
-    ctx.lineTo(b.x + L, b.y);
-    ctx.moveTo(b.x + b.w - L, b.y);
-    ctx.lineTo(b.x + b.w, b.y);
-    ctx.lineTo(b.x + b.w, b.y + L);
-    ctx.moveTo(b.x + b.w, b.y + b.h - L);
-    ctx.lineTo(b.x + b.w, b.y + b.h);
-    ctx.lineTo(b.x + b.w - L, b.y + b.h);
-    ctx.moveTo(b.x + L, b.y + b.h);
-    ctx.lineTo(b.x, b.y + b.h);
-    ctx.lineTo(b.x, b.y + b.h - L);
-    ctx.stroke();
+function guideRect(vw,vh){const g=STD.guide;return{x:vw*g.x,y:vh*g.y,w:vw*g.w,h:vh*g.h}}
+function corners(ctx,b,color,lw){
+ const L=Math.min(b.w,b.h)*.24;ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();
+ ctx.moveTo(b.x,b.y+L);ctx.lineTo(b.x,b.y);ctx.lineTo(b.x+L,b.y);
+ ctx.moveTo(b.x+b.w-L,b.y);ctx.lineTo(b.x+b.w,b.y);ctx.lineTo(b.x+b.w,b.y+L);
+ ctx.moveTo(b.x+b.w,b.y+b.h-L);ctx.lineTo(b.x+b.w,b.y+b.h);ctx.lineTo(b.x+b.w-L,b.y+b.h);
+ ctx.moveTo(b.x+L,b.y+b.h);ctx.lineTo(b.x,b.y+b.h);ctx.lineTo(b.x,b.y+b.h-L);ctx.stroke();
 }
-function drawOverlay(faces) {
-    lastDraw = faces;
-    const c = $('overlayCanvas'), ctx = c.getContext('2d'), r = c.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
-    const W = Math.round(r.width * dpr), H = Math.round(r.height * dpr);
-    if (c.width !== W || c.height !== H) {
-        c.width = W;
-        c.height = H;
-    }
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, W, H);
-    const vw = video.videoWidth, vh = video.videoHeight;
-    if (!stream || !vw || !vh)
-        return;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const s = Math.min(r.width / vw, r.height / vh), ox = (r.width - vw * s) / 2, oy = (r.height - vh * s) / 2, mirror = video.classList.contains('mirror');
-    const map = (x, y, w, h) => ({ x: ox + (mirror ? vw - x - w : x) * s, y: oy + y * s, w: w * s, h: h * s });
-    const g = guideRect(vw, vh), gr = map(g.x, g.y, g.w, g.h);
-    ctx.setLineDash([10, 8]);
-    ctx.strokeStyle = 'rgba(255,255,255,.6)';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(gr.x, gr.y, gr.w, gr.h);
-    ctx.setLineDash([]);
-    for (const f of faces) {
-        const b = map(f.box.x, f.box.y, f.box.width, f.box.height);
-        corners(ctx, b, f.ok ? '#ff2020' : 'rgba(255,70,70,.5)', f.ok ? 4 : 3);
-        if (f.label) {
-            ctx.font = 'bold 15px system-ui,"Noto Sans KR",sans-serif';
-            const tw = ctx.measureText(f.label).width + 14, th = 24;
-            let ly = b.y - th - 6;
-            if (ly < 2)
-                ly = b.y + b.h + 6;
-            ctx.fillStyle = f.ok ? 'rgba(220,20,20,.88)' : 'rgba(120,30,30,.7)';
-            ctx.fillRect(b.x, ly, tw, th);
-            ctx.fillStyle = '#fff';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(f.label, b.x + 7, ly + th / 2);
-        }
-    }
+function drawOverlay(faces){
+ lastDraw=faces;
+ const c=$('overlayCanvas'),ctx=c.getContext('2d'),r=c.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+ const W=Math.round(r.width*dpr),H=Math.round(r.height*dpr);if(c.width!==W||c.height!==H){c.width=W;c.height=H}
+ ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,W,H);
+ const vw=video.videoWidth,vh=video.videoHeight;if(!stream||!vw||!vh)return;
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+ const s=Math.min(r.width/vw,r.height/vh),ox=(r.width-vw*s)/2,oy=(r.height-vh*s)/2,mirror=video.classList.contains('mirror');
+ const map=(x,y,w,h)=>({x:ox+(mirror?vw-x-w:x)*s,y:oy+y*s,w:w*s,h:h*s});
+ const g=guideRect(vw,vh),gr=map(g.x,g.y,g.w,g.h);
+ ctx.setLineDash([10,8]);ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=2;ctx.strokeRect(gr.x,gr.y,gr.w,gr.h);ctx.setLineDash([]);
+ for(const f of faces){
+  const b=map(f.box.x,f.box.y,f.box.width,f.box.height);
+  corners(ctx,b,f.ok?'#ff2020':'rgba(255,70,70,.5)',f.ok?4:3);
+  if(f.label){
+   ctx.font='bold 15px system-ui,"Noto Sans KR",sans-serif';const tw=ctx.measureText(f.label).width+14,th=24;
+   let ly=b.y-th-6;if(ly<2)ly=b.y+b.h+6;
+   ctx.fillStyle=f.ok?'rgba(220,20,20,.88)':'rgba(120,30,30,.7)';ctx.fillRect(b.x,ly,tw,th);
+   ctx.fillStyle='#fff';ctx.textBaseline='middle';ctx.fillText(f.label,b.x+7,ly+th/2);
+  }
+ }
 }
-window.addEventListener('resize', () => drawOverlay(lastDraw));
+window.addEventListener('resize',()=>drawOverlay(lastDraw));
+
 /* ---------- 저장소 ---------- */
-async function initDB() {
-    try {
-        db = await new Promise((resolve, reject) => { const r = indexedDB.open('face-recognition-test-v1', 1); r.onupgradeneeded = () => r.result.createObjectStore('members', { keyPath: 'id' }); r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error); r.onblocked = () => reject(Error('다른 탭을 닫아 주세요.')); });
-        members = await new Promise((resolve, reject) => { const r = db.transaction('members').objectStore('members').getAll(); r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error); });
-        for (const m of members)
-            ensureTemplate(m);
-        db.onversionchange = () => { db.close(); db = null; $('storage').textContent = '다른 창에서 변경됨 · 새로고침 필요'; controls(); };
-        $('storage').textContent = '이 기기에 저장됨 · IndexedDB';
-        renderMembers();
-    }
-    catch (e) {
-        db = null;
-        $('storage').textContent = '사용 불가: ' + e.message;
-        status('회원 저장소를 열 수 없습니다. 시크릿 창이 아닌 일반 Chrome 창에서 실행해 주세요.', true);
-        controls();
-    }
+async function initDB(){
+ try{
+  db=await new Promise((resolve,reject)=>{const r=indexedDB.open('face-recognition-test-v1',1);r.onupgradeneeded=()=>r.result.createObjectStore('members',{keyPath:'id'});r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);r.onblocked=()=>reject(Error('다른 탭을 닫아 주세요.'))});
+  members=await new Promise((resolve,reject)=>{const r=db.transaction('members').objectStore('members').getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+  for(const m of members)ensureTemplate(m);
+  db.onversionchange=()=>{db.close();db=null;$('storage').textContent='다른 창에서 변경됨 · 새로고침 필요';controls()};
+  $('storage').textContent='이 기기에 저장됨 · IndexedDB';renderMembers();
+ }catch(e){db=null;$('storage').textContent='사용 불가: '+e.message;status('회원 저장소를 열 수 없습니다. 시크릿 창이 아닌 일반 Chrome 창에서 실행해 주세요.',true);controls()}
 }
-function writeDB(action) { return new Promise((resolve, reject) => { const tx = db.transaction('members', 'readwrite'); action(tx.objectStore('members')); tx.oncomplete = resolve; tx.onerror = () => reject(tx.error || Error('저장 오류')); tx.onabort = () => reject(tx.error || Error('저장 취소')); }); }
-const fmtId = n => 'Q' + String(n).padStart(3, '0');
-function nextNum() { let n = 1; for (const m of members) {
-    const x = /^Q(\d+)$/i.exec(m.id);
-    if (x && Number(x[1]) >= n)
-        n = Number(x[1]) + 1;
-} const saved = Number(store.get(NEXT_KEY)); return Number.isInteger(saved) && saved > n ? saved : n; }
-async function removeMember(id) {
-    if (mutating || !db || session)
-        return;
-    if (!confirm(id === null ? '등록된 회원을 모두 삭제할까요?' : '회원번호 ' + id + ' 정보를 삭제할까요?'))
-        return;
-    mutating = true;
-    controls();
-    try {
-        await writeDB(s => id === null ? s.clear() : s.delete(id));
-        if (id === null) {
-            members = [];
-            checkLog.ids = {};
-            store.set(NEXT_KEY, '1');
-        }
-        else {
-            members = members.filter(m => m.id !== id);
-            delete checkLog.ids[id];
-        }
-        store.set(LOG_KEY, JSON.stringify(checkLog));
-        renderMembers();
-        status('회원 정보가 삭제되었습니다.');
-    }
-    catch (e) {
-        status('삭제 실패: ' + e.message, true);
-    }
-    finally {
-        mutating = false;
-        controls();
-    }
+function writeDB(action){return new Promise((resolve,reject)=>{const tx=db.transaction('members','readwrite');action(tx.objectStore('members'));tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||Error('저장 오류'));tx.onabort=()=>reject(tx.error||Error('저장 취소'))})}
+const fmtId=n=>'Q'+String(n).padStart(3,'0');
+function nextNum(){let n=1;for(const m of members){const x=/^Q(\d+)$/i.exec(m.id);if(x&&Number(x[1])>=n)n=Number(x[1])+1}const saved=Number(store.get(NEXT_KEY));return Number.isInteger(saved)&&saved>n?saved:n}
+async function removeMember(id){
+ if(mutating||!db||session)return;
+ if(!confirm(id===null?'등록된 회원을 모두 삭제할까요?':'회원번호 '+id+' 정보를 삭제할까요?'))return;
+ mutating=true;controls();
+ try{
+  await writeDB(s=>id===null?s.clear():s.delete(id));
+  if(id===null){members=[];checkLog.ids={};store.set(NEXT_KEY,'1')}
+  else{members=members.filter(m=>m.id!==id);delete checkLog.ids[id]}
+  store.set(LOG_KEY,JSON.stringify(checkLog));renderMembers();status('회원 정보가 삭제되었습니다.');
+ }catch(e){status('삭제 실패: '+e.message,true)}finally{mutating=false;controls()}
 }
-$('clearAll').onclick = () => removeMember(null);
-$('memberSearch').addEventListener('input', () => renderMembers());
+$('clearAll').onclick=()=>removeMember(null);
+$('memberSearch').addEventListener('input',()=>renderMembers());
+
 /* ---------- 벡터 계산 ---------- */
-function distance(a, b) { if (!a || !b || a.length !== b.length)
-    return Infinity; let s = 0; for (let i = 0; i < a.length; i++) {
-    const d = a[i] - b[i];
-    s += d * d;
-} return Math.sqrt(s); }
-function meanOf(list) { if (!(list === null || list === void 0 ? void 0 : list.length))
-    return null; const n = list[0].length, o = new Array(n).fill(0); for (const v of list)
-    for (let i = 0; i < n; i++)
-        o[i] += v[i]; for (let i = 0; i < n; i++)
-    o[i] /= list.length; return o; }
-function ensureTemplate(m) { if (!m.template || m.template.length !== 128)
-    m.template = meanOf(m.descriptors || []); return m.template; }
-function scoreAll(q) { return members.map(m => ({ m, d: distance(q, ensureTemplate(m)), legacy: memberLegacy(m) })).filter(x => Number.isFinite(x.d)).sort((a, b) => a.d - b.d); }
+function distance(a,b){if(!a||!b||a.length!==b.length)return Infinity;let s=0;for(let i=0;i<a.length;i++){const d=a[i]-b[i];s+=d*d}return Math.sqrt(s)}
+function meanOf(list){if(!list?.length)return null;const n=list[0].length,o=new Array(n).fill(0);for(const v of list)for(let i=0;i<n;i++)o[i]+=v[i];for(let i=0;i<n;i++)o[i]/=list.length;return o}
+function ensureTemplate(m){if(!m.template||m.template.length!==128)m.template=meanOf(m.descriptors||[]);return m.template}
+function scoreAll(q){return members.map(m=>({m,d:distance(q,ensureTemplate(m)),legacy:memberLegacy(m)})).filter(x=>Number.isFinite(x.d)).sort((a,b)=>a.d-b.d)}
 /* 같은 사람 프레임만 남기기: 중앙값에 가까운 프레임 */
-function robustMean(list) {
-    if (list.length < 3)
-        return meanOf(list);
-    const m0 = meanOf(list), ds = list.map(v => distance(v, m0)), sorted = ds.slice().sort((a, b) => a - b), med = sorted[sorted.length >> 1];
-    const keep = list.filter((v, i) => ds[i] <= Math.max(med * 1.6, .18));
-    return meanOf(keep.length >= 3 ? keep : list);
+function robustMean(list){
+ if(list.length<3)return meanOf(list);
+ const m0=meanOf(list),ds=list.map(v=>distance(v,m0)),sorted=ds.slice().sort((a,b)=>a-b),med=sorted[sorted.length>>1];
+ const keep=list.filter((v,i)=>ds[i]<=Math.max(med*1.6,.18));
+ return meanOf(keep.length>=3?keep:list);
 }
+
 /* ---------- 모델 ---------- */
-function loadLibrary() {
-    if (window.faceapi)
-        return Promise.resolve();
-    if (libraryPromise)
-        return libraryPromise;
-    libraryPromise = new Promise((resolve, reject) => { const s = document.createElement('script'); s.src = LIB; s.crossOrigin = 'anonymous'; const timer = setTimeout(() => { s.remove(); reject(Error('라이브러리 로딩 시간 초과. 인터넷 연결을 확인하세요.')); }, 30000); s.onload = () => { clearTimeout(timer); resolve(); }; s.onerror = () => { clearTimeout(timer); s.remove(); reject(Error('인식 라이브러리를 받지 못했습니다. 인터넷 연결을 확인하세요.')); }; document.head.append(s); }).catch(e => { libraryPromise = null; throw e; });
-    return libraryPromise;
+function loadLibrary(){
+ if(window.faceapi)return Promise.resolve();if(libraryPromise)return libraryPromise;
+ libraryPromise=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=LIB;s.crossOrigin='anonymous';const timer=setTimeout(()=>{s.remove();reject(Error('라이브러리 로딩 시간 초과. 인터넷 연결을 확인하세요.'))},30000);s.onload=()=>{clearTimeout(timer);resolve()};s.onerror=()=>{clearTimeout(timer);s.remove();reject(Error('인식 라이브러리를 받지 못했습니다. 인터넷 연결을 확인하세요.'))};document.head.append(s)}).catch(e=>{libraryPromise=null;throw e});
+ return libraryPromise;
 }
-function loadModels() {
-    if (ready)
-        return Promise.resolve();
-    if (modelPromise)
-        return modelPromise;
-    $('model').textContent = '로딩 중';
-    modelPromise = (async () => {
-        await loadLibrary();
-        try {
-            await faceapi.tf.ready();
-            faceapi.tf.tidy(() => faceapi.tf.ones([2, 2]).matMul(faceapi.tf.ones([2, 2])).dataSync());
-        }
-        catch (_a) {
-            try {
-                await faceapi.tf.setBackend('cpu');
-                await faceapi.tf.ready();
-            }
-            catch (_b) { }
-        }
-        const limit = (p, ms, msg) => { let t; return Promise.race([p, new Promise((_, rej) => { t = setTimeout(() => rej(Error(msg)), ms); })]).finally(() => clearTimeout(t)); };
-        await limit(faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL), 90000, '인식 모델 로딩 시간 초과');
-        await limit(faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL), 60000, '검출 모델 로딩 시간 초과');
-        // 68점 랜드마크(약 350KB)로 눈 위치를 정확히 잡아 정렬. 실패하면 경량 랜드마크로 대체
-        try {
-            await limit(faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL), 60000, '랜드마크 모델 로딩 시간 초과');
-            useSSD = true;
-        }
-        catch (e) {
-            await limit(faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL), 60000, '모델 로딩 시간 초과');
-            useSSD = false;
-        }
-        ready = true;
-        let be = '';
-        try {
-            be = faceapi.tf.getBackend();
-        }
-        catch (_c) { }
-        $('model').textContent = 'Tiny 검출 320 + ' + (useSSD ? '68점 랜드마크' : '경량 랜드마크(대체)') + ' · 정렬 150px · ' + (be || '?');
-    })().catch(e => { modelPromise = null; $('model').textContent = '로딩 실패'; throw e; });
-    return modelPromise;
+function loadModels(){
+ if(ready)return Promise.resolve();if(modelPromise)return modelPromise;
+ $('model').textContent='로딩 중';
+ modelPromise=(async()=>{
+  await loadLibrary();
+  try{await faceapi.tf.ready();faceapi.tf.tidy(()=>faceapi.tf.ones([2,2]).matMul(faceapi.tf.ones([2,2])).dataSync())}catch{try{await faceapi.tf.setBackend('cpu');await faceapi.tf.ready()}catch{}}
+  const limit=(p,ms,msg)=>{let t;return Promise.race([p,new Promise((_,rej)=>{t=setTimeout(()=>rej(Error(msg)),ms)})]).finally(()=>clearTimeout(t))};
+  await limit(faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),90000,'인식 모델 로딩 시간 초과');
+  await limit(faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),60000,'검출 모델 로딩 시간 초과');
+  // 68점 랜드마크(약 350KB)로 눈 위치를 정확히 잡아 정렬. 실패하면 경량 랜드마크로 대체
+  try{await limit(faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),60000,'랜드마크 모델 로딩 시간 초과');useSSD=true}
+  catch(e){await limit(faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),60000,'모델 로딩 시간 초과');useSSD=false}
+  ready=true;let be='';try{be=faceapi.tf.getBackend()}catch{}
+  $('model').textContent='Tiny 검출 320 + '+(useSSD?'68점 랜드마크':'경량 랜드마크(대체)')+' · 정렬 150px · '+(be||'?');
+ })().catch(e=>{modelPromise=null;$('model').textContent='로딩 실패';throw e});
+ return modelPromise;
 }
+
 /* ---------- 카메라 ---------- */
-async function permissionInfo() { try {
-    const p = await navigator.permissions.query({ name: 'camera' });
-    const show = () => { $('permission').textContent = ({ granted: '허용됨', denied: '차단됨', prompt: '요청 대기' })[p.state] || p.state; };
-    show();
-    p.onchange = () => { show(); if (p.state === 'granted' && !stream) {
-        nextRetryAt = 0;
-        startCamera();
-    } };
+async function permissionInfo(){try{const p=await navigator.permissions.query({name:'camera'});const show=()=>{$('permission').textContent=({granted:'허용됨',denied:'차단됨',prompt:'요청 대기'})[p.state]||p.state};show();p.onchange=()=>{show();if(p.state==='granted'&&!stream){nextRetryAt=0;startCamera()}}}catch{$('permission').textContent='카메라 시작 시 확인'}}
+function stopCamera(message){
+ if(session)endSession();generation++;stream?.getTracks().forEach(t=>t.stop());stream=null;video.srcObject=null;lastLoopAt=0;
+ $('placeholder').hidden=false;$('resolution').textContent='—';$('engine').textContent='중지';
+ clearMetrics();drawOverlay([]);if(message)status(message);controls();
 }
-catch (_a) {
-    $('permission').textContent = '카메라 시작 시 확인';
-} }
-function stopCamera(message) {
-    if (session)
-        endSession();
-    generation++;
-    stream === null || stream === void 0 ? void 0 : stream.getTracks().forEach(t => t.stop());
-    stream = null;
-    video.srcObject = null;
-    lastLoopAt = 0;
-    $('placeholder').hidden = false;
-    $('resolution').textContent = '—';
-    $('engine').textContent = '중지';
-    clearMetrics();
-    drawOverlay([]);
-    if (message)
-        status(message);
-    controls();
-}
-function showCamBtn(text) { if (stream)
-    return; $('camBtn').hidden = false; $('phText').textContent = text || '카메라가 켜지지 않았습니다'; }
-$('camBtn').onclick = e => { e.stopPropagation(); if (starting && Date.now() - startAt > 6000) {
-    generation++;
-    starting = false;
-} nextRetryAt = 0; startCamera(); };
-function retryModels(run) { setTimeout(async () => { if (run !== generation || ready)
-    return; try {
-    await loadModels();
-    if (run !== generation)
-        return;
-    $('engine').textContent = '대기 중';
-    status('준비 완료. 똑똑 버튼을 눌러 주세요.');
-    controls();
-}
-catch (e) {
-    if (run === generation) {
-        status('얼굴 모델 로딩 재시도 실패: ' + e.message + '\n인터넷 연결을 확인해 주세요. 계속 재시도합니다.', true);
-        retryModels(run);
-    }
-} }, 10000); }
-async function listDevices() { try {
-    const d = await navigator.mediaDevices.enumerateDevices();
-    const v = d.filter(x => x.kind === 'videoinput');
-    $('devices').textContent = v.length + '개' + (v.length && v[0].label ? ' · ' + v.map(x => x.label).join(', ') : '');
-}
-catch (_a) {
-    $('devices').textContent = '확인 불가';
-} }
-$('diagBtn').onclick = async () => {
-    var _a, _b, _c, _d, _e, _f;
-    await listDevices();
-    const rows = ['FACE CHECK-IN ' + VERSION + ' 진단', '시각: ' + new Date().toLocaleString('ko-KR'), 'UA: ' + navigator.userAgent, '설정: ' + JSON.stringify(settings)];
-    for (const dt of document.querySelectorAll('dl dt'))
-        rows.push(dt.textContent + ': ' + dt.nextElementSibling.textContent);
-    rows.push('마지막 판정: ' + $('matchAudit').textContent, '상태: ' + $('status').textContent.replace(/\n/g, ' / '));
-    for (const e of vlog.slice(0, 10))
-        rows.push('기록 ' + hhmm(e.t) + ' ' + e.mode + ' ' + (e.sel || '-') + ' ' + e.result + ' 본인 ' + ((_c = (_b = (_a = e.dSel) === null || _a === void 0 ? void 0 : _a.toFixed) === null || _b === void 0 ? void 0 : _b.call(_a, 3)) !== null && _c !== void 0 ? _c : '-') + ' 타인 ' + (e.other || '-') + ' ' + ((_f = (_e = (_d = e.dOther) === null || _d === void 0 ? void 0 : _d.toFixed) === null || _e === void 0 ? void 0 : _e.call(_d, 3)) !== null && _f !== void 0 ? _f : '-'));
-    const text = rows.join('\n');
-    try {
-        await navigator.clipboard.writeText(text);
-        $('diagMsg').textContent = '복사됨';
-    }
-    catch (_g) {
-        prompt('아래 내용을 복사해 주세요', text);
-    }
+function showCamBtn(text){if(stream)return;$('camBtn').hidden=false;$('phText').textContent=text||'카메라가 켜지지 않았습니다'}
+$('camBtn').onclick=e=>{e.stopPropagation();if(starting&&Date.now()-startAt>6000){generation++;starting=false}nextRetryAt=0;startCamera()};
+function retryModels(run){setTimeout(async()=>{if(run!==generation||ready)return;try{await loadModels();if(run!==generation)return;$('engine').textContent='대기 중';status('준비 완료. 똑똑 버튼을 눌러 주세요.');controls()}catch(e){if(run===generation){status('얼굴 모델 로딩 재시도 실패: '+e.message+'\n인터넷 연결을 확인해 주세요. 계속 재시도합니다.',true);retryModels(run)}}},10000)}
+async function listDevices(){try{const d=await navigator.mediaDevices.enumerateDevices();const v=d.filter(x=>x.kind==='videoinput');$('devices').textContent=v.length+'개'+(v.length&&v[0].label?' · '+v.map(x=>x.label).join(', '):'')}catch{$('devices').textContent='확인 불가'}}
+$('diagBtn').onclick=async()=>{
+ await listDevices();
+ const rows=['FACE CHECK-IN '+VERSION+' 진단','시각: '+new Date().toLocaleString('ko-KR'),'UA: '+navigator.userAgent,'설정: '+JSON.stringify(settings)];
+ for(const dt of document.querySelectorAll('dl dt'))rows.push(dt.textContent+': '+dt.nextElementSibling.textContent);
+ rows.push('마지막 판정: '+$('matchAudit').textContent,'상태: '+$('status').textContent.replace(/\n/g,' / '));
+ for(const e of vlog.slice(0,10))rows.push('기록 '+hhmm(e.t)+' '+e.mode+' '+(e.sel||'-')+' '+e.result+' 본인 '+(e.dSel?.toFixed?.(3)??'-')+' 타인 '+(e.other||'-')+' '+(e.dOther?.toFixed?.(3)??'-'));
+ const text=rows.join('\n');
+ try{await navigator.clipboard.writeText(text);$('diagMsg').textContent='복사됨'}catch{prompt('아래 내용을 복사해 주세요',text)}
 };
-/* 구형 기기(안드로이드 9 등) 호환: 무리한 조건(프레임 상한 등) 없이 단순한 요청부터.
-   실패 후 바로 재요청하면 카메라가 아직 해제되지 않아 연속 실패하므로 0.6초 쉬고 다음 방식 시도 */
-function legacyGetUserMedia(c) {
-    const old = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-    if (!old)
-        return Promise.reject(Object.assign(new Error('이 브라우저는 카메라를 지원하지 않습니다.'), { name: 'NotSupportedError' }));
-    return new Promise((res, rej) => old.call(navigator, c, res, rej));
+async function openStream(){
+ const f=$('facing').value,tries=[
+  {video:{facingMode:{ideal:f},width:{ideal:640},height:{ideal:480},frameRate:{ideal:24,max:30}},audio:false},
+  {video:{facingMode:f},audio:false},
+  {video:true,audio:false}];
+ let last;
+ for(const c of tries){try{return await navigator.mediaDevices.getUserMedia(c)}catch(e){last=e;if(e.name==='NotAllowedError'||e.name==='SecurityError')throw e}}
+ throw last;
 }
-function gum(c) { return navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? navigator.mediaDevices.getUserMedia(c) : legacyGetUserMedia(c); }
-async function openStream() {
-    const f = $('facing').value, tries = [
-        { video: { facingMode: { ideal: f }, width: { ideal: 640 }, height: { ideal: 480 } }, audio: false },
-        { video: { facingMode: f }, audio: false },
-        { video: true, audio: false }
-    ];
-    let last;
-    for (let i = 0; i < tries.length; i++) {
-        try {
-            return await gum(tries[i]);
-        }
-        catch (e) {
-            last = e;
-            $('camError').textContent = '시도 ' + (i + 1) + ' 실패: ' + e.name;
-            if (e.name === 'NotAllowedError' || e.name === 'SecurityError' || e.name === 'PermissionDeniedError')
-                throw e;
-            await wait(600);
-        }
-    }
-    throw last;
+function setupInApp(){
+ $('browser').textContent=(IS_IOS?'아이폰/아이패드':IS_ANDROID?'안드로이드':'기타')+' · '+(IN_APP||(/CriOS|Chrome/.test(UA)?'Chrome':/Safari/.test(UA)?'Safari':/SamsungBrowser/.test(UA)?'삼성 인터넷':'브라우저'));
+ if(!IN_APP)return;
+ $('inapp').hidden=false;
+ $('inappText').textContent=IN_APP+' 안에서 열려 카메라가 막혀 있습니다. 아래 버튼으로 '+(IS_IOS?'Safari':'Chrome')+'에서 다시 열어 주세요.';
+ $('openExternal').onclick=()=>{const url=location.href;
+  if(/KAKAOTALK/i.test(UA))location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(url);
+  else if(IS_ANDROID)location.href='intent://'+url.replace(/^https?:\/\//,'')+'#Intent;scheme=https;package=com.android.chrome;end';
+  else alert('오른쪽 메뉴(⋯ 또는 공유)에서 "Safari로 열기"를 눌러 주세요.');};
+ $('copyUrl').onclick=async()=>{try{await navigator.clipboard.writeText(location.href);$('copyUrl').textContent='복사됨'}catch{prompt('주소를 복사해 주세요',location.href)}};
 }
-function setupInApp() {
-    const andV = (UA.match(/Android ([\d.]+)/) || [])[1], chV = +((UA.match(/Chrome\/(\d+)/) || [])[1] || 0);
-    $('browser').textContent = (IS_IOS ? '아이폰/아이패드' : IS_ANDROID ? '안드로이드 ' + (andV || '') : '기타') + ' · ' + (IN_APP || (/SamsungBrowser/.test(UA) ? '삼성 인터넷' : /CriOS|Chrome/.test(UA) ? 'Chrome' : /Safari/.test(UA) ? 'Safari' : '브라우저')) + (chV ? ' ' + chV : '');
-    if (chV && chV < 80) {
-        $('browser').textContent += ' · 버전 낮음: Play 스토어에서 Chrome·Android System WebView 업데이트 권장';
-        $('voiceHint').textContent = 'Chrome ' + chV + ' 사용 중 · 업데이트하면 더 빠르고 안정적입니다.';
-    }
-    if (!IN_APP)
-        return;
-    $('inapp').hidden = false;
-    $('inappText').textContent = IN_APP + ' 안에서 열려 카메라가 막혀 있습니다. 아래 버튼으로 ' + (IS_IOS ? 'Safari' : 'Chrome') + '에서 다시 열어 주세요.';
-    $('openExternal').onclick = () => {
-        const url = location.href;
-        if (/KAKAOTALK/i.test(UA))
-            location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(url);
-        else if (IS_ANDROID)
-            location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
-        else
-            alert('오른쪽 메뉴(⋯ 또는 공유)에서 "Safari로 열기"를 눌러 주세요.');
-    };
-    $('copyUrl').onclick = async () => { try {
-        await navigator.clipboard.writeText(location.href);
-        $('copyUrl').textContent = '복사됨';
-    }
-    catch (_a) {
-        prompt('주소를 복사해 주세요', location.href);
-    } };
+async function startCamera(){
+ if(starting||stream||document.hidden||Date.now()<nextRetryAt)return;
+ if(!isSecureContext||!navigator.mediaDevices?.getUserMedia){
+  status(IN_APP?IN_APP+' 안의 브라우저에서는 카메라를 쓸 수 없습니다. [Chrome / Safari로 열기]를 눌러 주세요.':!isSecureContext?'보안(HTTPS) 주소가 아니라 카메라가 차단됩니다. https:// 주소로 열어 주세요.':'이 브라우저는 카메라를 지원하지 않습니다. Chrome에서 열어 주세요.',true);
+  $('engine').textContent='HTTPS 필요';nextRetryAt=Date.now()+60000;showCamBtn();return}
+ starting=true;startAt=Date.now();controls();const run=++generation;$('engine').textContent='카메라 시작 중';$('camBtn').hidden=true;$('phText').textContent='카메라를 준비하고 있습니다…';
+ const hang=setTimeout(()=>{if(starting&&run===generation){status('카메라 권한 창이 보이지 않나요?\n[📷 카메라 켜기]를 눌러 주세요.',true);showCamBtn('권한 창이 보이지 않으면 눌러 주세요')}},8000);
+ try{
+  status('카메라를 시작합니다. 권한 요청이 뜨면 허용해 주세요.');
+  loadModels().catch(()=>{});
+  const s=await openStream();
+  if(run!==generation||document.hidden){s.getTracks().forEach(t=>t.stop());return}
+  stream=s;video.srcObject=s;video.classList.toggle('mirror',$('facing').value==='user');
+  await new Promise(r=>{if(video.readyState>=1)return r();const t=setTimeout(r,4000);video.onloadedmetadata=()=>{clearTimeout(t);r()}});
+  try{await video.play();needPlay=false}catch(pe){needPlay=true;$('camError').textContent='영상 재생 차단('+pe.name+') · 터치 필요'}
+  if(run!==generation)return;
+  $('placeholder').hidden=true;$('permission').textContent='허용됨';if(!needPlay)$('camError').textContent='없음';
+  $('resolution').textContent=video.videoWidth+' × '+video.videoHeight;drawOverlay([]);listDevices();
+  s.getVideoTracks()[0].addEventListener('ended',()=>{if(stream===s){stopCamera('카메라 연결이 끊어져 다시 시작합니다.');nextRetryAt=Date.now()+2000}});
+  status(needPlay?'화면을 한 번 터치하면 카메라 화면이 켜집니다.':'카메라 연결됨. 얼굴 모델을 준비합니다…',needPlay);$('engine').textContent='모델 로딩 중';
+  try{await loadModels()}catch(me){
+   if(run!==generation)return;
+   status('카메라는 켜졌지만 얼굴 모델을 불러오지 못했습니다.\n'+me.message+'\n10초 후 자동으로 다시 시도합니다.',true);$('engine').textContent='모델 재시도';
+   retryModels(run);loop(run);return;
+  }
+  if(run!==generation||document.hidden)return;
+  $('engine').textContent='대기 중';
+  if(!needPlay)status('준비 완료. 똑똑 버튼을 누르고 카메라를 바라봐 주세요.');
+  showResult('입장하시려면','오른쪽 똑똑 버튼을 눌러 주세요.');controls();
+  loop(run);
+ }catch(e){
+  if(run!==generation)return;
+  stopCamera();
+  $('camError').textContent=e.name+(e.message?' · '+e.message:'');
+  const messages={NotAllowedError:'카메라 권한이 거부되었습니다. 설정 > 애플리케이션 > Chrome > 권한 > 카메라 허용, 그리고 주소창 자물쇠 > 권한 > 카메라 허용을 확인해 주세요.',NotFoundError:'사용 가능한 카메라를 찾지 못했습니다.',NotReadableError:'카메라를 열 수 없습니다. 다른 카메라 앱을 종료해 주세요.',SecurityError:'보안 정책으로 카메라가 차단되었습니다.',OverconstrainedError:'이 카메라가 요청한 설정을 지원하지 않습니다.'};
+  status((messages[e.name]||e.message||'카메라 오류')+'\n오류 코드: '+e.name+' · 잠시 후 자동으로 다시 시도합니다.',true);$('engine').textContent='재시도 대기';
+  nextRetryAt=Date.now()+(e.name==='NotAllowedError'?15000:5000);permissionInfo();
+ }finally{clearTimeout(hang);starting=false;controls();if(!stream)showCamBtn()}
 }
-async function startCamera() {
-    if (starting || stream || document.hidden || Date.now() < nextRetryAt)
-        return;
-    const hasGum = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) || !!(navigator.getUserMedia || navigator.webkitGetUserMedia);
-    if (window.isSecureContext === false || !hasGum) {
-        status(IN_APP ? IN_APP + ' 안의 브라우저에서는 카메라를 쓸 수 없습니다. [Chrome / Safari로 열기]를 눌러 주세요.' : !isSecureContext ? '보안(HTTPS) 주소가 아니라 카메라가 차단됩니다. https:// 주소로 열어 주세요.' : '이 브라우저는 카메라를 지원하지 않습니다. Chrome에서 열어 주세요.', true);
-        $('engine').textContent = 'HTTPS 필요';
-        nextRetryAt = Date.now() + 60000;
-        showCamBtn();
-        return;
-    }
-    starting = true;
-    startAt = Date.now();
-    controls();
-    const run = ++generation;
-    $('engine').textContent = '카메라 시작 중';
-    $('camBtn').hidden = true;
-    $('phText').textContent = '카메라를 준비하고 있습니다…';
-    const hang = setTimeout(() => { if (starting && run === generation) {
-        status('카메라가 자동으로 켜지지 않았습니다.\n화면의 [📷 카메라 켜기]를 눌러 주세요.', true);
-        showCamBtn('눌러서 카메라 켜기');
-    } }, 5000);
-    try {
-        status('카메라를 시작합니다. 권한 요청이 뜨면 허용해 주세요.');
-        loadModels().catch(() => { });
-        const s = await openStream();
-        if (run !== generation || document.hidden) {
-            s.getTracks().forEach(t => t.stop());
-            return;
-        }
-        stream = s;
-        video.muted = true;
-        video.setAttribute('playsinline', '');
-        video.setAttribute('muted', '');
-        if ('srcObject' in video)
-            video.srcObject = s;
-        else
-            video.src = URL.createObjectURL(s);
-        video.classList.toggle('mirror', $('facing').value === 'user');
-        await new Promise(r => { if (video.readyState >= 1)
-            return r(); const t = setTimeout(r, 4000); video.onloadedmetadata = () => { clearTimeout(t); r(); }; });
-        try {
-            await video.play();
-            needPlay = false;
-        }
-        catch (pe) {
-            needPlay = true;
-            $('camError').textContent = '영상 재생 차단(' + pe.name + ') · 터치 필요';
-        }
-        if (run !== generation)
-            return;
-        $('placeholder').hidden = true;
-        $('permission').textContent = '허용됨';
-        if (!needPlay)
-            $('camError').textContent = '없음';
-        $('resolution').textContent = video.videoWidth + ' × ' + video.videoHeight;
-        drawOverlay([]);
-        listDevices();
-        s.getVideoTracks()[0].addEventListener('ended', () => { if (stream === s) {
-            stopCamera('카메라 연결이 끊어져 다시 시작합니다.');
-            nextRetryAt = Date.now() + 2000;
-        } });
-        status(needPlay ? '화면을 한 번 터치하면 카메라 화면이 켜집니다.' : '카메라 연결됨. 얼굴 모델을 준비합니다…', needPlay);
-        $('engine').textContent = '모델 로딩 중';
-        try {
-            await loadModels();
-        }
-        catch (me) {
-            if (run !== generation)
-                return;
-            status('카메라는 켜졌지만 얼굴 모델을 불러오지 못했습니다.\n' + me.message + '\n10초 후 자동으로 다시 시도합니다.', true);
-            $('engine').textContent = '모델 재시도';
-            retryModels(run);
-            loop(run);
-            return;
-        }
-        if (run !== generation || document.hidden)
-            return;
-        $('engine').textContent = '대기 중';
-        if (!needPlay)
-            status('준비 완료. 똑똑 버튼을 누르고 카메라를 바라봐 주세요.');
-        showResult('입장하시려면', '오른쪽 똑똑 버튼을 눌러 주세요.');
-        controls();
-        loop(run);
-    }
-    catch (e) {
-        if (run !== generation)
-            return;
-        stopCamera();
-        $('camError').textContent = e.name + (e.message ? ' · ' + e.message : '');
-        const messages = { PermissionDeniedError: '카메라 권한이 거부되었습니다. 설정 > 애플리케이션 > Chrome > 권한 > 카메라를 허용해 주세요.', TrackStartError: '카메라를 열 수 없습니다. 다른 카메라 앱을 종료한 뒤 [📷 카메라 켜기]를 눌러 주세요.', AbortError: '카메라를 여는 중 중단되었습니다. 다시 시도합니다.', NotSupportedError: '이 브라우저는 카메라를 지원하지 않습니다. Chrome을 최신으로 업데이트해 주세요.', NotAllowedError: '카메라 권한이 거부되었습니다. 설정 > 애플리케이션 > Chrome > 권한 > 카메라 허용, 그리고 주소창 자물쇠 > 권한 > 카메라 허용을 확인해 주세요.', NotFoundError: '사용 가능한 카메라를 찾지 못했습니다.', NotReadableError: '카메라를 열 수 없습니다. 다른 카메라 앱을 종료해 주세요.', SecurityError: '보안 정책으로 카메라가 차단되었습니다.', OverconstrainedError: '이 카메라가 요청한 설정을 지원하지 않습니다.' };
-        status((messages[e.name] || e.message || '카메라 오류') + '\n오류 코드: ' + e.name + ' · 잠시 후 자동으로 다시 시도합니다.', true);
-        $('engine').textContent = '재시도 대기';
-        nextRetryAt = Date.now() + (e.name === 'NotAllowedError' ? 15000 : 5000);
-        permissionInfo();
-    }
-    finally {
-        clearTimeout(hang);
-        starting = false;
-        controls();
-        if (!stream)
-            showCamBtn();
-    }
-}
-$('restart').onclick = () => { stopCamera('카메라를 다시 시작합니다.'); nextRetryAt = 0; startCamera(); };
-$('facing').onchange = () => { store.set(FACING_KEY, $('facing').value); stopCamera(); nextRetryAt = 0; startCamera(); };
+$('restart').onclick=()=>{stopCamera('카메라를 다시 시작합니다.');nextRetryAt=0;startCamera()};
+$('facing').onchange=()=>{store.set(FACING_KEY,$('facing').value);stopCamera();nextRetryAt=0;startCamera()};
 </script>
-<script>'use strict';
+<script>
+'use strict';
 /* ---------- 얼굴 분석: 검출 → 품질 → 정렬(눈 수평) → 조명 보정 → 128D 특징값 ---------- */
 // 영상 프레임을 복사하지 않고 video를 바로 검출(GPU)에 넘김 → 화면이 덜 버벅임
-async function analyze() {
-    if (!stream || video.readyState < 2 || !video.videoWidth)
-        throw Error('카메라 영상을 기다리고 있습니다.');
-    return await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: .5 })).withFaceLandmarks(!useSSD);
+async function analyze(){
+ if(!stream||video.readyState<2||!video.videoWidth)throw Error('카메라 영상을 기다리고 있습니다.');
+ return await faceapi.detectAllFaces(video,new faceapi.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:.5})).withFaceLandmarks(!useSSD);
 }
-function avgPt(p, a, b) { let x = 0, y = 0; for (let i = a; i <= b; i++) {
-    x += p[i].x;
-    y += p[i].y;
-} const n = b - a + 1; return { x: x / n, y: y / n }; }
-function pose(landmarks) {
-    const p = landmarks.positions, eA = avgPt(p, 36, 41), eB = avgPt(p, 42, 47), nose = p[30], mouth = avgPt(p, 48, 67);
-    const l = Math.abs(nose.x - eA.x), r = Math.abs(eB.x - nose.x), between = nose.x > Math.min(eA.x, eB.x) && nose.x < Math.max(eA.x, eB.x);
-    const yaw = between && Math.max(l, r) > 0 ? Math.min(l, r) / Math.max(l, r) : 0;
-    const roll = Math.abs(Math.atan2(eB.y - eA.y, eB.x - eA.x) * 180 / Math.PI);
-    const eyeY = (eA.y + eB.y) / 2, pitch = mouth.y > eyeY ? (nose.y - eyeY) / (mouth.y - eyeY) : 0;
-    return { yaw, roll: Math.min(roll, 180 - roll), pitch, sign: Math.sign(nose.x - (eA.x + eB.x) / 2) };
+function avgPt(p,a,b){let x=0,y=0;for(let i=a;i<=b;i++){x+=p[i].x;y+=p[i].y}const n=b-a+1;return{x:x/n,y:y/n}}
+function pose(landmarks){
+ const p=landmarks.positions,eA=avgPt(p,36,41),eB=avgPt(p,42,47),nose=p[30],mouth=avgPt(p,48,67);
+ const l=Math.abs(nose.x-eA.x),r=Math.abs(eB.x-nose.x),between=nose.x>Math.min(eA.x,eB.x)&&nose.x<Math.max(eA.x,eB.x);
+ const yaw=between&&Math.max(l,r)>0?Math.min(l,r)/Math.max(l,r):0;
+ const roll=Math.abs(Math.atan2(eB.y-eA.y,eB.x-eA.x)*180/Math.PI);
+ const eyeY=(eA.y+eB.y)/2,pitch=mouth.y>eyeY?(nose.y-eyeY)/(mouth.y-eyeY):0;
+ return{yaw,roll:Math.min(roll,180-roll),pitch,sign:Math.sign(nose.x-(eA.x+eB.x)/2)};
 }
-function evaluate(det, phase) {
-    const b = det.detection.box, vw = video.videoWidth, vh = video.videoHeight, size = b.width / Math.min(vw, vh), g = guideRect(vw, vh), p = pose(det.landmarks);
-    const ev = { size, yaw: p.yaw, sign: p.sign, ok: false, msg: '', key: '', label: '' };
-    const yMin = phase ? phase.min : STD.yaw, yMax = phase ? phase.max : 1;
-    if (size < STD.minSize) {
-        ev.msg = '카메라에 조금 더 가까이 와 주세요.';
-        ev.key = 'near';
-        ev.label = '더 가까이';
-    }
-    else if (size > STD.maxSize) {
-        ev.msg = '조금 뒤로 물러나 주세요.';
-        ev.key = 'far';
-        ev.label = '조금 뒤로';
-    }
-    else if (b.x < g.x || b.y < g.y || b.x + b.width > g.x + g.w || b.y + b.height > g.y + g.h) {
-        ev.msg = '흰 점선 안으로 얼굴을 맞춰 주세요.';
-        ev.key = 'guide';
-        ev.label = '점선 안으로';
-    }
-    else if (det.detection.score < STD.score) {
-        ev.msg = '얼굴이 선명하지 않습니다.';
-        ev.key = 'blur';
-        ev.label = '정면을 봐 주세요';
-    }
-    else if (p.roll > STD.roll || p.pitch < STD.pitchMin || p.pitch > STD.pitchMax) {
-        ev.msg = '고개를 기울이지 말고 카메라를 바라봐 주세요.';
-        ev.key = 'tilt';
-        ev.label = '고개 바로';
-    }
-    else if (p.yaw < yMin) {
-        ev.msg = (phase === null || phase === void 0 ? void 0 : phase.side) ? '너무 많이 돌렸습니다. 살짝만 돌려 주세요.' : '고개를 돌리지 말고 정면을 바라봐 주세요.';
-        ev.key = 'side';
-        ev.label = (phase === null || phase === void 0 ? void 0 : phase.side) ? '살짝만' : '정면을 봐 주세요';
-    }
-    else if (p.yaw > yMax) {
-        ev.msg = '고개를 조금 더 돌려 주세요.';
-        ev.key = 'turn';
-        ev.label = '조금 더 돌리기';
-    }
-    else
-        ev.ok = true;
-    return ev;
+function evaluate(det,phase){
+ const b=det.detection.box,vw=video.videoWidth,vh=video.videoHeight,size=b.width/Math.min(vw,vh),g=guideRect(vw,vh),p=pose(det.landmarks);
+ const ev={size,yaw:p.yaw,sign:p.sign,ok:false,msg:'',key:'',label:''};
+ const yMin=phase?phase.min:STD.yaw,yMax=phase?phase.max:1;
+ if(size<STD.minSize){ev.msg='카메라에 조금 더 가까이 와 주세요.';ev.key='near';ev.label='더 가까이'}
+ else if(size>STD.maxSize){ev.msg='조금 뒤로 물러나 주세요.';ev.key='far';ev.label='조금 뒤로'}
+ else if(b.x<g.x||b.y<g.y||b.x+b.width>g.x+g.w||b.y+b.height>g.y+g.h){ev.msg='흰 점선 안으로 얼굴을 맞춰 주세요.';ev.key='guide';ev.label='점선 안으로'}
+ else if(det.detection.score<STD.score){ev.msg='얼굴이 선명하지 않습니다.';ev.key='blur';ev.label='정면을 봐 주세요'}
+ else if(p.roll>STD.roll||p.pitch<STD.pitchMin||p.pitch>STD.pitchMax){ev.msg='고개를 기울이지 말고 카메라를 바라봐 주세요.';ev.key='tilt';ev.label='고개 바로'}
+ else if(p.yaw<yMin){ev.msg=phase?.side?'너무 많이 돌렸습니다. 살짝만 돌려 주세요.':'고개를 돌리지 말고 정면을 바라봐 주세요.';ev.key='side';ev.label=phase?.side?'살짝만':'정면을 봐 주세요'}
+ else if(p.yaw>yMax){ev.msg='고개를 조금 더 돌려 주세요.';ev.key='turn';ev.label='조금 더 돌리기'}
+ else ev.ok=true;
+ return ev;
 }
-const VOICE = { near: '카메라에 조금 더 가까이 와 주세요.', far: '조금 뒤로 물러나 주세요.', guide: '점선 안으로 얼굴을 맞춰 주세요.', side: '정면을 바라봐 주세요.', blur: '정면을 바라봐 주세요.', tilt: '고개를 바로 해 주세요.', turn: '고개를 조금 더 돌려 주세요.' };
-async function describe(det) {
-    const p = det.landmarks.positions, l = avgPt(p, 36, 41), r = avgPt(p, 42, 47);
-    const ang = Math.atan2(r.y - l.y, r.x - l.x), cx = (l.x + r.x) / 2, cy = (l.y + r.y) / 2, c = Math.cos(-ang), s = Math.sin(-ang);
-    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    for (const q of p) {
-        const dx = q.x - cx, dy = q.y - cy, x = cx + dx * c - dy * s, y = cy + dx * s + dy * c;
-        if (x < x0)
-            x0 = x;
-        if (x > x1)
-            x1 = x;
-        if (y < y0)
-            y0 = y;
-        if (y > y1)
-            y1 = y;
-    }
-    const w = x1 - x0, h = y1 - y0;
-    x0 -= w * .2;
-    x1 += w * .2;
-    y0 -= h * .2;
-    y1 += h * .2;
-    const side = Math.max(x1 - x0, y1 - y0), sx = (x0 + x1) / 2 - side / 2, sy = (y0 + y1) / 2 - side / 2, k = 150 / side;
-    cctx.setTransform(1, 0, 0, 1, 0, 0);
-    cctx.fillStyle = '#000';
-    cctx.fillRect(0, 0, 150, 150);
-    cctx.setTransform(k, 0, 0, k, -sx * k, -sy * k);
-    cctx.translate(cx, cy);
-    cctx.rotate(-ang);
-    cctx.translate(-cx, -cy);
-    cctx.drawImage(video, 0, 0);
-    cctx.setTransform(1, 0, 0, 1, 0, 0);
-    const img = cctx.getImageData(0, 0, 150, 150), d = img.data, gray = new Float32Array(150 * 150);
-    for (let i = 0, j = 0; i < d.length; i += 4, j++)
-        gray[j] = .299 * d[i] + .587 * d[i + 1] + .114 * d[i + 2];
-    let sum = 0, n = 0;
-    for (let y = 35; y < 115; y++)
-        for (let x = 35; x < 115; x++) {
-            sum += gray[y * 150 + x];
-            n++;
-        }
-    const lum = sum / n;
-    let ls = 0, ls2 = 0, ln = 0;
-    for (let y = 26; y < 124; y += 1)
-        for (let x = 26; x < 124; x += 1) {
-            const i = y * 150 + x, v = 4 * gray[i] - gray[i - 1] - gray[i + 1] - gray[i - 150] - gray[i + 150];
-            ls += v;
-            ls2 += v * v;
-            ln++;
-        }
-    const sharp = ls2 / ln - (ls / ln) ** 2;
-    let gamma = 1;
-    if (lum < STD.darkLum && lum > 8) {
-        gamma = Math.log(115 / 255) / Math.log(lum / 255);
-        const lut = new Uint8ClampedArray(256);
-        for (let i = 0; i < 256; i++)
-            lut[i] = 255 * Math.pow(i / 255, gamma);
-        for (let i = 0; i < d.length; i += 4) {
-            d[i] = lut[d[i]];
-            d[i + 1] = lut[d[i + 1]];
-            d[i + 2] = lut[d[i + 2]];
-        }
-        cctx.putImageData(img, 0, 0);
-    }
-    const desc = await faceapi.computeFaceDescriptor(chip);
-    return { desc: Array.from(desc), lum, sharp, gamma, roll: ang * 180 / Math.PI };
+const VOICE={near:'카메라에 조금 더 가까이 와 주세요.',far:'조금 뒤로 물러나 주세요.',guide:'점선 안으로 얼굴을 맞춰 주세요.',side:'정면을 바라봐 주세요.',blur:'정면을 바라봐 주세요.',tilt:'고개를 바로 해 주세요.',turn:'고개를 조금 더 돌려 주세요.'};
+async function describe(det){
+ const p=det.landmarks.positions,l=avgPt(p,36,41),r=avgPt(p,42,47);
+ const ang=Math.atan2(r.y-l.y,r.x-l.x),cx=(l.x+r.x)/2,cy=(l.y+r.y)/2,c=Math.cos(-ang),s=Math.sin(-ang);
+ let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+ for(const q of p){const dx=q.x-cx,dy=q.y-cy,x=cx+dx*c-dy*s,y=cy+dx*s+dy*c;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
+ const w=x1-x0,h=y1-y0;x0-=w*.2;x1+=w*.2;y0-=h*.2;y1+=h*.2;
+ const side=Math.max(x1-x0,y1-y0),sx=(x0+x1)/2-side/2,sy=(y0+y1)/2-side/2,k=150/side;
+ cctx.setTransform(1,0,0,1,0,0);cctx.fillStyle='#000';cctx.fillRect(0,0,150,150);
+ cctx.setTransform(k,0,0,k,-sx*k,-sy*k);cctx.translate(cx,cy);cctx.rotate(-ang);cctx.translate(-cx,-cy);
+ cctx.drawImage(video,0,0);cctx.setTransform(1,0,0,1,0,0);
+ const img=cctx.getImageData(0,0,150,150),d=img.data,gray=new Float32Array(150*150);
+ for(let i=0,j=0;i<d.length;i+=4,j++)gray[j]=.299*d[i]+.587*d[i+1]+.114*d[i+2];
+ let sum=0,n=0;for(let y=35;y<115;y++)for(let x=35;x<115;x++){sum+=gray[y*150+x];n++}
+ const lum=sum/n;
+ let ls=0,ls2=0,ln=0;for(let y=26;y<124;y+=1)for(let x=26;x<124;x+=1){const i=y*150+x,v=4*gray[i]-gray[i-1]-gray[i+1]-gray[i-150]-gray[i+150];ls+=v;ls2+=v*v;ln++}
+ const sharp=ls2/ln-(ls/ln)**2;
+ let gamma=1;
+ if(lum<STD.darkLum&&lum>8){
+  gamma=Math.log(115/255)/Math.log(lum/255);
+  const lut=new Uint8ClampedArray(256);for(let i=0;i<256;i++)lut[i]=255*Math.pow(i/255,gamma);
+  for(let i=0;i<d.length;i+=4){d[i]=lut[d[i]];d[i+1]=lut[d[i+1]];d[i+2]=lut[d[i+2]]}
+  cctx.putImageData(img,0,0);
+ }
+ const desc=await faceapi.computeFaceDescriptor(chip);
+ return {desc:Array.from(desc),lum,sharp,gamma,roll:ang*180/Math.PI};
 }
+
 /* ---------- 세션: 똑똑 → 얼굴로 찾기(1:N) → 환영 / 비슷한 분만 후보 / 처음이면 자동 등록 ---------- */
-let undoTimer = null, lastSuccess = null;
-function updateBell() {
-    const b = $('bell'), canStart = !!stream && ready && !mutating && !starting;
-    b.disabled = !session && !canStart;
-    b.classList.toggle('ready', !session && canStart);
-    b.classList.toggle('busy', !!session);
-    const left = session ? Math.max(0, Math.ceil((session.until - Date.now()) / 1000)) : 0;
-    if (session) {
-        $('bellText').textContent = { scan: '확인 중', choose: '선택 중', verify: '확인 중', enroll: '등록 촬영', register: '이름 입력', 'enroll-confirm': '확인 필요' }[session.mode] || '진행 중';
-        $('bellSub').textContent = left + '초 · 누르면 취소';
-    }
-    else {
-        $('bellText').textContent = '똑똑';
-        $('bellSub').textContent = canStart ? '눌러서 체크인' : (!stream ? '카메라 준비 중' : !ready ? '모델 준비 중' : '잠시만요');
-    }
+let undoTimer=null,lastSuccess=null;
+function updateBell(){
+ const b=$('bell'),canStart=!!stream&&ready&&!mutating&&!starting;
+ b.disabled=!session&&!canStart;b.classList.toggle('ready',!session&&canStart);b.classList.toggle('busy',!!session);
+ const left=session?Math.max(0,Math.ceil((session.until-Date.now())/1000)):0;
+ if(session){$('bellText').textContent={scan:'확인 중',choose:'선택 중',verify:'확인 중',enroll:'등록 촬영',register:'이름 입력','enroll-confirm':'확인 필요'}[session.mode]||'진행 중';$('bellSub').textContent=left+'초 · 누르면 취소'}
+ else{$('bellText').textContent='똑똑';$('bellSub').textContent=canStart?'눌러서 체크인':(!stream?'카메라 준비 중':!ready?'모델 준비 중':'잠시만요')}
 }
-function idleSoon(ms = 7000) { clearTimeout(idleTimer); idleTimer = setTimeout(() => { if (!session) {
-    showResult('입장하시려면', '오른쪽 똑똑 버튼을 눌러 주세요.');
-    clearMetrics();
-} }, ms); }
+function idleSoon(ms=7000){clearTimeout(idleTimer);idleTimer=setTimeout(()=>{if(!session){showResult('입장하시려면','오른쪽 똑똑 버튼을 눌러 주세요.');clearMetrics()}},ms)}
 /* 가족은 성이 같으므로 아바타에는 이름(성 제외)을 표시 */
-function avatarText(name) { const c = [...String(name).trim()]; if (!c.length)
-    return '?'; const given = c.length >= 3 ? c.slice(1) : c.length === 2 && /[가-힣]/.test(c[0]) ? c.slice(1) : c; return given.slice(0, 2).join(''); }
-function newSession(mode, ms) {
-    clearInterval(sessionTick);
-    session = { mode, until: Date.now() + ms, samples: [], sampleAt: 0, attempts: 0, member: null, cands: [] };
-    sessionTick = setInterval(tick, 250);
-    $('engine').textContent = '체크인 진행';
-    controls();
-    return session;
+function avatarText(name){const c=[...String(name).trim()];if(!c.length)return '?';const given=c.length>=3?c.slice(1):c.length===2&&/[가-힣]/.test(c[0])?c.slice(1):c;return given.slice(0,2).join('')}
+function newSession(mode,ms){
+ clearInterval(sessionTick);
+ session={mode,until:Date.now()+ms,samples:[],sampleAt:0,attempts:0,member:null,cands:[]};
+ sessionTick=setInterval(tick,250);$('engine').textContent='체크인 진행';controls();return session;
 }
-function startSession() {
-    if (session || !stream || !ready || mutating || starting)
-        return;
-    chime();
-    clearTimeout(idleTimer);
-    hideWelcome();
-    newSession('scan', SCAN_MS);
-    showResult('얼굴을 확인합니다', '점선 안에서 정면을 바라봐 주세요.');
-    setTimeout(() => { if ((session === null || session === void 0 ? void 0 : session.mode) === 'scan')
-        speak('정면을 바라봐 주세요.', 'scan', 0); }, 600);
+function startSession(){
+ if(session||!stream||!ready||mutating||starting)return;
+ chime();clearTimeout(idleTimer);hideWelcome();
+ newSession('scan',SCAN_MS);
+ showResult('얼굴을 확인합니다','점선 안에서 정면을 바라봐 주세요.');
+ setTimeout(()=>{if(session?.mode==='scan')speak('정면을 바라봐 주세요.','scan',0)},600);
 }
 /* 비슷한 분이 여럿일 때만, 그분들만 보여 줌 (최대 3명 + 신규 등록) */
-function showCandidates(cands, title, hint) {
-    if (!session)
-        return;
-    session.mode = 'choose';
-    session.cands = cands.map(x => x.m);
-    session.member = null;
-    session.attempts = 0;
-    session.until = Date.now() + PICK_MS;
-    $('pickTitle').textContent = title;
-    $('pickHint').textContent = hint;
-    const wrap = $('pickList');
-    wrap.replaceChildren();
-    for (const m of session.cands) {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'pickBtn';
-        const av = document.createElement('span');
-        av.className = 'avatar';
-        av.style.background = avatarColor(m.name);
-        av.textContent = avatarText(m.name);
-        const tx = document.createElement('span');
-        const st = document.createElement('strong');
-        st.textContent = m.name;
-        const sm = document.createElement('small');
-        sm.textContent = m.id;
-        tx.append(st, sm);
-        b.append(av, tx);
-        b.onclick = () => selectMember(m);
-        wrap.append(b);
-    }
-    const nb = document.createElement('button');
-    nb.type = 'button';
-    nb.className = 'pickBtn newBtn';
-    nb.textContent = '＋ 목록에 없어요 · 신규 등록';
-    nb.onclick = () => openRegister(null);
-    wrap.append(nb);
-    $('pickCard').hidden = false;
-    controls();
+function showCandidates(cands,title,hint){
+ if(!session)return;
+ session.mode='choose';session.cands=cands.map(x=>x.m);session.member=null;session.attempts=0;session.until=Date.now()+PICK_MS;
+ $('pickTitle').textContent=title;$('pickHint').textContent=hint;
+ const wrap=$('pickList');wrap.replaceChildren();
+ for(const m of session.cands){
+  const b=document.createElement('button');b.type='button';b.className='pickBtn';
+  const av=document.createElement('span');av.className='avatar';av.style.background=avatarColor(m.name);av.textContent=avatarText(m.name);
+  const tx=document.createElement('span');const st=document.createElement('strong');st.textContent=m.name;const sm=document.createElement('small');sm.textContent=m.id;tx.append(st,sm);
+  b.append(av,tx);b.onclick=()=>selectMember(m);wrap.append(b);
+ }
+ const nb=document.createElement('button');nb.type='button';nb.className='pickBtn newBtn';nb.textContent='＋ 목록에 없어요 · 신규 등록';nb.onclick=()=>openRegister(null);wrap.append(nb);
+ $('pickCard').hidden=false;controls();
 }
-function tick() {
-    var _a, _b, _c, _d;
-    if (!session)
-        return;
-    if ($('regDialog').open || $('simDialog').open) {
-        session.until = Math.max(session.until, Date.now() + 5000);
-        updateBell();
-        return;
-    }
-    if (Date.now() > session.until) {
-        const m = session.mode;
-        if (m === 'scan') {
-            // 시간 안에 결론이 안 나면: 비슷한 분이 있으면 그분들만, 아니면 안내
-            const S = session.samples;
-            if (S.length >= VERIFY_FRAMES && members.length) {
-                const list = scoreAll(robustMean(S.slice(-UNKNOWN_FRAMES))), c = list.filter(x => x.d <= UNKNOWN + .05).slice(0, 3);
-                if (c.length) {
-                    showCandidates(c, '혹시 이분이신가요?', '확실하지 않습니다. 본인 이름을 누르거나, 목록에 없으면 신규 등록을 눌러 주세요.');
-                    speak('본인 이름을 눌러 주세요.', 'cand', 0);
-                    updateBell();
-                    return;
-                }
-            }
-            endSession();
-            showResult('얼굴을 확인하지 못했습니다', '밝은 곳에서 정면을 바라보고 다시 똑똑을 눌러 주세요.');
-            speak('얼굴을 확인하지 못했습니다. 다시 시도해 주세요.', 'to-s', 0);
-        }
-        else if (m === 'verify') {
-            addLog({ mode: '선택 확인', sel: (_a = session.member) === null || _a === void 0 ? void 0 : _a.name, result: '시간초과', dSel: (_b = session.lastSel) !== null && _b !== void 0 ? _b : null, other: (_c = session.lastOther) !== null && _c !== void 0 ? _c : null, dOther: (_d = session.lastOtherD) !== null && _d !== void 0 ? _d : null });
-            endSession();
-            showResult('확인하지 못했습니다', '다시 똑똑을 눌러 주세요.');
-        }
-        else if (m === 'enroll') {
-            endSession();
-            showResult('등록 촬영 시간 초과', '다시 똑똑을 눌러 주세요.');
-        }
-        else {
-            endSession();
-            showResult('시간이 지났습니다', '다시 하시려면 똑똑 버튼을 눌러 주세요.');
-        }
-    }
-    updateBell();
+function tick(){
+ if(!session)return;
+ if($('regDialog').open||$('simDialog').open){session.until=Math.max(session.until,Date.now()+5000);updateBell();return}
+ if(Date.now()>session.until){
+  const m=session.mode;
+  if(m==='scan'){
+   // 시간 안에 결론이 안 나면: 비슷한 분이 있으면 그분들만, 아니면 안내
+   const S=session.samples;
+   if(S.length>=VERIFY_FRAMES&&members.length){
+    const list=scoreAll(robustMean(S.slice(-UNKNOWN_FRAMES))),c=list.filter(x=>x.d<=UNKNOWN+.05).slice(0,3);
+    if(c.length){showCandidates(c,'혹시 이분이신가요?','확실하지 않습니다. 본인 이름을 누르거나, 목록에 없으면 신규 등록을 눌러 주세요.');speak('본인 이름을 눌러 주세요.','cand',0);updateBell();return}
+   }
+   endSession();showResult('얼굴을 확인하지 못했습니다','밝은 곳에서 정면을 바라보고 다시 똑똑을 눌러 주세요.');speak('얼굴을 확인하지 못했습니다. 다시 시도해 주세요.','to-s',0);
+  }else if(m==='verify'){
+   addLog({mode:'선택 확인',sel:session.member?.name,result:'시간초과',dSel:session.lastSel??null,other:session.lastOther??null,dOther:session.lastOtherD??null});
+   endSession();showResult('확인하지 못했습니다','다시 똑똑을 눌러 주세요.');
+  }else if(m==='enroll'){endSession();showResult('등록 촬영 시간 초과','다시 똑똑을 눌러 주세요.')}
+  else{endSession();showResult('시간이 지났습니다','다시 하시려면 똑똑 버튼을 눌러 주세요.')}
+ }
+ updateBell();
 }
-function endSession() {
-    if (!session)
-        return;
-    session = null;
-    clearInterval(sessionTick);
-    if (ready && stream)
-        $('engine').textContent = '대기 중';
-    $('pickCard').hidden = true;
-    $('phaseBar').hidden = true;
-    document.body.classList.remove('filllight');
-    drawOverlay([]);
-    idleSoon();
-    controls();
+function endSession(){
+ if(!session)return;session=null;clearInterval(sessionTick);if(ready&&stream)$('engine').textContent='대기 중';
+ $('pickCard').hidden=true;$('phaseBar').hidden=true;document.body.classList.remove('filllight');
+ drawOverlay([]);idleSoon();controls();
 }
-$('pickCancel').onclick = () => { endSession(); showResult('취소했습니다', '다시 하시려면 똑똑 버튼을 눌러 주세요.'); };
-$('bell').onclick = () => { var _a; if (session) {
-    if ($('regDialog').open)
-        $('regDialog').close();
-    endSession();
-    showResult('취소했습니다', '다시 하시려면 똑똑 버튼을 눌러 주세요.');
-    (_a = window.speechSynthesis) === null || _a === void 0 ? void 0 : _a.cancel();
-    return;
-} startSession(); };
-function selectMember(m) {
-    if (!session)
-        return;
-    const fresh = session.sampleAt && Date.now() - session.sampleAt < 2000 ? session.samples.slice(-VERIFY_FRAMES) : [];
-    session.mode = 'verify';
-    session.member = m;
-    session.samples = fresh;
-    session.attempts = 0;
-    session.until = Date.now() + VERIFY_MS;
-    $('pickTitle').textContent = m.name + ' 님 확인 중';
-    $('pickHint').textContent = '정면을 바라봐 주세요.';
-    showResult(m.name + ' 님 확인 중…', '점선 안에서 정면을 바라봐 주세요.');
-    controls();
+$('pickCancel').onclick=()=>{endSession();showResult('취소했습니다','다시 하시려면 똑똑 버튼을 눌러 주세요.')};
+$('bell').onclick=()=>{if(session){if($('regDialog').open)$('regDialog').close();endSession();showResult('취소했습니다','다시 하시려면 똑똑 버튼을 눌러 주세요.');window.speechSynthesis?.cancel();return}startSession()};
+function selectMember(m){
+ if(!session)return;
+ const fresh=session.sampleAt&&Date.now()-session.sampleAt<2000?session.samples.slice(-VERIFY_FRAMES):[];
+ session.mode='verify';session.member=m;session.samples=fresh;session.attempts=0;session.until=Date.now()+VERIFY_MS;
+ $('pickTitle').textContent=m.name+' 님 확인 중';$('pickHint').textContent='정면을 바라봐 주세요.';
+ showResult(m.name+' 님 확인 중…','점선 안에서 정면을 바라봐 주세요.');controls();
 }
-async function handleFrame(dets, t0) {
-    if (!session)
-        return;
-    $('faceCount').textContent = dets.length + '명';
-    $('lastAnalysis').textContent = new Date().toLocaleTimeString('ko-KR');
-    const lat = () => $('latency').textContent = Math.round(performance.now() - t0) + ' ms';
-    if (!dets.length) {
-        drawOverlay([]);
-        lat();
-        if (session.mode === 'scan')
-            showResult('얼굴을 보여 주세요', '점선 안에서 카메라를 바라봐 주세요.');
-        return;
-    }
-    if (dets.length > 1) {
-        drawOverlay(dets.map(r => ({ box: r.detection.box, ok: false, label: '한 분씩' })));
-        showResult('한 분씩 서 주세요', '카메라 앞에는 한 분만 서 주세요.');
-        guide('한 분씩 카메라를 바라봐 주세요.');
-        lat();
-        return;
-    }
-    const det = dets[0], phase = session.mode === 'enroll' ? ENROLL_PLAN[0] : null, ev = evaluate(det, phase);
-    $('faceSize').textContent = Math.round(ev.size * 100) + '%';
-    $('frontal').textContent = Math.round(ev.yaw * 100) + '%';
-    if (!ev.ok) {
-        drawOverlay([{ box: det.detection.box, ok: false, label: ev.label }]);
-        if (session.mode !== 'choose')
-            showResult('자세를 맞춰 주세요', ev.msg);
-        guide(VOICE[ev.key] || ev.msg);
-        lat();
-        return;
-    }
-    const f = await describe(det);
-    lat();
-    $('light').textContent = Math.round(f.lum) + ' / ' + Math.round(f.sharp) + (f.gamma !== 1 ? ' · 보정' : '');
-    if (!session)
-        return;
-    if (settings.fill && f.lum < STD.darkLum)
-        document.body.classList.add('filllight');
-    if (f.lum < STD.minLum) {
-        drawOverlay([{ box: det.detection.box, ok: false, label: '너무 어두움' }]);
-        showResult('얼굴이 너무 어둡습니다', '밝은 곳을 향하거나 조명을 켜 주세요.');
-        guide('얼굴이 어둡습니다. 밝은 쪽을 바라봐 주세요.');
-        return;
-    }
-    if (f.sharp < STD.minSharp) {
-        drawOverlay([{ box: det.detection.box, ok: false, label: '흔들림' }]);
-        return;
-    }
-    let label = '';
-    if (session.mode === 'scan')
-        label = scanStep(f.desc);
-    else if (session.mode === 'choose') {
-        consistentPush(session.samples, f.desc, UNKNOWN_FRAMES);
-        session.sampleAt = Date.now();
-        label = '이름을 눌러 주세요';
-    }
-    else if (session.mode === 'verify')
-        label = verifyStep(f.desc);
-    else if (session.mode === 'enroll')
-        label = enrollStep(f.desc, ev);
-    if (session)
-        drawOverlay([{ box: det.detection.box, ok: true, label }]);
-    else
-        drawOverlay([]);
+
+async function handleFrame(dets,t0){
+ if(!session)return;
+ $('faceCount').textContent=dets.length+'명';$('lastAnalysis').textContent=new Date().toLocaleTimeString('ko-KR');
+ const lat=()=>$('latency').textContent=Math.round(performance.now()-t0)+' ms';
+ if(!dets.length){drawOverlay([]);lat();if(session.mode==='scan')showResult('얼굴을 보여 주세요','점선 안에서 카메라를 바라봐 주세요.');return}
+ if(dets.length>1){drawOverlay(dets.map(r=>({box:r.detection.box,ok:false,label:'한 분씩'})));showResult('한 분씩 서 주세요','카메라 앞에는 한 분만 서 주세요.');guide('한 분씩 카메라를 바라봐 주세요.');lat();return}
+ const det=dets[0],phase=session.mode==='enroll'?ENROLL_PLAN[0]:null,ev=evaluate(det,phase);
+ $('faceSize').textContent=Math.round(ev.size*100)+'%';$('frontal').textContent=Math.round(ev.yaw*100)+'%';
+ if(!ev.ok){drawOverlay([{box:det.detection.box,ok:false,label:ev.label}]);if(session.mode!=='choose')showResult('자세를 맞춰 주세요',ev.msg);guide(VOICE[ev.key]||ev.msg);lat();return}
+ const f=await describe(det);lat();
+ $('light').textContent=Math.round(f.lum)+' / '+Math.round(f.sharp)+(f.gamma!==1?' · 보정':'');
+ if(!session)return;
+ if(settings.fill&&f.lum<STD.darkLum)document.body.classList.add('filllight');
+ if(f.lum<STD.minLum){drawOverlay([{box:det.detection.box,ok:false,label:'너무 어두움'}]);showResult('얼굴이 너무 어둡습니다','밝은 곳을 향하거나 조명을 켜 주세요.');guide('얼굴이 어둡습니다. 밝은 쪽을 바라봐 주세요.');return}
+ if(f.sharp<STD.minSharp){drawOverlay([{box:det.detection.box,ok:false,label:'흔들림'}]);return}
+ let label='';
+ if(session.mode==='scan')label=scanStep(f.desc);
+ else if(session.mode==='choose'){consistentPush(session.samples,f.desc,UNKNOWN_FRAMES);session.sampleAt=Date.now();label='이름을 눌러 주세요'}
+ else if(session.mode==='verify')label=verifyStep(f.desc);
+ else if(session.mode==='enroll')label=enrollStep(f.desc,ev);
+ if(session)drawOverlay([{box:det.detection.box,ok:true,label}]);else drawOverlay([]);
 }
-function consistentPush(S, desc, max) {
-    if (S.length >= 3) {
-        const m = meanOf(S);
-        if (distance(desc, m) > SAME) {
-            S.length = 0;
-        }
-    }
-    S.push(desc);
-    if (S.length > max)
-        S.shift();
-    return true;
+function consistentPush(S,desc,max){
+ if(S.length>=3){const m=meanOf(S);if(distance(desc,m)>SAME){S.length=0}}
+ S.push(desc);if(S.length>max)S.shift();return true;
 }
-function scanStep(desc) {
-    var _a, _b, _c, _d, _e, _f, _g, _h;
-    const S = session.samples;
-    consistentPush(S, desc, UNKNOWN_FRAMES);
-    session.sampleAt = Date.now();
-    $('streakCount').textContent = Math.min(S.length, VERIFY_FRAMES) + ' / ' + VERIFY_FRAMES;
-    if (!members.length) {
-        if (S.length < UNKNOWN_FRAMES) {
-            showResult('처음 오셨나요?', '정면을 바라봐 주세요 (' + S.length + '/' + UNKNOWN_FRAMES + ')');
-            return '확인 중';
-        }
-        openRegister(null, S.slice());
-        return '';
-    }
-    if (S.length < VERIFY_FRAMES) {
-        showResult('얼굴을 확인합니다', '잠시 정면을 바라봐 주세요.');
-        return '확인 중';
-    }
-    const q = robustMean(S.slice(-VERIFY_FRAMES)), list = scoreAll(q), top = list[0], second = list[1] || null;
-    const thr = level().verify + (top.legacy ? LEGACY_BONUS : 0), gap = second ? second.d - top.d : Infinity;
-    $('distance').textContent = top.m.name + ' ' + top.d.toFixed(3);
-    $('gap').textContent = second ? second.m.name + ' ' + second.d.toFixed(3) + ' (' + gap.toFixed(3) + ')' : '없음';
-    $('matchAudit').textContent = '1순위 ' + top.m.name + ' ' + top.d.toFixed(3) + ' (기준 ' + thr.toFixed(2) + ')' + (second ? ' · 2순위 ' + second.m.name + ' ' + second.d.toFixed(3) + ' · 차이 ' + gap.toFixed(3) + ' (필요 ' + UNIQUE_GAP + ')' : '');
-    // ① 한 분으로 확실 → 그분만 환영
-    if (top.d <= thr && gap >= UNIQUE_GAP) {
-        success('얼굴 인식', top.m, top.d, second, q);
-        return '';
-    }
-    // ② 기준 안이지만 비슷한 분(가족 등)이 있음 → 그분들만 후보로
-    if (top.d <= thr) {
-        if (S.length < UNKNOWN_FRAMES)
-            return '확인 중'; // 프레임을 더 모아 다시 판단
-        const q8 = robustMean(S), l8 = scoreAll(q8), t8 = l8[0], g8 = l8[1] ? l8[1].d - t8.d : Infinity;
-        if (t8.d <= thr && g8 >= UNIQUE_GAP) {
-            success('얼굴 인식', t8.m, t8.d, l8[1] || null, q8);
-            return '';
-        }
-        const c = l8.filter(x => x.d <= t8.d + CAND_RANGE && x.d <= thr + .05).slice(0, 3);
-        addLog({ mode: '얼굴 인식', sel: t8.m.name, result: '후보 ' + c.length + '명', dSel: t8.d, other: (_b = (_a = l8[1]) === null || _a === void 0 ? void 0 : _a.m.name) !== null && _b !== void 0 ? _b : null, dOther: (_d = (_c = l8[1]) === null || _c === void 0 ? void 0 : _c.d) !== null && _d !== void 0 ? _d : null });
-        showCandidates(c, '혹시 이분이신가요?', '얼굴이 비슷한 분이 있습니다. 본인 이름을 눌러 주세요.');
-        speak('본인 이름을 눌러 주세요.', 'cand', 0);
-        return '';
-    }
-    // ③ 모든 회원과 충분히 다름 → 처음 오신 분: 자동 등록 창
-    if (S.length >= UNKNOWN_FRAMES) {
-        const q8 = robustMean(S), l8 = scoreAll(q8), t8 = l8[0];
-        if (t8.d >= UNKNOWN) {
-            addLog({ mode: '얼굴 인식', sel: null, result: '미등록 → 등록', dSel: null, other: t8.m.name, dOther: t8.d });
-            openRegister(null, S.slice());
-            return '';
-        }
-        // 애매한 거리(기준~0.50): 비슷한 1~3명 + 신규 등록만 보여 줌
-        const c = l8.filter(x => x.d < UNKNOWN).slice(0, 3);
-        addLog({ mode: '얼굴 인식', sel: t8.m.name, result: '애매 → 후보 ' + c.length + '명', dSel: t8.d, other: (_f = (_e = l8[1]) === null || _e === void 0 ? void 0 : _e.m.name) !== null && _f !== void 0 ? _f : null, dOther: (_h = (_g = l8[1]) === null || _g === void 0 ? void 0 : _g.d) !== null && _h !== void 0 ? _h : null });
-        showCandidates(c, '혹시 이분이신가요?', '맞으면 이름을, 처음 오셨으면 신규 등록을 눌러 주세요.');
-        speak('본인 이름이 있으면 누르고, 처음이시면 신규 등록을 눌러 주세요.', 'grey', 0);
-        return '';
-    }
-    return '확인 중';
+function scanStep(desc){
+ const S=session.samples;consistentPush(S,desc,UNKNOWN_FRAMES);session.sampleAt=Date.now();
+ $('streakCount').textContent=Math.min(S.length,VERIFY_FRAMES)+' / '+VERIFY_FRAMES;
+ if(!members.length){
+  if(S.length<UNKNOWN_FRAMES){showResult('처음 오셨나요?','정면을 바라봐 주세요 ('+S.length+'/'+UNKNOWN_FRAMES+')');return '확인 중'}
+  openRegister(null,S.slice());return '';
+ }
+ if(S.length<VERIFY_FRAMES){showResult('얼굴을 확인합니다','잠시 정면을 바라봐 주세요.');return '확인 중'}
+ const q=robustMean(S.slice(-VERIFY_FRAMES)),list=scoreAll(q),top=list[0],second=list[1]||null;
+ const thr=level().verify+(top.legacy?LEGACY_BONUS:0),gap=second?second.d-top.d:Infinity;
+ $('distance').textContent=top.m.name+' '+top.d.toFixed(3);$('gap').textContent=second?second.m.name+' '+second.d.toFixed(3)+' ('+gap.toFixed(3)+')':'없음';
+ $('matchAudit').textContent='1순위 '+top.m.name+' '+top.d.toFixed(3)+' (기준 '+thr.toFixed(2)+')'+(second?' · 2순위 '+second.m.name+' '+second.d.toFixed(3)+' · 차이 '+gap.toFixed(3)+' (필요 '+UNIQUE_GAP+')':'');
+ // ① 한 분으로 확실 → 그분만 환영
+ if(top.d<=thr&&gap>=UNIQUE_GAP){success('얼굴 인식',top.m,top.d,second,q);return ''}
+ // ② 기준 안이지만 비슷한 분(가족 등)이 있음 → 그분들만 후보로
+ if(top.d<=thr){
+  if(S.length<UNKNOWN_FRAMES)return '확인 중';   // 프레임을 더 모아 다시 판단
+  const q8=robustMean(S),l8=scoreAll(q8),t8=l8[0],g8=l8[1]?l8[1].d-t8.d:Infinity;
+  if(t8.d<=thr&&g8>=UNIQUE_GAP){success('얼굴 인식',t8.m,t8.d,l8[1]||null,q8);return ''}
+  const c=l8.filter(x=>x.d<=t8.d+CAND_RANGE&&x.d<=thr+.05).slice(0,3);
+  addLog({mode:'얼굴 인식',sel:t8.m.name,result:'후보 '+c.length+'명',dSel:t8.d,other:l8[1]?.m.name??null,dOther:l8[1]?.d??null});
+  showCandidates(c,'혹시 이분이신가요?','얼굴이 비슷한 분이 있습니다. 본인 이름을 눌러 주세요.');speak('본인 이름을 눌러 주세요.','cand',0);
+  return '';
+ }
+ // ③ 모든 회원과 충분히 다름 → 처음 오신 분: 자동 등록 창
+ if(S.length>=UNKNOWN_FRAMES){
+  const q8=robustMean(S),l8=scoreAll(q8),t8=l8[0];
+  if(t8.d>=UNKNOWN){addLog({mode:'얼굴 인식',sel:null,result:'미등록 → 등록',dSel:null,other:t8.m.name,dOther:t8.d});openRegister(null,S.slice());return ''}
+  // 애매한 거리(기준~0.50): 비슷한 1~3명 + 신규 등록만 보여 줌
+  const c=l8.filter(x=>x.d<UNKNOWN).slice(0,3);
+  addLog({mode:'얼굴 인식',sel:t8.m.name,result:'애매 → 후보 '+c.length+'명',dSel:t8.d,other:l8[1]?.m.name??null,dOther:l8[1]?.d??null});
+  showCandidates(c,'혹시 이분이신가요?','맞으면 이름을, 처음 오셨으면 신규 등록을 눌러 주세요.');speak('본인 이름이 있으면 누르고, 처음이시면 신규 등록을 눌러 주세요.','grey',0);
+  return '';
+ }
+ return '확인 중';
 }
-function verifyStep(desc) {
-    var _a, _b;
-    const m = session.member, S = session.samples;
-    consistentPush(S, desc, 8);
-    session.sampleAt = Date.now();
-    $('streakCount').textContent = Math.min(S.length, VERIFY_FRAMES) + ' / ' + VERIFY_FRAMES;
-    if (S.length < VERIFY_FRAMES) {
-        showResult(m.name + ' 님 확인 중…', '잠시 정면을 바라봐 주세요.');
-        return m.name + ' 확인 중';
-    }
-    const q = robustMean(S.slice(-VERIFY_FRAMES)), list = scoreAll(q), sel = list.find(x => x.m.id === m.id), o = list.find(x => x.m.id !== m.id) || null;
-    if (!sel) {
-        endSession();
-        return '';
-    }
-    const thr = level().verify + (sel.legacy ? LEGACY_BONUS : 0) + .03; // 본인이 고른 경우 약간 완화
-    session.lastSel = sel.d;
-    session.lastOther = (_a = o === null || o === void 0 ? void 0 : o.m.name) !== null && _a !== void 0 ? _a : null;
-    session.lastOtherD = (_b = o === null || o === void 0 ? void 0 : o.d) !== null && _b !== void 0 ? _b : null;
-    $('distance').textContent = m.name + ' ' + sel.d.toFixed(3);
-    $('gap').textContent = o ? o.m.name + ' ' + o.d.toFixed(3) : '없음';
-    $('matchAudit').textContent = '선택 확인 · ' + m.name + ' ' + sel.d.toFixed(3) + ' (기준 ' + thr.toFixed(2) + ')' + (o ? ' · 다른 분 최소 ' + o.m.name + ' ' + o.d.toFixed(3) + ' (필요 차이 0.01)' : '');
-    // 본인이 짧은 후보 목록에서 직접 골랐으므로, 다른 분보다 분명히(0.01) 더 가까우면 통과
-    if (sel.d <= thr && (!o || sel.d <= o.d - .01)) {
-        success('선택 확인', m, sel.d, o, q);
-        return '';
-    }
-    if (o && o.d < sel.d && (session.cands.some(c => c.id === o.m.id) || o.d < sel.d - .02)) {
-        addLog({ mode: '선택 확인', sel: m.name, result: '다른 사람', dSel: sel.d, other: o.m.name, dOther: o.d });
-        session.mode = 'choose';
-        session.member = null;
-        session.until = Date.now() + 15000;
-        $('pickTitle').textContent = '본인 이름을 다시 눌러 주세요';
-        $('pickHint').textContent = m.name + ' 님보다 다른 분 얼굴과 더 비슷합니다.';
-        showResult('선택한 이름과 얼굴이 다릅니다', '본인 이름을 다시 눌러 주세요.');
-        speak('선택한 이름과 얼굴이 다릅니다. 다시 눌러 주세요.', 'wrong', 0);
-        controls();
-        return '';
-    }
-    session.attempts++;
-    S.length = 0;
-    if (session.attempts < 3) {
-        showResult(m.name + ' 님 한 번 더 확인합니다', '정면을 바라보고 점선 가운데로 와 주세요.');
-        return m.name + ' 재확인';
-    }
-    addLog({ mode: '선택 확인', sel: m.name, result: '불일치', dSel: sel.d, other: o === null || o === void 0 ? void 0 : o.m.name, dOther: o === null || o === void 0 ? void 0 : o.d });
-    endSession();
-    showResult('확인하지 못했습니다', m.name + ' 님 등록 얼굴과 충분히 일치하지 않습니다. 관리자에게 얼굴 재등록을 요청해 주세요.');
-    speak('얼굴을 확인하지 못했습니다.', 'fail', 0);
-    return '';
+function verifyStep(desc){
+ const m=session.member,S=session.samples;
+ consistentPush(S,desc,8);session.sampleAt=Date.now();
+ $('streakCount').textContent=Math.min(S.length,VERIFY_FRAMES)+' / '+VERIFY_FRAMES;
+ if(S.length<VERIFY_FRAMES){showResult(m.name+' 님 확인 중…','잠시 정면을 바라봐 주세요.');return m.name+' 확인 중'}
+ const q=robustMean(S.slice(-VERIFY_FRAMES)),list=scoreAll(q),sel=list.find(x=>x.m.id===m.id),o=list.find(x=>x.m.id!==m.id)||null;
+ if(!sel){endSession();return ''}
+ const thr=level().verify+(sel.legacy?LEGACY_BONUS:0)+.03;   // 본인이 고른 경우 약간 완화
+ session.lastSel=sel.d;session.lastOther=o?.m.name??null;session.lastOtherD=o?.d??null;
+ $('distance').textContent=m.name+' '+sel.d.toFixed(3);$('gap').textContent=o?o.m.name+' '+o.d.toFixed(3):'없음';
+ $('matchAudit').textContent='선택 확인 · '+m.name+' '+sel.d.toFixed(3)+' (기준 '+thr.toFixed(2)+')'+(o?' · 다른 분 최소 '+o.m.name+' '+o.d.toFixed(3)+' (필요 차이 0.01)':'');
+ // 본인이 짧은 후보 목록에서 직접 골랐으므로, 다른 분보다 분명히(0.01) 더 가까우면 통과
+ if(sel.d<=thr&&(!o||sel.d<=o.d-.01)){success('선택 확인',m,sel.d,o,q);return ''}
+ if(o&&o.d<sel.d&&(session.cands.some(c=>c.id===o.m.id)||o.d<sel.d-.02)){
+  addLog({mode:'선택 확인',sel:m.name,result:'다른 사람',dSel:sel.d,other:o.m.name,dOther:o.d});
+  session.mode='choose';session.member=null;session.until=Date.now()+15000;
+  $('pickTitle').textContent='본인 이름을 다시 눌러 주세요';$('pickHint').textContent=m.name+' 님보다 다른 분 얼굴과 더 비슷합니다.';
+  showResult('선택한 이름과 얼굴이 다릅니다','본인 이름을 다시 눌러 주세요.');speak('선택한 이름과 얼굴이 다릅니다. 다시 눌러 주세요.','wrong',0);controls();
+  return '';
+ }
+ session.attempts++;S.length=0;
+ if(session.attempts<3){showResult(m.name+' 님 한 번 더 확인합니다','정면을 바라보고 점선 가운데로 와 주세요.');return m.name+' 재확인'}
+ addLog({mode:'선택 확인',sel:m.name,result:'불일치',dSel:sel.d,other:o?.m.name,dOther:o?.d});
+ endSession();showResult('확인하지 못했습니다',m.name+' 님 등록 얼굴과 충분히 일치하지 않습니다. 관리자에게 얼굴 재등록을 요청해 주세요.');speak('얼굴을 확인하지 못했습니다.','fail',0);
+ return '';
 }
-function hideWelcome() { $('welcome').hidden = true; $('notMe').hidden = true; clearTimeout(undoTimer); }
-function success(mode, m, d, o, q) {
-    var _a, _b, _c;
-    const before = checkedAt(m.id), now = Date.now(), samples = ((_a = session === null || session === void 0 ? void 0 : session.samples) === null || _a === void 0 ? void 0 : _a.slice()) || [];
-    endSession();
-    if (before) {
-        announce(m, 'already', before);
-        showResult(m.name + ' 님, 이미 체크되었습니다', '회원번호 ' + m.id + ' · 오늘 체크 ' + hhmm(before));
-    }
-    else {
-        markChecked(m.id, now);
-        announce(m, 'welcome');
-        showResult(m.name + ' 님 환영합니다', '회원번호 ' + m.id + ' · 체크 ' + hhmm(now));
-    }
-    addLog({ mode, sel: m.name, result: '환영', dSel: d, other: (_b = o === null || o === void 0 ? void 0 : o.m.name) !== null && _b !== void 0 ? _b : null, dOther: (_c = o === null || o === void 0 ? void 0 : o.d) !== null && _c !== void 0 ? _c : null });
-    // "제가 아니에요" 6초 동안 표시 → 누르면 체크 취소 후 비슷한 분/신규 등록
-    lastSuccess = { m, q, d, o, mode, wasNew: !before, samples, at: now };
-    $('notMe').hidden = false;
-    clearTimeout(undoTimer);
-    undoTimer = setTimeout(() => { $('notMe').hidden = true; const s = lastSuccess; lastSuccess = null; if (s && s.m === m)
-        adapt(m, q, d, o); }, 6000);
+function hideWelcome(){$('welcome').hidden=true;$('notMe').hidden=true;clearTimeout(undoTimer)}
+function success(mode,m,d,o,q){
+ const before=checkedAt(m.id),now=Date.now(),samples=session?.samples?.slice()||[];
+ endSession();
+ if(before){announce(m,'already',before);showResult(m.name+' 님, 이미 체크되었습니다','회원번호 '+m.id+' · 오늘 체크 '+hhmm(before))}
+ else{markChecked(m.id,now);announce(m,'welcome');showResult(m.name+' 님 환영합니다','회원번호 '+m.id+' · 체크 '+hhmm(now))}
+ addLog({mode,sel:m.name,result:'환영',dSel:d,other:o?.m.name??null,dOther:o?.d??null});
+ // "제가 아니에요" 6초 동안 표시 → 누르면 체크 취소 후 비슷한 분/신규 등록
+ lastSuccess={m,q,d,o,mode,wasNew:!before,samples,at:now};
+ $('notMe').hidden=false;clearTimeout(undoTimer);
+ undoTimer=setTimeout(()=>{$('notMe').hidden=true;const s=lastSuccess;lastSuccess=null;if(s&&s.m===m)adapt(m,q,d,o)},6000);
 }
-$('notMe').onclick = () => {
-    var _a, _b, _c, _d;
-    const s = lastSuccess;
-    if (!s)
-        return;
-    lastSuccess = null;
-    hideWelcome();
-    if (s.wasNew) {
-        delete checkLog.ids[s.m.id];
-        store.set(LOG_KEY, JSON.stringify(checkLog));
-        renderMembers();
-    }
-    addLog({ mode: '정정', sel: s.m.name, result: '제가 아니에요', dSel: s.d, other: (_b = (_a = s.o) === null || _a === void 0 ? void 0 : _a.m.name) !== null && _b !== void 0 ? _b : null, dOther: (_d = (_c = s.o) === null || _c === void 0 ? void 0 : _c.d) !== null && _d !== void 0 ? _d : null });
-    newSession('choose', PICK_MS);
-    session.samples = s.samples;
-    session.sampleAt = Date.now();
-    const c = scoreAll(s.q).filter(x => x.m.id !== s.m.id && x.d <= UNKNOWN).slice(0, 3);
-    showCandidates(c, c.length ? '혹시 이분이신가요?' : '처음 오셨나요?', c.length ? '본인 이름을 누르거나, 목록에 없으면 신규 등록을 눌러 주세요.' : '아래 신규 등록을 눌러 이름을 입력해 주세요.');
-    showResult('체크를 취소했습니다', c.length ? '본인 이름을 눌러 주세요.' : '신규 등록을 눌러 주세요.');
-    speak(c.length ? '본인 이름을 눌러 주세요.' : '신규 등록을 눌러 주세요.', 'notme', 0);
+$('notMe').onclick=()=>{
+ const s=lastSuccess;if(!s)return;lastSuccess=null;hideWelcome();
+ if(s.wasNew){delete checkLog.ids[s.m.id];store.set(LOG_KEY,JSON.stringify(checkLog));renderMembers()}
+ addLog({mode:'정정',sel:s.m.name,result:'제가 아니에요',dSel:s.d,other:s.o?.m.name??null,dOther:s.o?.d??null});
+ newSession('choose',PICK_MS);session.samples=s.samples;session.sampleAt=Date.now();
+ const c=scoreAll(s.q).filter(x=>x.m.id!==s.m.id&&x.d<=UNKNOWN).slice(0,3);
+ showCandidates(c,c.length?'혹시 이분이신가요?':'처음 오셨나요?',c.length?'본인 이름을 누르거나, 목록에 없으면 신규 등록을 눌러 주세요.':'아래 신규 등록을 눌러 이름을 입력해 주세요.');
+ showResult('체크를 취소했습니다',c.length?'본인 이름을 눌러 주세요.':'신규 등록을 눌러 주세요.');speak(c.length?'본인 이름을 눌러 주세요.':'신규 등록을 눌러 주세요.','notme',0);
 };
 /* 확실한 환영만 평균 얼굴을 보강 (등록 표본은 항상 유지) */
-async function adapt(m, q, d, o) {
-    if (!settings.adapt || memberLegacy(m) || !db)
-        return;
-    if (d > level().verify - .04 || (o && o.d - d < .06))
-        return;
-    try {
-        const cur = members.find(x => x.id === m.id);
-        if (!cur)
-            return;
-        const base = (cur.descriptors || []).slice(0, KEEP_ENROLL), extra = (cur.descriptors || []).slice(KEEP_ENROLL).concat([q]).slice(-(MAX_SAMPLES - KEEP_ENROLL));
-        const next = Object.assign(Object.assign({}, cur), { descriptors: base.concat(extra), updatedAt: Date.now() });
-        next.template = meanOf(next.descriptors);
-        await writeDB(s => s.put(next));
-        const i = members.findIndex(x => x.id === m.id);
-        if (i >= 0)
-            members[i] = next;
-        renderMembers();
-    }
-    catch (e) {
-        console.warn('adapt', e);
-    }
+async function adapt(m,q,d,o){
+ if(!settings.adapt||memberLegacy(m)||!db)return;
+ if(d>level().verify-.04||(o&&o.d-d<.06))return;
+ try{
+  const cur=members.find(x=>x.id===m.id);if(!cur)return;
+  const base=(cur.descriptors||[]).slice(0,KEEP_ENROLL),extra=(cur.descriptors||[]).slice(KEEP_ENROLL).concat([q]).slice(-(MAX_SAMPLES-KEEP_ENROLL));
+  const next={...cur,descriptors:base.concat(extra),updatedAt:Date.now()};next.template=meanOf(next.descriptors);
+  await writeDB(s=>s.put(next));
+  const i=members.findIndex(x=>x.id===m.id);if(i>=0)members[i]=next;renderMembers();
+ }catch(e){console.warn('adapt',e)}
 }
+
 /* ---------- 신규 등록 · 얼굴 재등록 (정면·좌·우·정면 13장) ---------- */
-let regTarget = null;
-let regSamples = null;
-function openRegister(existing, samples) {
-    if (!db || !ready || !stream) {
-        status('카메라와 얼굴 모델이 준비된 뒤 등록할 수 있습니다.', true);
-        return;
-    }
-    regTarget = existing || null;
-    // 방금 확인한 정면 프레임(같은 사람 4장 이상)이 있으면 그대로 등록에 사용 → 추가 촬영 없음
-    const pre = samples || (session && session.sampleAt && Date.now() - session.sampleAt < 3000 ? session.samples.slice() : null);
-    regSamples = !existing && pre && pre.length >= VERIFY_FRAMES ? pre.slice(-UNKNOWN_FRAMES) : null;
-    if (!session)
-        newSession('register', PICK_MS);
-    else {
-        session.mode = 'register';
-        session.until = Date.now() + PICK_MS;
-    }
-    $('pickCard').hidden = true;
-    if (!existing) {
-        showResult('처음 오셨네요!', '이름을 입력해 주세요.');
-        speak('처음 오셨네요. 이름을 입력해 주세요.', 'reg', 0);
-    }
-    $('regTitle').textContent = existing ? '얼굴 재등록' : '처음 오셨네요!';
-    $('regSub').textContent = existing ? existing.name + ' 님 얼굴을 새로 촬영해 기존 얼굴 정보를 바꿉니다. 정면을 바라보면 약 2초 촬영합니다.' : regSamples ? '이름을 입력하면 방금 확인한 얼굴로 등록됩니다.' : '이름을 입력한 뒤 정면을 바라보면 약 2초 동안 촬영합니다.';
-    $('regSave').textContent = existing || !regSamples ? '촬영 시작' : '등록하기';
-    $('regId').textContent = existing ? existing.id : fmtId(nextNum());
-    $('regName').value = existing ? existing.name : '';
-    $('regName').readOnly = !!existing;
-    $('regConsent').checked = false;
-    $('regError').textContent = '';
-    if (!$('regDialog').open)
-        $('regDialog').showModal();
-    if (!existing)
-        setTimeout(() => $('regName').focus(), 150);
-    controls();
+let regTarget=null;
+let regSamples=null;
+function openRegister(existing,samples){
+ if(!db||!ready||!stream){status('카메라와 얼굴 모델이 준비된 뒤 등록할 수 있습니다.',true);return}
+ regTarget=existing||null;
+ // 방금 확인한 정면 프레임(같은 사람 4장 이상)이 있으면 그대로 등록에 사용 → 추가 촬영 없음
+ const pre=samples||(session&&session.sampleAt&&Date.now()-session.sampleAt<3000?session.samples.slice():null);
+ regSamples=!existing&&pre&&pre.length>=VERIFY_FRAMES?pre.slice(-UNKNOWN_FRAMES):null;
+ if(!session)newSession('register',PICK_MS);else{session.mode='register';session.until=Date.now()+PICK_MS}
+ $('pickCard').hidden=true;
+ if(!existing){showResult('처음 오셨네요!','이름을 입력해 주세요.');speak('처음 오셨네요. 이름을 입력해 주세요.','reg',0)}
+ $('regTitle').textContent=existing?'얼굴 재등록':'처음 오셨네요!';
+ $('regSub').textContent=existing?existing.name+' 님 얼굴을 새로 촬영해 기존 얼굴 정보를 바꿉니다. 정면을 바라보면 약 2초 촬영합니다.':regSamples?'이름을 입력하면 방금 확인한 얼굴로 등록됩니다.':'이름을 입력한 뒤 정면을 바라보면 약 2초 동안 촬영합니다.';
+ $('regSave').textContent=existing||!regSamples?'촬영 시작':'등록하기';
+ $('regId').textContent=existing?existing.id:fmtId(nextNum());
+ $('regName').value=existing?existing.name:'';$('regName').readOnly=!!existing;
+ $('regConsent').checked=false;$('regError').textContent='';
+ if(!$('regDialog').open)$('regDialog').showModal();
+ if(!existing)setTimeout(()=>$('regName').focus(),150);
+ controls();
 }
-$('regCancel').onclick = () => { $('regDialog').close(); regTarget = null; regSamples = null; if (session) {
-    endSession();
-    showResult('등록을 취소했습니다', '다시 하시려면 똑똑 버튼을 눌러 주세요.');
-} };
-$('regDialog').addEventListener('cancel', e => { e.preventDefault(); $('regCancel').onclick(); });
-$('regForm').onsubmit = e => {
-    e.preventDefault();
-    const name = $('regName').value.trim();
-    if (!name) {
-        $('regError').textContent = '이름을 입력해 주세요.';
-        $('regName').focus();
-        return;
-    }
-    if (!$('regConsent').checked) {
-        $('regError').textContent = '저장 동의에 체크해 주세요.';
-        return;
-    }
-    $('regDialog').close();
-    if (!session)
-        newSession('enroll', ENROLL_MS);
-    session.mode = 'enroll';
-    session.member = null;
-    session.until = Date.now() + ENROLL_MS;
-    session.enroll = { name, id: regTarget ? regTarget.id : fmtId(nextNum()), existing: regTarget, phase: 0, count: 0, collected: [], sideSign: 0, pauseUntil: Date.now() + 900, lastAt: 0 };
-    if (regSamples && !regTarget) {
-        session.enroll.collected = regSamples.slice();
-        regSamples = null;
-        finishEnroll();
-        return;
-    }
-    $('pickCard').hidden = true;
-    renderPhase();
-    showResult('등록 촬영 · ' + ENROLL_PLAN[0].label, ENROLL_PLAN[0].say);
-    speak(name + ' 님, ' + ENROLL_PLAN[0].say, 'en0', 0);
-    controls();
+$('regCancel').onclick=()=>{$('regDialog').close();regTarget=null;regSamples=null;if(session){endSession();showResult('등록을 취소했습니다','다시 하시려면 똑똑 버튼을 눌러 주세요.')}};
+$('regDialog').addEventListener('cancel',e=>{e.preventDefault();$('regCancel').onclick()});
+$('regForm').onsubmit=e=>{
+ e.preventDefault();
+ const name=$('regName').value.trim();
+ if(!name){$('regError').textContent='이름을 입력해 주세요.';$('regName').focus();return}
+ if(!$('regConsent').checked){$('regError').textContent='저장 동의에 체크해 주세요.';return}
+ $('regDialog').close();
+ if(!session)newSession('enroll',ENROLL_MS);
+ session.mode='enroll';session.member=null;session.until=Date.now()+ENROLL_MS;
+ session.enroll={name,id:regTarget?regTarget.id:fmtId(nextNum()),existing:regTarget,phase:0,count:0,collected:[],sideSign:0,pauseUntil:Date.now()+900,lastAt:0};
+ if(regSamples&&!regTarget){session.enroll.collected=regSamples.slice();regSamples=null;finishEnroll();return}
+ $('pickCard').hidden=true;renderPhase();
+ showResult('등록 촬영 · '+ENROLL_PLAN[0].label,ENROLL_PLAN[0].say);
+ speak(name+' 님, '+ENROLL_PLAN[0].say,'en0',0);controls();
 };
-function renderPhase() {
-    const bar = $('phaseBar'), E = session === null || session === void 0 ? void 0 : session.enroll;
-    if (!E) {
-        bar.hidden = true;
-        return;
-    }
-    bar.hidden = false;
-    bar.replaceChildren();
-    ENROLL_PLAN.forEach((p, i) => { const s = document.createElement('span'); s.textContent = p.label + (i === E.phase ? ' ' + E.count + '/' + p.n : ''); s.className = i < E.phase ? 'done' : i === E.phase ? 'on' : ''; bar.append(s); });
+function renderPhase(){
+ const bar=$('phaseBar'),E=session?.enroll;if(!E){bar.hidden=true;return}
+ bar.hidden=false;bar.replaceChildren();
+ ENROLL_PLAN.forEach((p,i)=>{const s=document.createElement('span');s.textContent=p.label+(i===E.phase?' '+E.count+'/'+p.n:'');s.className=i<E.phase?'done':i===E.phase?'on':'';bar.append(s)});
 }
-function enrollStep(desc, ev) {
-    const E = session.enroll, P = ENROLL_PLAN[E.phase], now = Date.now();
-    if (now < E.pauseUntil || now - E.lastAt < 150)
-        return P.label;
-    if (E.collected.length >= 3 && distance(desc, meanOf(E.collected)) > SAME) {
-        showResult('다른 얼굴이 감지되었습니다', '등록하는 분만 화면에 있어야 합니다.');
-        return '다른 얼굴';
-    }
-    if (P.side) {
-        if (!ev.sign)
-            return P.label;
-        if (P.opposite) {
-            if (ev.sign === E.sideSign) {
-                showResult('등록 촬영 · ' + P.label, '반대쪽으로 살짝 돌려 주세요.');
-                guide('반대쪽으로 살짝 돌려 주세요.');
-                return '반대쪽으로';
-            }
-        }
-        else
-            E.sideSign = ev.sign;
-    }
-    E.collected.push(desc);
-    E.count++;
-    E.lastAt = now;
-    if (E.count >= P.n) {
-        E.phase++;
-        E.count = 0;
-        if (E.phase >= ENROLL_PLAN.length) {
-            renderPhase();
-            finishEnroll();
-            return '';
-        }
-        E.pauseUntil = now + 900;
-        speak(ENROLL_PLAN[E.phase].say, 'en' + E.phase, 0);
-    }
-    renderPhase();
-    const N = ENROLL_PLAN[E.phase];
-    showResult('등록 촬영 · ' + N.label, N.say + ' (' + E.collected.length + '/' + ENROLL_PLAN.reduce((a, p) => a + p.n, 0) + ')');
-    return N.label;
+function enrollStep(desc,ev){
+ const E=session.enroll,P=ENROLL_PLAN[E.phase],now=Date.now();
+ if(now<E.pauseUntil||now-E.lastAt<150)return P.label;
+ if(E.collected.length>=3&&distance(desc,meanOf(E.collected))>SAME){showResult('다른 얼굴이 감지되었습니다','등록하는 분만 화면에 있어야 합니다.');return '다른 얼굴'}
+ if(P.side){
+  if(!ev.sign)return P.label;
+  if(P.opposite){if(ev.sign===E.sideSign){showResult('등록 촬영 · '+P.label,'반대쪽으로 살짝 돌려 주세요.');guide('반대쪽으로 살짝 돌려 주세요.');return '반대쪽으로'}}
+  else E.sideSign=ev.sign;
+ }
+ E.collected.push(desc);E.count++;E.lastAt=now;
+ if(E.count>=P.n){
+  E.phase++;E.count=0;
+  if(E.phase>=ENROLL_PLAN.length){renderPhase();finishEnroll();return ''}
+  E.pauseUntil=now+900;speak(ENROLL_PLAN[E.phase].say,'en'+E.phase,0);
+ }
+ renderPhase();
+ const N=ENROLL_PLAN[E.phase];showResult('등록 촬영 · '+N.label,N.say+' ('+E.collected.length+'/'+ENROLL_PLAN.reduce((a,p)=>a+p.n,0)+')');
+ return N.label;
 }
-function finishEnroll() {
-    const E = session.enroll, q = meanOf(E.collected), near = scoreAll(q).find(x => x.m.id !== E.id) || null;
-    E.near = near;
-    if (near && near.d < SIMILAR_WARN && !E.existing) {
-        session.mode = 'enroll-confirm';
-        controls();
-        $('simText').textContent = '이미 등록된 ' + near.m.name + ' 님(' + near.m.id + ')과 거의 같은 얼굴입니다(거리 ' + near.d.toFixed(3) + '). 다른 사람(쌍둥이 등)이 맞으면 등록하세요. 같은 분이면 취소해 주세요.';
-        $('simDialog').showModal();
-        speak('비슷한 얼굴이 있습니다. 화면을 확인해 주세요.', 'sim', 0);
-        return;
-    }
-    saveEnroll();
+function finishEnroll(){
+ const E=session.enroll,q=meanOf(E.collected),near=scoreAll(q).find(x=>x.m.id!==E.id)||null;
+ E.near=near;
+ if(near&&near.d<SIMILAR_WARN&&!E.existing){
+  session.mode='enroll-confirm';controls();
+  $('simText').textContent='이미 등록된 '+near.m.name+' 님('+near.m.id+')과 거의 같은 얼굴입니다(거리 '+near.d.toFixed(3)+'). 다른 사람(쌍둥이 등)이 맞으면 등록하세요. 같은 분이면 취소해 주세요.';
+  $('simDialog').showModal();speak('비슷한 얼굴이 있습니다. 화면을 확인해 주세요.','sim',0);
+  return;
+ }
+ saveEnroll();
 }
-$('simOk').onclick = () => { $('simDialog').close(); saveEnroll(); };
-$('simCancel').onclick = () => { $('simDialog').close(); endSession(); showResult('등록을 취소했습니다', '같은 분이면 회원 목록의 "얼굴 재등록"을 이용해 주세요.'); };
-$('simDialog').addEventListener('cancel', e => { e.preventDefault(); $('simCancel').onclick(); });
-async function saveEnroll() {
-    var _a, _b, _c, _d;
-    if (!(session === null || session === void 0 ? void 0 : session.enroll))
-        return;
-    const E = session.enroll, now = Date.now();
-    mutating = true;
-    controls();
-    try {
-        const descriptors = E.collected.slice(0, KEEP_ENROLL);
-        const member = E.existing ? Object.assign(Object.assign({}, E.existing), { descriptors, template: meanOf(descriptors), pipeline: PIPE, updatedAt: now, reenrolledAt: now }) : { id: E.id, name: E.name, descriptors, template: meanOf(descriptors), pipeline: PIPE, createdAt: now };
-        await writeDB(s => s.put(member));
-        const i = members.findIndex(x => x.id === member.id);
-        if (i >= 0)
-            members[i] = member;
-        else
-            members.push(member);
-        if (!E.existing) {
-            const x = /^Q(\d+)$/.exec(member.id);
-            if (x)
-                store.set(NEXT_KEY, String(Number(x[1]) + 1));
-        }
-        addLog({ mode: '등록', sel: member.name, result: E.existing ? '재등록' : '신규', dSel: null, other: (_b = (_a = E.near) === null || _a === void 0 ? void 0 : _a.m.name) !== null && _b !== void 0 ? _b : null, dOther: (_d = (_c = E.near) === null || _c === void 0 ? void 0 : _c.d) !== null && _d !== void 0 ? _d : null });
-        endSession();
-        if (E.existing) {
-            announce(member, 'reenroll');
-            showResult(member.name + ' 님 얼굴 재등록 완료', '이제 똑똑 → 이름 선택으로 확인해 보세요.');
-        }
-        else {
-            markChecked(member.id, now);
-            announce(member, 'new');
-            showResult(member.name + ' 님 환영합니다', '회원번호 ' + member.id + ' · 등록 완료');
-        }
-        renderMembers();
-    }
-    catch (err) {
-        status('저장 실패: ' + err.message, true);
-        endSession();
-    }
-    finally {
-        mutating = false;
-        regTarget = null;
-        controls();
-    }
+$('simOk').onclick=()=>{$('simDialog').close();saveEnroll()};
+$('simCancel').onclick=()=>{$('simDialog').close();endSession();showResult('등록을 취소했습니다','같은 분이면 회원 목록의 "얼굴 재등록"을 이용해 주세요.')};
+$('simDialog').addEventListener('cancel',e=>{e.preventDefault();$('simCancel').onclick()});
+async function saveEnroll(){
+ if(!session?.enroll)return;
+ const E=session.enroll,now=Date.now();
+ mutating=true;controls();
+ try{
+  const descriptors=E.collected.slice(0,KEEP_ENROLL);
+  const member=E.existing?{...E.existing,descriptors,template:meanOf(descriptors),pipeline:PIPE,updatedAt:now,reenrolledAt:now}
+   :{id:E.id,name:E.name,descriptors,template:meanOf(descriptors),pipeline:PIPE,createdAt:now};
+  await writeDB(s=>s.put(member));
+  const i=members.findIndex(x=>x.id===member.id);if(i>=0)members[i]=member;else members.push(member);
+  if(!E.existing){const x=/^Q(\d+)$/.exec(member.id);if(x)store.set(NEXT_KEY,String(Number(x[1])+1))}
+  addLog({mode:'등록',sel:member.name,result:E.existing?'재등록':'신규',dSel:null,other:E.near?.m.name??null,dOther:E.near?.d??null});
+  endSession();
+  if(E.existing){announce(member,'reenroll');showResult(member.name+' 님 얼굴 재등록 완료','이제 똑똑 → 이름 선택으로 확인해 보세요.')}
+  else{markChecked(member.id,now);announce(member,'new');showResult(member.name+' 님 환영합니다','회원번호 '+member.id+' · 등록 완료')}
+  renderMembers();
+ }catch(err){status('저장 실패: '+err.message,true);endSession()}
+ finally{mutating=false;regTarget=null;controls()}
 }
+
 /* ---------- 분석 루프 ---------- */
-async function loop(run) {
-    while (stream && run === generation) {
-        lastLoopAt = Date.now();
-        const active = session && ready && !mutating && ['scan', 'choose', 'verify', 'enroll'].includes(session.mode) && !$('regDialog').open && !$('simDialog').open;
-        if (active) {
-            const t0 = performance.now();
-            try {
-                const dets = await analyze();
-                if (run !== generation)
-                    break;
-                await handleFrame(dets, t0);
-            }
-            catch (e) {
-                if (run === generation) {
-                    showResult('인식 오류', e.message);
-                    await wait(800);
-                }
-            }
-            await wait(120);
-        }
-        else
-            await wait(250);
-    }
+async function loop(run){
+ while(stream&&run===generation){
+  lastLoopAt=Date.now();
+  const active=session&&ready&&!mutating&&['scan','choose','verify','enroll'].includes(session.mode)&&!$('regDialog').open&&!$('simDialog').open;
+  if(active){
+   const t0=performance.now();
+   try{const dets=await analyze();if(run!==generation)break;await handleFrame(dets,t0)}
+   catch(e){if(run===generation){showResult('인식 오류',e.message);await wait(800)}}
+   await wait(120);
+  }else await wait(250);
+ }
 }
+
 /* ---------- 설정 ---------- */
-$('setLevel').value = settings.level;
-$('setAdapt').checked = settings.adapt;
-$('setFill').checked = settings.fill;
-$('setLevel').onchange = () => { settings.level = $('setLevel').value; saveSettings(); };
-$('setAdapt').onchange = () => { settings.adapt = $('setAdapt').checked; saveSettings(); };
-$('setFill').onchange = () => { settings.fill = $('setFill').checked; saveSettings(); if (!settings.fill)
-    document.body.classList.remove('filllight'); };
+$('setLevel').value=settings.level;$('setAdapt').checked=settings.adapt;$('setFill').checked=settings.fill;
+$('setLevel').onchange=()=>{settings.level=$('setLevel').value;saveSettings()};
+$('setAdapt').onchange=()=>{settings.adapt=$('setAdapt').checked;saveSettings()};
+$('setFill').onchange=()=>{settings.fill=$('setFill').checked;saveSettings();if(!settings.fill)document.body.classList.remove('filllight')};
+
 /* ---------- 상시 운영 ---------- */
-async function requestWakeLock() {
-    if (!('wakeLock' in navigator)) {
-        $('wake').textContent = '지원 안 됨 · 기기 화면 자동 꺼짐을 "사용 안 함"으로 설정하세요';
-        return;
-    }
-    if (wakeLock || wakeRequesting || document.hidden)
-        return;
-    wakeRequesting = true;
-    try {
-        wakeLock = await navigator.wakeLock.request('screen');
-        $('wake').textContent = '켜짐';
-        wakeLock.addEventListener('release', () => { wakeLock = null; $('wake').textContent = '해제됨 · 자동 재요청'; });
-    }
-    catch (e) {
-        $('wake').textContent = '요청 실패: ' + e.message;
-    }
-    finally {
-        wakeRequesting = false;
-    }
+async function requestWakeLock(){
+ if(!('wakeLock' in navigator)){$('wake').textContent='지원 안 됨 · 기기 화면 자동 꺼짐을 "사용 안 함"으로 설정하세요';return}
+ if(wakeLock||wakeRequesting||document.hidden)return;wakeRequesting=true;
+ try{wakeLock=await navigator.wakeLock.request('screen');$('wake').textContent='켜짐';wakeLock.addEventListener('release',()=>{wakeLock=null;$('wake').textContent='해제됨 · 자동 재요청'})}
+ catch(e){$('wake').textContent='요청 실패: '+e.message}finally{wakeRequesting=false}
 }
-document.addEventListener('visibilitychange', () => {
-    var _a;
-    if (document.hidden) {
-        (_a = window.speechSynthesis) === null || _a === void 0 ? void 0 : _a.cancel();
-        if (stream || starting)
-            stopCamera('화면을 벗어나 카메라를 일시 중지했습니다.');
-    }
-    else {
-        nextRetryAt = 0;
-        startCamera();
-        requestWakeLock();
-    }
+document.addEventListener('visibilitychange',()=>{
+ if(document.hidden){window.speechSynthesis?.cancel();if(stream||starting)stopCamera('화면을 벗어나 카메라를 일시 중지했습니다.')}
+ else{nextRetryAt=0;startCamera();requestWakeLock()}
 });
-window.addEventListener('pagehide', () => stopCamera());
-setInterval(() => {
-    if (document.hidden)
-        return;
-    rollDay();
-    if (!stream && !starting)
-        startCamera();
-    else if (stream && lastLoopAt && Date.now() - lastLoopAt > 25000) {
-        stopCamera('인식이 멈춰 카메라를 다시 시작합니다.');
-        nextRetryAt = 0;
-        startCamera();
-    }
-    if (!wakeLock)
-        requestWakeLock();
-    if (new Date().getHours() === 4 && Date.now() - BOOT > 20 * 3600e3 && !session && !mutating)
-        location.reload();
-}, 5000);
+window.addEventListener('pagehide',()=>stopCamera());
+setInterval(()=>{
+ if(document.hidden)return;
+ rollDay();
+ if(!stream&&!starting)startCamera();
+ else if(stream&&lastLoopAt&&Date.now()-lastLoopAt>25000){stopCamera('인식이 멈춰 카메라를 다시 시작합니다.');nextRetryAt=0;startCamera()}
+ if(!wakeLock)requestWakeLock();
+ if(new Date().getHours()===4&&Date.now()-BOOT>20*3600e3&&!session&&!mutating)location.reload();
+},5000);
+
 /* ---------- 시작 ---------- */
-$('facing').value = store.get(FACING_KEY) === 'environment' ? 'environment' : 'user';
-$('protocol').textContent = location.protocol + (location.hostname ? ' · ' + location.hostname : '');
-$('secure').textContent = isSecureContext ? '보안 컨텍스트 사용 가능' : '보안 컨텍스트 아님 · HTTPS 필요';
-setupInApp();
-permissionInfo();
-initDB();
-renderLog();
-controls();
-requestWakeLock();
-startCamera();
+$('facing').value=store.get(FACING_KEY)==='environment'?'environment':'user';
+$('protocol').textContent=location.protocol+(location.hostname?' · '+location.hostname:'');
+$('secure').textContent=isSecureContext?'보안 컨텍스트 사용 가능':'보안 컨텍스트 아님 · HTTPS 필요';
+setupInApp();permissionInfo();initDB();renderLog();controls();requestWakeLock();startCamera();
 </script></body></html>
