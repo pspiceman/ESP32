@@ -216,6 +216,7 @@ html,body{overscroll-behavior:none}
    <div id="members"></div>
    <p class="hint">회원번호는 Q001부터 자동 부여됩니다. <b>재등록 권장</b> 표시는 이전 버전(2.x)에서 등록된 얼굴입니다. <b>정보 수정</b>으로 이름·핸디·전화번호를, <b>얼굴 재등록</b>으로 얼굴을 바꿀 수 있습니다.</p>
   </section>
+  <section class="card"><h2>전체 화면</h2><div class="row"><label class="consent" style="margin:0"><input id="fsAuto" type="checkbox" checked> 화면을 터치하면 자동으로 전체 화면(주소창 숨김)</label></div><div class="row" style="margin-top:10px"><button id="fsBtn" type="button">지금 전체 화면</button><button id="fsExit" type="button">전체 화면 끄기</button><span id="fsMsg" class="hint"></span></div><p class="hint">브라우저 규칙상 전체 화면은 <b>화면을 한 번 터치해야</b> 켜집니다. 새로고침이나 앱 전환 후에는 첫 터치(똑똑 포함) 때 다시 전체 화면이 됩니다. 항상 주소창 없이 쓰려면 Chrome 메뉴 ⋮ → <b>홈 화면에 추가</b>로 아이콘을 만들어 실행하세요.</p></section>
   <section class="card"><h2>새로고침</h2><div class="row"><button id="reloadBtn" type="button">화면 새로고침</button><button id="hardReloadBtn" type="button">최신 버전으로 새로고침</button></div><p class="hint">입장 화면에서 손가락으로 화면을 <b>아래로 길게 당겼다 놓으면</b> 새로고침됩니다. GitHub에 새 파일을 올렸는데 예전 화면이 보이면 <b>최신 버전으로 새로고침</b>을 누르세요(저장된 회원·입실 기록은 그대로 유지).</p></section>
   <section class="card"><h2>설정 잠금</h2>
    <div class="settings"><label for="pinNew">설정 비밀번호 변경 (숫자 4~8자리)</label><input id="pinNew" inputmode="numeric" type="password" placeholder="새 비밀번호 (기본 0000)" autocomplete="new-password"></div>
@@ -227,7 +228,7 @@ html,body{overscroll-behavior:none}
    <b>사용 순서:</b> 똑똑 → 정면 바라보기(1~2초) → "OOO님 입장 확인". 처음 오신 분은 이름/닉네임 → 종목·핸디 → 휴대폰 번호를 차례로 입력합니다. 퇴실은 관리자가 결제 확인 후 관리자 웹에서 처리합니다.<br>
    <b>정확도:</b> 등록 때 정면 8장, 확인 때 4장을 평균하고 두 눈이 수평이 되도록 정렬한 뒤 비교합니다. 1·2순위 차이가 작으면 비슷한 분들만 골라 보여 줍니다.<br>
    얼굴 분석은 기기에서만 수행하며 사진·영상을 저장하거나 보내지 않습니다(얼굴 특징값 숫자만 이 기기에 저장). 생체 위조(사진) 검출 기능은 없습니다.</p>
-   <p class="hint" id="footerVer">Q24 입장 등록 4.0.6 · face-api.js 0.22.2</p>
+   <p class="hint" id="footerVer">Q24 입장 등록 4.0.7 · face-api.js 0.22.2</p>
   </section>
  </div>
 </section>
@@ -1189,5 +1190,30 @@ $('hardReloadBtn').onclick=()=>doReload(true);
   show(dy)},{passive:true});
  document.addEventListener('touchend',()=>{if(y0==null)return;if(active&&dy>=TH&&!blocked())doReload(false);else reset()},{passive:true});
  document.addEventListener('touchcancel',reset,{passive:true});
+})();
+
+/* ---------- 전체 화면 (주소창 숨김) ---------- */
+(()=>{
+ const FS_KEY='q24FullscreenAuto',root=document.documentElement;
+ let auto=store.get(FS_KEY)!=='0';$('fsAuto').checked=auto;
+ const isFs=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
+ const can=!!(root.requestFullscreen||root.webkitRequestFullscreen);
+ const standalone=matchMedia('(display-mode: fullscreen)').matches||matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+ function enter(){
+  if(isFs()||!can)return Promise.resolve(isFs());
+  try{const r=root.requestFullscreen?root.requestFullscreen({navigationUI:'hide'}):root.webkitRequestFullscreen();
+   return Promise.resolve(r).then(()=>{try{screen.orientation?.lock?.('landscape').catch(()=>{})}catch{}return true}).catch(()=>false)}catch{return Promise.resolve(false)}
+ }
+ function exit(){try{(document.exitFullscreen||document.webkitExitFullscreen)?.call(document)}catch{}}
+ function msg(){$('fsMsg').textContent=standalone?'홈 화면 앱으로 실행 중':!can?'이 브라우저는 전체 화면을 지원하지 않습니다':isFs()?'전체 화면 사용 중':'전체 화면 아님'}
+ // 첫 터치(또는 클릭) 때 전체 화면 — 똑똑 버튼 누름도 그대로 동작
+ const onTouch=()=>{if(auto&&!standalone&&!isFs())enter().then(msg)};
+ document.addEventListener('pointerup',onTouch,true);
+ document.addEventListener('touchend',onTouch,true);
+ document.addEventListener('fullscreenchange',msg);document.addEventListener('webkitfullscreenchange',msg);
+ $('fsAuto').onchange=()=>{auto=$('fsAuto').checked;store.set(FS_KEY,auto?'1':'0');if(auto)enter().then(msg);else exit()};
+ $('fsBtn').onclick=()=>enter().then(ok=>{msg();if(!ok&&can)toast('전체 화면을 켜지 못했습니다. 화면을 한 번 더 터치해 주세요.')});
+ $('fsExit').onclick=()=>{auto=false;$('fsAuto').checked=false;store.set(FS_KEY,'0');exit();setTimeout(msg,300)};
+ msg();
 })();
 </script></body></html>
