@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Q24 입장 관리자</title>
+<meta name="theme-color" content="#15333e"><meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/png" href="./icons/icon-192.png">
+<style>
+:root{--ink:#17313b;--muted:#64777d;--green:#087f70;--line:#d9e5e3;--bg:#f2f6f5;--red:#b0402f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px system-ui,-apple-system,'Noto Sans KR',sans-serif}
+header{position:sticky;top:0;z-index:5;padding:10px 18px;background:#15333e;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}.brand img{height:36px}
+.logoText{display:grid;place-items:center;height:36px;padding:0 10px;border-radius:9px;background:#e8402f;font-weight:900;font-size:20px}
+.brand strong{font-size:20px}.brand small{display:block;color:#c0d4d6;font-size:12px}
+.hdrRight{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.dot{display:flex;align-items:center;gap:6px;font-size:13px;color:#d6e4e6}.dot i{width:10px;height:10px;border-radius:50%;background:#7c8b90}
+.dot.on i{background:#3ed19a}.dot.err i{background:#ff6b5b}.dot.warn i{background:#f0b23c}
+button,select,input{font:inherit;border:1px solid var(--line);border-radius:10px;min-height:40px;padding:8px 12px}
+button{cursor:pointer;background:#fff;color:var(--ink);font-weight:650}button.primary{background:var(--green);border-color:var(--green);color:#fff}
+button.danger{color:var(--red)}button:disabled{opacity:.45;cursor:not-allowed}
+header button{background:#24495a;border-color:#3c6475;color:#fff}
+main{padding:14px 18px 40px;max-width:1400px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}.stat span{display:block;color:var(--muted);font-size:13px}.stat b{display:block;font-size:28px;margin-top:4px;font-variant-numeric:tabular-nums}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tabs button{border-radius:20px}.tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 16px;overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:10px 8px;border-top:1px solid var(--line);text-align:left;vertical-align:middle;white-space:nowrap}
+th{color:var(--muted);font-weight:600;font-size:13px;border-top:0}td.name{white-space:normal;font-weight:650;min-width:120px}
+td.num{font-variant-numeric:tabular-nums}
+tr.pending td{opacity:.55}
+.badge{display:inline-block;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700;margin-left:6px;background:#fde7e3;color:var(--red)}
+.badge.ok{background:#e0eeea;color:#176657}
+.empty{color:var(--muted);padding:24px 8px;text-align:center}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.toolbar input{flex:1;min-width:180px}
+.hint{color:var(--muted);font-size:13px;line-height:1.6}
+dialog{border:0;border-radius:18px;padding:22px;width:min(520px,94vw);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,30,36,.55)}dialog h2{margin:0 0 6px}
+label{display:block;font-size:14px;font-weight:650;margin-top:12px}label input,label select{width:100%;margin-top:6px}
+.check{display:flex;gap:10px;align-items:flex-start;font-weight:500;margin-top:14px}.check input{width:22px;min-height:22px;margin:0}
+.sum{background:#edf6f2;border-radius:12px;padding:12px 14px;margin:10px 0;line-height:1.7}
+.btns{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:16px}.btns button{min-height:50px}
+.err{color:var(--red);min-height:20px;font-size:14px;margin:8px 0 0}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#15333e;color:#fff;padding:12px 18px;border-radius:12px;z-index:30;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.log{font-size:13px}.log td{white-space:normal}
+[hidden]{display:none!important}
+@media (max-width:760px){.stats{grid-template-columns:1fr 1fr}main{padding:10px}th,td{padding:8px 6px}}
+</style></head><body>
+<header><div class="brand"><img src="./q24_logo.png" alt="Q24" onerror="this.hidden=true;document.getElementById('logoText').hidden=false"><span id="logoText" class="logoText" hidden>Q24</span><div><strong>Q24 입장 관리자</strong><small id="siteLabel">매장 연결 전</small></div></div>
+ <div class="hdrRight"><span class="dot" id="connDot"><i></i><span id="connText">연결 안 됨</span></span><span class="dot" id="tabDot"><i></i><span id="tabText">태블릿 확인 전</span></span><span id="clock" style="font-variant-numeric:tabular-nums"></span><button id="btnConn" type="button">⚙ 연결 설정</button></div></header>
+<main>
+ <div class="stats">
+  <div class="stat"><span>현재 입실</span><b id="stIn">0</b></div>
+  <div class="stat"><span>오늘 퇴실</span><b id="stOut">0</b></div>
+  <div class="stat"><span>오늘 신규 등록</span><b id="stNew">0</b></div>
+  <div class="stat"><span>오늘 결제 합계</span><b id="stSum">0원</b></div>
+ </div>
+ <div class="tabs" id="tabs">
+  <button type="button" data-tab="in" class="on">입실 중</button><button type="button" data-tab="out">퇴실 기록</button><button type="button" data-tab="new">신규 등록</button><button type="button" data-tab="members">회원 목록</button><button type="button" data-tab="log">이벤트 로그</button>
+ </div>
+ <section class="card" data-panel="in">
+  <div class="toolbar"><input id="qIn" placeholder="이름 · 회원번호 · 전화번호 검색"><button id="btnSync" type="button">태블릿에서 새로 받기</button></div>
+  <table><thead><tr><th>입실 시각</th><th>누적 시간</th><th>회원번호</th><th>성명/닉네임</th><th>종목 · 핸디</th><th>전화번호</th><th></th></tr></thead><tbody id="tbIn"></tbody></table>
+  <p class="hint">결제(무통장입금 등)를 직접 확인한 뒤 <b>퇴실 처리</b>를 누르세요. 태블릿이 잠시 꺼져 있어도 명령은 브로커에 보관되었다가 태블릿이 연결되면 처리됩니다.</p>
+ </section>
+ <section class="card" data-panel="out" hidden>
+  <div class="toolbar"><input id="dOut" type="date" style="flex:0 0 auto"><input id="qOut" placeholder="검색"><button id="btnCsv" type="button">CSV 저장</button></div>
+  <table><thead><tr><th>입실</th><th>퇴실</th><th>이용 시간</th><th>회원번호</th><th>성명/닉네임</th><th>종목 · 핸디</th><th>전화번호</th><th>결제</th><th>금액</th><th>메모</th></tr></thead><tbody id="tbOut"></tbody></table>
+  <p class="hint">퇴실 기록은 이 관리자 브라우저에도 누적 저장됩니다(최근 90일). 태블릿은 오늘 기록만 보냅니다.</p>
+ </section>
+ <section class="card" data-panel="new" hidden>
+  <table><thead><tr><th>등록 시각</th><th>회원번호</th><th>성명/닉네임</th><th>종목 · 핸디</th><th>전화번호</th><th>상태</th></tr></thead><tbody id="tbNew"></tbody></table>
+ </section>
+ <section class="card" data-panel="members" hidden>
+  <div class="toolbar"><input id="qMem" placeholder="이름 · 회원번호 · 전화번호 검색"><span class="hint" id="memInfo"></span></div>
+  <table><thead><tr><th>회원번호</th><th>성명/닉네임</th><th>종목 · 핸디</th><th>전화번호</th><th>등록일</th><th>상태</th></tr></thead><tbody id="tbMem"></tbody></table>
+  <p class="hint">회원 정보 수정·삭제·얼굴 재등록은 태블릿의 ⚙ 설정 → 회원 관리에서 합니다.</p>
+ </section>
+ <section class="card" data-panel="log" hidden><table class="log"><tbody id="tbLog"></tbody></table></section>
+</main>
+
+<dialog id="dlgConn"><form method="dialog" id="fmConn">
+ <h2>연결 설정</h2><p class="hint" style="margin:0">태블릿 ⚙ 설정 → 원격 관리에 넣은 값과 <b>똑같이</b> 입력하세요. 이 브라우저에만 저장됩니다.</p>
+ <label>브로커 주소 (wss)<input id="cBroker" placeholder="wss://broker.emqx.io:8084/mqtt" autocomplete="off"></label>
+ <label>매장 코드<input id="cSite" placeholder="예: Q24-강남점" autocomplete="off"></label>
+ <label>암호 키<input id="cPass" type="password" autocomplete="current-password"></label>
+ <label>처리자 이름 (기록용)<input id="cBy" placeholder="예: 관리자" autocomplete="off"></label>
+ <label class="check"><input id="cBeep" type="checkbox" checked><span>입실·신규 등록 시 알림음</span></label>
+ <p class="err" id="cErr"></p>
+ <div class="btns"><button type="button" id="cCancel">닫기</button><button type="submit" class="primary">저장하고 연결</button></div>
+</form></dialog>
+<dialog id="dlgOut"><form method="dialog" id="fmOut">
+ <h2>결제 확인 후 퇴실</h2>
+ <div class="sum" id="oSum"></div>
+ <label>결제 방법<select id="oMethod"><option>무통장입금</option><option>계좌이체</option><option>현금</option><option>카드</option><option>정기권/쿠폰</option><option>기타</option></select></label>
+ <label>결제 금액(원)<input id="oAmount" inputmode="numeric" placeholder="예: 12000" autocomplete="off"></label>
+ <label>메모<input id="oMemo" maxlength="60" placeholder="입금자명, 테이블 번호 등" autocomplete="off"></label>
+ <label class="check"><input id="oConfirm" type="checkbox"><span>결제(입금)를 직접 확인했습니다.</span></label>
+ <p class="err" id="oErr"></p>
+ <div class="btns"><button type="button" id="oCancel">취소</button><button type="submit" class="primary" id="oOk">퇴실 처리</button></div>
+</form></dialog>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const CFG_KEY='q24AdminRemote',HIST_KEY='q24AdminHistory',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
+const LIBS=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
+const enc=new TextEncoder(),dec=new TextDecoder();
+const b64=u=>btoa(String.fromCharCode(...u)),unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+let cfg=Object.assign({broker:DEF_BROKER,site:'',pass:'',by:'관리자',beep:true},(()=>{try{return JSON.parse(localStorage.getItem(CFG_KEY))||{}}catch{return {}}})());
+let client=null,aesKey=null,base='',online=false,gen=0,libP=null,tab='in',audioCtx=null;
+let state={open:[],closed:[],at:0},roster=[],tabletStatus=null,logs=[],pending={},firstState=true;
+let hist=(()=>{try{return JSON.parse(localStorage.getItem(HIST_KEY))||{}}catch{return {}}})();
+const pad=n=>String(n).padStart(2,'0');
+const hhmm=t=>t?new Date(t).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'—';
+const ymd=t=>{const d=new Date(t);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+const dur=ms=>{const m=Math.max(0,Math.floor(ms/60000));return Math.floor(m/60)+'시간 '+pad(m%60)+'분'};
+const won=n=>(n===''||n==null||isNaN(Number(n)))?'—':Number(n).toLocaleString('ko-KR')+'원';
+const game=v=>v.game?v.game+' '+(v.handi??''):'—';
+function toast(m,ms=3500){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,ms)}
+function beep(){if(!cfg.beep)return;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();audioCtx.resume?.();const o=audioCtx.createOscillator(),g=audioCtx.createGain(),t=audioCtx.currentTime;o.frequency.value=880;g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.25,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.5);o.connect(g).connect(audioCtx.destination);o.start(t);o.stop(t+.55)}catch{}}
+function el(tag,props={},...kids){const e=Object.assign(document.createElement(tag),props);e.append(...kids);return e}
+function td(text,cls){return el('td',{textContent:text??'—',className:cls||''})}
+function telTd(p){const c=el('td');if(p){c.append(el('a',{href:'tel:'+String(p).replace(/\D/g,''),textContent:p}))}else c.textContent='—';return c}
+function match(v,q){if(!q)return true;q=q.trim().toLowerCase();const d=q.replace(/\D/g,'');return String(v.name||'').toLowerCase().includes(q)||String(v.id||'').toLowerCase().includes(q)||(d.length>=3&&String(v.phone||'').replace(/\D/g,'').includes(d))}
+
+/* ---------- 암호화 (태블릿과 동일) ---------- */
+async function sha256hex(t){const h=await crypto.subtle.digest('SHA-256',enc.encode(t));return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('')}
+async function deriveKey(){if(!cfg.pass){aesKey=null;return}const raw=await crypto.subtle.importKey('raw',enc.encode(cfg.pass),'PBKDF2',false,['deriveKey']);aesKey=await crypto.subtle.deriveKey({name:'PBKDF2',salt:enc.encode('q24-face-checkin:'+cfg.site.trim()),iterations:120000,hash:'SHA-256'},raw,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
+async function seal(obj){if(!aesKey)return JSON.stringify({v:1,enc:0,data:obj});const iv=crypto.getRandomValues(new Uint8Array(12)),ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},aesKey,enc.encode(JSON.stringify(obj)));return JSON.stringify({v:1,enc:1,iv:b64(iv),ct:b64(new Uint8Array(ct))})}
+async function unseal(s){const o=JSON.parse(s);if(o.enc){if(!aesKey)throw Error('암호 키가 필요합니다');return JSON.parse(dec.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(o.iv)},aesKey,unb64(o.ct))))}if(aesKey)throw Error('암호화되지 않은 메시지');return o.data}
+function loadLib(){if(window.mqtt)return Promise.resolve();if(libP)return libP;libP=(async()=>{for(const src of LIBS){try{await new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.crossOrigin='anonymous';const t=setTimeout(()=>{s.remove();no()},20000);s.onload=()=>{clearTimeout(t);ok()};s.onerror=()=>{clearTimeout(t);s.remove();no()};document.head.append(s)});if(window.mqtt)return}catch{}}throw Error('MQTT 라이브러리를 받지 못했습니다')})().catch(e=>{libP=null;throw e});return libP}
+
+/* ---------- 연결 ---------- */
+function conn(st,text){const d=$('connDot');d.className='dot'+(st?' '+st:'');$('connText').textContent=text}
+let decryptWarned=false;
+async function connect(){
+ gen++;const my=gen;online=false;if(client){try{client.end(true)}catch{}client=null}
+ $('siteLabel').textContent=cfg.site?'매장 '+cfg.site:'매장 연결 전';
+ if(!cfg.site){conn('err','연결 설정 필요');$('dlgConn').showModal();fillConn();return}
+ if(!window.crypto?.subtle){conn('err','HTTPS 필요');return}
+ conn('warn','연결 중…');
+ try{await loadLib();await deriveKey();base='q24/v1/'+(await sha256hex('q24:'+cfg.site.trim())).slice(0,20)}catch(e){conn('err',e.message);setTimeout(()=>{if(my===gen)connect()},30000);return}
+ if(my!==gen)return;
+ state={open:[],closed:[],at:0};roster=[];tabletStatus=null;firstState=true;decryptWarned=false;render();
+ const c=mqtt.connect(cfg.broker,{clientId:'q24adm_'+Math.random().toString(16).slice(2,10),clean:true,keepalive:30,reconnectPeriod:5000,connectTimeout:15000});
+ client=c;
+ c.on('connect',()=>{if(my!==gen)return;online=true;conn('on','브로커 연결됨'+(aesKey?' · 암호화':' · ⚠ 암호화 없음'));c.subscribe([base+'/state',base+'/members',base+'/event',base+'/status'],{qos:1})});
+ c.on('reconnect',()=>{if(my===gen)conn('warn','다시 연결 중…')});
+ c.on('offline',()=>{if(my===gen){online=false;conn('err','연결 끊김 · 재연결 중')}});
+ c.on('error',e=>{if(my===gen)conn('err','오류: '+(e?.message||e))});
+ c.on('message',async(topic,buf)=>{
+  if(my!==gen)return;const text=dec.decode(buf);if(!text)return;const sub=topic.slice(base.length+1);
+  if(sub==='status'){try{tabletStatus=JSON.parse(text)}catch{}renderTablet();return}
+  let o;try{o=await unseal(text)}catch(e){if(!decryptWarned){decryptWarned=true;conn('err','복호화 실패 · 암호 키/매장 코드 확인');toast('태블릿 메시지를 풀지 못했습니다. 암호 키와 매장 코드가 태블릿과 같은지 확인해 주세요.',6000)}return}
+  if(sub==='state')onState(o);else if(sub==='members'){roster=o.list||[];render()}else if(sub==='event')onEvent(o);
+ });
+}
+function onState(o){
+ const prev=new Set(state.open.map(v=>v.key));
+ state={open:o.open||[],closed:o.closed||[],at:o.at||Date.now(),memberCount:o.memberCount};
+ for(const v of state.closed)hist[v.key]=v;saveHist();
+ for(const k of Object.keys(pending))if(!state.open.some(v=>v.key===k))delete pending[k];
+ if(!firstState&&state.open.some(v=>!prev.has(v.key)))beep();
+ firstState=false;render();renderTablet();
+}
+function onEvent(e){
+ const v=e.visit||{},labels={checkin:'입실',register:'신규 등록 · 입실',checkout:'퇴실',undo:'입실 취소(태블릿)',ack:'명령 처리'};
+ let text=labels[e.type]||e.type;
+ if(e.type==='ack'){text+=' · '+({checkout:'퇴실',cancel:'입실 취소',sync:'새로 받기'}[e.cmd]||e.cmd)+(e.ok?' 완료':' 실패: '+(e.reason||''));const p=Object.entries(pending).find(([,x])=>x.cid===e.cid);if(p){delete pending[p[0]];toast(e.ok?(e.visit?.name||'')+' 님 '+(e.cmd==='cancel'?'입실 취소':'퇴실')+' 완료':'처리 실패: '+(e.reason||''),4000)}}
+ if(e.type==='checkout'&&v.key)hist[v.key]=v,saveHist();
+ if(e.type==='checkin'||e.type==='register')beep();
+ logs.unshift({at:e.at||Date.now(),text,who:v.name?v.name+' ('+v.id+')':'',extra:e.type==='checkout'?(v.method||'')+' '+won(v.amount):''});logs=logs.slice(0,200);
+ render();
+}
+function saveHist(){const lim=Date.now()-90*864e5;for(const k of Object.keys(hist))if((hist[k].outAt||0)<lim)delete hist[k];try{localStorage.setItem(HIST_KEY,JSON.stringify(hist))}catch{}}
+function renderTablet(){
+ const d=$('tabDot'),seen=Math.max(tabletStatus?.at||0,state.at||0),age=Date.now()-seen;
+ if(!seen){d.className='dot';$('tabText').textContent='태블릿 신호 없음';return}
+ const ok=tabletStatus?.online!==false&&age<150000;
+ d.className='dot '+(ok?'on':'err');$('tabText').textContent=(ok?'태블릿 온라인':'태블릿 오프라인')+' · 최근 '+hhmm(seen);
+}
+async function sendCmd(cmd){
+ if(!client||!online){toast('브로커에 연결되어 있지 않습니다.');return false}
+ const cid='C'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+ const body={...cmd,cid,by:cfg.by||'관리자',at:Date.now()};
+ client.publish(base+'/cmd/'+cid,await seal(body),{qos:1,retain:cmd.type!=='sync'});
+ if(cmd.key){pending[cmd.key]={cid,at:Date.now(),type:cmd.type};setTimeout(()=>{if(pending[cmd.key]?.cid===cid){toast('태블릿 응답 대기 중 · 태블릿이 연결되면 자동 처리됩니다.',5000);render()}},20000)}
+ render();return true;
+}
+
+/* ---------- 화면 ---------- */
+function render(){
+ const t0=new Date();t0.setHours(0,0,0,0);const today=t0.getTime();
+ const closedToday=Object.values(hist).filter(v=>v.outAt>=today);
+ $('stIn').textContent=state.open.length;$('stOut').textContent=closedToday.length;
+ $('stNew').textContent=roster.filter(m=>(m.createdAt||0)>=today).length;
+ $('stSum').textContent=closedToday.reduce((a,v)=>a+(Number(v.amount)||0),0).toLocaleString('ko-KR')+'원';
+ for(const b of $('tabs').children){const k=b.dataset.tab;b.classList.toggle('on',k===tab);b.textContent={in:'입실 중',out:'퇴실 기록',new:'신규 등록',members:'회원 목록',log:'이벤트 로그'}[k]+({in:' ('+state.open.length+')',out:' ('+closedToday.length+')',new:' ('+$('stNew').textContent+')',members:' ('+roster.length+')',log:''}[k])}
+ for(const p of document.querySelectorAll('[data-panel]'))p.hidden=p.dataset.panel!==tab;
+ // 입실 중
+ const tb=$('tbIn');tb.replaceChildren();
+ const rows=state.open.filter(v=>match(v,$('qIn').value));
+ if(!rows.length)tb.append(el('tr',{},el('td',{colSpan:7,className:'empty',textContent:state.at?'입실 중인 회원이 없습니다.':'태블릿 상태를 기다리는 중…'})));
+ for(const v of rows){
+  const pend=pending[v.key];
+  const nm=td(v.name,'name');if(v.isNew)nm.append(el('span',{className:'badge',textContent:'신규'}));
+  const act=el('td');
+  if(pend)act.append(el('span',{className:'hint',textContent:'처리 중…'}));
+  else{act.append(el('button',{type:'button',className:'primary',textContent:'결제 확인 후 퇴실',onclick:()=>openCheckout(v)}),' ',el('button',{type:'button',className:'danger',textContent:'입실 취소',onclick:()=>cancelVisit(v)}))}
+  const tr=el('tr',{className:pend?'pending':''},td(hhmm(v.inAt),'num'),td(dur(Date.now()-v.inAt),'num live'),td(v.id),nm,td(game(v)),telTd(v.phone),act);
+  tr.dataset.in=v.inAt;tb.append(tr);
+ }
+ // 퇴실 기록
+ if(!$('dOut').value)$('dOut').value=ymd(Date.now());
+ const day=$('dOut').value,outs=Object.values(hist).filter(v=>ymd(v.outAt)===day&&match(v,$('qOut').value)).sort((a,b)=>b.outAt-a.outAt);
+ const to=$('tbOut');to.replaceChildren();
+ if(!outs.length)to.append(el('tr',{},el('td',{colSpan:10,className:'empty',textContent:'퇴실 기록이 없습니다.'})));
+ for(const v of outs)to.append(el('tr',{},td(hhmm(v.inAt),'num'),td(hhmm(v.outAt),'num'),td(dur(v.outAt-v.inAt),'num'),td(v.id),td(v.name,'name'),td(game(v)),telTd(v.phone),td(v.method||'—'),td(won(v.amount),'num'),td(v.memo||'')));
+ if(outs.length){const s=outs.reduce((a,v)=>a+(Number(v.amount)||0),0);to.append(el('tr',{},el('td',{colSpan:8,textContent:'합계 '+outs.length+'건',style:'font-weight:700'}),td(s.toLocaleString('ko-KR')+'원','num'),td('')))}
+ // 신규 등록
+ const tn=$('tbNew');tn.replaceChildren();const news=roster.filter(m=>(m.createdAt||0)>=today).sort((a,b)=>b.createdAt-a.createdAt);
+ if(!news.length)tn.append(el('tr',{},el('td',{colSpan:6,className:'empty',textContent:'오늘 신규 등록이 없습니다.'})));
+ const openIds=new Set(state.open.map(v=>v.id));
+ for(const m of news)tn.append(el('tr',{},td(hhmm(m.createdAt),'num'),td(m.id),td(m.name,'name'),td(game(m)),telTd(m.phone),td(openIds.has(m.id)?'입실 중':'퇴실')));
+ // 회원 목록
+ const tm=$('tbMem');tm.replaceChildren();const mem=roster.filter(m=>match(m,$('qMem').value)).sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+ $('memInfo').textContent=roster.length?'전체 '+roster.length+'명':'';
+ if(!mem.length)tm.append(el('tr',{},el('td',{colSpan:6,className:'empty',textContent:roster.length?'검색 결과가 없습니다.':'회원 명단을 기다리는 중…'})));
+ for(const m of mem)tm.append(el('tr',{},td(m.id),td(m.name,'name'),td(game(m)),telTd(m.phone),td(m.createdAt?ymd(m.createdAt):'—'),td(openIds.has(m.id)?'입실 중':'')));
+ // 로그
+ const tl=$('tbLog');tl.replaceChildren();
+ if(!logs.length)tl.append(el('tr',{},el('td',{className:'empty',textContent:'이 창을 연 뒤의 이벤트가 여기에 표시됩니다.'})));
+ for(const l of logs)tl.append(el('tr',{},td(new Date(l.at).toLocaleTimeString('ko-KR'),'num'),td(l.text),td(l.who),td(l.extra)));
+}
+function tickLive(){for(const tr of $('tbIn').children){const t=Number(tr.dataset.in);if(t){const c=tr.querySelector('.live');if(c)c.textContent=dur(Date.now()-t)}}renderTablet();$('clock').textContent=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}
+setInterval(tickLive,15000);setInterval(()=>$('clock').textContent=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}),1000);
+
+let outTarget=null;
+function openCheckout(v){
+ outTarget=v;$('oSum').replaceChildren();
+ $('oSum').append(el('b',{textContent:v.name+' ('+v.id+')'}),el('br'),'입실 '+hhmm(v.inAt)+' · 이용 '+dur(Date.now()-v.inAt),el('br'),game(v)+' · '+(v.phone||'전화번호 없음'));
+ $('oMethod').value='무통장입금';$('oAmount').value='';$('oMemo').value='';$('oConfirm').checked=false;$('oErr').textContent='';
+ $('dlgOut').showModal();setTimeout(()=>$('oAmount').focus(),100);
+}
+$('oCancel').onclick=()=>$('dlgOut').close();
+for(const id of ['oConfirm','oAmount'])$(id).addEventListener('input',()=>$('oErr').textContent='');
+$('fmOut').onsubmit=async e=>{
+ e.preventDefault();const a=$('oAmount').value.replace(/[^\d]/g,'');
+ if(!$('oConfirm').checked){$('oErr').textContent='결제 확인에 체크해 주세요.';return}
+ if($('oAmount').value.trim()&&!a){$('oErr').textContent='금액은 숫자로 입력해 주세요.';return}
+ if(await sendCmd({type:'checkout',key:outTarget.key,memberId:outTarget.id,method:$('oMethod').value,amount:a===''?'':Number(a),memo:$('oMemo').value.trim(),outAt:Date.now()})){$('dlgOut').close();toast(outTarget.name+' 님 퇴실 명령을 보냈습니다.')}
+};
+async function cancelVisit(v){if(!confirm(v.name+' 님 입실 기록을 취소할까요? (잘못 인식된 경우 등, 결제 없이 기록 삭제)'))return;if(await sendCmd({type:'cancel',key:v.key,memberId:v.id}))toast('입실 취소 명령을 보냈습니다.')}
+
+function fillConn(){$('cBroker').value=cfg.broker;$('cSite').value=cfg.site;$('cPass').value=cfg.pass;$('cBy').value=cfg.by;$('cBeep').checked=cfg.beep;$('cErr').textContent=''}
+$('btnConn').onclick=()=>{fillConn();$('dlgConn').showModal()};
+$('cCancel').onclick=()=>$('dlgConn').close();
+$('fmConn').onsubmit=e=>{
+ e.preventDefault();const b=$('cBroker').value.trim()||DEF_BROKER;
+ if(!/^wss?:\/\//.test(b)){$('cErr').textContent='브로커 주소는 wss:// 로 시작해야 합니다.';return}
+ if(!$('cSite').value.trim()){$('cErr').textContent='매장 코드를 입력해 주세요.';return}
+ cfg={broker:b,site:$('cSite').value.trim(),pass:$('cPass').value,by:$('cBy').value.trim()||'관리자',beep:$('cBeep').checked};
+ try{localStorage.setItem(CFG_KEY,JSON.stringify(cfg))}catch{}
+ $('dlgConn').close();connect();
+};
+$('btnSync').onclick=()=>sendCmd({type:'sync'}).then(ok=>ok&&toast('태블릿에 최신 상태를 요청했습니다.'));
+$('btnCsv').onclick=()=>{
+ const day=$('dOut').value,rows=Object.values(hist).filter(v=>ymd(v.outAt)===day).sort((a,b)=>a.outAt-b.outAt);
+ const q=s=>'"'+String(s??'').replace(/"/g,'""')+'"';
+ const csv=['입실,퇴실,이용(분),회원번호,성명/닉네임,종목,핸디,전화번호,결제,금액,메모,처리자'].concat(rows.map(v=>[new Date(v.inAt).toLocaleString('ko-KR'),new Date(v.outAt).toLocaleString('ko-KR'),Math.round((v.outAt-v.inAt)/60000),v.id,v.name,v.game,v.handi,v.phone,v.method,v.amount,v.memo,v.by].map(q).join(','))).join('\r\n');
+ const a=el('a',{href:URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv'})),download:'Q24_퇴실기록_'+day+'.csv'});document.body.append(a);a.click();a.remove();
+};
+for(const b of $('tabs').children)b.onclick=()=>{tab=b.dataset.tab;render()};
+for(const id of ['qIn','qOut','qMem','dOut'])$(id).addEventListener('input',render);
+setInterval(()=>{if(Object.keys(pending).length)render()},20000);
+render();connect();tickLive();
+</script></body></html>
