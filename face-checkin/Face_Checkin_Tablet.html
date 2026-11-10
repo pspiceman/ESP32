@@ -5,8 +5,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Q24 입장 등록">
-<link rel="icon" type="image/png" href="./icons/icon-192.png">
-<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="icon" type="image/png" href="./icons/q24-192.png" onerror="this.href='./icons/icon-192.png'">
+<link rel="apple-touch-icon" href="./icons/q24-192.png">
 <script src="./pwa.js" defer></script><style>
 :root{--ink:#17313b;--muted:#64777d;--green:#087f70;--line:#d9e5e3;--bg:#f2f6f5;--hdr:64px}
 *{box-sizing:border-box}
@@ -139,6 +139,10 @@ html,body{overscroll-behavior:none}
 .side.phone .result,.side.phone .inCount,.side.phone .bellWrap{display:none}
 .side.picking .bellWrap{flex:0 0 auto;padding:6px}.side.picking .bell{width:96px;height:96px;border-width:5px;font-size:20px}.side.picking .bell svg{width:28px;height:28px}.side.picking .finger,.side.picking .bell small{display:none}.side.picking .inCount{display:none}
 .side.picking .result{padding:14px}.side.picking .result strong{font-size:26px}.side.picking .result p{font-size:17px}
+#fsGate{position:fixed;inset:0;z-index:40;background:radial-gradient(circle at 50% 40%,#1d3d49,#0b161b 70%);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#fsGate img{width:min(46vw,46vh,360px);height:auto;border-radius:18px;box-shadow:0 0 40px rgba(60,160,255,.35)}
+#fsGate b{font-size:clamp(26px,5vh,44px)}#fsGate span{font-size:clamp(15px,2.6vh,20px);color:#c0d4d6}
+#fsGate .tapRing{width:78px;height:78px;border-radius:50%;border:4px solid #e8402f;animation:pulse 2s infinite;display:grid;place-items:center;font-size:40px}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#15333e;color:#fff;padding:12px 18px;border-radius:12px;z-index:30;font-size:15px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
 .pinPad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.pinPad button{min-height:56px;font-size:22px}
 @media (orientation:portrait){main{grid-template-columns:1fr;grid-template-rows:minmax(0,1.4fr) auto}.side{flex-direction:row;flex-wrap:wrap;align-items:stretch}.side .result{flex:1 1 60%}.bellWrap{flex:0 0 auto}.bell{width:180px;height:180px}.pickCard{flex-basis:100%}.spBody{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}}
@@ -241,8 +245,8 @@ html,body{overscroll-behavior:none}
    <div id="members"></div>
    <p class="hint">회원번호는 Q001부터 자동 부여됩니다. <b>재등록 권장</b> 표시는 이전 버전(2.x)에서 등록된 얼굴입니다. <b>정보 수정</b>으로 이름·핸디·전화번호를, <b>얼굴 재등록</b>으로 얼굴을 바꿀 수 있습니다.</p>
   </section>
-  <section class="card"><h2>전체 화면</h2><div class="row"><label class="consent" style="margin:0"><input id="fsAuto" type="checkbox" checked> 화면을 터치하면 자동으로 전체 화면(주소창 숨김)</label></div><div class="row" style="margin-top:10px"><button id="fsBtn" type="button">지금 전체 화면</button><button id="fsExit" type="button">전체 화면 끄기</button><span id="fsMsg" class="hint"></span></div><p class="hint">브라우저 규칙상 전체 화면은 <b>화면을 한 번 터치해야</b> 켜집니다. 새로고침이나 앱 전환 후에는 첫 터치(톡 포함) 때 다시 전체 화면이 됩니다. 항상 주소창 없이 쓰려면 Chrome 메뉴 ⋮ → <b>홈 화면에 추가</b>로 아이콘을 만들어 실행하세요.</p></section>
-  <section class="card"><h2>새로고침</h2><div class="row"><button id="reloadBtn" type="button">화면 새로고침</button><button id="hardReloadBtn" type="button">최신 버전으로 새로고침</button></div><p class="hint">입장 화면에서 손가락으로 화면을 <b>아래로 길게 당겼다 놓으면</b> 새로고침됩니다. GitHub에 새 파일을 올렸는데 예전 화면이 보이면 <b>최신 버전으로 새로고침</b>을 누르세요(저장된 회원·입실 기록은 그대로 유지).</p></section>
+  <section class="card"><h2>전체 화면</h2><div class="row"><label class="consent" style="margin:0"><input id="fsAuto" type="checkbox" checked> 화면을 터치하면 자동으로 전체 화면(주소창 숨김)</label></div><div class="row" style="margin-top:10px"><button id="fsBtn" type="button">지금 전체 화면</button><button id="fsExit" type="button">전체 화면 끄기</button><span id="fsMsg" class="hint"></span></div><p class="hint">"화면 새로고침"·아래로 당기기는 페이지를 다시 열지 않아 <b>전체 화면이 그대로 유지</b>됩니다. 페이지를 새로 열 때(최신 버전 새로고침·재부팅 등)는 브라우저 규칙상 <b>"화면을 터치해 주세요" 시작 화면을 한 번 터치</b>하면 전체 화면이 됩니다. 항상 주소창 없이 쓰려면 Chrome 메뉴 ⋮ → <b>홈 화면에 추가</b>로 아이콘을 만들어 실행하세요.</p></section>
+  <section class="card"><h2>새로고침</h2><div class="row"><button id="reloadBtn" type="button">화면 새로고침</button><button id="hardReloadBtn" type="button">최신 버전으로 새로고침</button></div><p class="hint">입장 화면에서 손가락으로 화면을 <b>아래로 길게 당겼다 놓으면</b> 새로고침됩니다(전체 화면 유지). GitHub에 새 파일을 올렸는데 예전 화면이 보이면 <b>최신 버전으로 새로고침</b>을 누르세요(저장된 회원·입실 기록은 그대로 유지).</p></section>
   <section class="card"><h2>설정 잠금</h2>
    <div class="settings"><label for="pinNew">설정 비밀번호 변경 (숫자 4~8자리)</label><input id="pinNew" inputmode="numeric" type="password" placeholder="새 비밀번호 (기본 0000)" autocomplete="new-password"></div>
    <div class="row" style="margin-top:10px"><button id="pinSave" type="button">비밀번호 변경</button><span id="pinMsg" class="hint"></span></div>
@@ -253,7 +257,7 @@ html,body{overscroll-behavior:none}
    <b>사용 순서:</b> 톡 → 정면 바라보기(1~2초) → "OOO님 입장 확인". 처음 오신 분은 이름/닉네임 → 종목·핸디 → 휴대폰 번호를 차례로 입력합니다. 퇴실은 관리자가 결제 확인 후 관리자 웹에서 처리합니다.<br>
    <b>정확도:</b> 등록 때 정면 8장, 확인 때 4장을 평균하고 두 눈이 수평이 되도록 정렬한 뒤 비교합니다. 1·2순위 차이가 작으면 비슷한 분들만 골라 보여 줍니다.<br>
    얼굴 분석은 기기에서만 수행하며 사진·영상을 저장하거나 보내지 않습니다(얼굴 특징값 숫자만 이 기기에 저장). 생체 위조(사진) 검출 기능은 없습니다.</p>
-   <p class="hint" id="footerVer">Q24 입장 등록 4.1 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
+   <p class="hint" id="footerVer">Q24 입장 등록 4.1.1 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
   </section>
  </div>
 </section>
@@ -285,6 +289,7 @@ html,body{overscroll-behavior:none}
  <div class="btns"><button type="button" id="pinCancel">취소</button><button class="primary" type="button" id="pinOk">확인</button></div>
 </form></dialog>
 <div id="toast" class="toast" hidden></div>
+<div id="fsGate" hidden role="button" aria-label="화면을 터치하면 전체 화면으로 시작합니다"><img id="fsGateLogo" alt="Q24"><b>화면을 터치해 주세요</b><div class="tapRing">👆</div><span>터치하면 전체 화면(주소창 없음)으로 시작합니다</span></div>
 <div id="ptr" class="ptr" aria-hidden="true"><i>⬇</i><span id="ptrText">아래로 당기면 새로고침</span></div>
 <script>
 window.onerror=function(m,src,l){var e=document.getElementById('status');if(e){e.className='status error';e.textContent='스크립트 오류: '+m+' (줄 '+l+')\n브라우저가 너무 오래되었을 수 있습니다. Chrome을 최신으로 업데이트해 주세요.'}};
@@ -1375,7 +1380,20 @@ setupInApp();permissionInfo();initDB().then(()=>{renderInCount();Remote.start()}
 setInterval(()=>{if(!$('settingsPage').hidden)renderMembers()},60000);
 
 /* ---------- 새로고침: 아래로 당겨서 놓기 + 설정의 버튼 ---------- */
+/* 화면 새로고침: 페이지를 다시 열지 않고 카메라·회원·원격 연결만 다시 시작 → 전체 화면 유지 */
+async function softReload(){
+ const p=$('ptr');p.classList.add('spin');p.style.transition='transform .2s';p.style.transform='translate(-50%,0)';$('ptrText').textContent='새로고침 중…';
+ try{if($('regDialog').open)$('regDialog').close();if($('simDialog').open)$('simDialog').close();hideWelcome();stopCamera()}catch{}
+ try{const o=JSON.parse(store.get(VISIT_KEY));if(o&&o.open)visits=o}catch{}
+ try{db?.close()}catch{}await initDB();
+ renderInCount();showIdle();clearMetrics();
+ nextRetryAt=0;starting=false;await wait(300);startCamera();
+ Remote.start();if(settings.engine==='sface'&&!SF.ready&&ready)SF.load();
+ setTimeout(()=>{p.classList.remove('spin','go');p.style.transform='translate(-50%,-70px)';$('ptrText').textContent='아래로 당기면 새로고침'},700);
+ toast('새로고침했습니다.',2000);
+}
 function doReload(hard){
+ if(!hard){softReload();return}
  const p=$('ptr');p.classList.add('spin');p.style.transform='translate(-50%,0)';$('ptrText').textContent='새로고침 중…';
  try{stopCamera()}catch{}
  const go=()=>{const u=new URL(location.href);if(hard)u.searchParams.set('v',Date.now().toString(36));else u.searchParams.delete('v');location.replace(u.href)};
@@ -1415,15 +1433,20 @@ $('hardReloadBtn').onclick=()=>doReload(true);
    return Promise.resolve(r).then(()=>{try{screen.orientation?.lock?.('landscape').catch(()=>{})}catch{}return true}).catch(()=>false)}catch{return Promise.resolve(false)}
  }
  function exit(){try{(document.exitFullscreen||document.webkitExitFullscreen)?.call(document)}catch{}}
+ const gate=$('fsGate');$('fsGateLogo').src=$('logoImg').src;let gateFailed=false;
+ // 새로고침·재실행 후에도 항상 전체 화면: 브라우저 규칙상 터치가 1번 필요 → 시작 화면으로 받음
+ function gateCheck(){gate.hidden=!(auto&&can&&!standalone&&!isFs()&&!gateFailed)}
+ gate.addEventListener('click',e=>{e.stopPropagation();enter().then(()=>setTimeout(()=>{if(!isFs())gateFailed=true;gateCheck();msg()},500))});
+ document.addEventListener('fullscreenchange',()=>setTimeout(gateCheck,150));document.addEventListener('webkitfullscreenchange',()=>setTimeout(gateCheck,150));
  function msg(){$('fsMsg').textContent=standalone?'홈 화면 앱으로 실행 중':!can?'이 브라우저는 전체 화면을 지원하지 않습니다':isFs()?'전체 화면 사용 중':'전체 화면 아님'}
  // 첫 터치(또는 클릭) 때 전체 화면 — 톡 버튼 누름도 그대로 동작
- const onTouch=()=>{if(auto&&!standalone&&!isFs())enter().then(msg)};
+ const onTouch=e=>{if(!gate.hidden||e?.target?.closest?.('#fsGate'))return;if(auto&&!standalone&&!isFs())enter().then(msg)};
  document.addEventListener('pointerup',onTouch,true);
  document.addEventListener('touchend',onTouch,true);
  document.addEventListener('fullscreenchange',msg);document.addEventListener('webkitfullscreenchange',msg);
- $('fsAuto').onchange=()=>{auto=$('fsAuto').checked;store.set(FS_KEY,auto?'1':'0');if(auto)enter().then(msg);else exit()};
+ $('fsAuto').onchange=()=>{auto=$('fsAuto').checked;store.set(FS_KEY,auto?'1':'0');if(auto)enter().then(msg);else exit();gateCheck()};
  $('fsBtn').onclick=()=>enter().then(ok=>{msg();if(!ok&&can)toast('전체 화면을 켜지 못했습니다. 화면을 한 번 더 터치해 주세요.')});
- $('fsExit').onclick=()=>{auto=false;$('fsAuto').checked=false;store.set(FS_KEY,'0');exit();setTimeout(msg,300)};
- msg();
+ $('fsExit').onclick=()=>{auto=false;$('fsAuto').checked=false;store.set(FS_KEY,'0');exit();setTimeout(()=>{msg();gateCheck()},300)};
+ msg();gateCheck();
 })();
 </script></body></html>
