@@ -52,6 +52,7 @@ video{width:100%;height:100%;object-fit:contain;display:block}video.mirror{trans
 .welcome strong{display:block;font-size:32px;overflow-wrap:anywhere}.welcome span{display:block;margin-top:6px;color:#f1f7f5}
 .status{padding:9px 12px;background:#e9f3f0;border-radius:10px;line-height:1.45;white-space:pre-line;font-size:14px;max-height:4.6em;overflow:hidden;flex-shrink:0}
 .status.error{background:#fff0ec;color:#a83732}
+#status:not(.error){display:none}  /* 입장 화면 하단 안내 문구 숨김 (오류만 표시) */
 .inapp{position:absolute;left:12px;right:12px;top:12px;z-index:2}
 .result{background:#edf6f2;border:1px solid #d3e9df;border-radius:16px;padding:20px;flex-shrink:0}
 .result strong{display:block;font-size:40px;overflow-wrap:anywhere;line-height:1.25}.result p{margin:10px 0 0;font-size:25px;font-weight:600;line-height:1.45;word-break:keep-all}
@@ -257,7 +258,7 @@ html,body{overscroll-behavior:none}
    <b>사용 순서:</b> 톡 → 정면 바라보기(1~2초) → "OOO님 입장 확인". 처음 오신 분은 이름/닉네임 → 종목·핸디 → 휴대폰 번호를 차례로 입력합니다. 퇴실은 관리자가 결제 확인 후 관리자 웹에서 처리합니다.<br>
    <b>정확도:</b> 등록 때 정면 8장, 확인 때 4장을 평균하고 두 눈이 수평이 되도록 정렬한 뒤 비교합니다. 1·2순위 차이가 작으면 비슷한 분들만 골라 보여 줍니다.<br>
    얼굴 분석은 기기에서만 수행하며 사진·영상을 저장하거나 보내지 않습니다(얼굴 특징값 숫자만 이 기기에 저장). 생체 위조(사진) 검출 기능은 없습니다.</p>
-   <p class="hint" id="footerVer">Q24 입장 등록 4.1.1 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
+   <p class="hint" id="footerVer">Q24 입장 등록 4.1.2 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
   </section>
  </div>
 </section>
