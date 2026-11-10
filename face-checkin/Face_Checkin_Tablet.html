@@ -123,6 +123,10 @@ body.filllight .camera{box-shadow:0 0 0 6px #fff}
 .spBody{overflow:auto;padding:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-content:start}
 .spBody .card.wide{grid-column:1/-1}
 #members{max-height:none}
+.ptr{position:fixed;left:50%;top:0;z-index:25;transform:translate(-50%,-70px);background:#15333e;color:#fff;border-radius:0 0 18px 18px;padding:12px 22px;font-size:17px;font-weight:700;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.3);pointer-events:none;transition:background .15s}
+.ptr.go{background:#087f70}.ptr i{display:inline-block;font-style:normal;font-size:22px;transition:transform .15s}.ptr.go i{transform:rotate(180deg)}.ptr.spin i{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+html,body{overscroll-behavior:none}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#15333e;color:#fff;padding:12px 18px;border-radius:12px;z-index:30;font-size:15px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
 .pinPad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.pinPad button{min-height:56px;font-size:22px}
 @media (orientation:portrait){main{grid-template-columns:1fr;grid-template-rows:minmax(0,1.4fr) auto}.side{flex-direction:row;flex-wrap:wrap;align-items:stretch}.side .result{flex:1 1 60%}.bellWrap{flex:0 0 auto}.bell{width:180px;height:180px}.pickCard{flex-basis:100%}.spBody{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}}
@@ -212,6 +216,7 @@ body.filllight .camera{box-shadow:0 0 0 6px #fff}
    <div id="members"></div>
    <p class="hint">회원번호는 Q001부터 자동 부여됩니다. <b>재등록 권장</b> 표시는 이전 버전(2.x)에서 등록된 얼굴입니다. <b>정보 수정</b>으로 이름·핸디·전화번호를, <b>얼굴 재등록</b>으로 얼굴을 바꿀 수 있습니다.</p>
   </section>
+  <section class="card"><h2>새로고침</h2><div class="row"><button id="reloadBtn" type="button">화면 새로고침</button><button id="hardReloadBtn" type="button">최신 버전으로 새로고침</button></div><p class="hint">입장 화면에서 손가락으로 화면을 <b>아래로 길게 당겼다 놓으면</b> 새로고침됩니다. GitHub에 새 파일을 올렸는데 예전 화면이 보이면 <b>최신 버전으로 새로고침</b>을 누르세요(저장된 회원·입실 기록은 그대로 유지).</p></section>
   <section class="card"><h2>설정 잠금</h2>
    <div class="settings"><label for="pinNew">설정 비밀번호 변경 (숫자 4~8자리)</label><input id="pinNew" inputmode="numeric" type="password" placeholder="새 비밀번호 (기본 0000)" autocomplete="new-password"></div>
    <div class="row" style="margin-top:10px"><button id="pinSave" type="button">비밀번호 변경</button><span id="pinMsg" class="hint"></span></div>
@@ -222,7 +227,7 @@ body.filllight .camera{box-shadow:0 0 0 6px #fff}
    <b>사용 순서:</b> 똑똑 → 정면 바라보기(1~2초) → "OOO님 입장 확인". 처음 오신 분은 이름/닉네임 → 종목·핸디 → 휴대폰 번호를 차례로 입력합니다. 퇴실은 관리자가 결제 확인 후 관리자 웹에서 처리합니다.<br>
    <b>정확도:</b> 등록 때 정면 8장, 확인 때 4장을 평균하고 두 눈이 수평이 되도록 정렬한 뒤 비교합니다. 1·2순위 차이가 작으면 비슷한 분들만 골라 보여 줍니다.<br>
    얼굴 분석은 기기에서만 수행하며 사진·영상을 저장하거나 보내지 않습니다(얼굴 특징값 숫자만 이 기기에 저장). 생체 위조(사진) 검출 기능은 없습니다.</p>
-   <p class="hint" id="footerVer">Q24 입장 등록 4.0.4 · face-api.js 0.22.2</p>
+   <p class="hint" id="footerVer">Q24 입장 등록 4.0.5 · face-api.js 0.22.2</p>
   </section>
  </div>
 </section>
@@ -254,6 +259,7 @@ body.filllight .camera{box-shadow:0 0 0 6px #fff}
  <div class="btns"><button type="button" id="pinCancel">취소</button><button class="primary" type="button" id="pinOk">확인</button></div>
 </form></dialog>
 <div id="toast" class="toast" hidden></div>
+<div id="ptr" class="ptr" aria-hidden="true"><i>⬇</i><span id="ptrText">아래로 당기면 새로고침</span></div>
 <script>
 window.onerror=function(m,src,l){var e=document.getElementById('status');if(e){e.className='status error';e.textContent='스크립트 오류: '+m+' (줄 '+l+')\n브라우저가 너무 오래되었을 수 있습니다. Chrome을 최신으로 업데이트해 주세요.'}};
 </script>
@@ -1156,4 +1162,32 @@ $('protocol').textContent=location.protocol+(location.hostname?' · '+location.h
 $('secure').textContent=isSecureContext?'보안 컨텍스트 사용 가능':'보안 컨텍스트 아님 · HTTPS 필요';
 setupInApp();permissionInfo();initDB().then(()=>{renderInCount();Remote.start()});renderLog();renderInCount();controls();requestWakeLock();startCamera();
 setInterval(()=>{if(!$('settingsPage').hidden)renderMembers()},60000);
+
+/* ---------- 새로고침: 아래로 당겨서 놓기 + 설정의 버튼 ---------- */
+function doReload(hard){
+ const p=$('ptr');p.classList.add('spin');p.style.transform='translate(-50%,0)';$('ptrText').textContent='새로고침 중…';
+ try{stopCamera()}catch{}
+ const go=()=>{const u=new URL(location.href);if(hard)u.searchParams.set('v',Date.now().toString(36));else u.searchParams.delete('v');location.replace(u.href)};
+ if(!hard){setTimeout(go,200);return}
+ // 화면 파일 캐시만 비움 (IndexedDB 회원 정보 · localStorage 기록은 유지)
+ Promise.all([
+  navigator.serviceWorker?.getRegistrations?.().then(rs=>Promise.all(rs.map(r=>r.update().catch(()=>{})))).catch(()=>{}),
+  window.caches?.keys?.().then(ks=>Promise.all(ks.map(k=>caches.delete(k)))).catch(()=>{})
+ ]).finally(()=>setTimeout(go,200));
+}
+$('reloadBtn').onclick=()=>doReload(false);
+$('hardReloadBtn').onclick=()=>doReload(true);
+(()=>{
+ const TH=130,MAX=190;let y0=null,x0=0,dy=0,active=false;
+ const p=$('ptr');
+ const blocked=()=>!$('settingsPage').hidden||$('regDialog').open||$('simDialog').open||$('pinDialog').open||(session&&['register','enroll','enroll-confirm'].includes(session.mode));
+ const show=d=>{const k=Math.min(d,MAX);p.style.transition='none';p.style.transform='translate(-50%,'+(-70+k*.55)+'px)';const go=d>=TH;p.classList.toggle('go',go);$('ptrText').textContent=go?'놓으면 새로고침':'아래로 당기면 새로고침'};
+ const reset=()=>{p.style.transition='transform .2s';p.style.transform='translate(-50%,-70px)';p.classList.remove('go');y0=null;active=false;dy=0};
+ document.addEventListener('touchstart',e=>{if(e.touches.length!==1||blocked()){y0=null;return}const tch=e.touches[0];if(tch.clientY>innerHeight*.6){y0=null;return}y0=tch.clientY;x0=tch.clientX;dy=0;active=false},{passive:true});
+ document.addEventListener('touchmove',e=>{if(y0==null)return;const tch=e.touches[0];dy=tch.clientY-y0;const dx=Math.abs(tch.clientX-x0);
+  if(!active){if(dy>18&&dy>dx*1.5)active=true;else if(dy<-10||dx>40){y0=null;return}else return}
+  show(dy)},{passive:true});
+ document.addEventListener('touchend',()=>{if(y0==null)return;if(active&&dy>=TH&&!blocked())doReload(false);else reset()},{passive:true});
+ document.addEventListener('touchcancel',reset,{passive:true});
+})();
 </script></body></html>
