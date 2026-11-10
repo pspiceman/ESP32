@@ -127,6 +127,18 @@ body.filllight .camera{box-shadow:0 0 0 6px #fff}
 .ptr.go{background:#087f70}.ptr i{display:inline-block;font-style:normal;font-size:22px;transition:transform .15s}.ptr.go i{transform:rotate(180deg)}.ptr.spin i{animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 html,body{overscroll-behavior:none}
+.phoneCard{display:flex;flex-direction:column;min-height:0;flex:1}
+.pinDots{display:flex;justify-content:center;gap:16px;margin:4px 0 12px}
+.pinDots i{width:clamp(34px,6vh,48px);height:clamp(34px,6vh,48px);border-radius:12px;border:3px solid #b9d6cc;display:grid;place-items:center;font-style:normal;font-size:clamp(22px,4vh,32px);font-weight:800;color:var(--ink);background:#fff}
+.pinDots i.on{border-color:var(--green);background:#edf6f2}
+.phonePad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;flex:1;min-height:0}
+.phonePad button{min-height:clamp(44px,8.5vh,66px);font-size:clamp(22px,4vh,30px);border-radius:14px;padding:0}
+.phonePad button.fn{font-size:16px;color:var(--muted)}
+.phoneAlt{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.phoneAlt button{min-height:46px;font-size:15px}
+.err.big{font-size:16px;font-weight:700;text-align:center;min-height:24px;margin:0 0 6px}
+.side.phone .result,.side.phone .inCount,.side.phone .bellWrap{display:none}
+.side.picking .bellWrap{flex:0 0 auto;padding:6px}.side.picking .bell{width:96px;height:96px;border-width:5px;font-size:20px}.side.picking .bell svg{width:28px;height:28px}.side.picking .finger,.side.picking .bell small{display:none}.side.picking .inCount{display:none}
+.side.picking .result{padding:14px}.side.picking .result strong{font-size:26px}.side.picking .result p{font-size:17px}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#15333e;color:#fff;padding:12px 18px;border-radius:12px;z-index:30;font-size:15px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
 .pinPad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.pinPad button{min-height:56px;font-size:22px}
 @media (orientation:portrait){main{grid-template-columns:1fr;grid-template-rows:minmax(0,1.4fr) auto}.side{flex-direction:row;flex-wrap:wrap;align-items:stretch}.side .result{flex:1 1 60%}.bellWrap{flex:0 0 auto}.bell{width:180px;height:180px}.pickCard{flex-basis:100%}.spBody{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}}
@@ -150,14 +162,22 @@ html,body{overscroll-behavior:none}
  <div id="status" class="status" role="status" aria-live="polite">카메라를 자동으로 시작합니다. 권한 요청이 뜨면 허용해 주세요.</div>
 </div>
 <div class="side">
- <div class="result" aria-live="polite"><strong id="resultName">입장하시려면</strong><p id="resultId">오른쪽 똑똑 버튼을 <span class="once">한번</span> 눌러 주세요.</p><div class="phase" id="phaseBar" hidden></div></div>
+ <div class="result" aria-live="polite"><strong id="resultName">입장하시려면</strong><p id="resultId">오른쪽 톡 버튼을 <span class="once">한번</span> 눌러 주세요.</p><div class="phase" id="phaseBar" hidden></div></div>
  <section class="card pickCard" id="pickCard" hidden>
   <div class="row" style="justify-content:space-between"><h2 style="margin:0" id="pickTitle">혹시 이분이신가요?</h2><button id="pickCancel" type="button">취소</button></div>
   <p class="hint" id="pickHint" style="margin:6px 0 10px">얼굴이 비슷한 분이 있습니다. 본인 이름을 눌러 주세요.</p>
   <div class="pickWrap" id="pickList"></div>
  </section>
+ <section class="card phoneCard" id="phoneCard" hidden>
+  <div class="row" style="justify-content:space-between;flex-wrap:nowrap"><h2 style="margin:0" id="phoneTitle">휴대폰 뒷자리 4자리</h2><button id="phoneCancel" type="button">취소</button></div>
+  <p class="hint" id="phoneHint" style="margin:6px 0 8px">얼굴이 비슷한 분이 있어 번호로 확인합니다.</p>
+  <div class="pinDots" id="phoneDots"><i></i><i></i><i></i><i></i></div>
+  <p class="err big" id="phoneErr"></p>
+  <div class="phonePad" id="phonePad"></div>
+  <div class="phoneAlt"><button id="phoneList" type="button">이름으로 고르기</button><button id="phoneNew" type="button">처음 왔어요 · 신규 등록</button></div>
+ </section>
  <div class="inCount" id="inCountRow"><span>현재 입실</span><b id="inCount">0명</b></div>
- <div class="bellWrap" id="bellWrap"><button id="bell" class="bell" type="button" disabled aria-label="똑똑 초인종 — 누르면 입장 확인을 시작합니다"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm7-6v-5a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2z"/></svg><span id="bellText">똑똑</span><small id="bellSub">준비 중</small><span class="finger" aria-hidden="true">👆</span></button></div>
+ <div class="bellWrap" id="bellWrap"><button id="bell" class="bell" type="button" disabled aria-label="톡 초인종 — 누르면 입장 확인을 시작합니다"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm7-6v-5a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2z"/></svg><span id="bellText">톡</span><small id="bellSub">준비 중</small><span class="finger" aria-hidden="true">👆</span></button></div>
 </div>
 </main>
 
@@ -171,7 +191,7 @@ html,body{overscroll-behavior:none}
   </section>
   <section class="card"><h2>음성 안내</h2>
    <div class="row"><label class="consent" style="margin:0"><input id="voiceEnabled" type="checkbox" checked> 음성 안내</label><label for="voiceVolume">볼륨</label><input id="voiceVolume" type="range" min="0" max="1" step="0.1" value="0.8" style="width:140px;margin:0"><button id="voiceTest" type="button">음성 테스트</button></div>
-   <p id="voiceHint" class="hint">똑똑을 누르고 흰 점선 안에서 정면을 바라보면 1~2초 안에 인식합니다. 처음 오신 분은 등록 창이 자동으로 열립니다.</p>
+   <p id="voiceHint" class="hint">톡을 누르고 흰 점선 안에서 정면을 바라보면 1~2초 안에 인식합니다. 처음 오신 분은 등록 창이 자동으로 열립니다.</p>
   </section>
   <section class="card wide"><h2>검출 결과</h2>
    <div class="metrics">
@@ -198,7 +218,12 @@ html,body{overscroll-behavior:none}
     <label for="setLevel">판정 기준</label><select id="setLevel"><option value="strict">엄격 (0.36) · 가족 많음</option><option value="normal" selected>표준 (0.40)</option><option value="loose">관대 (0.45) · 인식 안 되는 분</option></select>
     <label for="setAdapt">확인 성공 시 얼굴 데이터 보강</label><input id="setAdapt" type="checkbox" checked>
     <label for="setFill">어두우면 화면 조명 보조</label><input id="setFill" type="checkbox" checked>
+    <label for="setEngine">인식 엔진</label><select id="setEngine"><option value="sface">고정밀 · SFace (ArcFace 계열)</option><option value="basic">기본 · face-api (가벼움)</option></select>
+    <label for="setConfirm">애매할 때 확인 방법</label><select id="setConfirm"><option value="phone">휴대폰 뒷자리 4자리</option><option value="pick">후보 이름 선택 (기본)</option></select>
    </div>
+   <p class="hint" id="engineInfo" style="margin:10px 0 0">엔진 상태 확인 중…</p>
+   <div class="row" style="margin-top:6px"><button id="sfRetry" type="button">고정밀 모델 다시 받기</button></div>
+   <p class="hint">고정밀 엔진은 처음 한 번 모델(약 39MB)을 받아 기기에 저장합니다. 기존 회원은 <b>다음 입장 때 고정밀 데이터가 자동으로 추가</b>되며, 그 전까지는 기본 엔진 값으로 비교합니다. 모델을 받지 못하면 자동으로 기본 엔진으로 동작합니다.</p>
    <details><summary>최근 판정 기록 (기준값 조정용)</summary><p class="hint">본인 거리(통과 시)와 다른 가족 거리 차이가 작으면 판정 기준을 엄격으로, 본인이 자주 실패하면 관대로 바꾸거나 얼굴을 다시 등록하세요.</p><table class="log" id="logTable"></table><div class="row" style="margin-top:8px"><button id="logClear" type="button">기록 지우기</button></div></details>
   </section>
   <section class="card wide"><h2>원격 관리 (퍼블릭 MQTT)</h2>
@@ -216,7 +241,7 @@ html,body{overscroll-behavior:none}
    <div id="members"></div>
    <p class="hint">회원번호는 Q001부터 자동 부여됩니다. <b>재등록 권장</b> 표시는 이전 버전(2.x)에서 등록된 얼굴입니다. <b>정보 수정</b>으로 이름·핸디·전화번호를, <b>얼굴 재등록</b>으로 얼굴을 바꿀 수 있습니다.</p>
   </section>
-  <section class="card"><h2>전체 화면</h2><div class="row"><label class="consent" style="margin:0"><input id="fsAuto" type="checkbox" checked> 화면을 터치하면 자동으로 전체 화면(주소창 숨김)</label></div><div class="row" style="margin-top:10px"><button id="fsBtn" type="button">지금 전체 화면</button><button id="fsExit" type="button">전체 화면 끄기</button><span id="fsMsg" class="hint"></span></div><p class="hint">브라우저 규칙상 전체 화면은 <b>화면을 한 번 터치해야</b> 켜집니다. 새로고침이나 앱 전환 후에는 첫 터치(똑똑 포함) 때 다시 전체 화면이 됩니다. 항상 주소창 없이 쓰려면 Chrome 메뉴 ⋮ → <b>홈 화면에 추가</b>로 아이콘을 만들어 실행하세요.</p></section>
+  <section class="card"><h2>전체 화면</h2><div class="row"><label class="consent" style="margin:0"><input id="fsAuto" type="checkbox" checked> 화면을 터치하면 자동으로 전체 화면(주소창 숨김)</label></div><div class="row" style="margin-top:10px"><button id="fsBtn" type="button">지금 전체 화면</button><button id="fsExit" type="button">전체 화면 끄기</button><span id="fsMsg" class="hint"></span></div><p class="hint">브라우저 규칙상 전체 화면은 <b>화면을 한 번 터치해야</b> 켜집니다. 새로고침이나 앱 전환 후에는 첫 터치(톡 포함) 때 다시 전체 화면이 됩니다. 항상 주소창 없이 쓰려면 Chrome 메뉴 ⋮ → <b>홈 화면에 추가</b>로 아이콘을 만들어 실행하세요.</p></section>
   <section class="card"><h2>새로고침</h2><div class="row"><button id="reloadBtn" type="button">화면 새로고침</button><button id="hardReloadBtn" type="button">최신 버전으로 새로고침</button></div><p class="hint">입장 화면에서 손가락으로 화면을 <b>아래로 길게 당겼다 놓으면</b> 새로고침됩니다. GitHub에 새 파일을 올렸는데 예전 화면이 보이면 <b>최신 버전으로 새로고침</b>을 누르세요(저장된 회원·입실 기록은 그대로 유지).</p></section>
   <section class="card"><h2>설정 잠금</h2>
    <div class="settings"><label for="pinNew">설정 비밀번호 변경 (숫자 4~8자리)</label><input id="pinNew" inputmode="numeric" type="password" placeholder="새 비밀번호 (기본 0000)" autocomplete="new-password"></div>
@@ -225,10 +250,10 @@ html,body{overscroll-behavior:none}
   </section>
   <section class="card"><h2>실행 방법 · 정확도 안내</h2>
    <p class="hint">HTTPS 주소(GitHub Pages 등)를 태블릿 Chrome에서 가로로 열어 사용하세요. 첫 실행 때 카메라 권한을 한 번 허용하면 이후 자동으로 켜집니다.<br>
-   <b>사용 순서:</b> 똑똑 → 정면 바라보기(1~2초) → "OOO님 입장 확인". 처음 오신 분은 이름/닉네임 → 종목·핸디 → 휴대폰 번호를 차례로 입력합니다. 퇴실은 관리자가 결제 확인 후 관리자 웹에서 처리합니다.<br>
+   <b>사용 순서:</b> 톡 → 정면 바라보기(1~2초) → "OOO님 입장 확인". 처음 오신 분은 이름/닉네임 → 종목·핸디 → 휴대폰 번호를 차례로 입력합니다. 퇴실은 관리자가 결제 확인 후 관리자 웹에서 처리합니다.<br>
    <b>정확도:</b> 등록 때 정면 8장, 확인 때 4장을 평균하고 두 눈이 수평이 되도록 정렬한 뒤 비교합니다. 1·2순위 차이가 작으면 비슷한 분들만 골라 보여 줍니다.<br>
    얼굴 분석은 기기에서만 수행하며 사진·영상을 저장하거나 보내지 않습니다(얼굴 특징값 숫자만 이 기기에 저장). 생체 위조(사진) 검출 기능은 없습니다.</p>
-   <p class="hint" id="footerVer">Q24 입장 등록 4.0.8 · face-api.js 0.22.2</p>
+   <p class="hint" id="footerVer">Q24 입장 등록 4.1 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
   </section>
  </div>
 </section>
@@ -400,7 +425,7 @@ document.getElementById('rmSync').onclick=()=>{Remote.pushState();Remote.pushMem
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='4.0',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='4.1',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
@@ -428,7 +453,7 @@ let lastLoopAt=0,nextRetryAt=0,wakeLock=null,wakeRequesting=false,welcomeTimer=n
 const chip=document.createElement('canvas');chip.width=chip.height=150;const cctx=chip.getContext('2d',{willReadFrequently:true});
 const store={get(k){try{return localStorage.getItem(k)}catch{return null}},set(k,v){try{localStorage.setItem(k,v)}catch{}}};
 const hhmm=t=>new Date(t).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
-const settings=Object.assign({level:'normal',adapt:true,fill:true},(()=>{try{return JSON.parse(store.get(SET_KEY))||{}}catch{return {}}})());
+const settings=Object.assign({level:'normal',adapt:true,fill:true,engine:'sface',confirm:'phone'},(()=>{try{return JSON.parse(store.get(SET_KEY))||{}}catch{return {}}})());
 function saveSettings(){store.set(SET_KEY,JSON.stringify(settings))}
 function level(){return LEVELS[settings.level]||LEVELS.normal}
 
@@ -490,16 +515,16 @@ function chime(){
  }catch{}
 }
 document.addEventListener('pointerdown',()=>{
- if(needPlay&&video.srcObject)video.play().then(()=>{needPlay=false;status('카메라 화면이 켜졌습니다. 똑똑 버튼을 눌러 주세요.')}).catch(()=>{});
+ if(needPlay&&video.srcObject)video.play().then(()=>{needPlay=false;status('카메라 화면이 켜졌습니다. 톡 버튼을 눌러 주세요.')}).catch(()=>{});
  if(!stream&&!starting){nextRetryAt=0;startCamera()}
  requestWakeLock();
 },true);
-$('voiceTest').onclick=()=>speak('안녕하세요. 똑똑을 누르고 카메라를 바라봐 주세요.','test',0);
+$('voiceTest').onclick=()=>speak('안녕하세요. 톡을 누르고 카메라를 바라봐 주세요.','test',0);
 $('voiceEnabled').onchange=()=>{if(!$('voiceEnabled').checked)window.speechSynthesis?.cancel();else speak('음성 안내를 켰습니다.','on',0)};
 
 /* ---------- 화면 표시 ---------- */
 function status(message,error=false){$('status').textContent=message;$('status').classList.toggle('error',error)}
-function showIdle(){$('resultName').textContent='입장하시려면';const p=$('resultId');p.replaceChildren('오른쪽 똑똑 버튼을 ',Object.assign(document.createElement('span'),{className:'once',textContent:'한번'}),' 눌러 주세요.')}
+function showIdle(){$('resultName').textContent='입장하시려면';const p=$('resultId');p.replaceChildren('오른쪽 톡 버튼을 ',Object.assign(document.createElement('span'),{className:'once',textContent:'한번'}),' 눌러 주세요.')}
 function showResult(title,detail){$('resultName').textContent=title;$('resultId').textContent=detail}
 function clearMetrics(){for(const id of ['faceCount','faceSize','frontal','distance','gap','latency','lastAnalysis','light'])$(id).textContent='—';$('streakCount').textContent='0 / '+VERIFY_FRAMES}
 function avatarColor(s){let h=0;for(const c of String(s))h=(h*31+c.charCodeAt(0))%360;return 'hsl('+h+' 45% 42%)'}
@@ -507,7 +532,7 @@ function memberLegacy(m){return !String(m.pipeline||'').startsWith('v3')}
 function controls(){updateBell();$('restart').disabled=starting;$('clearAll').disabled=!db||mutating||!members.length||!!session;for(const b of $('members').querySelectorAll('button'))b.disabled=mutating||!!session}
 function renderMembers(){
  $('members').replaceChildren();$('memberCount').textContent=members.length;
- if(!members.length){const p=document.createElement('p');p.className='hint';p.textContent='아직 등록된 회원이 없습니다. 똑똑을 누르고 카메라를 보면 등록 창이 열립니다.';$('members').append(p)}
+ if(!members.length){const p=document.createElement('p');p.className='hint';p.textContent='아직 등록된 회원이 없습니다. 톡을 누르고 카메라를 보면 등록 창이 열립니다.';$('members').append(p)}
  const qy=($('memberSearch')?.value||'').trim().toLowerCase();
  const qd=qy.replace(/\D/g,'');
  const list=[...members].filter(m=>!qy||m.name.toLowerCase().includes(qy)||String(m.id).toLowerCase().includes(qy)||(qd.length>=3&&String(m.phone||'').replace(/\D/g,'').includes(qd))).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
@@ -516,6 +541,7 @@ function renderMembers(){
   const row=document.createElement('div');row.className='item';
   const info=document.createElement('div'),name=document.createElement('strong'),id=document.createElement('small'),chk=document.createElement('small');
   name.textContent=m.name;const badge=document.createElement('span');badge.className='badge '+(memberLegacy(m)?'legacy':'ok');badge.textContent=memberLegacy(m)?'재등록 권장':'표본 '+(m.descriptors?.length||0);name.append(badge);
+  if(m.sf?.length){const b3=document.createElement('span');b3.className='badge ok';b3.textContent='고정밀';name.append(b3)}
   const v=openVisitOf(m.id);if(v){const b2=document.createElement('span');b2.className='badge in';b2.textContent='입실 중';name.append(b2)}
   id.textContent=m.id+(m.game?' · '+m.game+' '+(m.handi??''):'')+(m.phone?' · '+m.phone:'');
   chk.textContent=v?'입실 '+hhmm(v.inAt)+' · '+durText(Date.now()-v.inAt):'퇴실 상태';if(v)chk.className='checked';
@@ -598,11 +624,31 @@ async function removeMember(id){
 $('clearAll').onclick=()=>removeMember(null);
 $('memberSearch').addEventListener('input',()=>renderMembers());
 
-/* ---------- 벡터 계산 ---------- */
-function distance(a,b){if(!a||!b||a.length!==b.length)return Infinity;let s=0;for(let i=0;i<a.length;i++){const d=a[i]-b[i];s+=d*d}return Math.sqrt(s)}
-function meanOf(list){if(!list?.length)return null;const n=list[0].length,o=new Array(n).fill(0);for(const v of list)for(let i=0;i<n;i++)o[i]+=v[i];for(let i=0;i<n;i++)o[i]/=list.length;return o}
-function ensureTemplate(m){if(!m.template||m.template.length!==128)m.template=meanOf(m.descriptors||[]);return m.template}
-function scoreAll(q){return members.map(m=>({m,d:distance(q,ensureTemplate(m)),legacy:memberLegacy(m)})).filter(x=>Number.isFinite(x.d)).sort((a,b)=>a.d-b.d)}
+/* ---------- 벡터 계산 ----------
+ 특징값 desc = {fa: face-api 128D, sf: SFace 128D(단위벡터) | null}
+ 거리는 모두 "기본 엔진 척도"로 맞춤 → 기존 기준값(0.36/0.40/0.45, 0.50 …)을 그대로 사용
+ SFace 코사인거리(1-cos) 0.55 → 0.40(표준 기준), 0.70 → 0.50(처음 오신 분) 로 선형 환산 */
+const SF_A=.55,SF_K=.10/.15;
+function euclid(a,b){if(!a||!b||a.length!==b.length)return Infinity;let s=0;for(let i=0;i<a.length;i++){const d=a[i]-b[i];s+=d*d}return Math.sqrt(s)}
+function norm(v){let s=0;for(const x of v)s+=x*x;s=Math.sqrt(s)||1;return v.map(x=>x/s)}
+function sfDist(a,b){if(!a||!b||a.length!==b.length)return Infinity;let s=0;for(let i=0;i<a.length;i++)s+=a[i]*b[i];return .40+((1-s)-SF_A)*SF_K}
+function useSF(){return settings.engine==='sface'&&SF.ready}
+function distance(a,b){
+ if(Array.isArray(a)||Array.isArray(b))return euclid(a,b);
+ if(!a||!b)return Infinity;
+ if(useSF()&&a.sf&&b.sf)return sfDist(a.sf,b.sf);
+ return euclid(a.fa,b.fa);
+}
+function vmean(list){if(!list?.length)return null;const n=list[0].length,o=new Array(n).fill(0);for(const v of list)for(let i=0;i<n;i++)o[i]+=v[i];for(let i=0;i<n;i++)o[i]/=list.length;return o}
+function meanOf(list){
+ if(!list?.length)return null;if(Array.isArray(list[0]))return vmean(list);
+ const fa=list.every(x=>x.fa)?vmean(list.map(x=>x.fa)):null,sf=list.every(x=>x.sf)?norm(vmean(list.map(x=>x.sf))):null;
+ return{fa,sf};
+}
+function ensureTemplate(m){if(!m.template||m.template.length!==128)m.template=vmean(m.descriptors||[]);return m.template}
+function ensureSfTemplate(m){if(!m.sf?.length)return null;if(!m.sfTemplate||m.sfTemplate.length!==m.sf[0].length)m.sfTemplate=norm(vmean(m.sf));return m.sfTemplate}
+function memberTpl(m){return{fa:ensureTemplate(m),sf:useSF()?ensureSfTemplate(m):null}}
+function scoreAll(q){return members.map(m=>{const T=memberTpl(m),hp=!!(useSF()&&q?.sf&&T.sf);return{m,d:distance(q,T),hp,legacy:!hp&&memberLegacy(m)}}).filter(x=>Number.isFinite(x.d)).sort((a,b)=>a.d-b.d)}
 /* 같은 사람 프레임만 남기기: 중앙값에 가까운 프레임 */
 function robustMean(list){
  if(list.length<3)return meanOf(list);
@@ -630,10 +676,104 @@ function loadModels(){
   try{await limit(faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),60000,'랜드마크 모델 로딩 시간 초과');useSSD=true}
   catch(e){await limit(faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),60000,'모델 로딩 시간 초과');useSSD=false}
   ready=true;let be='';try{be=faceapi.tf.getBackend()}catch{}
+  setTimeout(()=>{if(settings.engine==='sface')SF.load()},300);
   $('model').textContent='Tiny 검출 320 + '+(useSSD?'68점 랜드마크':'경량 랜드마크(대체)')+' · 정렬 150px · '+(be||'?');
  })().catch(e=>{modelPromise=null;$('model').textContent='로딩 실패';throw e});
  return modelPromise;
 }
+
+/* ---------- 고정밀 엔진: SFace (OpenCV Zoo, Apache-2.0) · ONNX Runtime Web(wasm) ----------
+ 정렬: 68점 랜드마크 → 5점(두 눈 중심·코끝·입꼬리) → ArcFace 표준 112×112 위치로 닮음변환
+ 입력: RGB 0~255 (OpenCV FaceRecognizerSF와 동일: scale 1, mean 0, swapRB) · 출력 128D → 단위벡터 */
+const SF=(()=>{
+ const ORT_BASES=['https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/','https://unpkg.com/onnxruntime-web@1.20.1/dist/'];
+ const MODEL_FILE='face_recognition_sface_2021dec.onnx';
+ const MODEL_URLS=['./models/'+MODEL_FILE,'https://huggingface.co/opencv/face_recognition_sface/resolve/main/'+MODEL_FILE,'https://huggingface.co/opencv/opencv_zoo/resolve/main/models/face_recognition_sface/'+MODEL_FILE];
+ const CACHE='q24-models-v1',CACHE_KEY='https://q24.local/models/'+MODEL_FILE;
+ const DST=[[38.2946,51.6963],[73.5318,51.5014],[56.0252,71.7366],[41.5493,92.3655],[70.7299,92.2041]];
+ const cv=document.createElement('canvas');cv.width=cv.height=112;const cx=cv.getContext('2d',{willReadFrequently:true});
+ const S={ready:false,loading:null,error:'',ms:0,progress:'',session:null,inName:'',outName:'',fails:0,retryTimer:null,lastMs:0};
+ function info(){
+  const el=$('engineInfo');if(!el)return;
+  const n=members.length,hp=members.filter(m=>m.sf?.length).length;
+  const eng=settings.engine==='sface'?(S.ready?'고정밀(SFace) 사용 중 · 1회 '+(S.lastMs||S.ms)+'ms':S.loading?'고정밀 모델 준비 중 '+S.progress+' · 그동안 기본 엔진 사용':'고정밀 모델 없음'+(S.error?' ('+S.error+')':'')+' · 기본 엔진으로 동작'):'기본(face-api) 사용 중';
+  el.textContent='현재: '+eng+' · 고정밀 데이터 보유 회원 '+hp+' / '+n+'명';
+ }
+ function script(src){return new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.crossOrigin='anonymous';const t=setTimeout(()=>{s.remove();no(Error('시간 초과'))},40000);s.onload=()=>{clearTimeout(t);ok()};s.onerror=()=>{clearTimeout(t);s.remove();no(Error('받기 실패'))};document.head.append(s)})}
+ async function loadOrt(){
+  if(window.ort)return ORT_BASES[0];
+  let last;for(const b of ORT_BASES){try{await script(b+'ort.wasm.min.js');if(window.ort)return b}catch(e){last=e}}
+  throw Error('ONNX 런타임을 받지 못했습니다'+(last?' ('+last.message+')':''));
+ }
+ async function fetchModel(){
+  let cache=null;try{cache=await caches.open(CACHE);const hit=await cache.match(CACHE_KEY);if(hit){const b=await hit.arrayBuffer();if(b.byteLength>1e6)return b}}catch{}
+  let last;
+  for(const url of MODEL_URLS){
+   try{
+    const r=await fetch(url,{mode:'cors'});if(!r.ok)throw Error('HTTP '+r.status);
+    const total=Number(r.headers.get('content-length'))||39e6;let got=0;const parts=[];
+    if(r.body?.getReader){const rd=r.body.getReader();for(;;){const {done,value}=await rd.read();if(done)break;parts.push(value);got+=value.length;S.progress=Math.min(99,Math.round(got/total*100))+'%';info()}}
+    else{const b=new Uint8Array(await r.arrayBuffer());parts.push(b);got=b.length}
+    if(got<1e6)throw Error('파일이 너무 작음');
+    const buf=new Uint8Array(got);let o=0;for(const p of parts){buf.set(p,o);o+=p.length}
+    try{await cache?.put(CACHE_KEY,new Response(buf.slice().buffer,{headers:{'content-type':'application/octet-stream'}}))}catch{}
+    return buf.buffer;
+   }catch(e){last=e}
+  }
+  throw Error('고정밀 모델을 받지 못했습니다'+(last?' ('+last.message+')':''));
+ }
+ function load(){
+  if(S.ready||S.loading)return S.loading||Promise.resolve();
+  S.error='';S.progress='0%';clearTimeout(S.retryTimer);info();
+  S.loading=(async()=>{
+   const base=await loadOrt();
+   ort.env.wasm.wasmPaths=base;ort.env.wasm.numThreads=self.crossOriginIsolated?Math.min(4,navigator.hardwareConcurrency||2):1;
+   const bytes=await fetchModel();S.progress='초기화';info();
+   const sess=await ort.InferenceSession.create(bytes,{executionProviders:['wasm'],graphOptimizationLevel:'all'});
+   S.session=sess;S.inName=sess.inputNames[0];S.outName=sess.outputNames[0];
+   const t0=performance.now();await run(new Float32Array(3*112*112).fill(127));S.ms=Math.round(performance.now()-t0);
+   S.ready=true;S.fails=0;
+   $('model').textContent=$('model').textContent.replace(/ · 고정밀.*$/,'')+' · 고정밀 SFace '+S.ms+'ms';
+   status('고정밀 인식(SFace) 준비 완료 · 1회 '+S.ms+'ms');
+  })().catch(e=>{S.error=e.message||String(e);S.fails++;console.warn('SFace',e);
+   if(S.fails<4)S.retryTimer=setTimeout(()=>{if(settings.engine==='sface')load()},60000*S.fails);
+  }).finally(()=>{S.loading=null;info();try{renderMembers()}catch{}});
+  return S.loading;
+ }
+ async function run(data){
+  const out=await S.session.run({[S.inName]:new ort.Tensor('float32',data,[1,3,112,112])});
+  return Array.from(out[S.outName].data);
+ }
+ /* 최소제곱 닮음변환(회전·균일배율·이동): src → dst */
+ function similarity(src,dst){
+  const n=src.length;let sx=0,sy=0,dx=0,dy=0;
+  for(let i=0;i<n;i++){sx+=src[i][0];sy+=src[i][1];dx+=dst[i][0];dy+=dst[i][1]}
+  sx/=n;sy/=n;dx/=n;dy/=n;let A=0,B=0,V=0;
+  for(let i=0;i<n;i++){const x=src[i][0]-sx,y=src[i][1]-sy,u=dst[i][0]-dx,v=dst[i][1]-dy;A+=x*u+y*v;B+=x*v-y*u;V+=x*x+y*y}
+  const a=A/V,b=B/V;return{a,b,tx:dx-(a*sx-b*sy),ty:dy-(b*sx+a*sy)};
+ }
+ function fivePoints(p){
+  let e1=avgPt(p,36,41),e2=avgPt(p,42,47),m1=p[48],m2=p[54];
+  if(e1.x>e2.x)[e1,e2]=[e2,e1];if(m1.x>m2.x)[m1,m2]=[m2,m1];   // 화면 왼쪽 눈/입꼬리가 먼저
+  return[[e1.x,e1.y],[e2.x,e2.y],[p[30].x,p[30].y],[m1.x,m1.y],[m2.x,m2.y]];
+ }
+ function crop(src,positions,gamma=1){
+  const T=similarity(fivePoints(positions),DST);
+  cx.setTransform(1,0,0,1,0,0);cx.fillStyle='#000';cx.fillRect(0,0,112,112);
+  cx.imageSmoothingEnabled=true;cx.imageSmoothingQuality='high';
+  cx.setTransform(T.a,T.b,-T.b,T.a,T.tx,T.ty);cx.drawImage(src,0,0);cx.setTransform(1,0,0,1,0,0);
+  const d=cx.getImageData(0,0,112,112).data,N=112*112,out=new Float32Array(3*N);
+  let lut=null;if(gamma!==1){lut=new Float32Array(256);for(let i=0;i<256;i++)lut[i]=255*Math.pow(i/255,gamma)}
+  for(let i=0,j=0;j<N;i+=4,j++){out[j]=lut?lut[d[i]]:d[i];out[N+j]=lut?lut[d[i+1]]:d[i+1];out[2*N+j]=lut?lut[d[i+2]]:d[i+2]}
+  return{data:out,T};
+ }
+ async function embed(src,positions,gamma){
+  if(!S.ready)return null;
+  const t0=performance.now();const {data}=crop(src,positions,gamma);const v=norm(await run(data));S.lastMs=Math.round(performance.now()-t0);return v;
+ }
+ return{get ready(){return S.ready},load,embed,info,crop,similarity,fivePoints,_S:S,DST};
+})();
+$('sfRetry').onclick=async()=>{try{const c=await caches.open('q24-models-v1');await c.delete('https://q24.local/models/face_recognition_sface_2021dec.onnx')}catch{}SF._S.ready=false;SF._S.session=null;SF._S.fails=0;if(settings.engine!=='sface'){settings.engine='sface';$('setEngine').value='sface';saveSettings()}SF.load()};
 
 /* ---------- 카메라 ---------- */
 async function permissionInfo(){try{const p=await navigator.permissions.query({name:'camera'});const show=()=>{$('permission').textContent=({granted:'허용됨',denied:'차단됨',prompt:'요청 대기'})[p.state]||p.state};show();p.onchange=()=>{show();if(p.state==='granted'&&!stream){nextRetryAt=0;startCamera()}}}catch{$('permission').textContent='카메라 시작 시 확인'}}
@@ -644,7 +784,7 @@ function stopCamera(message){
 }
 function showCamBtn(text){if(stream)return;$('camBtn').hidden=false;$('phText').textContent=text||'카메라가 켜지지 않았습니다'}
 $('camBtn').onclick=e=>{e.stopPropagation();if(starting&&Date.now()-startAt>6000){generation++;starting=false}nextRetryAt=0;startCamera()};
-function retryModels(run){setTimeout(async()=>{if(run!==generation||ready)return;try{await loadModels();if(run!==generation)return;$('engine').textContent='대기 중';status('준비 완료. 똑똑 버튼을 눌러 주세요.');controls()}catch(e){if(run===generation){status('얼굴 모델 로딩 재시도 실패: '+e.message+'\n인터넷 연결을 확인해 주세요. 계속 재시도합니다.',true);retryModels(run)}}},10000)}
+function retryModels(run){setTimeout(async()=>{if(run!==generation||ready)return;try{await loadModels();if(run!==generation)return;$('engine').textContent='대기 중';status('준비 완료. 톡 버튼을 눌러 주세요.');controls()}catch(e){if(run===generation){status('얼굴 모델 로딩 재시도 실패: '+e.message+'\n인터넷 연결을 확인해 주세요. 계속 재시도합니다.',true);retryModels(run)}}},10000)}
 async function listDevices(){try{const d=await navigator.mediaDevices.enumerateDevices();const v=d.filter(x=>x.kind==='videoinput');$('devices').textContent=v.length+'개'+(v.length&&v[0].label?' · '+v.map(x=>x.label).join(', '):'')}catch{$('devices').textContent='확인 불가'}}
 $('diagBtn').onclick=async()=>{
  await listDevices();
@@ -702,7 +842,7 @@ async function startCamera(){
   }
   if(run!==generation||document.hidden)return;
   $('engine').textContent='대기 중';
-  if(!needPlay)status('준비 완료. 똑똑 버튼을 누르고 카메라를 바라봐 주세요.');
+  if(!needPlay)status('준비 완료. 톡 버튼을 누르고 카메라를 바라봐 주세요.');
   showIdle();controls();
   loop(run);
  }catch(e){
@@ -773,17 +913,18 @@ async function describe(det){
   cctx.putImageData(img,0,0);
  }
  const desc=await faceapi.computeFaceDescriptor(chip);
- return {desc:Array.from(desc),lum,sharp,gamma,roll:ang*180/Math.PI};
+ let sf=null;if(useSF()){try{sf=await SF.embed(video,p,gamma)}catch(e){console.warn('SFace run',e)}}
+ return {desc:{fa:Array.from(desc),sf},lum,sharp,gamma,roll:ang*180/Math.PI};
 }
 
-/* ---------- 세션: 똑똑 → 얼굴로 찾기(1:N) → 환영 / 비슷한 분만 후보 / 처음이면 자동 등록 ---------- */
+/* ---------- 세션: 톡 → 얼굴로 찾기(1:N) → 환영 / 비슷한 분만 후보 / 처음이면 자동 등록 ---------- */
 let undoTimer=null,lastSuccess=null;
 function updateBell(){
  const b=$('bell'),canStart=!!stream&&ready&&!mutating&&!starting;
  b.disabled=!session&&!canStart;b.classList.toggle('ready',!session&&canStart);b.classList.toggle('busy',!!session);
  const left=session?Math.max(0,Math.ceil((session.until-Date.now())/1000)):0;
- if(session){$('bellText').textContent={scan:'확인 중',choose:'선택 중',verify:'확인 중',enroll:'등록 촬영',register:'정보 입력','enroll-confirm':'확인 필요'}[session.mode]||'진행 중';$('bellSub').textContent=left+'초 · 누르면 취소'}
- else{$('bellText').textContent='똑똑';$('bellSub').textContent=canStart?'눌러서 입장':(!stream?'카메라 준비 중':!ready?'모델 준비 중':'잠시만요')}
+ if(session){$('bellText').textContent={scan:'확인 중',choose:'선택 중',phone:'번호 입력',verify:'확인 중',enroll:'등록 촬영',register:'정보 입력','enroll-confirm':'확인 필요'}[session.mode]||'진행 중';$('bellSub').textContent=left+'초 · 누르면 취소'}
+ else{$('bellText').textContent='톡';$('bellSub').textContent=canStart?'눌러서 입장':(!stream?'카메라 준비 중':!ready?'모델 준비 중':'잠시만요')}
 }
 function idleSoon(ms=7000){clearTimeout(idleTimer);idleTimer=setTimeout(()=>{if(!session){showIdle();clearMetrics()}},ms)}
 /* 가족은 성이 같으므로 아바타에는 이름(성 제외)을 표시 */
@@ -813,8 +954,58 @@ function showCandidates(cands,title,hint){
   b.append(av,tx);b.onclick=()=>selectMember(m);wrap.append(b);
  }
  const nb=document.createElement('button');nb.type='button';nb.className='pickBtn newBtn';nb.textContent='＋ 목록에 없어요 · 신규 등록';nb.onclick=()=>openRegister(null);wrap.append(nb);
- $('pickCard').hidden=false;controls();
+ $('phoneCard').hidden=true;$('pickCard').hidden=false;sideMode();controls();
 }
+/* 애매할 때: 설정에 따라 휴대폰 뒷자리 4자리 또는 후보 이름 선택 */
+function askWho(cands,title,hint,say){
+ if(settings.confirm==='phone'&&cands.some(x=>last4(x.m))){showPhone(cands);return}
+ showCandidates(cands,title,hint);if(say)speak(say,'cand:'+say,0);
+}
+const last4=m=>String(m?.phone||'').replace(/\D/g,'').slice(-4);
+let phoneCode='';
+function sideMode(){const s=document.querySelector('.side');s.classList.toggle('phone',!$('phoneCard').hidden);s.classList.toggle('picking',!$('pickCard').hidden)}
+function renderDots(){[...$('phoneDots').children].forEach((el,i)=>{el.textContent=phoneCode[i]?'●':'';el.classList.toggle('on',!!phoneCode[i])})}
+function showPhone(cands,hint){
+ if(!session)return;
+ session.mode='phone';session.cands=cands.map(x=>x.m);session.member=null;session.phoneTries=0;session.until=Date.now()+PICK_MS;
+ phoneCode='';renderDots();$('phoneErr').textContent='';
+ $('phoneHint').textContent=hint||'얼굴이 비슷한 분이 있어 휴대폰 번호로 확인합니다.';
+ $('pickCard').hidden=true;$('phoneCard').hidden=false;sideMode();
+ showResult('휴대폰 뒷자리 4자리','등록한 휴대폰 번호의 마지막 4자리를 눌러 주세요.');
+ speak('휴대폰 번호 뒷자리 네 자리를 눌러 주세요.','phone',0);controls();
+}
+(()=>{for(const k of ['1','2','3','4','5','6','7','8','9','지움','0','←']){
+ const b=document.createElement('button');b.type='button';b.textContent=k;if(k.length>1)b.className='fn';
+ b.onclick=()=>{if(!session||session.mode!=='phone')return;session.until=Date.now()+PICK_MS;$('phoneErr').textContent='';
+  if(k==='지움')phoneCode='';else if(k==='←')phoneCode=phoneCode.slice(0,-1);else if(phoneCode.length<4)phoneCode+=k;
+  renderDots();if(phoneCode.length===4)setTimeout(phoneSubmit,180)};
+ $('phonePad').append(b)}})();
+function phoneSubmit(){
+ if(!session||session.mode!=='phone'||phoneCode.length!==4)return;
+ const code=phoneCode,S=session.samples,q=S.length?robustMean(S.slice(-UNKNOWN_FRAMES)):null,scored=q?scoreAll(q):[];
+ const dOf=id=>scored.find(x=>x.m.id===id)?.d??Infinity;
+ let hits=session.cands.filter(m=>last4(m)===code);
+ // 후보에 없으면: 같은 번호 + 얼굴도 어느 정도 비슷한 회원만 (남의 번호로 입장 방지)
+ if(!hits.length)hits=members.filter(m=>last4(m)===code&&dOf(m.id)<UNKNOWN);
+ if(hits.length===1){
+  const m=hits[0],d=dOf(m.id),o=scored.find(x=>x.m.id!==m.id)||null;
+  addLog({mode:'번호 확인',sel:m.name,result:'환영',dSel:Number.isFinite(d)?d:null,other:o?.m.name??null,dOther:o?.d??null});
+  success('번호 확인',m,Number.isFinite(d)?d:null,o,q,{force:Number.isFinite(d)&&d<=level().verify+.08});return;
+ }
+ if(hits.length>1){
+  $('phoneCard').hidden=true;sideMode();
+  showCandidates(hits.map(m=>({m,d:dOf(m.id)})),'번호가 같은 분이 있습니다','본인 이름을 눌러 주세요.');speak('본인 이름을 눌러 주세요.','cand',0);return;
+ }
+ session.phoneTries=(session.phoneTries||0)+1;phoneCode='';renderDots();
+ addLog({mode:'번호 확인',sel:null,result:'번호 불일치 '+session.phoneTries+'회',dSel:null,other:null,dOther:null});
+ if(session.phoneTries>=3){endSession();showResult('확인하지 못했습니다','번호가 일치하지 않습니다. 처음 오셨으면 다시 톡을 눌러 신규 등록하거나, 관리자에게 문의해 주세요.');speak('번호가 일치하지 않습니다. 관리자에게 문의해 주세요.','phonefail',0);return}
+ $('phoneErr').textContent='일치하는 회원이 없습니다. 다시 눌러 주세요. ('+session.phoneTries+'/3)';speak('일치하는 번호가 없습니다. 다시 눌러 주세요.','phoneerr',0);
+}
+$('phoneCancel').onclick=()=>{endSession();showResult('취소했습니다','다시 하시려면 톡 버튼을 눌러 주세요.')};
+$('phoneNew').onclick=()=>openRegister(null);
+$('phoneList').onclick=()=>{if(!session)return;const q=session.samples.length?robustMean(session.samples.slice(-UNKNOWN_FRAMES)):null,sc=q?scoreAll(q):[];
+ const c=session.cands.map(m=>({m,d:sc.find(x=>x.m.id===m.id)?.d??1}));$('phoneCard').hidden=true;sideMode();
+ showCandidates(c,'혹시 이분이신가요?','본인 이름을 누르거나, 목록에 없으면 신규 등록을 눌러 주세요.');speak('본인 이름을 눌러 주세요.','cand',0)};
 function tick(){
  if(!session)return;
  if($('regDialog').open||$('simDialog').open){session.until=Math.max(session.until,Date.now()+5000);updateBell();return}
@@ -825,24 +1016,24 @@ function tick(){
    const S=session.samples;
    if(S.length>=VERIFY_FRAMES&&members.length){
     const list=scoreAll(robustMean(S.slice(-UNKNOWN_FRAMES))),c=list.filter(x=>x.d<=UNKNOWN+.05).slice(0,3);
-    if(c.length){showCandidates(c,'혹시 이분이신가요?','확실하지 않습니다. 본인 이름을 누르거나, 목록에 없으면 신규 등록을 눌러 주세요.');speak('본인 이름을 눌러 주세요.','cand',0);updateBell();return}
+    if(c.length){askWho(c,'혹시 이분이신가요?','확실하지 않습니다. 본인 이름을 누르거나, 목록에 없으면 신규 등록을 눌러 주세요.','본인 이름을 눌러 주세요.');updateBell();return}
    }
-   endSession();showResult('얼굴을 확인하지 못했습니다','밝은 곳에서 정면을 바라보고 다시 똑똑을 눌러 주세요.');speak('얼굴을 확인하지 못했습니다. 다시 시도해 주세요.','to-s',0);
+   endSession();showResult('얼굴을 확인하지 못했습니다','밝은 곳에서 정면을 바라보고 다시 톡을 눌러 주세요.');speak('얼굴을 확인하지 못했습니다. 다시 시도해 주세요.','to-s',0);
   }else if(m==='verify'){
    addLog({mode:'선택 확인',sel:session.member?.name,result:'시간초과',dSel:session.lastSel??null,other:session.lastOther??null,dOther:session.lastOtherD??null});
-   endSession();showResult('확인하지 못했습니다','다시 똑똑을 눌러 주세요.');
-  }else if(m==='enroll'){endSession();showResult('등록 촬영 시간 초과','다시 똑똑을 눌러 주세요.')}
-  else{endSession();showResult('시간이 지났습니다','다시 하시려면 똑똑 버튼을 눌러 주세요.')}
+   endSession();showResult('확인하지 못했습니다','다시 톡을 눌러 주세요.');
+  }else if(m==='enroll'){endSession();showResult('등록 촬영 시간 초과','다시 톡을 눌러 주세요.')}
+  else{endSession();showResult('시간이 지났습니다','다시 하시려면 톡 버튼을 눌러 주세요.')}
  }
  updateBell();
 }
 function endSession(){
  if(!session)return;session=null;clearInterval(sessionTick);if(ready&&stream)$('engine').textContent='대기 중';
- $('pickCard').hidden=true;$('phaseBar').hidden=true;document.body.classList.remove('filllight');
+ $('pickCard').hidden=true;$('phoneCard').hidden=true;sideMode();phoneCode='';$('phaseBar').hidden=true;document.body.classList.remove('filllight');
  drawOverlay([]);idleSoon();controls();
 }
-$('pickCancel').onclick=()=>{endSession();showResult('취소했습니다','다시 하시려면 똑똑 버튼을 눌러 주세요.')};
-$('bell').onclick=()=>{if(session){if($('regDialog').open)$('regDialog').close();endSession();showResult('취소했습니다','다시 하시려면 똑똑 버튼을 눌러 주세요.');window.speechSynthesis?.cancel();return}startSession()};
+$('pickCancel').onclick=()=>{endSession();showResult('취소했습니다','다시 하시려면 톡 버튼을 눌러 주세요.')};
+$('bell').onclick=()=>{if(session){if($('regDialog').open)$('regDialog').close();endSession();showResult('취소했습니다','다시 하시려면 톡 버튼을 눌러 주세요.');window.speechSynthesis?.cancel();return}startSession()};
 function selectMember(m){
  if(!session)return;
  const fresh=session.sampleAt&&Date.now()-session.sampleAt<2000?session.samples.slice(-VERIFY_FRAMES):[];
@@ -859,7 +1050,7 @@ async function handleFrame(dets,t0){
  if(dets.length>1){drawOverlay(dets.map(r=>({box:r.detection.box,ok:false,label:'한 분씩'})));showResult('한 분씩 서 주세요','카메라 앞에는 한 분만 서 주세요.');guide('한 분씩 카메라를 바라봐 주세요.');lat();return}
  const det=dets[0],phase=session.mode==='enroll'?ENROLL_PLAN[0]:null,ev=evaluate(det,phase);
  $('faceSize').textContent=Math.round(ev.size*100)+'%';$('frontal').textContent=Math.round(ev.yaw*100)+'%';
- if(!ev.ok){drawOverlay([{box:det.detection.box,ok:false,label:ev.label}]);if(session.mode!=='choose')showResult('자세를 맞춰 주세요',ev.msg);guide(VOICE[ev.key]||ev.msg);lat();return}
+ if(!ev.ok){drawOverlay([{box:det.detection.box,ok:false,label:ev.label}]);if(session.mode!=='choose'&&session.mode!=='phone')showResult('자세를 맞춰 주세요',ev.msg);guide(VOICE[ev.key]||ev.msg);lat();return}
  const f=await describe(det);lat();
  $('light').textContent=Math.round(f.lum)+' / '+Math.round(f.sharp)+(f.gamma!==1?' · 보정':'');
  if(!session)return;
@@ -868,7 +1059,7 @@ async function handleFrame(dets,t0){
  if(f.sharp<STD.minSharp){drawOverlay([{box:det.detection.box,ok:false,label:'흔들림'}]);return}
  let label='';
  if(session.mode==='scan')label=scanStep(f.desc);
- else if(session.mode==='choose'){consistentPush(session.samples,f.desc,UNKNOWN_FRAMES);session.sampleAt=Date.now();label='이름을 눌러 주세요'}
+ else if(session.mode==='choose'||session.mode==='phone'){consistentPush(session.samples,f.desc,UNKNOWN_FRAMES);session.sampleAt=Date.now();label=session.mode==='phone'?'번호를 눌러 주세요':'이름을 눌러 주세요'}
  else if(session.mode==='verify')label=verifyStep(f.desc);
  else if(session.mode==='enroll')label=enrollStep(f.desc,ev);
  if(session)drawOverlay([{box:det.detection.box,ok:true,label}]);else drawOverlay([]);
@@ -888,7 +1079,7 @@ function scanStep(desc){
  const q=robustMean(S.slice(-VERIFY_FRAMES)),list=scoreAll(q),top=list[0],second=list[1]||null;
  const thr=level().verify+(top.legacy?LEGACY_BONUS:0),gap=second?second.d-top.d:Infinity;
  $('distance').textContent=top.m.name+' '+top.d.toFixed(3);$('gap').textContent=second?second.m.name+' '+second.d.toFixed(3)+' ('+gap.toFixed(3)+')':'없음';
- $('matchAudit').textContent='1순위 '+top.m.name+' '+top.d.toFixed(3)+' (기준 '+thr.toFixed(2)+')'+(second?' · 2순위 '+second.m.name+' '+second.d.toFixed(3)+' · 차이 '+gap.toFixed(3)+' (필요 '+UNIQUE_GAP+')':'');
+ $('matchAudit').textContent=(top.hp?'[고정밀] ':'[기본] ')+'1순위 '+top.m.name+' '+top.d.toFixed(3)+' (기준 '+thr.toFixed(2)+')'+(second?' · 2순위 '+second.m.name+' '+second.d.toFixed(3)+' · 차이 '+gap.toFixed(3)+' (필요 '+UNIQUE_GAP+')':'');
  // ① 한 분으로 확실 → 그분만 환영
  if(top.d<=thr&&gap>=UNIQUE_GAP){success('얼굴 인식',top.m,top.d,second,q);return ''}
  // ② 기준 안이지만 비슷한 분(가족 등)이 있음 → 그분들만 후보로
@@ -898,7 +1089,7 @@ function scanStep(desc){
   if(t8.d<=thr&&g8>=UNIQUE_GAP){success('얼굴 인식',t8.m,t8.d,l8[1]||null,q8);return ''}
   const c=l8.filter(x=>x.d<=t8.d+CAND_RANGE&&x.d<=thr+.05).slice(0,3);
   addLog({mode:'얼굴 인식',sel:t8.m.name,result:'후보 '+c.length+'명',dSel:t8.d,other:l8[1]?.m.name??null,dOther:l8[1]?.d??null});
-  showCandidates(c,'혹시 이분이신가요?','얼굴이 비슷한 분이 있습니다. 본인 이름을 눌러 주세요.');speak('본인 이름을 눌러 주세요.','cand',0);
+  askWho(c,'혹시 이분이신가요?','얼굴이 비슷한 분이 있습니다. 본인 이름을 눌러 주세요.','본인 이름을 눌러 주세요.');
   return '';
  }
  // ③ 모든 회원과 충분히 다름 → 처음 오신 분: 자동 등록 창
@@ -908,7 +1099,7 @@ function scanStep(desc){
   // 애매한 거리(기준~0.50): 비슷한 1~3명 + 신규 등록만 보여 줌
   const c=l8.filter(x=>x.d<UNKNOWN).slice(0,3);
   addLog({mode:'얼굴 인식',sel:t8.m.name,result:'애매 → 후보 '+c.length+'명',dSel:t8.d,other:l8[1]?.m.name??null,dOther:l8[1]?.d??null});
-  showCandidates(c,'혹시 이분이신가요?','맞으면 이름을, 처음 오셨으면 신규 등록을 눌러 주세요.');speak('본인 이름이 있으면 누르고, 처음이시면 신규 등록을 눌러 주세요.','grey',0);
+  askWho(c,'혹시 이분이신가요?','맞으면 이름을, 처음 오셨으면 신규 등록을 눌러 주세요.','본인 이름이 있으면 누르고, 처음이시면 신규 등록을 눌러 주세요.');
   return '';
  }
  return '확인 중';
@@ -940,7 +1131,7 @@ function verifyStep(desc){
  return '';
 }
 function hideWelcome(){$('welcome').hidden=true;$('notMe').hidden=true;clearTimeout(undoTimer)}
-function success(mode,m,d,o,q){
+function success(mode,m,d,o,q,opt={}){
  const before=checkedAt(m.id),now=Date.now(),samples=session?.samples?.slice()||[];
  endSession();
  if(before){announce(m,'already',before);showResult(m.name+' 님, 이미 입실 중','회원번호 '+m.id+' · 입실 '+hhmm(before)+' · 퇴실은 관리자에게 결제 후 처리됩니다')}
@@ -949,7 +1140,7 @@ function success(mode,m,d,o,q){
  // "제가 아니에요" 6초 동안 표시 → 누르면 체크 취소 후 비슷한 분/신규 등록
  lastSuccess={m,q,d,o,mode,wasNew:!before,samples,at:now};
  $('notMe').hidden=false;clearTimeout(undoTimer);
- undoTimer=setTimeout(()=>{$('notMe').hidden=true;const s=lastSuccess;lastSuccess=null;if(s&&s.m===m)adapt(m,q,d,o)},6000);
+ undoTimer=setTimeout(()=>{$('notMe').hidden=true;const s=lastSuccess;lastSuccess=null;if(s&&s.m===m)adapt(m,q,d,o,{samples,force:!!opt.force})},6000);
 }
 $('notMe').onclick=()=>{
  const s=lastSuccess;if(!s)return;lastSuccess=null;hideWelcome();
@@ -957,19 +1148,32 @@ $('notMe').onclick=()=>{
  addLog({mode:'정정',sel:s.m.name,result:'제가 아니에요',dSel:s.d,other:s.o?.m.name??null,dOther:s.o?.d??null});
  newSession('choose',PICK_MS);session.samples=s.samples;session.sampleAt=Date.now();
  const c=scoreAll(s.q).filter(x=>x.m.id!==s.m.id&&x.d<=UNKNOWN).slice(0,3);
+ if(c.length&&settings.confirm==='phone'&&c.some(x=>last4(x.m))){showPhone(c,'입실을 취소했습니다. 본인 휴대폰 뒷자리로 확인합니다.');return}
  showCandidates(c,c.length?'혹시 이분이신가요?':'처음 오셨나요?',c.length?'본인 이름을 누르거나, 목록에 없으면 신규 등록을 눌러 주세요.':'아래 신규 등록을 눌러 이름을 입력해 주세요.');
  showResult('입실을 취소했습니다',c.length?'본인 이름을 눌러 주세요.':'신규 등록을 눌러 주세요.');speak(c.length?'본인 이름을 눌러 주세요.':'신규 등록을 눌러 주세요.','notme',0);
 };
-/* 확실한 환영만 평균 얼굴을 보강 (등록 표본은 항상 유지) */
-async function adapt(m,q,d,o){
- if(!settings.adapt||memberLegacy(m)||!db)return;
- if(d>level().verify-.04||(o&&o.d-d<.06))return;
+/* 확실한 환영만 평균 얼굴을 보강 (등록 표본은 항상 유지)
+ + 고정밀 데이터가 없는 회원은 확인된 입장 때 그때 찍힌 정면 프레임으로 고정밀 데이터를 자동 추가 */
+async function adapt(m,q,d,o,opt={}){
+ if(!db||!q)return;
  try{
   const cur=members.find(x=>x.id===m.id);if(!cur)return;
-  const base=(cur.descriptors||[]).slice(0,KEEP_ENROLL),extra=(cur.descriptors||[]).slice(KEEP_ENROLL).concat([q]).slice(-(MAX_SAMPLES-KEEP_ENROLL));
-  const next={...cur,descriptors:base.concat(extra),updatedAt:Date.now()};next.template=meanOf(next.descriptors);
+  const conf=settings.adapt&&d!=null&&!(d>level().verify-.04||(o&&o.d-d<.06));
+  const ok=conf||opt.force;
+  const sfFrames=(opt.samples||[]).map(x=>x?.sf).filter(Boolean);
+  const migrate=!cur.sf?.length&&(sfFrames.length>=3||q.sf)&&(ok||(d!=null&&d<=level().verify));
+  if(!ok&&!migrate)return;
+  const next={...cur,updatedAt:Date.now()};
+  if(ok&&q.fa&&!memberLegacy(cur)){
+   const base=(cur.descriptors||[]).slice(0,KEEP_ENROLL),extra=(cur.descriptors||[]).slice(KEEP_ENROLL).concat([q.fa]).slice(-(MAX_SAMPLES-KEEP_ENROLL));
+   next.descriptors=base.concat(extra);next.template=vmean(next.descriptors);
+  }
+  if(migrate){next.sf=(sfFrames.length?sfFrames:[q.sf]).slice(-KEEP_ENROLL);next.sfTemplate=norm(vmean(next.sf))}
+  else if(ok&&q.sf&&cur.sf?.length){const base=cur.sf.slice(0,KEEP_ENROLL),extra=cur.sf.slice(KEEP_ENROLL).concat([q.sf]).slice(-(MAX_SAMPLES-KEEP_ENROLL));next.sf=base.concat(extra);next.sfTemplate=norm(vmean(next.sf))}
+  if(next.descriptors===cur.descriptors&&next.sf===cur.sf)return;
   await writeDB(s=>s.put(next));
-  const i=members.findIndex(x=>x.id===m.id);if(i>=0)members[i]=next;renderMembers();
+  const i=members.findIndex(x=>x.id===m.id);if(i>=0)members[i]=next;renderMembers();SF.info();
+  if(migrate)addLog({mode:'고정밀',sel:cur.name,result:'고정밀 데이터 추가',dSel:d,other:null,dOther:null});
  }catch(e){console.warn('adapt',e)}
 }
 
@@ -1003,7 +1207,7 @@ function openRegister(existing,samples,mode){
  // 방금 확인한 정면 프레임(같은 사람 4장 이상)이 있으면 그대로 등록에 사용 → 추가 촬영 없음
  const pre=samples||(session&&session.sampleAt&&Date.now()-session.sampleAt<3000?session.samples.slice():null);
  regSamples=regMode==='new'&&pre&&pre.length>=VERIFY_FRAMES?pre.slice(-UNKNOWN_FRAMES):null;
- if(regMode!=='edit'){if(!session)newSession('register',PICK_MS);else{session.mode='register';session.until=Date.now()+PICK_MS}$('pickCard').hidden=true}
+ if(regMode!=='edit'){if(!session)newSession('register',PICK_MS);else{session.mode='register';session.until=Date.now()+PICK_MS}$('pickCard').hidden=true;$('phoneCard').hidden=true;sideMode()}
  $('regTitle').textContent=regMode==='face'?'얼굴 재등록':regMode==='edit'?'회원 정보 수정':'처음 오셨네요!';
  $('regSub').textContent=regMode==='face'?existing.name+' 님 얼굴을 새로 촬영해 기존 얼굴 정보를 바꿉니다. 정면을 바라보면 약 2초 촬영합니다.':regMode==='edit'?'이름/닉네임 · 핸디 · 휴대폰 번호를 바꿉니다. 얼굴 정보는 그대로입니다.':regSamples?'순서대로 입력하면 방금 확인한 얼굴로 등록됩니다.':'순서대로 입력한 뒤 정면을 바라보면 약 2초 동안 촬영합니다.';
  $('regId').textContent=existing?existing.id:fmtId(nextNum());
@@ -1024,7 +1228,7 @@ function regValidate(s){
  if(s==='face'&&!$('regConsentFace').checked)return '얼굴 저장 동의에 체크해 주세요.';
  return '';
 }
-function regCancelAll(){$('regDialog').close();regTarget=null;regSamples=null;if(session){endSession();showResult('등록을 취소했습니다','다시 하시려면 똑똑 버튼을 눌러 주세요.')}}
+function regCancelAll(){$('regDialog').close();regTarget=null;regSamples=null;if(session){endSession();showResult('등록을 취소했습니다','다시 하시려면 톡 버튼을 눌러 주세요.')}}
 $('regCancel').onclick=()=>{if(typeof regStep==='number'&&regStep>0){showRegStep(regStep-1);return}regCancelAll()};
 $('regDialog').addEventListener('cancel',e=>{e.preventDefault();regCancelAll()});
 $('regClose').onclick=()=>regCancelAll();
@@ -1101,17 +1305,19 @@ async function saveEnroll(){
  const E=session.enroll,now=Date.now();
  mutating=true;controls();
  try{
-  const descriptors=E.collected.slice(0,KEEP_ENROLL);
-  const member=E.existing?{...E.existing,descriptors,template:meanOf(descriptors),pipeline:PIPE,updatedAt:now,reenrolledAt:now}
-   :{id:E.id,name:E.name,game:E.game||'',handi:E.handi??'',phone:E.phone||'',descriptors,template:meanOf(descriptors),pipeline:PIPE,createdAt:now};
+  const descriptors=E.collected.map(x=>x.fa).filter(Boolean).slice(0,KEEP_ENROLL);
+  const sfl=E.collected.map(x=>x.sf).filter(Boolean).slice(0,KEEP_ENROLL);
+  const hp=sfl.length>=3?{sf:sfl,sfTemplate:norm(vmean(sfl))}:{sf:undefined,sfTemplate:undefined};
+  const member=E.existing?{...E.existing,descriptors,template:vmean(descriptors),...hp,pipeline:PIPE,updatedAt:now,reenrolledAt:now}
+   :{id:E.id,name:E.name,game:E.game||'',handi:E.handi??'',phone:E.phone||'',descriptors,template:vmean(descriptors),...hp,pipeline:PIPE,createdAt:now};
   await writeDB(s=>s.put(member));
   const i=members.findIndex(x=>x.id===member.id);if(i>=0)members[i]=member;else members.push(member);
   if(!E.existing){const x=/^Q(\d+)$/.exec(member.id);if(x)store.set(NEXT_KEY,String(Number(x[1])+1))}
   addLog({mode:'등록',sel:member.name,result:E.existing?'재등록':'신규',dSel:null,other:E.near?.m.name??null,dOther:E.near?.d??null});
   endSession();
-  if(E.existing){announce(member,'reenroll');showResult(member.name+' 님 얼굴 재등록 완료','이제 똑똑 → 이름 선택으로 확인해 보세요.')}
+  if(E.existing){announce(member,'reenroll');showResult(member.name+' 님 얼굴 재등록 완료','이제 톡 → 이름 선택으로 확인해 보세요.')}
   else{markChecked(member.id,now,true);announce(member,'new');showResult(member.name+' 님 입장 확인','신규 등록 완료 · 회원번호 '+member.id+' · 입실 '+hhmm(now))}
-  renderMembers();Remote.pushMembers();
+  renderMembers();Remote.pushMembers();SF.info();
  }catch(err){status('저장 실패: '+err.message,true);endSession()}
  finally{mutating=false;regTarget=null;controls()}
 }
@@ -1120,7 +1326,7 @@ async function saveEnroll(){
 async function loop(run){
  while(stream&&run===generation){
   lastLoopAt=Date.now();
-  const active=session&&ready&&!mutating&&['scan','choose','verify','enroll'].includes(session.mode)&&!$('regDialog').open&&!$('simDialog').open;
+  const active=session&&ready&&!mutating&&['scan','choose','phone','verify','enroll'].includes(session.mode)&&!$('regDialog').open&&!$('simDialog').open;
   if(active){
    const t0=performance.now();
    try{const dets=await analyze();if(run!==generation)break;await handleFrame(dets,t0)}
@@ -1135,6 +1341,10 @@ $('setLevel').value=settings.level;$('setAdapt').checked=settings.adapt;$('setFi
 $('setLevel').onchange=()=>{settings.level=$('setLevel').value;saveSettings()};
 $('setAdapt').onchange=()=>{settings.adapt=$('setAdapt').checked;saveSettings()};
 $('setFill').onchange=()=>{settings.fill=$('setFill').checked;saveSettings();if(!settings.fill)document.body.classList.remove('filllight')};
+$('setEngine').value=settings.engine;$('setConfirm').value=settings.confirm;
+$('setEngine').onchange=()=>{settings.engine=$('setEngine').value;saveSettings();if(settings.engine==='sface'&&ready)SF.load();SF.info();status(settings.engine==='sface'?'고정밀 엔진을 선택했습니다.':'기본 엔진을 선택했습니다.')};
+$('setConfirm').onchange=()=>{settings.confirm=$('setConfirm').value;saveSettings()};
+SF.info();
 
 /* ---------- 상시 운영 ---------- */
 async function requestWakeLock(){
@@ -1206,7 +1416,7 @@ $('hardReloadBtn').onclick=()=>doReload(true);
  }
  function exit(){try{(document.exitFullscreen||document.webkitExitFullscreen)?.call(document)}catch{}}
  function msg(){$('fsMsg').textContent=standalone?'홈 화면 앱으로 실행 중':!can?'이 브라우저는 전체 화면을 지원하지 않습니다':isFs()?'전체 화면 사용 중':'전체 화면 아님'}
- // 첫 터치(또는 클릭) 때 전체 화면 — 똑똑 버튼 누름도 그대로 동작
+ // 첫 터치(또는 클릭) 때 전체 화면 — 톡 버튼 누름도 그대로 동작
  const onTouch=()=>{if(auto&&!standalone&&!isFs())enter().then(msg)};
  document.addEventListener('pointerup',onTouch,true);
  document.addEventListener('touchend',onTouch,true);
