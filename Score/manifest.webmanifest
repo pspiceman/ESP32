@@ -1,0 +1,21 @@
+{
+  "id": "./cue24_scoreboard.html",
+  "name": "CUE24 Score Board",
+  "short_name": "CUE24",
+  "description": "CUE24 스마트 당구장 점수판 · 3구/4구/연습 · 영상 AI 자동득점",
+  "lang": "ko",
+  "start_url": "./cue24_scoreboard.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "landscape",
+  "background_color": "#05080f",
+  "theme_color": "#05080f",
+  "categories": ["sports", "utilities"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
