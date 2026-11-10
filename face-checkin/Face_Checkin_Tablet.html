@@ -87,8 +87,8 @@ dialog h2{font-size:23px;margin-bottom:4px}
 .btns button{min-height:56px;font-size:18px}
 .bell{width:min(190px,32vh);height:min(190px,32vh);border-radius:50%;background:#e8402f;color:#fff;border:6px solid #fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:30px;font-weight:800;padding:0;box-shadow:0 10px 30px rgba(0,0,0,.3);-webkit-tap-highlight-color:transparent;user-select:none}
 .bell svg{width:52px;height:52px}.bell small{font-size:13px;font-weight:600;opacity:.92}
-.bellWrap{overflow:hidden;padding:30px 30px 34px}
-.bell{position:relative;width:min(290px,40vh,28vw);height:min(290px,40vh,28vw);border-width:8px;font-size:clamp(30px,5.4vh,46px)}
+.bellWrap{overflow:hidden;padding:20px 30px calc(30px + 12vh)}
+.bell{position:relative;width:min(290px,37vh,28vw);height:min(290px,37vh,28vw);border-width:8px;font-size:clamp(30px,5.4vh,46px)}
 .bell svg{width:clamp(48px,9vh,78px);height:clamp(48px,9vh,78px)}.bell small{font-size:clamp(13px,2.2vh,18px)}
 .finger{position:absolute;right:-4%;bottom:-9%;font-size:clamp(54px,11vh,92px);line-height:1;filter:drop-shadow(0 6px 8px rgba(0,0,0,.35));pointer-events:none;transform-origin:50% 100%;animation:tap 1.6s ease-in-out infinite}
 .bell.busy .finger,.bell:disabled .finger{animation:none;opacity:.35}
@@ -227,7 +227,7 @@ html,body{overscroll-behavior:none}
    <b>사용 순서:</b> 똑똑 → 정면 바라보기(1~2초) → "OOO님 입장 확인". 처음 오신 분은 이름/닉네임 → 종목·핸디 → 휴대폰 번호를 차례로 입력합니다. 퇴실은 관리자가 결제 확인 후 관리자 웹에서 처리합니다.<br>
    <b>정확도:</b> 등록 때 정면 8장, 확인 때 4장을 평균하고 두 눈이 수평이 되도록 정렬한 뒤 비교합니다. 1·2순위 차이가 작으면 비슷한 분들만 골라 보여 줍니다.<br>
    얼굴 분석은 기기에서만 수행하며 사진·영상을 저장하거나 보내지 않습니다(얼굴 특징값 숫자만 이 기기에 저장). 생체 위조(사진) 검출 기능은 없습니다.</p>
-   <p class="hint" id="footerVer">Q24 입장 등록 4.0.5 · face-api.js 0.22.2</p>
+   <p class="hint" id="footerVer">Q24 입장 등록 4.0.6 · face-api.js 0.22.2</p>
   </section>
  </div>
 </section>
