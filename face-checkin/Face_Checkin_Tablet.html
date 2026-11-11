@@ -172,6 +172,17 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 .numPad button{font-size:clamp(24px,4.6vh,36px);border-radius:16px;padding:0;min-height:48px}.numPad button.fn{font-size:18px;color:var(--muted)}
 .consent.big{font-size:18px}.consent.big input{width:28px;min-height:28px}
 .stepFace{max-width:720px}
+/* 핸디·휴대폰 한 화면 */
+.fields{display:flex;flex-direction:column;gap:8px}
+.field{display:grid;grid-template-columns:110px 1fr auto;align-items:center;gap:10px;background:#fff;border:2px solid var(--line);border-radius:14px;padding:6px 10px 6px 14px;min-height:clamp(54px,9vh,72px);cursor:pointer}
+.field.on{border:3px solid var(--green);background:#f3fbf8;box-shadow:0 0 0 3px rgba(8,127,112,.15)}
+.field.bad{border-color:#d0463a}
+.fl{font-size:17px;font-weight:700;color:var(--muted)}.field.on .fl{color:var(--green)}
+.fv{font-size:clamp(26px,5vh,40px);font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.5px}
+.fv.none{font-size:clamp(18px,3vh,22px);color:var(--muted);font-weight:700}
+.field .skipBtn{min-height:42px;font-size:15px;padding:6px 12px}
+.stepNum .chips{margin:10px 0 6px;min-height:48px}
+
 @media (max-height:620px){.regTop{padding:6px 10px}.regAct button{min-height:46px}.regTitle h2{font-size:19px}.chips{margin:8px 0}.chips button{min-height:42px}}
 @media (orientation:portrait){.stepNum{grid-template-columns:1fr;grid-template-rows:auto 1fr}.regTop{flex-wrap:wrap}.regTop .steps{order:3;flex-basis:100%}}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#15333e;color:#fff;padding:12px 18px;border-radius:12px;z-index:30;font-size:15px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
@@ -288,7 +299,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
    <b>사용 순서:</b> 톡 → 정면 바라보기(1~2초) → "OOO님 입장 확인". 처음 오신 분은 이름/닉네임 → 종목·핸디 → 휴대폰 번호를 차례로 입력합니다. 퇴실은 관리자가 결제 확인 후 관리자 웹에서 처리합니다.<br>
    <b>정확도:</b> 등록 때 정면 8장, 확인 때 4장을 평균하고 두 눈이 수평이 되도록 정렬한 뒤 비교합니다. 1·2순위 차이가 작으면 비슷한 분들만 골라 보여 줍니다.<br>
    얼굴 분석은 기기에서만 수행하며 사진·영상을 저장하거나 보내지 않습니다(얼굴 특징값 숫자만 이 기기에 저장). 생체 위조(사진) 검출 기능은 없습니다.</p>
-   <p class="hint" id="footerVer">Q24 입장 등록 4.2 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
+   <p class="hint" id="footerVer">Q24 입장 등록 4.2.1 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
   </section>
  </div>
 </section>
@@ -299,7 +310,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 <dialog id="regDialog" class="regFull"><form id="regForm" method="dialog" novalidate>
  <div class="regTop">
   <div class="regTitle"><h2 id="regTitle">처음 오셨네요!</h2><small>회원번호 <b id="regId">—</b> · <span id="regSub">순서대로 입력해 주세요</span></small></div>
-  <div class="steps" id="regSteps"><span data-s="0">① 이름</span><span data-s="1">② 3구 핸디</span><span data-s="2">③ 4구 점수</span><span data-s="3">④ 휴대폰</span></div>
+  <div class="steps" id="regSteps"><span data-s="0">① 이름 · 닉네임</span><span data-s="1">② 핸디 · 휴대폰</span></div>
   <div class="regAct"><button type="button" id="regCancel">취소</button><button class="primary" id="regSave" type="submit">다음 ▶</button><button type="button" id="regClose" aria-label="등록 취소">✕</button></div>
  </div>
  <p id="regError" class="err big"></p>
@@ -309,13 +320,16 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
    <input id="regName" class="bigInput" maxlength="20" placeholder="예: 김회원 / 큐왕" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="next">
    <p class="hint">입력 후 키보드의 <b>다음(완료)</b> 또는 위쪽 <b>다음 ▶</b>을 누르세요. 같은 이름의 회원이 있으면 숫자나 별명을 붙여 주세요.</p>
   </div>
-  <div data-step="num" class="stepNum" hidden>
+  <div data-step="1" class="stepNum" hidden>
    <div class="numLeft">
-    <p class="q" id="numQ">3구 핸디를 눌러 주세요</p>
-    <div class="numShow" id="numShow"><span id="numVal">—</span><small id="numUnit"></small></div>
+    <p class="q" id="numQ">핸디와 휴대폰 번호를 눌러 주세요</p>
+    <div class="fields">
+     <div class="field" data-f="h3" role="button" tabindex="0"><span class="fl">3구 핸디</span><b class="fv" id="fv_h3">—</b><button type="button" class="skipBtn" data-skip="h3">안 쳐요</button></div>
+     <div class="field" data-f="h4" role="button" tabindex="0"><span class="fl">4구 점수</span><b class="fv" id="fv_h4">—</b><button type="button" class="skipBtn" data-skip="h4">안 쳐요</button></div>
+     <div class="field" data-f="phone" role="button" tabindex="0"><span class="fl">휴대폰</span><b class="fv" id="fv_phone">010-</b></div>
+    </div>
     <div class="chips" id="numChips"></div>
-    <button type="button" id="numSkip" class="skipBtn">3구는 안 쳐요</button>
-    <label class="consent" id="consentWrap" hidden><input id="regConsent" type="checkbox"><span>이름/닉네임·핸디·휴대폰 번호·얼굴 특징값을 이 기기에 저장하고, 입실 관리를 위해 매장 관리자에게 전송(얼굴 정보 제외, 암호화)하는 데 동의합니다.</span></label>
+    <label class="consent" id="consentWrap"><input id="regConsent" type="checkbox"><span>이름/닉네임·핸디·휴대폰 번호·얼굴 특징값을 이 기기에 저장하고, 입실 관리를 위해 매장 관리자에게 전송(얼굴 정보 제외, 암호화)하는 데 동의합니다.</span></label>
    </div>
    <div class="numPad" id="numPad"></div>
   </div>
@@ -621,9 +635,9 @@ setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString('ko-KR',{h
 /* ---------- 얼굴 테두리 (빨간 ㄱ자) ---------- */
 function guideRect(vw,vh){const g=STD.guide;return{x:vw*g.x,y:vh*g.y,w:vw*g.w,h:vh*g.h}}
 /* 화면에 그리는 점선: 판정 영역(위)보다 작게, 적당한 거리의 얼굴(머리) 크기에 맞춤 */
-function guideDrawRect(vw,vh){const m=Math.min(vw,vh),w=m*.56,h=m*.74;return{x:(vw-w)/2,y:Math.max(vh*.04,(vh-h)/2-vh*.02),w,h}}
+function guideDrawRect(vw,vh){const m=Math.min(vw,vh),w=Math.min(vw*.9,m*.80),h=Math.min(vh*.94,m*.94);return{x:(vw-w)/2,y:(vh-h)/2,w,h}}
 /* 검출 박스(눈썹~턱)를 머리 크기로 넓혀 꺾쇠 표시 */
-function headBox(b){const w=b.width,h=b.height;return{x:b.x-w*.12,y:b.y-h*.28,width:w*1.24,height:h*1.36}}
+function headBox(b){const w=b.width,h=b.height;return{x:b.x-w*.06,y:b.y-h*.16,width:w*1.12,height:h*1.22}}
 function corners(ctx,b,color,lw){
  const L=Math.min(b.w,b.h)*.24;ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();
  ctx.moveTo(b.x,b.y+L);ctx.lineTo(b.x,b.y);ctx.lineTo(b.x+L,b.y);
@@ -644,6 +658,9 @@ function drawOverlay(faces){
  ctx.setLineDash([12,9]);ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=2.5;const rr=Math.min(gr.w,gr.h)*.18;ctx.beginPath();ctx.roundRect?ctx.roundRect(gr.x,gr.y,gr.w,gr.h,rr):ctx.rect(gr.x,gr.y,gr.w,gr.h);ctx.stroke();ctx.setLineDash([]);
  for(const f of faces){
   const hb=headBox(f.box),b=map(hb.x,hb.y,hb.width,hb.height);
+  // 얼굴 중심이 점선 안이면 꺾쇠가 점선을 넘지 않게 안쪽으로 맞춤
+  const cx=b.x+b.w/2,cy=b.y+b.h/2,pad=6;
+  if(cx>gr.x&&cx<gr.x+gr.w&&cy>gr.y&&cy<gr.y+gr.h){const x1=Math.max(b.x,gr.x+pad),y1=Math.max(b.y,gr.y+pad),x2=Math.min(b.x+b.w,gr.x+gr.w-pad),y2=Math.min(b.y+b.h,gr.y+gr.h-pad);b.x=x1;b.y=y1;b.w=x2-x1;b.h=y2-y1}
   corners(ctx,b,f.ok?'#ff2020':'rgba(255,70,70,.5)',f.ok?4:3);
   if(f.label){
    ctx.font='bold 15px system-ui,"Noto Sans KR",sans-serif';const tw=ctx.measureText(f.label).width+14,th=24;
@@ -1238,11 +1255,11 @@ async function adapt(m,q,d,o,opt={}){
 /* ---------- 신규 등록 · 얼굴 재등록 (정면·좌·우·정면 13장) ---------- */
 let regTarget=null;
 let regSamples=null,regMode='new',regStep=0,regIdleAt=0;
-const REG={h3:'',h4:'',phone:'',skip3:false,skip4:false};
-const NUM_STEPS={
- 1:{q:'3구 핸디를 눌러 주세요',unit:'점 (3구)',max:3,chips:[8,10,13,15,18,20,22,25,28,30,35],skip:'3구는 안 쳐요',key:'h3',skipKey:'skip3',say:'3구 핸디를 눌러 주세요. 3구를 안 치시면, 안 쳐요를 눌러 주세요.'},
- 2:{q:'4구 점수를 눌러 주세요',unit:'점 (4구)',max:4,chips:[50,80,100,120,150,200,250,300,400,500],skip:'4구는 안 쳐요',key:'h4',skipKey:'skip4',say:'4구 점수를 눌러 주세요. 4구를 안 치시면, 안 쳐요를 눌러 주세요.'},
- 3:{q:'휴대폰 번호를 눌러 주세요',unit:'',max:11,chips:[],skip:'',key:'phone',say:'휴대폰 번호를 누르고, 아래 동의에 체크해 주세요.'}
+const REG={h3:'',h4:'',phone:'',skip3:false,skip4:false,active:'h3'};
+const FIELDS={
+ h3:{max:3,chips:[8,10,13,15,18,20,22,25,28,30,35],skipKey:'skip3',next:'h4',label:'3구 핸디'},
+ h4:{max:4,chips:[50,80,100,120,150,200,250,300,400,500],skipKey:'skip4',next:'phone',label:'4구 점수'},
+ phone:{max:11,chips:[],next:null,label:'휴대폰'}
 };
 function fmtPhone(s){const d=String(s).replace(/\D/g,'').slice(0,11);if(d.length<4)return d;if(d.length<8)return d.slice(0,3)+'-'+d.slice(3);return d.slice(0,3)+'-'+d.slice(3,d.length-4)+'-'+d.slice(-4)}
 function handiOf(m){
@@ -1254,41 +1271,47 @@ function handiText(m){const {h3,h4}=handiOf(m);return[h3?'3구 '+h3:'',h4?'4구 
 (()=>{for(const k of ['1','2','3','4','5','6','7','8','9','지움','0','←']){
  const b=document.createElement('button');b.type='button';b.textContent=k;if(k.length>1)b.className='fn';
  b.onclick=()=>numKey(k);$('numPad').append(b)}})();
+function touchReg(){regIdleAt=Date.now();$('regError').textContent='';for(const f of document.querySelectorAll('.field'))f.classList.remove('bad')}
+function setActive(f){REG.active=f;renderNum()}
 function numKey(k){
- const S=NUM_STEPS[regStep];if(!S)return;regIdleAt=Date.now();$('regError').textContent='';
- let v=REG[S.key];if(k==='지움')v='';else if(k==='←')v=v.slice(0,-1);else if(v.length<S.max){if(S.key!=='phone'&&v==='0')v='';v+=k}
- REG[S.key]=v;if(S.skipKey&&v)REG[S.skipKey]=false;renderNum();
+ const f=REG.active,F=FIELDS[f];if(!F)return;touchReg();
+ let v=REG[f];if(k==='지움')v=f==='phone'?'010':'';else if(k==='←')v=v.slice(0,-1);else if(v.length<F.max){if(f!=='phone'&&v==='0')v='';v+=k}
+ REG[f]=v;if(F.skipKey&&v)REG[F.skipKey]=false;renderNum();
 }
 function renderNum(){
- const S=NUM_STEPS[regStep];if(!S)return;const v=REG[S.key],skip=S.skipKey&&REG[S.skipKey];
- $('numVal').textContent=skip?'안 쳐요':S.key==='phone'?(v?fmtPhone(v):'010-'):(v||'—');
- $('numShow').classList.toggle('none',!!skip||(!v&&S.key!=='phone'));$('numUnit').textContent=skip?'':S.unit;
- for(const b of $('numChips').children)b.classList.toggle('sel',b.dataset.v===v&&!skip);
- $('numSkip').classList.toggle('on',!!skip);
+ for(const f of ['h3','h4','phone']){
+  const F=FIELDS[f],skip=F.skipKey&&REG[F.skipKey],v=REG[f],el=$('fv_'+f);
+  el.textContent=skip?'안 쳐요':f==='phone'?(v?fmtPhone(v):'010-'):(v||'—');
+  el.classList.toggle('none',!!skip||(!v&&f!=='phone'));
+  const row=document.querySelector('.field[data-f="'+f+'"]');row.classList.toggle('on',REG.active===f);
+  const sb=row.querySelector('.skipBtn');if(sb)sb.classList.toggle('on',!!skip);
+ }
+ const F=FIELDS[REG.active],cur=REG[REG.active];
+ $('numChips').replaceChildren(...F.chips.map(c=>{const b=document.createElement('button');b.type='button';b.textContent=c;b.dataset.v=String(c);if(String(c)===cur)b.className='sel';
+  b.onclick=()=>{const a=REG.active;REG[a]=String(c);if(FIELDS[a].skipKey)REG[FIELDS[a].skipKey]=false;touchReg();REG.active=FIELDS[a].next||a;renderNum()};return b}));
+ $('numChips').style.visibility=F.chips.length?'visible':'hidden';
+ $('numQ').textContent=REG.active==='phone'?'휴대폰 번호를 눌러 주세요':FIELDS[REG.active].label+'를 누르거나 아래에서 고르세요';
 }
+for(const row of document.querySelectorAll('.field'))row.addEventListener('click',e=>{if(e.target.closest('.skipBtn'))return;touchReg();setActive(row.dataset.f)});
+for(const b of document.querySelectorAll('.field .skipBtn'))b.onclick=e=>{e.stopPropagation();const f=b.dataset.skip,k=FIELDS[f].skipKey;REG[k]=!REG[k];if(REG[k]){REG[f]='';REG.active=FIELDS[f].next}else REG.active=f;touchReg();renderNum()};
 function showRegStep(s){
  regStep=s;regIdleAt=Date.now();$('regError').textContent='';
- const num=typeof s==='number'&&s>=1;
- for(const el of $('regForm').querySelectorAll('[data-step]'))el.hidden=!(el.dataset.step===String(s)||(num&&el.dataset.step==='num'));
+ for(const el of $('regForm').querySelectorAll('[data-step]'))el.hidden=el.dataset.step!==String(s);
  $('regSteps').hidden=s==='face';
  for(const el of $('regSteps').children){const i=Number(el.dataset.s);el.className=s==='face'?'':i<s?'done':i===s?'on':''}
- if(num){
-  const S=NUM_STEPS[s];$('numQ').textContent=S.q;
-  $('numChips').replaceChildren(...S.chips.map(c=>{const b=document.createElement('button');b.type='button';b.textContent=c;b.dataset.v=String(c);b.onclick=()=>{REG[S.key]=String(c);if(S.skipKey)REG[S.skipKey]=false;regIdleAt=Date.now();$('regError').textContent='';renderNum()};return b}));
-  $('numChips').hidden=!S.chips.length;$('numSkip').hidden=!S.skip;$('numSkip').textContent=S.skip;
-  $('consentWrap').hidden=s!==3;
-  if(s===3&&!REG.phone)REG.phone='010';
-  renderNum();try{document.activeElement?.blur?.()}catch{}   // 숫자 단계: 시스템 키보드 닫기
+ if(s===1){
+  if(!REG.phone)REG.phone='010';
+  REG.active=!REG.skip3&&!REG.h3?'h3':!REG.skip4&&!REG.h4?'h4':'phone';
+  renderNum();try{document.activeElement?.blur?.()}catch{}   // 시스템 키보드 닫기
  }
- const last=s==='face'||s===3;
+ const last=s==='face'||s===1;
  $('regSave').textContent=last?(regMode==='edit'?'저장 ✓':regMode==='face'||!regSamples?'촬영 시작 ▶':'등록 완료 ✓'):'다음 ▶';
- $('regCancel').textContent=typeof s==='number'&&s>0?'◀ 이전':'취소';
- if(regMode==='new'&&typeof s==='number'){speak(s===0?'처음 오셨네요. 이름이나 닉네임을 입력해 주세요.':NUM_STEPS[s].say,'reg'+s,0)}
+ $('regCancel').textContent=s===1?'◀ 이전':'취소';
+ if(regMode==='new'&&typeof s==='number')speak(s===0?'처음 오셨네요. 이름이나 닉네임을 입력해 주세요.':'3구 핸디, 4구 점수, 휴대폰 번호를 차례로 눌러 주세요. 안 치는 종목은 안 쳐요를 눌러 주세요.','reg'+s,0);
  if(s===0)setTimeout(()=>{const n=$('regName');n.focus();try{n.setSelectionRange(n.value.length,n.value.length)}catch{}},120);
 }
-$('numSkip').onclick=()=>{const S=NUM_STEPS[regStep];if(!S?.skipKey)return;REG[S.skipKey]=!REG[S.skipKey];if(REG[S.skipKey])REG[S.key]='';regIdleAt=Date.now();$('regError').textContent='';renderNum()};
 $('regName').addEventListener('input',()=>{regIdleAt=Date.now();$('regError').textContent=''});
-$('regConsent').addEventListener('change',()=>{regIdleAt=Date.now();$('regError').textContent=''});
+$('regConsent').addEventListener('change',touchReg);
 $('regConsentFace').addEventListener('change',()=>{regIdleAt=Date.now();$('regError').textContent=''});
 /* mode: 'new' 신규 등록 · 'face' 얼굴 재등록 · 'edit' 정보 수정 */
 function openRegister(existing,samples,mode){
@@ -1307,26 +1330,28 @@ function openRegister(existing,samples,mode){
  $('regId').textContent=existing?existing.id:fmtId(nextNum());
  $('regName').value=existing?existing.name:'';
  const H=handiOf(existing);REG.h3=H.h3;REG.h4=H.h4;REG.skip3=!!existing&&!H.h3;REG.skip4=!!existing&&!H.h4;
- REG.phone=String(existing?.phone||'').replace(/\D/g,'');
+ REG.phone=String(existing?.phone||'').replace(/\D/g,'');REG.active='h3';
  $('regConsent').checked=regMode==='edit';$('regConsentFace').checked=false;
  if(!$('regDialog').open)$('regDialog').showModal();
  showRegStep(regMode==='face'?'face':0);
  controls();
 }
 function regValidate(s){
+ const bad=f=>{REG.active=f;renderNum();document.querySelector('.field[data-f="'+f+'"]').classList.add('bad')};
  if(s===0){const n=$('regName').value.trim();if(!n){$('regName').focus();return '이름 또는 닉네임을 입력해 주세요.'}
   const dup=members.find(m=>m.name===n&&m.id!==regTarget?.id);if(dup&&regMode==='new')return '같은 이름('+dup.id+')이 있습니다. 구분되도록 숫자나 별명을 붙여 주세요. (예: '+n+'2)'}
- if(s===1&&!REG.skip3&&!/^\d{1,3}$/.test(REG.h3))return '3구 핸디를 누르거나, 안 치시면 "3구는 안 쳐요"를 눌러 주세요.';
- if(s===2){if(!REG.skip4&&!/^\d{1,4}$/.test(REG.h4))return '4구 점수를 누르거나, 안 치시면 "4구는 안 쳐요"를 눌러 주세요.';
-  if(REG.skip3&&REG.skip4)return '3구 또는 4구 중 하나는 입력해 주세요.'}
- if(s===3){const d=REG.phone;if(!/^01\d{8,9}$/.test(d))return '휴대폰 번호를 정확히 눌러 주세요. (010으로 시작 10~11자리)';
-  const dup=members.find(m=>String(m.phone||'').replace(/\D/g,'')===d&&m.id!==regTarget?.id);if(dup)return '이미 등록된 번호입니다('+dup.id+' '+dup.name+'). 같은 분이면 관리자에게 얼굴 재등록을 요청해 주세요.';
+ if(s===1){
+  if(!REG.skip3&&!/^\d{1,3}$/.test(REG.h3)){bad('h3');return '3구 핸디를 누르거나, 안 치시면 "안 쳐요"를 눌러 주세요.'}
+  if(!REG.skip4&&!/^\d{1,4}$/.test(REG.h4)){bad('h4');return '4구 점수를 누르거나, 안 치시면 "안 쳐요"를 눌러 주세요.'}
+  if(REG.skip3&&REG.skip4){bad('h3');return '3구 또는 4구 중 하나는 입력해 주세요.'}
+  const d=REG.phone;if(!/^01\d{8,9}$/.test(d)){bad('phone');return '휴대폰 번호를 정확히 눌러 주세요. (010으로 시작 10~11자리)'}
+  const dup=members.find(m=>String(m.phone||'').replace(/\D/g,'')===d&&m.id!==regTarget?.id);if(dup){bad('phone');return '이미 등록된 번호입니다('+dup.id+' '+dup.name+'). 같은 분이면 관리자에게 얼굴 재등록을 요청해 주세요.'}
   if(!$('regConsent').checked)return '아래 저장·전송 동의에 체크해 주세요.'}
  if(s==='face'&&!$('regConsentFace').checked)return '얼굴 저장 동의에 체크해 주세요.';
  return '';
 }
 function regCancelAll(){$('regDialog').close();regTarget=null;regSamples=null;if(session){endSession();showResult('등록을 취소했습니다','다시 하시려면 톡 버튼을 눌러 주세요.')}}
-$('regCancel').onclick=()=>{if(typeof regStep==='number'&&regStep>0){showRegStep(regStep-1);return}regCancelAll()};
+$('regCancel').onclick=()=>{if(regStep===1){showRegStep(0);return}regCancelAll()};
 $('regDialog').addEventListener('cancel',e=>{e.preventDefault();regCancelAll()});
 $('regClose').onclick=()=>regCancelAll();
 // 등록 창을 열어 두고 떠난 경우: 90초 동안 입력이 없으면 자동 취소
@@ -1334,7 +1359,7 @@ setInterval(()=>{if($('regDialog').open&&regMode!=='edit'&&Date.now()-regIdleAt>
 $('regForm').onsubmit=async e=>{
  e.preventDefault();
  const err=regValidate(regStep);if(err){$('regError').textContent=err;if(regMode==='new')speak(err,'regerr',3000);return}
- if(typeof regStep==='number'&&regStep<3){showRegStep(regStep+1);return}
+ if(regStep===0){showRegStep(1);return}
  const h3=REG.skip3?'':REG.h3,h4=REG.skip4?'':REG.h4;
  const info={name:$('regName').value.trim(),handi3:h3,handi4:h4,game:h3?'3구':'4구',handi:h3||h4,phone:fmtPhone(REG.phone)};
  if(regMode==='edit'){await saveInfo(regTarget,info);return}
