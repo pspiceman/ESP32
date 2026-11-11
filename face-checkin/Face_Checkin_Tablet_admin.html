@@ -59,20 +59,20 @@ label{display:block;font-size:14px;font-weight:650;margin-top:12px}label input,l
  </div>
  <section class="card" data-panel="in">
   <div class="toolbar"><input id="qIn" placeholder="이름 · 회원번호 · 전화번호 검색"><button id="btnSync" type="button">태블릿에서 새로 받기</button></div>
-  <table><thead><tr><th>입실 시각</th><th>누적 시간</th><th>회원번호</th><th>성명/닉네임</th><th>종목 · 핸디</th><th>전화번호</th><th></th></tr></thead><tbody id="tbIn"></tbody></table>
+  <table><thead><tr><th>입실 시각</th><th>누적 시간</th><th>회원번호</th><th>성명/닉네임</th><th>3구 · 4구</th><th>전화번호</th><th></th></tr></thead><tbody id="tbIn"></tbody></table>
   <p class="hint">결제(무통장입금 등)를 직접 확인한 뒤 <b>퇴실 처리</b>를 누르세요. 태블릿이 잠시 꺼져 있어도 명령은 브로커에 보관되었다가 태블릿이 연결되면 처리됩니다.</p>
  </section>
  <section class="card" data-panel="out" hidden>
   <div class="toolbar"><input id="dOut" type="date" style="flex:0 0 auto"><input id="qOut" placeholder="검색"><button id="btnCsv" type="button">CSV 저장</button></div>
-  <table><thead><tr><th>입실</th><th>퇴실</th><th>이용 시간</th><th>회원번호</th><th>성명/닉네임</th><th>종목 · 핸디</th><th>전화번호</th><th>결제</th><th>금액</th><th>메모</th></tr></thead><tbody id="tbOut"></tbody></table>
+  <table><thead><tr><th>입실</th><th>퇴실</th><th>이용 시간</th><th>회원번호</th><th>성명/닉네임</th><th>3구 · 4구</th><th>전화번호</th><th>결제</th><th>금액</th><th>메모</th></tr></thead><tbody id="tbOut"></tbody></table>
   <p class="hint">퇴실 기록은 이 관리자 브라우저에도 누적 저장됩니다(최근 90일). 태블릿은 오늘 기록만 보냅니다.</p>
  </section>
  <section class="card" data-panel="new" hidden>
-  <table><thead><tr><th>등록 시각</th><th>회원번호</th><th>성명/닉네임</th><th>종목 · 핸디</th><th>전화번호</th><th>상태</th></tr></thead><tbody id="tbNew"></tbody></table>
+  <table><thead><tr><th>등록 시각</th><th>회원번호</th><th>성명/닉네임</th><th>3구 · 4구</th><th>전화번호</th><th>상태</th></tr></thead><tbody id="tbNew"></tbody></table>
  </section>
  <section class="card" data-panel="members" hidden>
   <div class="toolbar"><input id="qMem" placeholder="이름 · 회원번호 · 전화번호 검색"><span class="hint" id="memInfo"></span></div>
-  <table><thead><tr><th>회원번호</th><th>성명/닉네임</th><th>종목 · 핸디</th><th>전화번호</th><th>등록일</th><th>상태</th></tr></thead><tbody id="tbMem"></tbody></table>
+  <table><thead><tr><th>회원번호</th><th>성명/닉네임</th><th>3구 · 4구</th><th>전화번호</th><th>등록일</th><th>상태</th></tr></thead><tbody id="tbMem"></tbody></table>
   <p class="hint">회원 정보 수정·삭제·얼굴 재등록은 태블릿의 ⚙ 설정 → 회원 관리에서 합니다.</p>
  </section>
  <section class="card" data-panel="log" hidden><table class="log"><tbody id="tbLog"></tbody></table></section>
@@ -116,7 +116,8 @@ const hhmm=t=>t?new Date(t).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2
 const ymd=t=>{const d=new Date(t);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
 const dur=ms=>{const m=Math.max(0,Math.floor(ms/60000));return Math.floor(m/60)+'시간 '+pad(m%60)+'분'};
 const won=n=>(n===''||n==null||isNaN(Number(n)))?'—':Number(n).toLocaleString('ko-KR')+'원';
-const game=v=>v.game?v.game+' '+(v.handi??''):'—';
+function hd(v){const h3=v.handi3!=null&&v.handi3!==''?String(v.handi3):(v.game==='3구'&&v.handi!==''&&v.handi!=null?String(v.handi):''),h4=v.handi4!=null&&v.handi4!==''?String(v.handi4):(v.game==='4구'&&v.handi!==''&&v.handi!=null?String(v.handi):'');return{h3,h4}}
+const game=v=>{const {h3,h4}=hd(v);return[h3?'3구 '+h3:'',h4?'4구 '+h4:''].filter(Boolean).join(' · ')||'—'};
 function toast(m,ms=3500){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,ms)}
 function beep(){if(!cfg.beep)return;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();audioCtx.resume?.();const o=audioCtx.createOscillator(),g=audioCtx.createGain(),t=audioCtx.currentTime;o.frequency.value=880;g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.25,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.5);o.connect(g).connect(audioCtx.destination);o.start(t);o.stop(t+.55)}catch{}}
 function el(tag,props={},...kids){const e=Object.assign(document.createElement(tag),props);e.append(...kids);return e}
@@ -268,7 +269,7 @@ $('btnSync').onclick=()=>sendCmd({type:'sync'}).then(ok=>ok&&toast('태블릿에
 $('btnCsv').onclick=()=>{
  const day=$('dOut').value,rows=Object.values(hist).filter(v=>ymd(v.outAt)===day).sort((a,b)=>a.outAt-b.outAt);
  const q=s=>'"'+String(s??'').replace(/"/g,'""')+'"';
- const csv=['입실,퇴실,이용(분),회원번호,성명/닉네임,종목,핸디,전화번호,결제,금액,메모,처리자'].concat(rows.map(v=>[new Date(v.inAt).toLocaleString('ko-KR'),new Date(v.outAt).toLocaleString('ko-KR'),Math.round((v.outAt-v.inAt)/60000),v.id,v.name,v.game,v.handi,v.phone,v.method,v.amount,v.memo,v.by].map(q).join(','))).join('\r\n');
+ const csv=['입실,퇴실,이용(분),회원번호,성명/닉네임,3구 핸디,4구 점수,전화번호,결제,금액,메모,처리자'].concat(rows.map(v=>[new Date(v.inAt).toLocaleString('ko-KR'),new Date(v.outAt).toLocaleString('ko-KR'),Math.round((v.outAt-v.inAt)/60000),v.id,v.name,hd(v).h3,hd(v).h4,v.phone,v.method,v.amount,v.memo,v.by].map(q).join(','))).join('\r\n');
  const a=el('a',{href:URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv'})),download:'Q24_퇴실기록_'+day+'.csv'});document.body.append(a);a.click();a.remove();
 };
 for(const b of $('tabs').children)b.onclick=()=>{tab=b.dataset.tab;render()};
