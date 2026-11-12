@@ -12,6 +12,7 @@
 <meta name="application-name" content="CUE24">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" sizes="any" href="favicon.ico">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <style>
@@ -1383,7 +1384,7 @@ const CUSTOM={
  callTest:()=>`<div class="arow"><div class="l"><b>호출 테스트</b></div><div class="c"><button class="btn org" data-x="call">${ico('bell')}테스트 호출</button></div></div><div class="note">전송 형식: <code>{"type":"call","table":1,"store":"…","time":"ISO","game":"3구","usageMin":45,"fee":12000}</code><br>같은 PC의 다른 창(카운터 화면)은 <code>new BroadcastChannel('cue24')</code> 로도 수신할 수 있습니다.</div>`,
  hist:()=>{const rows=HIST.slice(0,30).map(h=>`<tr><td>${new Date(h.date).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</td><td>${KIND[h.kind]}</td><td>${h.players.map((p,i)=>`${h.winners.includes(i)?'🏆 ':''}${esc(p.name)} <span class="mut">${p.score}${p.handi?'/'+p.handi:''}</span>`).join(' · ')}</td><td>${h.innings}이닝</td><td>${fmtDur(h.ms)}</td></tr>`).join('');
   return `<div class="arow" style="grid-template-columns:1fr"><div class="c"><span class="mut">총 ${HIST.length}경기 · 등록 선수 ${RECENT.length}명</span><div class="sp"></div><button class="btn" data-x="csv">CSV 내보내기</button><button class="btn red" data-x="clrHist">기록 삭제</button><button class="btn red" data-x="clrPl">선수 목록 삭제</button></div></div><div style="padding:0 2rem 1.4rem"><table class="hist"><thead><tr><th>일시</th><th>종목</th><th>선수 · 점수</th><th>이닝</th><th>시간</th></tr></thead><tbody>${rows||'<tr><td colspan="5" class="mut">기록이 없습니다</td></tr>'}</tbody></table></div>`},
- sys:()=>`<div class="arow"><div class="l"><b>홈 화면 앱 설치</b><small>${INST.state()}</small></div><div class="c"><button class="btn pri" data-x="install" ${INST.evt?'':'disabled'}>${ico('full')}앱으로 설치</button></div></div>
+ sys:()=>`<div class="arow"><div class="l"><b>홈 화면 앱 설치</b><small>${INST.state()}</small></div><div class="c"><button class="btn pri" data-x="install" ${INST.evt?'':'disabled'}>${ico('full')}앱으로 설치</button><button class="btn" data-x="diag">${ico('check')}설치 상태 점검</button></div></div><div class="arow" style="grid-template-columns:1fr"><div id="aDiag" style="font-size:1.3rem"></div></div>
   <div class="arow"><div class="l"><b>설정 백업</b></div><div class="c"><button class="btn" data-x="exp">설정 내보내기</button><button class="btn" data-x="imp">설정 가져오기</button><button class="btn red" data-x="factory">공장 초기화</button><input type="file" id="aImp" accept=".json" hidden></div></div>
   <div class="note"><b style="color:var(--txt)">윈도우 11 키오스크 실행 (권장)</b><br>바탕화면 바로가기 대상에 입력:<br><code>"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" --kiosk --app="file:///C:/CUE24/cue24_scoreboard.html" --use-fake-ui-for-media-stream --autoplay-policy=no-user-gesture-required --disable-pinch --overscroll-history-navigation=0</code><br>시작프로그램 폴더(<code>shell:startup</code>)에 바로가기를 넣으면 PC 부팅 시 자동 실행됩니다. 종료: <code>Alt+F4</code><br>터치 키보드: 설정 → 시간 및 언어 → 입력 → 터치 키보드 → "키보드가 연결되지 않은 경우 터치 키보드 표시"를 켜세요.<br>버전 ${VER}</div>`,
  bridge:()=>`<div class="note">3Q Score 엔진 HTML의 <code>&lt;/body&gt;</code> 바로 앞에 아래 한 줄을 넣고, <code>cue24-bridge.js</code> 파일을 같은 폴더에 두세요. 엔진 판정 로직은 건드리지 않고 판정 결과만 점수판으로 전달합니다.<br><code>&lt;script src="cue24-bridge.js"&gt;&lt;/script&gt;</code></div><div style="padding:0 2rem 1.6rem"><textarea class="code" readonly id="aBridge"></textarea><div class="row" style="margin-top:1rem"><button class="btn" data-x="bcopy">코드 복사</button><button class="btn" data-x="bdl">cue24-bridge.js 저장</button></div></div>`
@@ -1428,6 +1429,7 @@ $('#aCont').addEventListener('click',async e=>{
  if(a==='call'){lastCall=0;callCounter()}
  if(a==='csv')exportCSV();
  if(a==='install')INST.run();
+ if(a==='diag'){$('#aDiag').innerHTML='<span class="mut">점검 중…</span>';$('#aDiag').innerHTML=await INST.diag()}
  if(a==='clrHist'&&await confirmBox('기록 삭제','모든 경기 기록을 삭제합니다.','삭제',1)){HIST=[];LS.set('cue24.history',HIST);drawAdmin()}
  if(a==='clrPl'&&await confirmBox('선수 목록 삭제','저장된 선수 이름·핸디 목록을 삭제합니다.','삭제',1)){RECENT=[];LS.set('cue24.players',RECENT);drawAdmin()}
  if(a==='exp')download('cue24-settings.json',JSON.stringify(S,null,2),'application/json');
@@ -1501,10 +1503,19 @@ setInterval(()=>{
 const INST={evt:null,
  standalone(){return matchMedia('(display-mode: fullscreen)').matches||matchMedia('(display-mode: standalone)').matches||navigator.standalone},
  state(){if(this.standalone())return '설치된 앱으로 실행 중';if(location.protocol==='file:')return 'file:// 로 열면 설치 불가 · https 또는 localhost 주소로 열어야 합니다';return this.evt?'설치 가능 — 버튼을 누르세요':'브라우저 메뉴 → "홈 화면에 추가" / "앱 설치"를 사용하세요'},
+ swOk:false,swErr:'',
+ async diag(){const L=[],ok=(c,t,h)=>L.push(`<div style="display:flex;gap:.8rem;align-items:baseline;padding:.25rem 0"><b style="color:${c?'var(--good)':'var(--bad)'};min-width:2rem">${c?'✓':'✗'}</b><span>${t}${!c&&h?` <span class="mut">— ${h}</span>`:''}</span></div>`);
+  ok(window.isSecureContext,'보안 주소 (https 또는 localhost)',`지금 ${location.protocol}//${location.host} · http로 연 LAN 주소에서는 설치가 안 되고 일반 바로가기만 만들어집니다`);
+  let reg=null;try{reg=await navigator.serviceWorker?.getRegistration()}catch(e){}ok(!!(reg&&(reg.active||reg.waiting||reg.installing)),'서비스워커 등록 (sw.js)',this.swErr||'sw.js가 같은 폴더에 있는지 확인');
+  let man=null;try{const r=await fetch('manifest.webmanifest',{cache:'no-store'});man=r.ok?await r.json():null}catch(e){}ok(!!man,'manifest.webmanifest 읽기','파일이 같은 폴더에 있는지 확인');
+  if(man){for(const ic of man.icons.filter(i=>/192|512/.test(i.sizes))){let g=false;try{g=(await fetch(ic.src,{cache:'no-store'})).ok}catch(e){}ok(g,'아이콘 '+ic.src,'파일 없음')}}
+  ok(this.standalone(),'설치된 앱으로 실행 중','지금은 브라우저 탭으로 실행 중');
+  const cv=(navigator.userAgent.match(/Chrome\/(\d+)/)||[])[1];ok(!cv||+cv>=90,'브라우저: '+(/SamsungBrowser/.test(navigator.userAgent)?'삼성 인터넷':cv?'Chrome '+cv:'기타'),'Play 스토어에서 Chrome 업데이트 필요');
+  return L.join('')},
  async run(){if(!this.evt)return;this.evt.prompt();const r=await this.evt.userChoice;this.evt=null;toast(r.outcome==='accepted'?'홈 화면에 설치했습니다':'설치를 취소했습니다');if(PAGE==='admin')drawAdmin()}};
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();INST.evt=e;if(PAGE==='admin')drawAdmin()});
 addEventListener('appinstalled',()=>{INST.evt=null;toast('CUE24 앱이 설치되었습니다')});
-if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>{navigator.serviceWorker.register('sw.js',{scope:'./'}).then(r=>{INST.swOk=true;try{r.update()}catch(e){}}).catch(e=>{INST.swErr=String(e&&e.message||e)})});
 
 /* ---------- boot ---------- */
 (function boot(){
