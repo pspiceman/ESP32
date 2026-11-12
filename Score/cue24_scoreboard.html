@@ -108,7 +108,7 @@ svg.i{width:1.2em;height:1.2em;stroke:currentColor;fill:none;stroke-width:2;stro
 .mode h2{font-size:5.6rem;line-height:1;margin-top:1.4rem;font-weight:900;letter-spacing:-.04em;position:relative}
 .mode p{margin-top:1rem;font-size:1.35rem;color:#b9c6e0;line-height:1.5;position:relative}
 .mode .art{flex:1;display:flex;align-items:center;justify-content:center;position:relative}
-.mode .art .ball{width:6.4rem;height:6.4rem}
+.mode .art .ball{width:5.4rem;height:5.4rem}
 .mode .go{display:flex;align-items:center;justify-content:space-between;font-weight:800;font-size:1.5rem;position:relative}
 .mode .go span.arrow{width:4.6rem;height:4.6rem;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#3ea3ff,#1a6ae0)}
 .mode.m3 .go span.arrow{background:linear-gradient(180deg,#ffa041,#ef6a08);color:#1d0d00}
@@ -118,6 +118,13 @@ svg.i{width:1.2em;height:1.2em;stroke:currentColor;fill:none;stroke-width:2;stro
 .ses b{font-family:var(--num);font-size:2rem}
 .ses .fee b{color:var(--org2)}
 
+/* ticker */
+.tk{flex:1;min-width:0;height:4.4rem;margin:0 1.6rem;display:flex;align-items:center;border-radius:99rem;border:1px solid rgba(255,138,30,.35);background:linear-gradient(90deg,rgba(255,138,30,.12),rgba(47,143,255,.08));overflow:hidden}
+.tkic{flex:none;width:4.4rem;height:4.4rem;display:flex;align-items:center;justify-content:center;color:#1d0d00;background:linear-gradient(180deg,#ffa041,#ef6a08);border-radius:99rem}
+.tkic .i{width:2rem;height:2rem}
+.tkw{flex:1;min-width:0;height:100%;overflow:hidden;position:relative;-webkit-mask:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);mask:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
+.tkt{position:absolute;left:0;top:50%;white-space:nowrap;font-size:1.6rem;font-weight:700;color:#ffe2c2;will-change:transform;animation:tkmv var(--dur,20s) linear infinite}
+@keyframes tkmv{from{transform:translate(var(--from),-50%)}to{transform:translate(var(--to),-50%)}}
 /* ---------- SETUP ---------- */
 #setup .body{flex:1;display:flex;flex-direction:column;gap:1.6rem;padding:1.8rem 2.6rem 1.8rem;min-height:0}
 .row{display:flex;align-items:center;gap:1.4rem}
@@ -249,6 +256,7 @@ svg.i{width:1.2em;height:1.2em;stroke:currentColor;fill:none;stroke-width:2;stro
 .ctl .plus{flex:1.5;font-size:2.6rem}
 .ctl .turn{width:22rem;flex:none;font-size:2.2rem}
 .ctl .sm{width:11rem;flex:none;flex-direction:column;gap:.3rem;font-size:1.25rem;padding:0}
+.ctl .sm.off{color:var(--dim)}
 .ctl .ai{width:14rem;flex:none;flex-direction:column;gap:.3rem;font-size:1.25rem;padding:0}
 .ctl .ai.on{background:linear-gradient(180deg,rgba(88,208,255,.32),rgba(47,143,255,.2));border-color:var(--cyan);color:#fff;box-shadow:0 0 2.4rem rgba(88,208,255,.3)}
 .ctl .ai b{font-size:1.6rem}
@@ -476,8 +484,9 @@ html.lite .mode{box-shadow:none}
 <!-- ========== HOME ========== -->
 <section class="page" id="home">
  <div class="bar" style="border:0;background:none;backdrop-filter:none">
-  <div><div class="ttl" id="hStore">CUE24</div><div class="sub" id="hDate"></div></div>
-  <div class="sp"></div>
+  <div style="flex:none"><div class="ttl" id="hStore">CUE24</div><div class="sub" id="hDate"></div></div>
+  <div class="tk" id="hTk"><span class="tkic"><svg class="i"><use href="#i-ai"/></svg></span><div class="tkw"><span class="tkt" id="hTkT"></span></div></div>
+  <div class="sp" id="hTkSp"></div>
   <span class="chip hide" id="hVidChip"><svg class="i"><use href="#i-cam"/></svg>영상 자동득점 테이블</span>
   <div class="clock" id="hClock">00:00</div>
  </div>
@@ -490,13 +499,13 @@ html.lite .mode{box-shadow:none}
   </div>
   <div class="modes">
    <button class="mode m3" data-mode="3c">
-    <div class="k">THREE BALL</div><h2>3구</h2><p>2–5인 · 핸디 경기<br>에버리지 · 하이런 기록</p>
+    <div class="k">THREE BALL</div><h2>3구</h2><p>2–6인 · 핸디 경기<br>에버리지 · 하이런 기록</p>
     <div class="badges" id="h3badge"></div>
     <div class="art"><div style="display:flex;gap:1rem"><i class="ball"></i><i class="ball c1"></i><i class="ball red"></i></div></div>
     <div class="go">경기 설정<span class="arrow"><svg class="i"><use href="#i-right"/></svg></span></div>
    </button>
    <button class="mode" data-mode="4c">
-    <div class="k">FOUR BALL</div><h2>4구</h2><p>2–5인 · 핸디 경기<br>점수 단위 자동 계산</p>
+    <div class="k">FOUR BALL</div><h2>4구</h2><p>2–6인 · 핸디 경기<br>점수 단위 자동 계산</p>
     <div class="art"><div style="display:grid;grid-template-columns:repeat(2,auto);gap:1rem"><i class="ball"></i><i class="ball c1"></i><i class="ball red"></i><i class="ball red"></i></div></div>
     <div class="go">경기 설정<span class="arrow"><svg class="i"><use href="#i-right"/></svg></span></div>
    </button>
@@ -565,6 +574,7 @@ html.lite .mode{box-shadow:none}
   <div class="hint" id="cHint"><b>자기</b> 득점 버튼을 누르면 턴이 자동으로 넘어갑니다</div>
   <button class="btn org turn hide" id="cTurn"><span>턴 넘기기</span><svg class="i"><use href="#i-turn"/></svg></button>
   <button class="btn ai hide" id="cAi"><svg class="i"><use href="#i-ai"/></svg><b id="cAiL">AI 수동</b></button>
+  <button class="btn sm" id="cSnd"><svg class="i"><use href="#i-vol"/></svg><span>소리 켬</span></button>
   <button class="btn sm" id="cPause"><svg class="i"><use href="#i-pause"/></svg>멈춤</button>
  </div>
 </section>
@@ -753,15 +763,17 @@ const DEF={
  store:{name:'CUE24 스마트 당구장',table:1,pin:'0000'},
  bill:{mode:'time',baseMin:30,baseFee:6000,unitMin:10,unitFee:1500,flatHours:4,flat4:20000,flat6:28000,flatOver:true,pauseStops:true,showFee:true},
  rules:{h3:20,h3list:'15,20,25,30,35,40',h4:150,h4list:'50,100,150,200,300,500,700,1000',unit4:10,equal:true,innLimit:0,shot:0,warn:10,timeouts:1,bigNum:'score',turnBtn:false},
+ ticker:{on:true,text:'큐24 당구장은 AI 자동득점 시스템 도입으로 고객 여러분께 스마트한 경기 환경을 제공하고 있습니다',dir:'rtl',speed:100},
  members:'김민준,25,150\n이서연,18,100\n박지훈,30,300\n최유나,15,80\n정도윤,22,200',
  view:{mode:'manual',src:'camera',cam:'',camRes:'1080',url:'',engine:'3Q_Score_v58_40.html',rot:90,fit:'cover',mirror:false,aspect:'9/16',autoDefault:false,aiMissTurn:true,aiHold:true,autoStart:true,rec:true,recSec:120,testBtns:false},
- snd:{fx:true,voice:true,vTurn:true,vPoint:false,vol:.8,game:'off'},
+ snd:{fx:true,voice:true,vTurn:true,vPoint:false,vol:.8,game:'on'},
  keys:{plus:'Space',minus:'Minus',turn:'Enter',undo:'Backspace'},
  call:{url:''},
  sys:{saverMin:5,resultBack:120,autoFull:true,lite:'auto'}
 };
 let S=merge(DEF,LS.get('cue24.settings',{}));
-if((S._v||1)<2){S.rules.bigNum='score';S.rules.h4list=DEF.rules.h4list;if(S.bill.mode==='flat'){}S._v=2;LS.set('cue24.settings',S)}
+if((S._v||1)<2){S.rules.bigNum='score';S.rules.h4list=DEF.rules.h4list;S._v=2}
+if(S._v<3){S.snd.game='on';S._v=3;LS.set('cue24.settings',S)}
 function saveS(){LS.set('cue24.settings',S);const e=$('#aSaved');if(e){e.classList.add('on');clearTimeout(saveS.t);saveS.t=setTimeout(()=>e.classList.remove('on'),1200)}}
 
 /* ---------- persistent data ---------- */
@@ -780,9 +792,10 @@ const unitOf=base=>base==='4c'?(+S.rules.unit4||10):1;
 
 /* ---------- sound & voice ---------- */
 const inGame=()=>!!G&&!G.finished&&PAGE==='game';
+const sndOn=()=>!!G&&G.snd!=='off';
 const SND={ctx:null,muted:false,force:false,
  ac(){if(!this.ctx){try{this.ctx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(this.ctx?.state==='suspended')this.ctx.resume();return this.ctx},
- tone(f,d=.12,type='sine',v=.3,at=0,slide){if(!S.snd.fx)return;if(inGame()&&G.snd==='off'&&!this.force)return;const c=this.ac();if(!c)return;const t=c.currentTime+at,o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v*S.snd.vol,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(c.destination);o.start(t);o.stop(t+d+.02)},
+ tone(f,d=.12,type='sine',v=.3,at=0,slide){if(!S.snd.fx)return;if(inGame()&&!this.force)return;const c=this.ac();if(!c)return;const t=c.currentTime+at,o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v*S.snd.vol,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(c.destination);o.start(t);o.stop(t+d+.02)},
  tap(){this.tone(900,.05,'triangle',.12)},
  point(){this.tone(880,.12,'triangle',.3);this.tone(1320,.22,'triangle',.28,.08)},
  minus(){this.tone(500,.15,'triangle',.25,0,300)},
@@ -792,9 +805,10 @@ const SND={ctx:null,muted:false,force:false,
  win(){[523,659,784,1047,1319].forEach((f,i)=>this.tone(f,.35,'triangle',.28,i*.11))},
  call(){this.tone(988,.5,'sine',.35);this.tone(784,.7,'sine',.35,.45)},
  err(){this.tone(220,.18,'square',.15)},
+ beep(){this.tone(1046,.09,'sine',.32)},
  must(fn){this.force=true;try{fn()}finally{this.force=false}}
 };
-function say(t,force){if(!S.snd.voice||!window.speechSynthesis)return;if(!force&&inGame()&&G.snd!=='all')return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';u.rate=1.05;u.volume=S.snd.vol;const v=speechSynthesis.getVoices().find(v=>/ko/i.test(v.lang));if(v)u.voice=v;speechSynthesis.speak(u)}catch(e){}}
+function say(t,force){if(!S.snd.voice||!window.speechSynthesis)return;if(!force&&inGame())return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';u.rate=1.05;u.volume=S.snd.vol;const v=speechSynthesis.getVoices().find(v=>/ko/i.test(v.lang));if(v)u.voice=v;speechSynthesis.speak(u)}catch(e){}}
 
 /* ---------- UI helpers ---------- */
 function toast(msg,warn){const t=$('#toast');t.innerHTML=msg;t.className=warn?'w on':'on';clearTimeout(toast.t);toast.t=setTimeout(()=>t.className=warn?'w':'',2600)}
@@ -813,12 +827,12 @@ function show(p){if(PAGE!==p&&p==='admin')PREV=PAGE;PAGE=p;$$('.page').forEach(x
 /* ---------- billing ---------- */
 function sesMs(){if(!SES)return 0;const t=now();return t-SES.start-SES.pausedMs-(SES.pauseAt?t-SES.pauseAt:0)}
 function sesFee(){if(!SES)return 0;const b=S.bill;if(b.mode==='time'){const m=Math.ceil(sesMs()/60000);return +b.baseFee+(m>b.baseMin?Math.ceil((m-b.baseMin)/Math.max(1,b.unitMin))*b.unitFee:0)}
- if(b.mode==='flat'){let f=+(+b.flatHours===6?b.flat6:b.flat4);const over=-flatLeft();if(over>0&&b.flatOver)f+=Math.ceil(over/60000/Math.max(1,b.unitMin))*b.unitFee;return f}return 0}
+ return 0}  // 정액제: 개별 결제 → 금액 계산·표시 안 함
 function flatLeft(){return (+S.bill.flatHours||4)*3600000-sesMs()}
 function flatTxt(){const l=flatLeft();return l>=0?`남은 시간 ${fmtDur(l,1)}`:`<span style="color:var(--bad)">초과 ${fmtDur(-l,1)}</span>`}
 function sesStart(){if(!SES){SES={start:now(),pausedMs:0,pauseAt:0,games:0,pgames:0};saveSes()}}
 function sesPause(on){if(!SES||!S.bill.pauseStops||S.bill.mode==='free')return;if(on&&!SES.pauseAt)SES.pauseAt=now();if(!on&&SES.pauseAt){SES.pausedMs+=now()-SES.pauseAt;SES.pauseAt=0}saveSes()}
-const feeOn=()=>S.bill.mode!=='free'&&S.bill.showFee;
+const feeOn=()=>S.bill.mode==='time'&&S.bill.showFee;
 
 /* ================= HOME ================= */
 function renderHome(){
@@ -826,11 +840,23 @@ function renderHome(){
  const vid=S.view.mode==='video';$('#hVidChip').classList.toggle('hide',!vid);
  $('#h3badge').innerHTML=vid?`<span class="chip ai">${ico('cam')}영상 · AI 자동득점</span>`:'';
  renderSes();
+ setTimeout(renderTicker,30);
 }
+function renderTicker(){
+ const T=S.ticker,box=$('#hTk'),t=$('#hTkT');const on=T.on&&String(T.text||'').trim();
+ box.classList.toggle('hide',!on);$('#hTkSp').classList.toggle('hide',!!on);if(!on)return;
+ const txt=String(T.text).replace(/\s*\n\s*/g,'   ·   ').trim();
+ if(t.dataset.k!==txt+T.dir+T.speed+innerWidth){t.dataset.k=txt+T.dir+T.speed+innerWidth;t.textContent=txt;
+  const W=t.parentElement.clientWidth,w=t.scrollWidth,dist=W+w,from=T.dir==='ltr'?-w:W,to=T.dir==='ltr'?W:-w;
+  const px=(+T.speed||100)*innerWidth/1920;
+  t.style.setProperty('--from',from+'px');t.style.setProperty('--to',to+'px');t.style.setProperty('--dur',(dist/px).toFixed(1)+'s');
+  t.style.animation='none';void t.offsetWidth;t.style.animation=''}
+}
+addEventListener('resize',()=>{if(PAGE==='home')renderTicker()});
 function renderSes(){
  const el=$('#hSes');if(!el)return;
  const mode={time:'시간제',flat:'정액제',free:'무료'}[S.bill.mode];
- if(!SES){el.innerHTML=`<span class="chip">${ico('won')}${mode}</span><span class="mut">${S.bill.mode==='time'?`기본 ${S.bill.baseMin}분 ${won(S.bill.baseFee)} · 이후 ${S.bill.unitMin}분당 ${won(S.bill.unitFee)}`:S.bill.mode==='flat'?`${S.bill.flatHours}시간 정액 ${won(+S.bill.flatHours===6?S.bill.flat6:S.bill.flat4)}`:'요금 없음'}</span><span class="mut">· 경기를 시작하면 이용 시간이 기록됩니다</span>`;return}
+ if(!SES){el.innerHTML=`<span class="chip">${ico('won')}${mode}</span><span class="mut">${S.bill.mode==='time'?`기본 ${S.bill.baseMin}분 ${won(S.bill.baseFee)} · 이후 ${S.bill.unitMin}분당 ${won(S.bill.unitFee)}`:S.bill.mode==='flat'?`정액 ${S.bill.flatHours}시간 이용 (개별 결제)`:'요금 없음'}</span><span class="mut">· 경기를 시작하면 이용 시간이 기록됩니다</span>`;return}
  el.innerHTML=`<span class="chip org">${ico('clock')}이용 중</span><div>이용 시간 <b class="num" id="hSesT">${fmtDur(sesMs(),1)}</b></div>${S.bill.mode==='flat'?`<div class="mut">정액 ${S.bill.flatHours}시간 · <b class="num" id="hSesL" style="color:var(--txt)">${flatTxt()}</b></div>`:''}<div class="mut">게임 <b class="num" style="color:var(--txt)">${SES.games}</b></div>${feeOn()?`<div class="fee">예상 요금 <b class="num" id="hSesF">${won(sesFee())}</b></div>`:''}<button class="btn ghost" id="hSettle" style="height:4rem;font-size:1.2rem">${ico('check')}정산 완료</button>`;
  $('#hSettle').onclick=()=>askPin(async()=>{if(await confirmBox('정산 완료','이용 시간과 요금 기록을 초기화합니다.<br>카운터에서 정산을 마친 뒤 누르세요.','정산 완료')){SES=null;LS.del('cue24.session');renderSes();toast('정산이 완료되었습니다')}});
 }
@@ -868,7 +894,7 @@ function openSetup(kind,keep){
  const base=kind==='pr'?(SU?.base||'3c'):kind;
  if(!keep){
   const n=kind==='pr'?1:2;
-  SU={kind,base,n,players:[],shot:+S.rules.shot,inn:+S.rules.innLimit,auto:!!S.view.autoDefault,snd:S.snd.game||'off'};
+  SU={kind,base,n,players:[],shot:+S.rules.shot,inn:+S.rules.innLimit,auto:!!S.view.autoDefault,snd:S.snd.game==='off'?'off':'on'};
   for(let i=0;i<6;i++)SU.players.push({name:defName(i),handi:defHandi(base,kind),def:true});
  }
  renderSetup();show('setup');
@@ -881,7 +907,7 @@ function renderSetup(){
  segInit($('#sCount'),(isPr?[1,2,3,4,5,6]:[2,3,4,5,6]).map(v=>[v,v+'인']),SU.n,v=>{SU.n=+v;renderSetup()});
  $('#sBaseWrap').classList.toggle('hide',!isPr);
  if(isPr)segInit($('#sBase'),[['3c','3구'],['4c','4구']],SU.base,v=>{SU.base=v;SU.players.forEach(p=>p.handi=0);renderSetup()});
- segInit($('#sSnd'),[['off','없음'],['fx','효과음'],['all','효과음+음성']],SU.snd||'off',v=>{SU.snd=v;if(v==='all')say('경기 중 음성 안내를 켭니다');else if(v==='fx')SND.point()});
+ segInit($('#sSnd'),[['on','켬 (득점 단음)'],['off','끔']],SU.snd==='off'?'off':'on',v=>{SU.snd=v;if(v==='on')SND.beep()});
  segInit($('#sShot'),[[0,'끔'],[30,'30초'],[40,'40초'],[50,'50초'],[60,'60초']],SU.shot,v=>SU.shot=+v);
  segInit($('#sInn'),[[0,'없음'],[20,'20'],[30,'30'],[40,'40'],[50,'50']],SU.inn,v=>SU.inn=+v);
  const vid=S.view.mode==='video'&&SU.base==='3c';$('#sAiWrap').classList.toggle('hide',!vid);
@@ -950,7 +976,7 @@ const isVid=()=>!!G&&S.view.mode==='video'&&G.base==='3c';
 function startGame(){
  const ps=SU.players.slice(0,SU.n);
  const names=new Set();ps.forEach((p,i)=>{if(names.has(p.name))p.name=p.name+' '+(i+1);names.add(p.name)});
- G={id:'g'+now(),snd:SU.snd||'off',kind:SU.kind,base:SU.base,unit:unitOf(SU.base),shot:SU.shot,innLimit:SU.inn,auto:S.view.mode==='video'&&SU.base==='3c'&&SU.auto,equal:!!S.rules.equal,
+ G={id:'g'+now(),snd:SU.snd==='off'?'off':'on',kind:SU.kind,base:SU.base,unit:unitOf(SU.base),shot:SU.shot,innLimit:SU.inn,auto:S.view.mode==='video'&&SU.base==='3c'&&SU.auto,equal:!!S.rules.equal,
   players:ps.map((p,i)=>({name:p.name,def:p.def,handi:+p.handi||0,c:i,score:0,run:0,hr:0,inn:i===0?1:0,turns:[],to:+S.rules.timeouts||0})),
   cur:0,inning:1,start:now(),playMs:0,paused:false,final:false,reached:[],finished:false,scLeft:SU.shot*1000,scOver:false,warned:0,aiSeen:{}};
  UNDO=[];sesStart();SES.games++;SES.pgames+=ps.length;saveSes();saveG();
@@ -969,7 +995,7 @@ function renderGame(fx){
  $('#gRule').innerHTML=`${ico('users')}${n}인${G.shot?` · ${G.shot}초`:''}${G.innLimit?` · ${G.innLimit}이닝`:''}`;
  $('#gInn').textContent=G.inning;$('#gLast').classList.toggle('hide',!G.final&&!(G.innLimit&&G.inning>=G.innLimit));
  $('#gLast').textContent=G.final?'LAST INNING · 동점 기회':'LAST INNING';
- $('#cTurn').classList.toggle('hide',!S.rules.turnBtn);
+ $('#cTurn').classList.toggle('hide',!S.rules.turnBtn);updSnd();
  $('#cAi').classList.toggle('hide',!vid);$('#cAi').classList.toggle('on',!!G.auto);$('#cAiL').textContent=G.auto?'AI 자동 ON':'AI 수동';
  const board=$('#gBoard');board.className='board '+(vid?'video':'manual')+(n===1&&!vid?' solo':'');board.style.setProperty('--n',n);const perCol=Math.ceil(n/2);board.style.setProperty('--fs',vid?[1,1.3,1.3,2,2,2.6,2.6][n]:[1,1,1,1.6,1.6,2.2,2.2][n]);
  const card=(p,i)=>{
@@ -1007,6 +1033,9 @@ $('#cMinus').onclick=minusPoint;
 $('#cTurn').onclick=()=>passTurn('btn');
 $('#cUndo').onclick=undo;
 $('#cPause').onclick=()=>setPause(true);
+function toggleSnd(){if(!G)return;G.snd=sndOn()?'off':'on';saveG();updSnd();if(sndOn())SND.must(()=>SND.beep());toast(`${ico(sndOn()?'vol':'mute')} 득점 소리 ${sndOn()?'켬':'끔'}`)}
+function updSnd(){const b=$('#cSnd');if(!b||!G)return;const on=sndOn();b.innerHTML=`${ico(on?'vol':'mute')}<span>소리 ${on?'켬':'끔'}</span>`;b.classList.toggle('off',!on)}
+$('#cSnd').onclick=toggleSnd;
 $('#pResume').onclick=()=>setPause(false);
 $('#cAi').onclick=()=>{if(!G)return;snap();G.auto=!G.auto;saveG();renderGame();SND.tap();toast(G.auto?`${ico('ai')} AI 자동득점 켜짐 — 판정이 자동 반영됩니다`:'수동 득점 모드');AI.cmd(G.auto?'start':'hold')};
 $('#gMenu').onclick=openMenu;
@@ -1025,7 +1054,7 @@ function addPoint(mult=1,src,noSnap){
  if(!G||G.finished||G.paused||(src!=='ai'&&src!=='auto'&&!deb()))return;
  if(!noSnap)snap();const p=curP(),v=G.unit*mult;
  p.score+=v;p.run+=v;p.hr=Math.max(p.hr,p.run);resetClock();
- SND.point();if(S.snd.vPoint)say(String(p.run/G.unit));
+ if(sndOn())SND.must(()=>SND.beep());
  if(p.handi>0&&p.score>=p.handi){p.score=p.handi;p.hr=Math.max(p.hr,p.run);return reached(src)}
  saveG();renderGame({i:G.cur,c:'pop flash'});
 }
@@ -1075,10 +1104,9 @@ function finish(){
  HIST.unshift(rec);HIST=HIST.slice(0,500);LS.set('cue24.history',HIST);
  G.players.forEach(p=>{if(p.def)return;let r=RECENT.find(x=>x.name===p.name);if(!r){r={name:p.name,games:0};RECENT.push(r)}r.last=now();r.games=(r.games||0)+1;if(G.kind!=='pr'&&p.handi)r[G.base==='4c'?'h4':'h3']=p.handi});
  RECENT=RECENT.sort((a,b)=>b.last-a.last).slice(0,400);LS.set('cue24.players',RECENT);
- saveG();if(G.snd!=='off')SND.win();
+ saveG();
  const wn=G.winners.map(i=>G.players[i].name);
  $('#finT').textContent=G.kind==='pr'||!wn.length?'FINISH':wn.length>1?'DRAW':'WIN';$('#finN').textContent=G.kind==='pr'?'연습 종료':!wn.length?'승자 없음':wn.length>2?`공동 1위 ${wn.length}명`:wn.length>1?wn.join(' · ')+' 무승부':wn[0];
- if(G.snd==='all')say(G.kind==='pr'||!wn.length?'경기를 종료합니다':wn.length>1?'무승부입니다':`${wn[0]} 승리`);
  renderGame();ov('finFx');setTimeout(()=>{ov('finFx',false);renderResult();show('result')},2000);
  AI.cmd('hold');
 }
@@ -1089,7 +1117,7 @@ function openMenu(){
  const items=[
   ['call','bell','카운터 호출','o'],['ilog','list','이닝별 기록'],['swap','swap','순서 바꾸기'+(first?'':'<small class="mut" style="font-size:1rem">(첫 이닝만)</small>'),'',!first],
   ['r1','replay','1분 전 영상','',!(vid&&rec)],['r2','replay','2분 전 영상','',!(vid&&rec)],
-  ['pause','pause','게임 멈춤'],['snd',G.snd==='off'?'mute':'vol',`소리: ${{off:'없음',fx:'효과음',all:'효과음+음성'}[G.snd||'off']}<small class="mut" style="font-size:1rem;display:block">눌러서 변경</small>`],['reset','reset','경기 초기화','d'],['end','flag','경기 종료','o'],['home','home','홈 (경기 취소)','d']];
+  ['pause','pause','게임 멈춤'],['snd',sndOn()?'vol':'mute',sndOn()?'소리 끄기':'소리 켜기'],['reset','reset','경기 초기화','d'],['end','flag','경기 종료','o'],['home','home','홈 (경기 취소)','d']];
  $('#qm').innerHTML=items.map(([k,ic,l,c,dis])=>`<button data-k="${k}" class="${c||''}" ${dis?'disabled':''}>${ico(ic)}<span style="text-align:center;line-height:1.3">${l}</span></button>`).join('');
  ov('menuOv');
 }
@@ -1099,7 +1127,7 @@ $('#qm').onclick=async e=>{const b=e.target.closest('button');if(!b)return;const
  if(k==='swap'){snap();const a=G.players;a.push(a.shift());a.forEach((p,i)=>{p.c=i;p.inn=i===0?1:0});G.cur=0;saveG();renderGame();toast(`${ico('swap')} 순서를 바꿨습니다 — ${esc(a[0].name)} 선공`)}
  if(k==='r1')RP.open(60);if(k==='r2')RP.open(120);
  if(k==='pause')setPause(true);
- if(k==='snd'){const o=['off','fx','all'];G.snd=o[(o.indexOf(G.snd||'off')+1)%3];saveG();toast(`${ico(G.snd==='off'?'mute':'vol')} 경기 중 소리: ${{off:'없음',fx:'효과음',all:'효과음+음성'}[G.snd]}`);if(G.snd!=='off')SND.point();if(G.snd==='all')say('음성 안내를 켭니다')}
+ if(k==='snd')toggleSnd();
  if(k==='reset'&&await confirmBox('경기 초기화','점수·이닝·하이런을 모두 0으로 되돌립니다.<br>같은 선수, 같은 순서로 처음부터 다시 시작합니다.','초기화',1)){snap();const keep=UNDO;G.players.forEach((p,i)=>Object.assign(p,{score:0,run:0,hr:0,inn:i===0?1:0,turns:[],to:+S.rules.timeouts||0}));Object.assign(G,{cur:0,inning:1,final:false,reached:[],playMs:0});resetClock();UNDO=keep;saveG();renderGame();toast('경기를 초기화했습니다')}
  if(k==='end'&&await confirmBox('경기 종료','현재 점수로 경기를 종료하고 결과를 기록합니다.','경기 종료')){snap();finish()}
  if(k==='home'&&await confirmBox('경기 취소','진행 중인 경기를 취소하고 홈으로 갑니다.<br><b style="color:var(--bad)">기록은 저장되지 않습니다.</b>','경기 취소',1)){
@@ -1133,7 +1161,7 @@ function renderResult(){
  const b=S.bill;let fee='';
  if(b.mode==='free'||!b.showFee)fee=`<div class="r"><span>이용 시간</span><b>${fmtDur(sesMs(),1)}</b></div><div class="r"><span>오늘 게임 수</span><b>${SES?.games||0}</b></div>`;
  else if(b.mode==='time')fee=`<div class="r"><span>요금제</span><b style="font-family:var(--ui);font-size:1.5rem">시간제</b></div><div class="r"><span>누적 이용 시간</span><b>${fmtDur(sesMs(),1)}</b></div><div class="r t"><span>현재 요금</span><b>${won(sesFee())}</b></div>`;
- else fee=`<div class="r"><span>요금제</span><b style="font-family:var(--ui);font-size:1.5rem">정액 ${b.flatHours}시간</b></div><div class="r"><span>이용 시간</span><b>${fmtDur(sesMs(),1)}</b></div><div class="r"><span>${flatLeft()>=0?'남은 시간':'초과 시간'}</span><b>${fmtDur(Math.abs(flatLeft()),1)}</b></div><div class="r t"><span>요금</span><b>${won(sesFee())}</b></div>`;
+ else fee=`<div class="r"><span>요금제</span><b style="font-family:var(--ui);font-size:1.5rem">정액 ${b.flatHours}시간</b></div><div class="r"><span>이용 시간</span><b>${fmtDur(sesMs(),1)}</b></div><div class="r t"><span>${flatLeft()>=0?'남은 시간':'초과 시간'}</span><b style="${flatLeft()<0?'color:var(--bad)':''}">${fmtDur(Math.abs(flatLeft()),1)}</b></div>`;
  $('#rFee').innerHTML=fee;resT=now();
 }
 $('#rHome').onclick=()=>{SND.tap();endResult();show('home')};
@@ -1273,20 +1301,22 @@ const SCHEMA=[
   {k:'store.name',l:'매장명',type:'text'},
   {k:'store.table',l:'테이블 번호',s:'이 화면이 담당하는 당구대 번호',type:'num',min:1,max:99},
   {k:'store.pin',l:'관리자 PIN',s:'숫자 4자리 · 기본값 0000',type:'pin'}]},
+ {id:'tk',t:'첫 화면 안내 문구 (흐르는 글)',ic:'ai',rows:[
+  {k:'ticker.on',l:'안내 문구 표시',type:'tg'},
+  {k:'ticker.text',l:'안내 문구',s:'첫 화면 상단에서 흘러가며 반복 표시',type:'area',show:()=>S.ticker.on},
+  {k:'ticker.dir',l:'흐르는 방향',type:'seg',o:[['rtl','오른쪽 → 왼쪽'],['ltr','왼쪽 → 오른쪽']],show:()=>S.ticker.on},
+  {k:'ticker.speed',l:'속도',type:'seg',o:[[60,'느리게'],[100,'보통'],[150,'빠르게']],show:()=>S.ticker.on}]},
  {id:'mem',t:'입장 회원 (경기 대기)',ic:'users',rows:[
   {k:'members',l:'입장 회원 목록',s:'한 줄에 한 명: 이름,3구핸디,4구핸디<br>선수 선택 화면 첫 탭에 표시 · POS 연동 전까지 카운터에서 관리',type:'area'}]},
  {id:'bill',t:'요금 (정액제 / 시간제)',ic:'won',rows:[
   {k:'bill.mode',l:'요금 방식',type:'seg',o:[['time','시간제'],['flat','정액제'],['free','무료/미표시']]},
   {k:'bill.baseMin',l:'기본 시간',type:'num',u:'분',show:()=>S.bill.mode==='time'},
   {k:'bill.baseFee',l:'기본 요금',type:'num',u:'원',step:500,show:()=>S.bill.mode==='time'},
-  {k:'bill.flatHours',l:'정액 기준',s:'이 테이블에 적용할 정액 이용 시간',type:'seg',o:[[4,'4시간'],[6,'6시간']],show:()=>S.bill.mode==='flat'},
-  {k:'bill.flat4',l:'4시간 정액 요금',type:'num',u:'원',step:1000,show:()=>S.bill.mode==='flat'},
-  {k:'bill.flat6',l:'6시간 정액 요금',type:'num',u:'원',step:1000,show:()=>S.bill.mode==='flat'},
-  {k:'bill.flatOver',l:'정액 시간 초과 시 추가 요금',s:'초과분에 아래 추가 단위 요금 적용 · 끄면 초과 시간만 표시',type:'tg',show:()=>S.bill.mode==='flat'},
-  {k:'bill.unitMin',l:'추가 단위 시간',type:'num',u:'분',show:()=>S.bill.mode==='time'||(S.bill.mode==='flat'&&S.bill.flatOver)},
-  {k:'bill.unitFee',l:'추가 단위 요금',type:'num',u:'원',step:100,show:()=>S.bill.mode==='time'||(S.bill.mode==='flat'&&S.bill.flatOver)},
+  {k:'bill.flatHours',l:'정액 기준',s:'개별 결제 · 화면에는 금액 없이 남은 시간만 표시',type:'seg',o:[[4,'4시간'],[6,'6시간']],show:()=>S.bill.mode==='flat'},
+  {k:'bill.unitMin',l:'추가 단위 시간',type:'num',u:'분',show:()=>S.bill.mode==='time'},
+  {k:'bill.unitFee',l:'추가 단위 요금',type:'num',u:'원',step:100,show:()=>S.bill.mode==='time'},
   {k:'bill.pauseStops',l:'게임 멈춤 시 시간 정지',s:'식사 등으로 멈춤을 누르면 이용 시간이 멈춥니다',type:'tg',show:()=>S.bill.mode!=='free'},
-  {k:'bill.showFee',l:'손님 화면에 요금 표시',type:'tg',show:()=>S.bill.mode!=='free'},
+  {k:'bill.showFee',l:'손님 화면에 요금 표시',type:'tg',show:()=>S.bill.mode==='time'},
   {custom:'billNow'}]},
  {id:'rules',t:'경기 규칙 · 기본값',ic:'rule',rows:[
   {k:'rules.h3',l:'3구 기본 핸디',type:'num',min:1,max:120},
@@ -1321,9 +1351,8 @@ const SCHEMA=[
   {k:'view.testBtns',l:'AI 테스트 버튼 표시',s:'영상 패널에 가짜 AI 판정 버튼 (설치 점검용) · 키보드 F8 득점 / F9 무득점',type:'tg',show:()=>S.view.mode==='video'},
   {custom:'vidTest',show:()=>S.view.mode==='video'}]},
  {id:'snd',t:'소리 · 음성 안내',ic:'vol',rows:[
-  {k:'snd.game',l:'경기 중 소리 기본값',s:'경기 설정 화면에서 경기마다 선택 가능 · 기본 없음 (샷 제한시간 경고음은 항상 울림)',type:'seg',o:[['off','없음 (기본)'],['fx','효과음'],['all','효과음+음성']]},
-  {k:'snd.fx',l:'효과음',type:'tg'},{k:'snd.voice',l:'음성 안내',s:'설정·호출 화면 안내 음성 · Windows 한국어 음성 사용',type:'tg'},
-  {k:'snd.vTurn',l:'경기 중 턴 안내 ("○○ 차례")',s:'경기 중 소리가 효과음+음성일 때',type:'tg',show:()=>S.snd.voice},{k:'snd.vPoint',l:'연속 득점 숫자 읽기',type:'tg',show:()=>S.snd.voice},
+  {k:'snd.game',l:'경기 중 득점 소리 기본값',s:'경기 중에는 득점 버튼 단음만 울림 · 경기 화면 [소리] 버튼으로 켜고 끔 (샷 제한시간 경고음은 항상)',type:'seg',o:[['on','켬 (기본)'],['off','끔']]},
+  {k:'snd.fx',l:'효과음 (전체)',s:'끄면 득점 단음 포함 모든 효과음이 꺼집니다',type:'tg'},{k:'snd.voice',l:'음성 안내',s:'경기 설정·호출 화면 안내 음성 (경기 중에는 나오지 않음)',type:'tg'},
   {k:'snd.vol',l:'볼륨',type:'seg',o:[[.3,'작게'],[.6,'보통'],[.8,'크게'],[1,'최대']]}]},
  {id:'keys',t:'무선 리모컨 · 키보드',ic:'key',rows:[{custom:'keys'}]},
  {id:'call',t:'카운터 호출 · POS 연동',ic:'link',rows:[
@@ -1338,10 +1367,10 @@ const SCHEMA=[
   {custom:'sys'}]},
  {id:'bridge',t:'AI 엔진 연동 코드',ic:'ai',rows:[{custom:'bridge'}]}
 ];
-const NAVN={"mem": "입장 회원", "store": "매장", "bill": "요금", "rules": "경기 규칙", "view": "영상 · AI", "snd": "소리", "keys": "리모컨", "call": "호출 · POS", "hist": "경기 기록", "sys": "시스템", "bridge": "엔진 연동"};
+const NAVN={"tk": "안내 문구", "mem": "입장 회원", "store": "매장", "bill": "요금", "rules": "경기 규칙", "view": "영상 · AI", "snd": "소리", "keys": "리모컨", "call": "호출 · POS", "hist": "경기 기록", "sys": "시스템", "bridge": "엔진 연동"};
 let learnKey=null;
 const CUSTOM={
- billNow:()=>`<div class="arow"><div class="l"><b>현재 이용 세션</b><small>정산 완료 시 초기화</small></div><div class="c">${SES?`<span class="chip org">${fmtDur(sesMs(),1)} · ${SES.games}게임 · ${won(sesFee())}</span><button class="btn red" data-x="settle">정산 완료 (초기화)</button>`:'<span class="mut">이용 중인 세션 없음</span>'}</div></div>`,
+ billNow:()=>`<div class="arow"><div class="l"><b>현재 이용 세션</b><small>정산 완료 시 초기화</small></div><div class="c">${SES?`<span class="chip org">${fmtDur(sesMs(),1)} · ${SES.games}게임${S.bill.mode==='time'?' · '+won(sesFee()):''}</span><button class="btn red" data-x="settle">정산 완료 (초기화)</button>`:'<span class="mut">이용 중인 세션 없음</span>'}</div></div>`,
  camSel:()=>`<div class="arow"><div class="l"><b>카메라 장치</b><small>${S.view.src==='engine'?'리플레이 녹화용 (AI 엔진은 자체 카메라 사용)':'LAN/USB 캡처 장치 선택'}</small></div><div class="c"><select class="fi w" id="aCam"><option value="">기본 카메라</option></select><button class="btn" data-x="camScan">${ico('reset')}장치 검색</button></div></div>`,
  vidTest:()=>`<div class="arow"><div class="l"><b>영상 점검</b><small>${S.view.src==='engine'?'엔진 전체 화면에서 4점 보정·색 보정 가능':'전체 화면으로 영상 확인'}</small></div><div class="c"><button class="btn pri" data-x="vfull">${ico('cam')}영상 전체 화면 열기</button><button class="btn" data-x="vre">${ico('reset')}영상 다시 연결</button><span class="mut" id="aVidSt" style="font-size:1.2rem">${VID.err||(VID.el?'연결됨':'대기')}${S.view.src==='engine'?' · 엔진 '+(AI.connected()?'연결됨':'미연결'):''}</span></div></div>`,
  keys:()=>`<div class="note">블루투스/RF 리모컨 대부분은 키보드처럼 동작합니다. [변경]을 누른 뒤 리모컨 버튼을 누르면 등록됩니다.</div>`+[['plus','득점 +1'],['turn','턴 넘기기'],['minus','점수 빼기'],['undo','이전 (되돌리기)']].map(([k,l])=>`<div class="arow"><div class="l"><b>${l}</b></div><div class="c"><span class="kbd ${learnKey===k?'learn':''}">${learnKey===k?'키 입력 대기…':esc(S.keys[k]||'없음')}</span><button class="btn" data-x="learn" data-v="${k}">변경</button><button class="btn ghost" data-x="unkey" data-v="${k}">지우기</button></div></div>`).join(''),
