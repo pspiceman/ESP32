@@ -761,7 +761,7 @@ const numList=s=>String(s||'').split(/[,\s]+/).map(Number).filter(n=>Number.isFi
 /* ---------- settings ---------- */
 const DEF={
  store:{name:'CUE24 스마트 당구장',table:1,pin:'0000'},
- bill:{mode:'time',baseMin:30,baseFee:6000,unitMin:10,unitFee:1500,flatHours:4,flat4:20000,flat6:28000,flatOver:true,pauseStops:true,showFee:true},
+ bill:{mode:'time',baseMin:30,baseFee:6000,unitMin:10,unitFee:1500,pauseStops:true,showFee:true},
  rules:{h3:20,h3list:'15,20,25,30,35,40',h4:150,h4list:'50,100,150,200,300,500,700,1000',unit4:10,equal:true,innLimit:0,shot:0,warn:10,timeouts:1,bigNum:'score',turnBtn:false},
  ticker:{on:true,text:'큐24 당구장은 AI 자동득점 시스템 도입으로 고객 여러분께 스마트한 경기 환경을 제공하고 있습니다',dir:'rtl',speed:100},
  members:'김민준,25,150\n이서연,18,100\n박지훈,30,300\n최유나,15,80\n정도윤,22,200',
@@ -828,10 +828,11 @@ function show(p){if(PAGE!==p&&p==='admin')PREV=PAGE;PAGE=p;$$('.page').forEach(x
 function sesMs(){if(!SES)return 0;const t=now();return t-SES.start-SES.pausedMs-(SES.pauseAt?t-SES.pauseAt:0)}
 function sesFee(){if(!SES)return 0;const b=S.bill;if(b.mode==='time'){const m=Math.ceil(sesMs()/60000);return +b.baseFee+(m>b.baseMin?Math.ceil((m-b.baseMin)/Math.max(1,b.unitMin))*b.unitFee:0)}
  return 0}  // 정액제: 개별 결제 → 금액 계산·표시 안 함
-function flatLeft(){return (+S.bill.flatHours||4)*3600000-sesMs()}
-function flatTxt(){const l=flatLeft();return l>=0?`남은 시간 ${fmtDur(l,1)}`:`<span style="color:var(--bad)">초과 ${fmtDur(-l,1)}</span>`}
-function sesStart(){if(!SES){SES={start:now(),pausedMs:0,pauseAt:0,games:0,pgames:0};saveSes()}}
-function sesPause(on){if(!SES||!S.bill.pauseStops||S.bill.mode==='free')return;if(on&&!SES.pauseAt)SES.pauseAt=now();if(!on&&SES.pauseAt){SES.pausedMs+=now()-SES.pauseAt;SES.pauseAt=0}saveSes()}
+
+
+const isTime=()=>S.bill.mode==='time';
+function sesStart(){if(!isTime())return;if(!SES){SES={start:now(),pausedMs:0,pauseAt:0,games:0,pgames:0};saveSes()}}
+function sesPause(on){if(!SES||!isTime()||!S.bill.pauseStops)return;if(on&&!SES.pauseAt)SES.pauseAt=now();if(!on&&SES.pauseAt){SES.pausedMs+=now()-SES.pauseAt;SES.pauseAt=0}saveSes()}
 const feeOn=()=>S.bill.mode==='time'&&S.bill.showFee;
 
 /* ================= HOME ================= */
@@ -854,11 +855,12 @@ function renderTicker(){
 }
 addEventListener('resize',()=>{if(PAGE==='home')renderTicker()});
 function renderSes(){
- const el=$('#hSes');if(!el)return;
- const mode={time:'시간제',flat:'정액제',free:'무료'}[S.bill.mode];
- if(!SES){el.innerHTML=`<span class="chip">${ico('won')}${mode}</span><span class="mut">${S.bill.mode==='time'?`기본 ${S.bill.baseMin}분 ${won(S.bill.baseFee)} · 이후 ${S.bill.unitMin}분당 ${won(S.bill.unitFee)}`:S.bill.mode==='flat'?`정액 ${S.bill.flatHours}시간 이용 (개별 결제)`:'요금 없음'}</span><span class="mut">· 경기를 시작하면 이용 시간이 기록됩니다</span>`;return}
- el.innerHTML=`<span class="chip org">${ico('clock')}이용 중</span><div>이용 시간 <b class="num" id="hSesT">${fmtDur(sesMs(),1)}</b></div>${S.bill.mode==='flat'?`<div class="mut">정액 ${S.bill.flatHours}시간 · <b class="num" id="hSesL" style="color:var(--txt)">${flatTxt()}</b></div>`:''}<div class="mut">게임 <b class="num" style="color:var(--txt)">${SES.games}</b></div>${feeOn()?`<div class="fee">예상 요금 <b class="num" id="hSesF">${won(sesFee())}</b></div>`:''}<button class="btn ghost" id="hSettle" style="height:4rem;font-size:1.2rem">${ico('check')}정산 완료</button>`;
- $('#hSettle').onclick=()=>askPin(async()=>{if(await confirmBox('정산 완료','이용 시간과 요금 기록을 초기화합니다.<br>카운터에서 정산을 마친 뒤 누르세요.','정산 완료')){SES=null;LS.del('cue24.session');renderSes();toast('정산이 완료되었습니다')}});
+ const el=$('#hSes');if(!el)return;const b=S.bill;
+ if(b.mode==='flat'){el.innerHTML=`<span class="chip">${ico('won')}정액제</span><span class="mut">회원 입장 시 개별 결제 · 경기 시간이 이용 시간으로 기록됩니다</span>`;return}
+ if(b.mode==='free'){el.innerHTML=`<span class="chip">${ico('won')}무료</span><span class="mut">경기 시간이 기록됩니다</span>`;return}
+ if(!SES){el.innerHTML=`<span class="chip">${ico('won')}시간제</span><span class="mut">기본 ${b.baseMin}분 ${won(b.baseFee)} · 이후 ${b.unitMin}분당 ${won(b.unitFee)} · 경기를 시작하면 테이블 이용 시간이 누적됩니다</span>`;return}
+ el.innerHTML=`<span class="chip org">${ico('clock')}이용 중</span><div>이용 시간 <b class="num" id="hSesT">${fmtDur(sesMs(),1)}</b></div><div class="mut">게임 <b class="num" style="color:var(--txt)">${SES.games}</b></div><button class="btn ghost" id="hSettle" style="height:4rem;font-size:1.2rem">${ico('check')}정산 완료</button>`;
+ $('#hSettle').onclick=()=>askPin(async()=>{if(await confirmBox('정산 완료',`누적 이용 시간 <b>${fmtDur(sesMs(),1)}</b> · 요금 <b style="color:var(--org2)">${won(sesFee())}</b><br>정산을 마쳤으면 이용 시간을 초기화합니다.`,'정산 완료')){SES=null;LS.del('cue24.session');renderSes();toast('정산이 완료되었습니다')}});
 }
 $$('.mode').forEach(b=>b.onclick=()=>{SND.tap();openSetup(b.dataset.mode)});
 $('#hCall').onclick=callCounter;$('#gCall').onclick=callCounter;
@@ -871,7 +873,7 @@ function callCounter(){
  if(now()-lastCall<8000){toast('이미 호출했습니다. 잠시만 기다려 주세요.');return}
  lastCall=now();SND.must(()=>SND.call());say('카운터를 호출했습니다',true);
  $('#callT').textContent=`TABLE ${pad(S.store.table)} · ${new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}`;ov('callFx');setTimeout(()=>ov('callFx',false),2600);
- const payload={type:'call',table:S.store.table,store:S.store.name,time:new Date().toISOString(),game:G&&!G.finished?KIND[G.kind]:null,usageMin:Math.round(sesMs()/60000),fee:sesFee()};
+ const payload={type:'call',table:S.store.table,store:S.store.name,time:new Date().toISOString(),game:G&&!G.finished?KIND[G.kind]:null,usageMin:Math.round((isTime()?sesMs():(G&&!G.finished?G.playMs:0))/60000),fee:isTime()?sesFee():null};
  try{new BroadcastChannel('cue24').postMessage(payload)}catch(e){}
  if(S.call.url){fetch(S.call.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)}).catch(()=>toast('호출 서버 연결 실패 — 관리자 설정을 확인하세요',1))}
 }
@@ -979,7 +981,7 @@ function startGame(){
  G={id:'g'+now(),snd:SU.snd==='off'?'off':'on',kind:SU.kind,base:SU.base,unit:unitOf(SU.base),shot:SU.shot,innLimit:SU.inn,auto:S.view.mode==='video'&&SU.base==='3c'&&SU.auto,equal:!!S.rules.equal,
   players:ps.map((p,i)=>({name:p.name,def:p.def,handi:+p.handi||0,c:i,score:0,run:0,hr:0,inn:i===0?1:0,turns:[],to:+S.rules.timeouts||0})),
   cur:0,inning:1,start:now(),playMs:0,paused:false,final:false,reached:[],finished:false,scLeft:SU.shot*1000,scOver:false,warned:0,aiSeen:{}};
- UNDO=[];sesStart();SES.games++;SES.pgames+=ps.length;saveSes();saveG();
+ UNDO=[];sesStart();if(SES&&isTime()){SES.games++;SES.pgames+=ps.length;saveSes()}saveG();
  renderGame();show('game');VID.ensure();AI.cmd('newgame');
  say(`${KIND[G.kind]} ${G.kind==='pr'?'연습':'경기'}를 시작합니다. ${G.players[0].name} 선공`,true);
 }
@@ -1021,7 +1023,7 @@ function renderGame(fx){
 function updClock(){if(!G||PAGE!=='game')return;const e=$('#sc');if(!e)return;const s=Math.ceil(Math.max(0,G.scLeft)/1000);e.querySelector('span').textContent=s;e.className='sc '+(G.scOver?'x':s<=S.rules.warn?'w':'');
  const pc=$(`.pc[data-i="${G.cur}"]`);pc&&pc.classList.toggle('warnb',G.scOver)}
 function updTop(){if(!G)return;$('#gTime').textContent=fmtDur(G.playMs);
- $('#gFee').innerHTML=SES&&S.bill.mode==='flat'?`<span class="fee">정액 ${S.bill.flatHours}h · ${flatTxt()}</span>`:SES&&feeOn()?`<span class="fee">이용 ${fmtDur(sesMs(),1)} · ${won(sesFee())}</span>`:'경기 시간'}
+ $('#gFee').innerHTML=SES&&isTime()?`<span class="fee">테이블 이용 ${fmtDur(sesMs(),1)}</span>`:'경기 시간'}
 
 $('#gBoard').addEventListener('click',e=>{
  const t=e.target.closest('[data-to]');if(t){useTimeout(+t.dataset.to);return}
@@ -1091,7 +1093,7 @@ function undo(){
 }
 function useTimeout(i){if(!G||i!==G.cur)return;const p=G.players[i];if(p.to<=0)return;snap();p.to--;G.scLeft=G.shot*1000;G.scOver=false;G.warned=0;SND.tap();toast(`${ico('timer')} ${esc(p.name)} 타임아웃 사용 — 시간 연장`);saveG();renderGame()}
 function setPause(on){if(!G)return;G.paused=on;sesPause(on);saveG();ov('pauseOv',on);
- $('#pBill').textContent=on&&SES&&S.bill.mode==='time'&&S.bill.pauseStops?'· 이용 시간도 멈춥니다':'';if(on)say('게임을 멈춥니다')}
+ $('#pBill').textContent=on&&SES&&isTime()&&S.bill.pauseStops?'· 이용 시간도 멈춥니다':'';if(on)say('게임을 멈춥니다')}
 
 function finish(){
  G.finished=true;G.end=now();
@@ -1158,10 +1160,9 @@ function renderResult(){
  const ordered=g.ranked.map(i=>g.players[i]);
  $('#rRows').parentElement.classList.toggle('tight',g.players.length>4);
  $('#rRows').innerHTML=ordered.map((p,k)=>{const i=g.players.indexOf(p),w=g.winners.includes(i);return `<tr class="${w?'w':''}"><td><span class="rk">${g.kind==='pr'?k+1:(w?ico('trophy'):k+1)}</span></td><td class="nm"><span><i class="ball ${COLORS[p.c]}"></i>${esc(p.name)}</span></td><td>${p.handi||'-'}</td><td style="font-size:3rem;color:#fff">${p.score}</td><td>${p.inn}</td><td>${avgTxt(p)}</td><td>${p.hr}</td><td>${p.handi?Math.round(p.score/p.handi*100)+'%':'-'}</td></tr>`}).join('');
- const b=S.bill;let fee='';
- if(b.mode==='free'||!b.showFee)fee=`<div class="r"><span>이용 시간</span><b>${fmtDur(sesMs(),1)}</b></div><div class="r"><span>오늘 게임 수</span><b>${SES?.games||0}</b></div>`;
- else if(b.mode==='time')fee=`<div class="r"><span>요금제</span><b style="font-family:var(--ui);font-size:1.5rem">시간제</b></div><div class="r"><span>누적 이용 시간</span><b>${fmtDur(sesMs(),1)}</b></div><div class="r t"><span>현재 요금</span><b>${won(sesFee())}</b></div>`;
- else fee=`<div class="r"><span>요금제</span><b style="font-family:var(--ui);font-size:1.5rem">정액 ${b.flatHours}시간</b></div><div class="r"><span>이용 시간</span><b>${fmtDur(sesMs(),1)}</b></div><div class="r t"><span>${flatLeft()>=0?'남은 시간':'초과 시간'}</span><b style="${flatLeft()<0?'color:var(--bad)':''}">${fmtDur(Math.abs(flatLeft()),1)}</b></div>`;
+ const b=S.bill;let fee='';const typ=t=>`<div class="r"><span>요금제</span><b style="font-family:var(--ui);font-size:1.5rem">${t}</b></div>`;
+ if(b.mode==='time'){fee=typ('시간제')+`<div class="r"><span>이번 경기 시간</span><b>${fmtDur(g.playMs,1)}</b></div><div class="r"><span>테이블 이용 시간</span><b>${fmtDur(sesMs(),1)}</b></div>`+(b.showFee?`<div class="r t"><span>요금</span><b>${won(sesFee())}</b></div>`:'')}
+ else fee=typ(b.mode==='flat'?'정액제 · 개별 결제':'무료')+`<div class="r t"><span>이용 시간</span><b style="color:var(--txt)">${fmtDur(g.playMs,1)}</b></div>`;
  $('#rFee').innerHTML=fee;resT=now();
 }
 $('#rHome').onclick=()=>{SND.tap();endResult();show('home')};
@@ -1309,15 +1310,15 @@ const SCHEMA=[
  {id:'mem',t:'입장 회원 (경기 대기)',ic:'users',rows:[
   {k:'members',l:'입장 회원 목록',s:'한 줄에 한 명: 이름,3구핸디,4구핸디<br>선수 선택 화면 첫 탭에 표시 · POS 연동 전까지 카운터에서 관리',type:'area'}]},
  {id:'bill',t:'요금 (정액제 / 시간제)',ic:'won',rows:[
-  {k:'bill.mode',l:'요금 방식',type:'seg',o:[['time','시간제'],['flat','정액제'],['free','무료/미표시']]},
+  {k:'bill.mode',l:'요금 방식',s:'시간제: 테이블 누적 이용 시간으로 요금 계산 · 정액제: 회원 입장 시 개별 결제 (점수판은 이용 시간만 표시)',type:'seg',o:[['time','시간제'],['flat','정액제'],['free','무료/미표시']]},
   {k:'bill.baseMin',l:'기본 시간',type:'num',u:'분',show:()=>S.bill.mode==='time'},
   {k:'bill.baseFee',l:'기본 요금',type:'num',u:'원',step:500,show:()=>S.bill.mode==='time'},
-  {k:'bill.flatHours',l:'정액 기준',s:'개별 결제 · 화면에는 금액 없이 남은 시간만 표시',type:'seg',o:[[4,'4시간'],[6,'6시간']],show:()=>S.bill.mode==='flat'},
+
   {k:'bill.unitMin',l:'추가 단위 시간',type:'num',u:'분',show:()=>S.bill.mode==='time'},
   {k:'bill.unitFee',l:'추가 단위 요금',type:'num',u:'원',step:100,show:()=>S.bill.mode==='time'},
-  {k:'bill.pauseStops',l:'게임 멈춤 시 시간 정지',s:'식사 등으로 멈춤을 누르면 이용 시간이 멈춥니다',type:'tg',show:()=>S.bill.mode!=='free'},
-  {k:'bill.showFee',l:'손님 화면에 요금 표시',type:'tg',show:()=>S.bill.mode==='time'},
-  {custom:'billNow'}]},
+  {k:'bill.pauseStops',l:'게임 멈춤 시 시간 정지',s:'식사 등으로 멈춤을 누르면 이용 시간이 멈춥니다',type:'tg',show:()=>S.bill.mode==='time'},
+  {k:'bill.showFee',l:'경기 결과 화면에 요금 표시',s:'요금은 경기가 끝난 뒤 결과 화면에서만 보여 줍니다',type:'tg',show:()=>S.bill.mode==='time'},
+  {custom:'billNow',show:()=>S.bill.mode==='time'}]},
  {id:'rules',t:'경기 규칙 · 기본값',ic:'rule',rows:[
   {k:'rules.h3',l:'3구 기본 핸디',type:'num',min:1,max:120},
   {k:'rules.h3list',l:'3구 빠른 선택',s:'쉼표로 구분 (최대 8개)',type:'text'},
@@ -1473,10 +1474,7 @@ setInterval(()=>{
  const hm=d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false});
  ['hClock','sClock','gClock','rClock','svClock'].forEach(id=>{const e=$('#'+id);if(e&&e.textContent!==hm)e.textContent=hm});
  $('#hDate').textContent=d.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
- if(PAGE==='home'&&SES){const a=$('#hSesT'),b=$('#hSesF'),c=$('#hSesL');if(a)a.textContent=fmtDur(sesMs(),1);if(b)b.textContent=won(sesFee());if(c)c.innerHTML=flatTxt()}
- if(SES&&S.bill.mode==='flat'){const l=flatLeft();
-  if(l<=600000&&l>0&&!SES.w10){SES.w10=1;saveSes();toast(`${ico('clock')} 정액 이용 시간이 10분 남았습니다`,1);SND.must(()=>SND.warn());say('정액 이용 시간이 10분 남았습니다',true)}
-  if(l<=0&&!SES.w0){SES.w0=1;saveSes();toast(`${ico('clock')} 정액 이용 시간이 끝났습니다`,1);SND.must(()=>SND.buzz());say('정액 이용 시간이 끝났습니다',true)}}
+ if(PAGE==='home'&&SES&&isTime()){const a=$('#hSesT');if(a)a.textContent=fmtDur(sesMs(),1)}
  if(G&&!G.finished&&!G.paused&&PAGE==='game'){
   G.playMs+=dt;
   if(G.shot&&!anyOv()){
