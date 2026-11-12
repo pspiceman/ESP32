@@ -854,13 +854,17 @@ function renderTicker(){
   t.style.animation='none';void t.offsetWidth;t.style.animation=''}
 }
 addEventListener('resize',()=>{if(PAGE==='home')renderTicker()});
+/* 시간제 정산: 결제(현재는 정산 완료 버튼) 시 이용 시간 리셋 → 다음 경기 시작부터 새로 계산 */
+function settle(after){askPin(async()=>{if(!SES){toast('정산할 이용 시간이 없습니다');return}
+ if(await confirmBox('정산 완료',`누적 이용 시간 <b>${fmtDur(sesMs(),1)}</b> · 게임 ${SES.games}판 · 요금 <b style="color:var(--org2)">${won(sesFee())}</b><br>정산을 마치면 이용 시간이 초기화되고,<br>다음 경기를 시작할 때부터 새로 계산합니다.`,'정산 완료')){
+  SES=null;LS.del('cue24.session');toast(`${ico('check')} 정산 완료 — 다음 경기부터 이용 시간을 새로 계산합니다`);after&&after()}})}
 function renderSes(){
  const el=$('#hSes');if(!el)return;const b=S.bill;
  if(b.mode==='flat'){el.innerHTML=`<span class="chip">${ico('won')}정액제</span><span class="mut">회원 입장 시 개별 결제 · 경기 시간이 이용 시간으로 기록됩니다</span>`;return}
  if(b.mode==='free'){el.innerHTML=`<span class="chip">${ico('won')}무료</span><span class="mut">경기 시간이 기록됩니다</span>`;return}
  if(!SES){el.innerHTML=`<span class="chip">${ico('won')}시간제</span><span class="mut">기본 ${b.baseMin}분 ${won(b.baseFee)} · 이후 ${b.unitMin}분당 ${won(b.unitFee)} · 경기를 시작하면 테이블 이용 시간이 누적됩니다</span>`;return}
  el.innerHTML=`<span class="chip org">${ico('clock')}이용 중</span><div>이용 시간 <b class="num" id="hSesT">${fmtDur(sesMs(),1)}</b></div><div class="mut">게임 <b class="num" style="color:var(--txt)">${SES.games}</b></div><button class="btn ghost" id="hSettle" style="height:4rem;font-size:1.2rem">${ico('check')}정산 완료</button>`;
- $('#hSettle').onclick=()=>askPin(async()=>{if(await confirmBox('정산 완료',`누적 이용 시간 <b>${fmtDur(sesMs(),1)}</b> · 요금 <b style="color:var(--org2)">${won(sesFee())}</b><br>정산을 마쳤으면 이용 시간을 초기화합니다.`,'정산 완료')){SES=null;LS.del('cue24.session');renderSes();toast('정산이 완료되었습니다')}});
+ $('#hSettle').onclick=()=>settle(renderSes);
 }
 $$('.mode').forEach(b=>b.onclick=()=>{SND.tap();openSetup(b.dataset.mode)});
 $('#hCall').onclick=callCounter;$('#gCall').onclick=callCounter;
@@ -1161,9 +1165,10 @@ function renderResult(){
  $('#rRows').parentElement.classList.toggle('tight',g.players.length>4);
  $('#rRows').innerHTML=ordered.map((p,k)=>{const i=g.players.indexOf(p),w=g.winners.includes(i);return `<tr class="${w?'w':''}"><td><span class="rk">${g.kind==='pr'?k+1:(w?ico('trophy'):k+1)}</span></td><td class="nm"><span><i class="ball ${COLORS[p.c]}"></i>${esc(p.name)}</span></td><td>${p.handi||'-'}</td><td style="font-size:3rem;color:#fff">${p.score}</td><td>${p.inn}</td><td>${avgTxt(p)}</td><td>${p.hr}</td><td>${p.handi?Math.round(p.score/p.handi*100)+'%':'-'}</td></tr>`}).join('');
  const b=S.bill;let fee='';const typ=t=>`<div class="r"><span>요금제</span><b style="font-family:var(--ui);font-size:1.5rem">${t}</b></div>`;
- if(b.mode==='time'){fee=typ('시간제')+`<div class="r"><span>이번 경기 시간</span><b>${fmtDur(g.playMs,1)}</b></div><div class="r"><span>테이블 이용 시간</span><b>${fmtDur(sesMs(),1)}</b></div>`+(b.showFee?`<div class="r t"><span>요금</span><b>${won(sesFee())}</b></div>`:'')}
+ if(b.mode==='time'){fee=typ('시간제')+`<div class="r"><span>이번 경기 시간</span><b>${fmtDur(g.playMs,1)}</b></div><div class="r"><span>테이블 이용 시간</span><b>${fmtDur(sesMs(),1)}</b></div>`+(b.showFee?`<div class="r t"><span>요금</span><b>${won(sesFee())}</b></div>`:'')+(SES?`<button class="btn org" id="rSettle" style="margin-top:.6rem">${ico('check')}정산 완료</button>`:`<div class="r"><span style="color:var(--good)">정산 완료됨</span></div>`)}
  else fee=typ(b.mode==='flat'?'정액제 · 개별 결제':'무료')+`<div class="r t"><span>이용 시간</span><b style="color:var(--txt)">${fmtDur(g.playMs,1)}</b></div>`;
  $('#rFee').innerHTML=fee;resT=now();
+ const rs=$('#rSettle');if(rs)rs.onclick=()=>settle(()=>{rs.outerHTML=`<div class="r"><span style="color:var(--good);font-weight:800">${ico('check')} 정산 완료됨</span></div>`});
 }
 $('#rHome').onclick=()=>{SND.tap();endResult();show('home')};
 $('#rAgain').onclick=()=>{SND.tap();const g=G;SU={kind:g.kind,base:g.base,n:g.players.length,shot:g.shot,inn:g.innLimit,auto:g.auto,snd:g.snd,players:g.players.map(p=>({name:p.name,handi:p.handi,def:p.def}))};while(SU.players.length<6)SU.players.push({name:defName(SU.players.length),handi:defHandi(g.base,g.kind),def:true});endResult();startGame()};
