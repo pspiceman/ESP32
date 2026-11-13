@@ -1,25 +1,35 @@
 {
-  "id": "./",
-  "name": "얼굴 체크인",
-  "short_name": "얼굴 체크인",
-  "lang": "ko",
-  "start_url": "./Face_Checkin_Tablet.html",
-  "scope": "./",
-  "display": "standalone",
-  "background_color": "#f2f6f5",
-  "theme_color": "#15333e",
-  "icons": [
-    {
-      "src": "./icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "./icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    }
-  ]
+ "name": "Q24 입장 등록",
+ "short_name": "Q24 입장",
+ "start_url": "./Face_Checkin_Tablet.html",
+ "scope": "./",
+ "display": "fullscreen",
+ "display_override": [
+  "fullscreen",
+  "standalone"
+ ],
+ "orientation": "landscape",
+ "background_color": "#0b161b",
+ "theme_color": "#15333e",
+ "lang": "ko",
+ "icons": [
+  {
+   "src": "./icons/q24-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "./icons/q24-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "./icons/q24-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
 }

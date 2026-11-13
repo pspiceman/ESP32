@@ -182,6 +182,10 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 .fv.none{font-size:clamp(18px,3vh,22px);color:var(--muted);font-weight:700}
 .field .skipBtn{min-height:42px;font-size:15px;padding:6px 12px}
 .stepNum .chips{margin:10px 0 6px;min-height:48px}
+.regFull .consent{font-size:clamp(17px,2.7vh,21px);line-height:1.55;gap:14px;margin-top:14px;font-weight:500}
+.regFull .consent input{width:30px;min-height:30px;margin-top:2px}
+.regFull .hint{font-size:clamp(15px,2.3vh,18px);line-height:1.6}
+.regFull .err.big{font-size:clamp(16px,2.5vh,20px)}
 
 @media (max-height:620px){.regTop{padding:6px 10px}.regAct button{min-height:46px}.regTitle h2{font-size:19px}.chips{margin:8px 0}.chips button{min-height:42px}}
 @media (orientation:portrait){.stepNum{grid-template-columns:1fr;grid-template-rows:auto 1fr}.regTop{flex-wrap:wrap}.regTop .steps{order:3;flex-basis:100%}}
@@ -243,7 +247,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
    <div class="metrics">
     <div class="metric"><span>검출 얼굴</span><b id="faceCount">—</b></div>
     <div class="metric"><span>평균용 표본</span><b id="streakCount">0 / 4</b></div>
-    <div class="metric"><span>얼굴 크기 (표준 18~70%)</span><b id="faceSize">—</b></div>
+    <div class="metric"><span>얼굴 크기 (표준 18~56%)</span><b id="faceSize">—</b></div>
     <div class="metric"><span>정면도 (기준 60%)</span><b id="frontal">—</b></div>
     <div class="metric"><span>1순위 거리</span><b id="distance">—</b></div>
     <div class="metric"><span>2순위 (차이)</span><b id="gap">—</b></div>
@@ -257,7 +261,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
    <dt>브라우저</dt><dd id="browser">—</dd><dt>실행 주소</dt><dd id="protocol">—</dd><dt>보안 연결</dt><dd id="secure">—</dd>
    <dt>카메라 권한</dt><dd id="permission">확인 중</dd><dt>영상 해상도</dt><dd id="resolution">—</dd>
    <dt>얼굴 모델</dt><dd id="model">로딩 전</dd><dt>기기 저장소</dt><dd id="storage">확인 중</dd>
-   <dt>화면 꺼짐 방지</dt><dd id="wake">확인 중</dd><dt>최근 분석 시각</dt><dd id="lastAnalysis">—</dd><dt>카메라 오류</dt><dd id="camError">없음</dd><dt>카메라 장치</dt><dd id="devices">—</dd>
+   <dt>화면 꺼짐 방지</dt><dd id="wake">확인 중</dd><dt>배터리</dt><dd id="batInfo">확인 불가</dd><dt>최근 분석 시각</dt><dd id="lastAnalysis">—</dd><dt>카메라 오류</dt><dd id="camError">없음</dd><dt>카메라 장치</dt><dd id="devices">—</dd>
   </dl><div class="row" style="margin-top:10px"><button id="diagBtn" type="button">진단 정보 복사</button><span class="hint" id="diagMsg"></span></div></section>
   <section class="card"><h2>인식 설정</h2>
    <div class="settings">
@@ -299,7 +303,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
    <b>사용 순서:</b> 톡 → 정면 바라보기(1~2초) → "OOO님 입장 확인". 처음 오신 분은 이름/닉네임 → 종목·핸디 → 휴대폰 번호를 차례로 입력합니다. 퇴실은 관리자가 결제 확인 후 관리자 웹에서 처리합니다.<br>
    <b>정확도:</b> 등록 때 정면 8장, 확인 때 4장을 평균하고 두 눈이 수평이 되도록 정렬한 뒤 비교합니다. 1·2순위 차이가 작으면 비슷한 분들만 골라 보여 줍니다.<br>
    얼굴 분석은 기기에서만 수행하며 사진·영상을 저장하거나 보내지 않습니다(얼굴 특징값 숫자만 이 기기에 저장). 생체 위조(사진) 검출 기능은 없습니다.</p>
-   <p class="hint" id="footerVer">Q24 입장 등록 4.2.1 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
+   <p class="hint" id="footerVer">Q24 입장 등록 4.3 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
   </section>
  </div>
 </section>
@@ -399,6 +403,8 @@ document.getElementById('pinSave').onclick=async()=>{
    event             입실·등록·퇴실·취소 이벤트
    status   (retain) 태블릿 온라인 여부(LWT)
    cmd/<id> (retain) 관리자 → 태블릿 명령(퇴실 등) · 처리 후 빈 메시지로 삭제 */
+/* 배터리 (Battery Status API · Chrome 안드로이드 지원) → 관리자 웹에 실시간 표시 */
+const BAT={level:null,charging:null};
 const Remote=(()=>{
  const KEY='q24Remote',DONE_KEY='q24RemoteDone',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
  const LIBS=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
@@ -462,6 +468,7 @@ const Remote=(()=>{
   if(cmd.cid){done.push(cmd.cid);done=done.slice(-200);try{localStorage.setItem(DONE_KEY,JSON.stringify(done))}catch{}}
   clear();pub('event',{type:'ack',cid:cmd.cid||'',cmd:cmd.type,...res,eid:visitKey()});pushState();
  }
+ function pushStatus(){if(!client||!online)return;try{client.publish(base+'/status',JSON.stringify({online:true,at:Date.now(),ver:VERSION,bat:BAT.level,chg:BAT.charging}),{qos:1,retain:true})}catch{}}
  function stop(){gen++;clearInterval(hb);hb=null;online=false;if(client){try{client.end(true)}catch{}client=null}}
  async function start(){
   stop();const my=gen;
@@ -475,28 +482,32 @@ const Remote=(()=>{
    will:{topic:base+'/status',payload:JSON.stringify({online:false}),qos:1,retain:true}});
   client=c;
   c.on('connect',()=>{if(my!==gen)return;online=true;ui('on','연결됨 · '+cfg.broker.replace(/^wss?:\/\//,'')+' · 매장 '+cfg.site.trim()+' · 채널 '+base.slice(-6).toUpperCase()+' · '+(aesKey?'암호화 사용':'⚠ 암호화 없음'));
-   c.publish(base+'/status',JSON.stringify({online:true,at:Date.now(),ver:VERSION}),{qos:1,retain:true});
+   pushStatus();
    c.subscribe(base+'/cmd/#',{qos:1});pushState();pushMembers()});
   c.on('reconnect',()=>{if(my===gen)ui('wait','다시 연결 중…')});
   c.on('offline',()=>{if(my===gen){online=false;ui('err','연결 끊김 · 자동 재연결 중')}});
   c.on('error',e=>{if(my===gen)ui('err','오류: '+(e?.message||e))});
   c.on('message',(t,p)=>{if(my===gen)onMessage(t,p)});
-  hb=setInterval(()=>{if(online){pushState();c.publish(base+'/status',JSON.stringify({online:true,at:Date.now(),ver:VERSION}),{qos:1,retain:true})}},60000);
+  hb=setInterval(()=>{if(online){pushState();pushStatus()}},60000);
  }
  function save(n){cfg={...cfg,...n};try{localStorage.setItem(KEY,JSON.stringify(cfg))}catch{};start()}
- return{start,stop,save,pushState,pushMembers,event,config:()=>({...cfg}),isOnline:()=>online,_seal:seal,_unseal:unseal};
+ return{start,stop,save,pushState,pushMembers,pushStatus,event,config:()=>({...cfg}),isOnline:()=>online,_seal:seal,_unseal:unseal};
 })();
+(async()=>{try{const b=await navigator.getBattery?.();if(!b)return;let last=-1;
+ const up=()=>{BAT.level=Math.round(b.level*100);BAT.charging=!!b.charging;const el=document.getElementById('batInfo');if(el)el.textContent=BAT.level+'%'+(BAT.charging?' (충전 중)':'');
+  last=BAT.level;Remote.pushStatus()};
+ up();b.addEventListener('levelchange',up);b.addEventListener('chargingchange',up)}catch{}})();
 document.getElementById('rmSave').onclick=()=>{const g=id=>document.getElementById(id);if(g('rmSite').value.trim())g('rmEnabled').checked=true;Remote.save({enabled:g('rmEnabled').checked,broker:g('rmBroker').value.trim()||'wss://broker.emqx.io:8084/mqtt',site:g('rmSite').value.trim(),pass:g('rmPass').value});toast('원격 설정을 저장했습니다.')};
 document.getElementById('rmSync').onclick=()=>{Remote.pushState();Remote.pushMembers();toast(Remote.isOnline()?'현재 상태를 다시 보냈습니다.':'원격에 연결되어 있지 않습니다.')};
 </script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='4.2',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='4.3',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
-const STD={minSize:.18,maxSize:.70,yaw:.60,roll:18,pitchMin:.22,pitchMax:.88,score:.5,
+const STD={minSize:.18,maxSize:.56,yaw:.60,roll:18,pitchMin:.22,pitchMax:.88,score:.5,
  guide:{x:.15,y:.04,w:.70,h:.92},minLum:45,darkLum:90,minSharp:10};
 /* 판정 기준 (5프레임 평균 얼굴 ↔ 회원 평균 얼굴 거리) */
 const LEVELS={strict:{verify:.36},normal:{verify:.40},loose:{verify:.45}};
@@ -635,7 +646,7 @@ setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString('ko-KR',{h
 /* ---------- 얼굴 테두리 (빨간 ㄱ자) ---------- */
 function guideRect(vw,vh){const g=STD.guide;return{x:vw*g.x,y:vh*g.y,w:vw*g.w,h:vh*g.h}}
 /* 화면에 그리는 점선: 판정 영역(위)보다 작게, 적당한 거리의 얼굴(머리) 크기에 맞춤 */
-function guideDrawRect(vw,vh){const m=Math.min(vw,vh),w=Math.min(vw*.9,m*.80),h=Math.min(vh*.94,m*.94);return{x:(vw-w)/2,y:(vh-h)/2,w,h}}
+function guideDrawRect(vw,vh){const m=Math.min(vw,vh),w=Math.min(vw*.9,m*.64),h=Math.min(vh*.94,m*.76);return{x:(vw-w)/2,y:(vh-h)/2-vh*.01,w,h}}
 /* 검출 박스(눈썹~턱)를 머리 크기로 넓혀 꺾쇠 표시 */
 function headBox(b){const w=b.width,h=b.height;return{x:b.x-w*.06,y:b.y-h*.16,width:w*1.12,height:h*1.22}}
 function corners(ctx,b,color,lw){
@@ -1331,7 +1342,7 @@ function openRegister(existing,samples,mode){
  $('regName').value=existing?existing.name:'';
  const H=handiOf(existing);REG.h3=H.h3;REG.h4=H.h4;REG.skip3=!!existing&&!H.h3;REG.skip4=!!existing&&!H.h4;
  REG.phone=String(existing?.phone||'').replace(/\D/g,'');REG.active='h3';
- $('regConsent').checked=regMode==='edit';$('regConsentFace').checked=false;
+ $('regConsent').checked=true;$('regConsentFace').checked=true;
  if(!$('regDialog').open)$('regDialog').showModal();
  showRegStep(regMode==='face'?'face':0);
  controls();
@@ -1544,7 +1555,7 @@ $('hardReloadBtn').onclick=()=>doReload(true);
  let auto=store.get(FS_KEY)!=='0';$('fsAuto').checked=auto;
  const isFs=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
  const can=!!(root.requestFullscreen||root.webkitRequestFullscreen);
- const standalone=matchMedia('(display-mode: fullscreen)').matches||matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+ const standalone=matchMedia('(display-mode: fullscreen)').matches;  // standalone(홈 화면 앱)도 상단 상태바를 숨기려고 전체 화면 요청
  function enter(){
   if(isFs()||!can)return Promise.resolve(isFs());
   try{const r=root.requestFullscreen?root.requestFullscreen({navigationUI:'hide'}):root.webkitRequestFullscreen();
