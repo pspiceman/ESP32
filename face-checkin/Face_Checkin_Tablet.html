@@ -234,7 +234,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.00</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.01</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -293,7 +293,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
    <p class="hint">회원번호는 Q001부터 자동 부여됩니다. <b>재등록 권장</b> 표시는 이전 버전(2.x)에서 등록된 얼굴입니다. <b>정보 수정</b>으로 이름·핸디·전화번호를, <b>얼굴 재등록</b>으로 얼굴을 바꿀 수 있습니다.</p>
   </section>
   <section class="card"><h2>전체 화면</h2><div class="row"><label class="consent" style="margin:0"><input id="fsAuto" type="checkbox" checked> 화면을 터치하면 자동으로 전체 화면(주소창 숨김)</label></div><div class="row" style="margin-top:10px"><button id="fsBtn" type="button">지금 전체 화면</button><button id="fsExit" type="button">전체 화면 끄기</button><span id="fsMsg" class="hint"></span></div><p class="hint">"화면 새로고침"·아래로 당기기는 페이지를 다시 열지 않아 <b>전체 화면이 그대로 유지</b>됩니다. 페이지를 새로 열 때(최신 버전 새로고침·재부팅 등)는 브라우저 규칙상 <b>"화면을 터치해 주세요" 시작 화면을 한 번 터치</b>하면 전체 화면이 됩니다. 항상 주소창 없이 쓰려면 Chrome 메뉴 ⋮ → <b>홈 화면에 추가</b>로 아이콘을 만들어 실행하세요.</p></section>
-  <section class="card"><h2>새로고침</h2><div class="row"><button id="reloadBtn" type="button">화면 새로고침</button><button id="hardReloadBtn" type="button">최신 버전으로 새로고침</button></div><p class="hint">입장 화면에서 손가락으로 화면을 <b>아래로 길게 당겼다 놓으면</b> 새로고침됩니다(전체 화면 유지). GitHub에 새 파일을 올렸는데 예전 화면이 보이면 <b>최신 버전으로 새로고침</b>을 누르세요(저장된 회원·입실 기록은 그대로 유지).</p></section>
+  <section class="card"><h2>새로고침 · 업데이트</h2><div class="row"><button id="reloadBtn" type="button">화면 새로고침</button><button id="hardReloadBtn" type="button">최신 버전으로 새로고침</button><button id="updBtn" type="button">업데이트 확인</button></div><p class="hint" id="updInfo" style="font-weight:700;color:var(--ink)"></p><p class="hint">GitHub에 새 파일을 올리면 <b>5분 안에 자동으로 확인해 새 버전으로 바뀝니다</b>(손님이 쓰는 중에는 끝난 뒤 적용). 바로 바꾸려면 입장 화면을 <b>아래로 길게 당겼다 놓거나</b> "최신 버전으로 새로고침"을 누르세요. 회원·입실 기록·설정은 그대로 유지됩니다. GitHub Pages 반영에는 올린 뒤 1~2분이 걸릴 수 있습니다.</p></section>
   <section class="card"><h2>설정 잠금</h2>
    <div class="settings"><label for="pinNew">설정 비밀번호 변경 (숫자 4~8자리)</label><input id="pinNew" inputmode="numeric" type="password" placeholder="새 비밀번호 (기본 0000)" autocomplete="new-password"></div>
    <div class="row" style="margin-top:10px"><button id="pinSave" type="button">비밀번호 변경</button><span id="pinMsg" class="hint"></span></div>
@@ -304,7 +304,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
    <b>사용 순서:</b> 톡 → 정면 바라보기(1~2초) → "OOO님 입장 확인". 처음 오신 분은 이름/닉네임 → 종목·핸디 → 휴대폰 번호를 차례로 입력합니다. 퇴실은 관리자가 결제 확인 후 관리자 웹에서 처리합니다.<br>
    <b>정확도:</b> 등록 때 정면 8장, 확인 때 4장을 평균하고 두 눈이 수평이 되도록 정렬한 뒤 비교합니다. 1·2순위 차이가 작으면 비슷한 분들만 골라 보여 줍니다.<br>
    얼굴 분석은 기기에서만 수행하며 사진·영상을 저장하거나 보내지 않습니다(얼굴 특징값 숫자만 이 기기에 저장). 생체 위조(사진) 검출 기능은 없습니다.</p>
-   <p class="hint" id="footerVer">Q24 입장 등록 v1.00 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
+   <p class="hint" id="footerVer">Q24 입장 등록 v1.01 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
   </section>
  </div>
 </section>
@@ -367,7 +367,7 @@ window.onerror=function(m,src,l){var e=document.getElementById('status');if(e){e
 let toastTimer=null;
 function toast(msg,ms=3500){const t=document.getElementById('toast');t.textContent=msg;t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.hidden=true,ms)}
 async function sha256hex(text){const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('')}
-function closeSettings(){document.getElementById('settingsPage').hidden=true}
+function closeSettings(){document.getElementById('settingsPage').hidden=true;try{if(Updater.pending&&!session)Updater.apply(Updater.pending)}catch{}}
 function showSettings(){
  const g=id=>document.getElementById(id);
  g('settingsPage').hidden=false;g('settingsPage').querySelector('.spBody').scrollTop=0;
@@ -504,7 +504,7 @@ document.getElementById('rmSync').onclick=()=>{Remote.pushState();Remote.pushMem
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='1.00',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='1.01',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
@@ -1523,17 +1523,42 @@ async function softReload(){
  toast('새로고침했습니다.',2000);
 }
 function doReload(hard){
- if(!hard){softReload();return}
- const p=$('ptr');p.classList.add('spin');p.style.transform='translate(-50%,0)';$('ptrText').textContent='새로고침 중…';
- try{stopCamera()}catch{}
- const go=()=>{const u=new URL(location.href);if(hard)u.searchParams.set('v',Date.now().toString(36));else u.searchParams.delete('v');location.replace(u.href)};
- if(!hard){setTimeout(go,200);return}
- // 화면 파일 캐시만 비움 (IndexedDB 회원 정보 · localStorage 기록은 유지)
- Promise.all([
-  navigator.serviceWorker?.getRegistrations?.().then(rs=>Promise.all(rs.map(r=>r.update().catch(()=>{})))).catch(()=>{}),
-  window.caches?.keys?.().then(ks=>Promise.all(ks.map(k=>caches.delete(k)))).catch(()=>{})
- ]).finally(()=>setTimeout(go,200));
+ if(!hard){Updater.check(true).then(v=>{if(!(v&&v!==VERSION))softReload()});return}   // 새 버전이 있으면 그 버전으로 다시 열기
+ Updater.apply(null);
 }
+/* ---------- 자동 업데이트: GitHub에 올린 파일의 버전을 확인해 바뀌었으면 새로 불러오기 ----------
+ · 시작 15초 뒤, 그 뒤 5분마다 확인 · 손님이 쓰는 중(인식·등록·설정 화면)에는 기다렸다가 적용
+ · 회원 정보(IndexedDB)·입실 기록·설정은 그대로 유지 */
+const Updater=(()=>{
+ let busy=false,pending=null,lastCheck=0,lastErr='';
+ const info=()=>{const el=$('updInfo');if(el)el.textContent='현재 v'+VERSION+(pending?' · 새 버전 v'+pending+' 대기 중':lastCheck?' · 최신 상태 (확인 '+new Date(lastCheck).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})+')':'')+(lastErr?' · 확인 실패: '+lastErr:'')};
+ async function latest(){
+  const u=new URL(location.href);u.hash='';u.search='';u.searchParams.set('chk',Date.now().toString(36));
+  const r=await fetch(u.href,{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);
+  const m=(await r.text()).match(/const VERSION='([^']+)'/);return m?m[1]:null;
+ }
+ const idle=()=>!session&&!$('regDialog').open&&!$('simDialog').open&&!$('pinDialog').open&&$('settingsPage').hidden;
+ async function check(applyNow){
+  if(busy)return null;busy=true;
+  try{const v=await latest();lastCheck=Date.now();lastErr='';if(v&&v!==VERSION){pending=v;if(applyNow||idle())apply(v)}return v}
+  catch(e){lastErr=e.message||String(e);return null}
+  finally{busy=false;info()}
+ }
+ async function apply(v){
+  const p=$('ptr');p.classList.add('spin');p.style.transition='transform .2s';p.style.transform='translate(-50%,0)';$('ptrText').textContent=v?'새 버전 v'+v+' 적용 중…':'최신 버전 불러오는 중…';
+  if(v)toast('새 버전 v'+v+'(으)로 업데이트합니다…',3000);
+  try{stopCamera()}catch{}
+  try{const rs=await navigator.serviceWorker?.getRegistrations?.();await Promise.all((rs||[]).map(r=>r.unregister().catch(()=>{})))}catch{}
+  try{const ks=await caches.keys();await Promise.all(ks.filter(k=>!k.startsWith('q24-models')).map(k=>caches.delete(k)))}catch{}
+  setTimeout(()=>{const u=new URL(location.href);u.searchParams.delete('chk');u.searchParams.set('v',(v||'r')+'-'+Date.now().toString(36));location.replace(u.href)},500);
+ }
+ setTimeout(()=>check(false),15000);
+ setInterval(()=>{if(pending&&idle())apply(pending);else if(!pending)check(false)},5*60000);
+ setInterval(()=>{if(pending&&idle())apply(pending)},20000);
+ info();
+ return{check,apply,info,get pending(){return pending}};
+})();
+$('updBtn').onclick=async()=>{$('updInfo').textContent='확인 중…';const v=await Updater.check(false);toast(v==null?'버전을 확인하지 못했습니다.':v!==VERSION?'새 버전 v'+v+' 이 있습니다. 설정을 닫으면 적용됩니다.':'최신 버전(v'+VERSION+')입니다.')};
 $('reloadBtn').onclick=()=>doReload(false);
 $('hardReloadBtn').onclick=()=>doReload(true);
 (()=>{
