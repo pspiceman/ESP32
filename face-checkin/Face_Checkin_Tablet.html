@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="Q24 입장 등록">
 <link rel="icon" type="image/png" href="./icons/q24-192.png" onerror="this.href='./icons/icon-192.png'">
 <link rel="apple-touch-icon" href="./icons/q24-192.png">
-<script src="./pwa.js" defer></script><style>
+<style>
 :root{--ink:#17313b;--muted:#64777d;--green:#087f70;--line:#d9e5e3;--bg:#f2f6f5;--hdr:64px}
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -234,7 +234,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.01</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.02</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -304,7 +304,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
    <b>사용 순서:</b> 톡 → 정면 바라보기(1~2초) → "OOO님 입장 확인". 처음 오신 분은 이름/닉네임 → 종목·핸디 → 휴대폰 번호를 차례로 입력합니다. 퇴실은 관리자가 결제 확인 후 관리자 웹에서 처리합니다.<br>
    <b>정확도:</b> 등록 때 정면 8장, 확인 때 4장을 평균하고 두 눈이 수평이 되도록 정렬한 뒤 비교합니다. 1·2순위 차이가 작으면 비슷한 분들만 골라 보여 줍니다.<br>
    얼굴 분석은 기기에서만 수행하며 사진·영상을 저장하거나 보내지 않습니다(얼굴 특징값 숫자만 이 기기에 저장). 생체 위조(사진) 검출 기능은 없습니다.</p>
-   <p class="hint" id="footerVer">Q24 입장 등록 v1.01 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
+   <p class="hint" id="footerVer">Q24 입장 등록 v1.02 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
   </section>
  </div>
 </section>
@@ -504,7 +504,7 @@ document.getElementById('rmSync').onclick=()=>{Remote.pushState();Remote.pushMem
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='1.01',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='1.02',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
@@ -1552,7 +1552,10 @@ const Updater=(()=>{
   try{const ks=await caches.keys();await Promise.all(ks.filter(k=>!k.startsWith('q24-models')).map(k=>caches.delete(k)))}catch{}
   setTimeout(()=>{const u=new URL(location.href);u.searchParams.delete('chk');u.searchParams.set('v',(v||'r')+'-'+Date.now().toString(36));location.replace(u.href)},500);
  }
- setTimeout(()=>check(false),15000);
+ // 예전에 등록된 서비스워커(오래된 화면을 보관)를 해제하고 화면 캐시 삭제 (인식 모델 캐시는 유지)
+ (async()=>{try{const rs=await navigator.serviceWorker?.getRegistrations?.();if(rs?.length)await Promise.all(rs.map(r=>r.unregister().catch(()=>{})))}catch{}
+  try{const ks=await caches.keys();await Promise.all(ks.filter(k=>!k.startsWith('q24-models')).map(k=>caches.delete(k)))}catch{}})();
+ setTimeout(()=>check(false),3000);   // 열자마자 최신 버전 확인
  setInterval(()=>{if(pending&&idle())apply(pending);else if(!pending)check(false)},5*60000);
  setInterval(()=>{if(pending&&idle())apply(pending)},20000);
  info();
