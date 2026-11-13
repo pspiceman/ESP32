@@ -235,7 +235,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.04</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.05</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -305,7 +305,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
    <b>사용 순서:</b> 톡 → 정면 바라보기(1~2초) → "OOO님 입장 확인". 처음 오신 분은 이름/닉네임 → 종목·핸디 → 휴대폰 번호를 차례로 입력합니다. 퇴실은 관리자가 결제 확인 후 관리자 웹에서 처리합니다.<br>
    <b>정확도:</b> 등록 때 정면 8장, 확인 때 4장을 평균하고 두 눈이 수평이 되도록 정렬한 뒤 비교합니다. 1·2순위 차이가 작으면 비슷한 분들만 골라 보여 줍니다.<br>
    얼굴 분석은 기기에서만 수행하며 사진·영상을 저장하거나 보내지 않습니다(얼굴 특징값 숫자만 이 기기에 저장). 생체 위조(사진) 검출 기능은 없습니다.</p>
-   <p class="hint" id="footerVer">Q24 입장 등록 v1.04 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
+   <p class="hint" id="footerVer">Q24 입장 등록 v1.05 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
   </section>
  </div>
 </section>
@@ -505,7 +505,7 @@ document.getElementById('rmSync').onclick=()=>{Remote.pushState();Remote.pushMem
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='1.04',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='1.05',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
@@ -584,16 +584,30 @@ let ttsStarted=0,ttsLastErr='';
 function ttsInfo(){const el=$('ttsInfo');if(!el)return;
  if(!window.speechSynthesis){el.textContent='이 브라우저는 음성 안내(TTS)를 지원하지 않습니다.';return}
  const vs=speechSynthesis.getVoices()||[],ko=vs.find(v=>/^ko([-_]|$)/i.test(v.lang));
- el.textContent='음성 엔진: '+(ko?'한국어 음성 있음':vs.length?'한국어 음성 없음(전체 '+vs.length+'개)':'음성 목록 없음')+(ttsStarted?' · 최근 재생 '+new Date(ttsStarted).toLocaleTimeString('ko-KR'):' · 재생 기록 없음');
+ el.textContent='음성 엔진: '+(ko?'한국어 음성 있음':vs.length?'한국어 음성 없음(전체 '+vs.length+'개)':'음성 목록 없음')+(ttsStarted?' · 최근 재생 '+new Date(ttsStarted).toLocaleTimeString('ko-KR'):' · 재생 기록 없음')+(ttsLastErr?' · 최근 오류: '+ttsLastErr:'')+' · 방식: '+(typeof ttsMode==='string'?ttsMode:'-');
 }
+/* 음성 재생: 정상일 때는 4.2.1과 같은 방식.
+ 실패(오류)하면 같은 문장을 다른 설정으로 자동 재시도 → 되는 방식을 기억해 다음부터 그 방식으로 */
+const TTS_MODES=['voice','lang','ko','default'];   // 한국어 음성 지정 → 언어만 ko-KR → ko → 기기 기본 음성
+let ttsMode=(()=>{try{return localStorage.getItem('q24TtsMode')||'voice'}catch{return 'voice'}})();
 function speak(text,key=text,interval=8000){
  if(!$('voiceEnabled').checked||!window.speechSynthesis||document.hidden)return;
  const now=Date.now();if(key===lastVoiceKey&&now-lastVoiceTime<interval)return;
  lastVoiceKey=key;lastVoiceTime=now;speechSynthesis.cancel();
- const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';u.rate=1;u.volume=Number($('voiceVolume').value);
- const ko=speechSynthesis.getVoices().find(v=>v.lang.toLowerCase().replace('_','-').startsWith('ko'));if(ko)u.voice=ko;
- u.onerror=e=>{if(!['interrupted','canceled','not-allowed'].includes(e.error))$('voiceHint').textContent='음성 재생 실패. 기기의 한국어 TTS와 미디어 볼륨을 확인하세요.'};
- u.onstart=()=>{ttsStarted=Date.now();ttsLastErr='';ttsInfo()};
+ speakTry(text,Math.max(0,TTS_MODES.indexOf(ttsMode)),key==='test');
+}
+function speakTry(text,i,isTest){
+ const mode=TTS_MODES[i],u=new SpeechSynthesisUtterance(text);u.rate=1;u.volume=Number($('voiceVolume').value);
+ if(mode==='voice'||mode==='lang')u.lang='ko-KR';else if(mode==='ko')u.lang='ko';
+ if(mode==='voice'){const ko=speechSynthesis.getVoices().find(v=>v.lang.toLowerCase().replace('_','-').startsWith('ko'));if(ko)u.voice=ko}
+ u.onerror=e=>{
+  if(['interrupted','canceled'].includes(e.error))return;
+  ttsLastErr=e.error||'오류';ttsInfo();
+  if(e.error==='not-allowed'){$('voiceHint').textContent='음성 재생이 막혔습니다(not-allowed). 화면을 한 번 터치한 뒤 다시 시도하세요.';return}
+  if(i+1<TTS_MODES.length){setTimeout(()=>speakTry(text,i+1,isTest),150);return}
+  $('voiceHint').textContent='음성 재생 실패('+e.error+'). '+(e.error==='network'?'인터넷 연결을 확인하거나, 기기 TTS에서 한국어 음성 데이터를 내려받아 주세요.':'기기 설정 → 텍스트 음성 변환(TTS) 출력에서 기본 엔진을 "Google 음성 인식 및 합성"으로 바꾸고 한국어 음성 데이터를 설치해 주세요.');
+ };
+ u.onstart=()=>{ttsStarted=Date.now();ttsLastErr='';if(ttsMode!==mode){ttsMode=mode;try{localStorage.setItem('q24TtsMode',mode)}catch{}}ttsInfo();if(isTest)$('voiceHint').textContent='음성 정상 · 재생 방식: '+{voice:'한국어 음성 지정',lang:'언어 ko-KR',ko:'언어 ko',default:'기기 기본 음성'}[mode]};
  speechSynthesis.speak(u);
 }
 function guide(text){const now=Date.now();if(now-lastGuideAt<5000)return;lastGuideAt=now;speak(text,'guide:'+text,0)}
