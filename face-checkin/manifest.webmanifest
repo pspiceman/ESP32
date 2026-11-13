@@ -1,0 +1,23 @@
+{
+ "id": "./Face_Checkin_Tablet.html",
+ "name": "Q24 입장 등록",
+ "short_name": "Q24 입장",
+ "description": "가브리엘 당구장 얼굴 인식 입장 등록",
+ "start_url": "./Face_Checkin_Tablet.html",
+ "scope": "./",
+ "display": "fullscreen",
+ "display_override": ["fullscreen", "standalone"],
+ "orientation": "landscape",
+ "background_color": "#0b161b",
+ "theme_color": "#15333e",
+ "lang": "ko",
+ "dir": "ltr",
+ "categories": ["business", "utilities"],
+ "prefer_related_applications": false,
+ "icons": [
+  {"src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+  {"src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+  {"src": "./icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+  {"src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+ ]
+}
