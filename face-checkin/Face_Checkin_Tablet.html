@@ -5,6 +5,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Q24 입장 등록">
+<script src="./pwa.js" defer></script>
 <link rel="icon" type="image/png" href="./icons/q24-192.png" onerror="this.href='./icons/icon-192.png'">
 <link rel="apple-touch-icon" href="./icons/q24-192.png">
 <style>
@@ -234,14 +235,14 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.03</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.04</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
    <p class="hint">설정 페이지가 열려 있어도 카메라와 원격 연결은 계속 동작합니다.</p>
   </section>
   <section class="card"><h2>음성 안내</h2>
-   <div class="row"><label class="consent" style="margin:0"><input id="voiceEnabled" type="checkbox" checked> 음성 안내</label><label for="voiceVolume">볼륨</label><input id="voiceVolume" type="range" min="0" max="1" step="0.1" value="0.8" style="width:140px;margin:0"><button id="voiceTest" type="button">음성 테스트</button></div>
+   <div class="row"><label class="consent" style="margin:0"><input id="voiceEnabled" type="checkbox" checked> 음성 안내</label><label for="voiceVolume">볼륨</label><input id="voiceVolume" type="range" min="0" max="1" step="0.1" value="0.8" style="width:140px;margin:0"><button id="voiceTest" type="button">음성 테스트</button><button id="chimeTest" type="button">딩동 테스트</button></div>
    <p id="ttsInfo" class="hint" style="font-weight:700;color:var(--ink)"></p><p id="voiceHint" class="hint">톡을 누르고 흰 점선 안에서 정면을 바라보면 1~2초 안에 인식합니다. 처음 오신 분은 등록 창이 자동으로 열립니다.</p>
   </section>
   <section class="card wide"><h2>검출 결과</h2>
@@ -304,7 +305,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
    <b>사용 순서:</b> 톡 → 정면 바라보기(1~2초) → "OOO님 입장 확인". 처음 오신 분은 이름/닉네임 → 종목·핸디 → 휴대폰 번호를 차례로 입력합니다. 퇴실은 관리자가 결제 확인 후 관리자 웹에서 처리합니다.<br>
    <b>정확도:</b> 등록 때 정면 8장, 확인 때 4장을 평균하고 두 눈이 수평이 되도록 정렬한 뒤 비교합니다. 1·2순위 차이가 작으면 비슷한 분들만 골라 보여 줍니다.<br>
    얼굴 분석은 기기에서만 수행하며 사진·영상을 저장하거나 보내지 않습니다(얼굴 특징값 숫자만 이 기기에 저장). 생체 위조(사진) 검출 기능은 없습니다.</p>
-   <p class="hint" id="footerVer">Q24 입장 등록 v1.03 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
+   <p class="hint" id="footerVer">Q24 입장 등록 v1.04 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
   </section>
  </div>
 </section>
@@ -504,7 +505,7 @@ document.getElementById('rmSync').onclick=()=>{Remote.pushState();Remote.pushMem
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='1.03',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='1.04',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
@@ -578,36 +579,22 @@ function renderLog(){
 $('logClear').onclick=()=>{vlog=[];store.set(VLOG_KEY,'[]');renderLog()};
 
 /* ---------- 음성 ---------- */
-/* 음성 안내 (안드로이드 Chrome 대응)
- · cancel() 직후 바로 speak() 하면 말이 사라지는 문제 → 말하는 중일 때만 취소하고 잠깐 뒤에 말하기
- · 발화 객체를 붙잡아 두어(가비지 수거로 끊김 방지) · 일시정지 상태 풀기(resume)
- · 1.5초 안에 시작하지 않으면 원인 안내 */
-let ttsVoice=null,ttsUtter=null,ttsStarted=0,ttsLastErr='';
-function pickVoice(){try{const vs=speechSynthesis.getVoices()||[];ttsVoice=vs.find(v=>/^ko([-_]|$)/i.test(v.lang)&&v.localService)||vs.find(v=>/^ko([-_]|$)/i.test(v.lang))||null;ttsInfo();return vs.length}catch{return 0}}
+/* 음성 상태 표시(진단용 · 동작에는 영향 없음) */
+let ttsStarted=0,ttsLastErr='';
 function ttsInfo(){const el=$('ttsInfo');if(!el)return;
  if(!window.speechSynthesis){el.textContent='이 브라우저는 음성 안내(TTS)를 지원하지 않습니다.';return}
- const n=(speechSynthesis.getVoices()||[]).length;
- el.textContent='음성 엔진: '+(ttsVoice?'한국어 음성 있음 ('+ttsVoice.name+')':n?'한국어 음성 없음 (전체 '+n+'개) → 기기 TTS에 한국어 설치 필요':'음성 목록을 아직 받지 못함')+(ttsLastErr?' · 최근 오류: '+ttsLastErr:'')+(ttsStarted?' · 최근 재생 '+new Date(ttsStarted).toLocaleTimeString('ko-KR'):'');
+ const vs=speechSynthesis.getVoices()||[],ko=vs.find(v=>/^ko([-_]|$)/i.test(v.lang));
+ el.textContent='음성 엔진: '+(ko?'한국어 음성 있음':vs.length?'한국어 음성 없음(전체 '+vs.length+'개)':'음성 목록 없음')+(ttsStarted?' · 최근 재생 '+new Date(ttsStarted).toLocaleTimeString('ko-KR'):' · 재생 기록 없음');
 }
-if(window.speechSynthesis){pickVoice();try{speechSynthesis.addEventListener('voiceschanged',pickVoice)}catch{speechSynthesis.onvoiceschanged=pickVoice}}
 function speak(text,key=text,interval=8000){
  if(!$('voiceEnabled').checked||!window.speechSynthesis||document.hidden)return;
  const now=Date.now();if(key===lastVoiceKey&&now-lastVoiceTime<interval)return;
- lastVoiceKey=key;lastVoiceTime=now;
- const say=()=>{
-  const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';u.rate=1;u.pitch=1;u.volume=Math.max(.1,Number($('voiceVolume').value));
-  if(!ttsVoice)pickVoice();if(ttsVoice)u.voice=ttsVoice;
-  let started=false;
-  u.onstart=()=>{started=true;ttsStarted=Date.now();ttsLastErr='';ttsInfo()};
-  u.onend=()=>{if(ttsUtter===u)ttsUtter=null};
-  u.onerror=e=>{if(['interrupted','canceled'].includes(e.error))return;ttsLastErr=e.error||'오류';ttsInfo();
-   $('voiceHint').textContent=e.error==='not-allowed'?'음성 재생이 막혔습니다. 화면을 한 번 터치한 뒤 다시 시도하세요.':'음성 재생 실패('+e.error+'). 기기의 한국어 TTS(텍스트 음성 변환)와 미디어 볼륨을 확인하세요.'};
-  ttsUtter=u;window.__ttsUtter=u;
-  try{speechSynthesis.resume()}catch{}
-  speechSynthesis.speak(u);
-  setTimeout(()=>{if(!started&&ttsUtter===u&&key==='test'){ttsLastErr='재생 시작 안 됨';ttsInfo();$('voiceHint').textContent='음성이 시작되지 않았습니다. 기기 설정 → 텍스트 음성 변환(TTS)에서 "Google 음성 인식 및 합성"과 한국어 음성을 설치·선택하고, 미디어 볼륨을 올려 주세요.'}},2000);
- };
- if(speechSynthesis.speaking||speechSynthesis.pending){speechSynthesis.cancel();setTimeout(say,120)}else say();
+ lastVoiceKey=key;lastVoiceTime=now;speechSynthesis.cancel();
+ const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';u.rate=1;u.volume=Number($('voiceVolume').value);
+ const ko=speechSynthesis.getVoices().find(v=>v.lang.toLowerCase().replace('_','-').startsWith('ko'));if(ko)u.voice=ko;
+ u.onerror=e=>{if(!['interrupted','canceled','not-allowed'].includes(e.error))$('voiceHint').textContent='음성 재생 실패. 기기의 한국어 TTS와 미디어 볼륨을 확인하세요.'};
+ u.onstart=()=>{ttsStarted=Date.now();ttsLastErr='';ttsInfo()};
+ speechSynthesis.speak(u);
 }
 function guide(text){const now=Date.now();if(now-lastGuideAt<5000)return;lastGuideAt=now;speak(text,'guide:'+text,0)}
 function chime(){
@@ -621,7 +608,8 @@ document.addEventListener('pointerdown',()=>{
  if(!stream&&!starting){nextRetryAt=0;startCamera()}
  requestWakeLock();
 },true);
-$('voiceTest').onclick=()=>{chime();$('voiceHint').textContent='딩동 소리가 나면 스피커는 정상입니다. 이어서 음성이 나오는지 들어 보세요.';setTimeout(()=>speak('안녕하세요. 톡을 누르고 카메라를 바라봐 주세요.','test',0),900)};
+$('voiceTest').onclick=()=>{speak('안녕하세요. 톡을 누르고 카메라를 바라봐 주세요.','test',0);setTimeout(ttsInfo,2500)};
+$('chimeTest').onclick=()=>chime();
 $('voiceEnabled').onchange=()=>{if(!$('voiceEnabled').checked)window.speechSynthesis?.cancel();else speak('음성 안내를 켰습니다.','on',0)};
 
 /* ---------- 화면 표시 ---------- */
