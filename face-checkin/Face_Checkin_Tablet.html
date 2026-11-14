@@ -250,7 +250,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.20</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.21</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -339,7 +339,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
    <b>번호로 입장:</b> 회원인데 얼굴 인식이 안 되면(마스크·역광 등) 휴대폰 뒷자리 4자리로 입장합니다. 같은 번호가 여러 명이면 이름을 고릅니다. 번호 입장은 관리자 웹 기록에 "번호"로 표시됩니다.<br>
    <b>정확도:</b> 등록 때 정면 8장, 확인 때 4장을 평균하고 두 눈이 수평이 되도록 정렬한 뒤 비교합니다. 1·2순위 차이가 작으면 비슷한 분들만 골라 보여 줍니다.<br>
    얼굴 분석은 기기에서만 수행하며 사진·영상을 저장하거나 보내지 않습니다(얼굴 특징값 숫자만 이 기기에 저장). 생체 위조(사진) 검출 기능은 없습니다.</p>
-   <p class="hint" id="footerVer">Q24 입장 등록 v1.20 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
+   <p class="hint" id="footerVer">Q24 입장 등록 v1.21 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
   </section>
  </div>
 </section>
@@ -547,7 +547,7 @@ const Ntfy=(()=>{
  const g=id=>document.getElementById(id);
  const tm=t=>new Date(t).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
  const subUrl=()=>cfg.topic.trim()?cfg.server.replace(/\/+$/,'')+'/'+cfg.topic.trim():'—';
- function ui(text){const el=g('ntStatus');if(el)el.textContent=text||(cfg.enabled?(cfg.topic.trim()?'알림 켜짐':'토픽 이름을 입력해 주세요'):'알림 꺼짐');const u=g('ntUrl');if(u)u.textContent=subUrl()}
+ function ui(text){const el=g('ntStatus');if(el){el.textContent=text||(cfg.enabled?(cfg.topic.trim()?'✅ 알림 켜짐':'토픽 이름을 입력해 주세요'):'알림 꺼짐');el.style.fontWeight='700';el.style.color=/⚠|실패/.test(el.textContent)?'#a83732':cfg.enabled?'#087f70':''}const u=g('ntUrl');if(u)u.textContent=subUrl()}
  async function post(msg,tryN=0){
   if(!cfg.enabled&&!msg._test)return false;
   if(!cfg.topic.trim()){ui('토픽 이름이 없습니다');return false}
@@ -573,21 +573,25 @@ const Ntfy=(()=>{
    tags:[type==='register'?'new':'white_check_mark','q24-'+type],priority:type==='register'?4:3});
  }
  function fill(){g('ntEnabled').checked=cfg.enabled;g('ntServer').value=cfg.server;g('ntTopic').value=cfg.topic;g('ntToken').value=cfg.token;g('ntCheckin').checked=cfg.checkin;g('ntRegister').checked=cfg.register;ui()}
+ const newTopic=()=>{const a=crypto.getRandomValues(new Uint8Array(8));return 'q24-'+[...a].map(b=>'abcdefghjkmnpqrstuvwxyz23456789'[b%31]).join('')};
+ function fail(msg){ui('⚠ '+msg);toast('⚠ '+msg,5000);return false}
  function save(){
-  const sv=(g('ntServer').value.trim()||'https://ntfy.sh').replace(/\/+$/,'');
-  if(!/^https:\/\//.test(sv)){ui('서버 주소는 https:// 로 시작해야 합니다');return false}
-  const tp=g('ntTopic').value.trim();
-  if(tp&&!/^[A-Za-z0-9_-]{1,64}$/.test(tp)){ui('토픽은 영문·숫자·-·_ 만 쓸 수 있습니다');return false}
+  let sv=(g('ntServer').value.trim()||'https://ntfy.sh').replace(/\/+$/,'');
+  if(!/^https?:\/\//i.test(sv))sv='https://'+sv;   // 주소만 쓴 경우 https:// 자동
+  sv=sv.replace(/^http:\/\//i,'https://');g('ntServer').value=sv;
+  let tp=g('ntTopic').value.trim().replace(/\s+/g,'-');g('ntTopic').value=tp;
+  if(tp&&!/^[A-Za-z0-9_-]{1,64}$/.test(tp)){g('ntEnabled').checked=false;cfg.enabled=false;try{localStorage.setItem(KEY,JSON.stringify(cfg))}catch{}return fail('토픽 이름은 영문·숫자·-·_ 만 쓸 수 있습니다 (한글 불가). "토픽 자동 생성"을 눌러 주세요.')}
+  // 알림을 켰는데 토픽이 없으면 자동으로 만들어 줌
+  if(g('ntEnabled').checked&&!tp){tp=newTopic();g('ntTopic').value=tp;toast('토픽을 자동으로 만들었습니다: '+tp+' · 관리자 웹 ⚙ 설정에도 같은 토픽을 넣어 주세요.',8000)}
   cfg={enabled:g('ntEnabled').checked,server:sv,topic:tp,token:g('ntToken').value,checkin:g('ntCheckin').checked,register:g('ntRegister').checked};
-  if(cfg.enabled&&!tp){cfg.enabled=false;g('ntEnabled').checked=false;ui('토픽 이름을 먼저 입력해 주세요');return false}
   try{localStorage.setItem(KEY,JSON.stringify(cfg))}catch{}
   ui();return true;
  }
  g('ntSave').onclick=()=>{if(save())toast(cfg.enabled?'ntfy 알림을 켰습니다.':'ntfy 설정을 저장했습니다(알림 꺼짐).')};
  g('ntEnabled').onchange=()=>{if(save())toast(cfg.enabled?'ntfy 알림 ON':'ntfy 알림 OFF')};
  for(const id of ['ntCheckin','ntRegister'])g(id).onchange=()=>save();
- g('ntRandom').onclick=()=>{const a=crypto.getRandomValues(new Uint8Array(8));g('ntTopic').value='q24-'+[...a].map(b=>'abcdefghjkmnpqrstuvwxyz23456789'[b%31]).join('');save();toast('토픽을 만들었습니다. 관리자 웹에도 같은 토픽을 넣어 주세요.',5000)};
- g('ntTest').onclick=async()=>{if(!save()&&!g('ntTopic').value.trim())return;ui('테스트 전송 중…');const ok=await post({_test:true,title:'Q24 테스트 알림',message:'인식기 알림이 정상입니다. ('+new Date().toLocaleString('ko-KR')+')',tags:['bell','q24-test'],priority:3});toast(ok?'테스트 알림을 보냈습니다.':'테스트 알림 전송에 실패했습니다.')};
+ g('ntRandom').onclick=()=>{g('ntTopic').value=newTopic();save();toast('토픽을 만들었습니다. 관리자 웹에도 같은 토픽을 넣어 주세요.',5000)};
+ g('ntTest').onclick=async()=>{if(!save()||!cfg.topic)return fail('토픽 이름이 없습니다. "토픽 자동 생성"을 눌러 주세요.');ui('테스트 전송 중…');const ok=await post({_test:true,title:'Q24 테스트 알림',message:'인식기 알림이 정상입니다. ('+new Date().toLocaleString('ko-KR')+')',tags:['bell','q24-test'],priority:3});toast(ok?'테스트 알림을 보냈습니다.':'테스트 알림 전송에 실패했습니다.')};
  ui();
  return{notify,fill,config:()=>({...cfg})};
 })();
@@ -595,7 +599,7 @@ const Ntfy=(()=>{
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='1.20',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='1.21',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
