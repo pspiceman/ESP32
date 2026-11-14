@@ -27,7 +27,7 @@ header{padding:0 18px;background:#15333e;color:white;display:flex;justify-conten
 .remoteDot.on i{background:#3ed19a}.remoteDot.err i{background:#ff6b5b}
 .gear{min-height:44px;width:48px;padding:0;border-radius:12px;background:#24495a;border:1px solid #3c6475;color:#fff;display:grid;place-items:center}
 .gear svg{width:26px;height:26px}
-main{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,1fr);gap:14px;padding:12px 14px 12px;min-height:0}
+main{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,1fr);gap:14px;padding:12px 14px calc(14px + env(safe-area-inset-bottom));min-height:0}
 .camCol{display:flex;flex-direction:column;gap:8px;min-height:0;min-width:0}
 .side{display:flex;flex-direction:column;gap:10px;min-height:0;min-width:0}
 button,select,input{font:inherit;border:1px solid var(--line);border-radius:10px;min-height:46px;padding:11px 14px}
@@ -89,7 +89,8 @@ dialog h2{font-size:23px;margin-bottom:4px}
 .btns button{min-height:56px;font-size:18px}
 .bell{width:min(190px,32vh);height:min(190px,32vh);border-radius:50%;background:#e8402f;color:#fff;border:6px solid #fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:30px;font-weight:800;padding:0;box-shadow:0 10px 30px rgba(0,0,0,.3);-webkit-tap-highlight-color:transparent;user-select:none}
 .bell svg{width:52px;height:52px}.bell small{font-size:13px;font-weight:600;opacity:.92}
-.bellWrap{overflow:hidden;padding:14px 30px calc(22px + 7vh)}
+.bellWrap{overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(28px,6.5vh,56px);padding:6px 0 10px}
+.bellWrap .quick{width:100%}
 /* 처음 왔어요 · 번호로 입장 버튼 */
 .quick{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex-shrink:0}
 .quick button{min-height:clamp(58px,10vh,82px);font-size:clamp(18px,3vh,24px);font-weight:800;border-radius:16px;border-width:3px;padding:6px 10px;line-height:1.2}
@@ -102,7 +103,7 @@ dialog h2{font-size:23px;margin-bottom:4px}
 .regNote .thumb{width:76px;height:76px}
 .memLeft{display:flex;gap:12px;align-items:center;min-width:0}
 .badge.photo{background:#e7f1fb;color:#164a78}
-.bell{position:relative;width:min(290px,37vh,28vw);height:min(290px,37vh,28vw);border-width:8px;font-size:clamp(30px,5.4vh,46px)}
+.bell{position:relative;flex-shrink:0;width:min(270px,33vh,26vw);height:min(270px,33vh,26vw);border-width:8px;font-size:clamp(30px,5.4vh,46px)}
 .bell svg{width:clamp(48px,9vh,78px);height:clamp(48px,9vh,78px)}.bell small{font-size:clamp(13px,2.2vh,18px)}
 .finger{position:absolute;right:-4%;bottom:-9%;font-size:clamp(54px,11vh,92px);line-height:1;filter:drop-shadow(0 6px 8px rgba(0,0,0,.35));pointer-events:none;transform-origin:50% 100%;animation:tap 1.6s ease-in-out infinite}
 .bell.busy .finger,.bell:disabled .finger{animation:none;opacity:.35}
@@ -241,14 +242,13 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
   <div class="phoneAlt"><button id="phoneList" type="button">이름으로 고르기</button><button id="phoneNew" type="button">🙋 처음 왔어요 · 신규 등록</button></div>
  </section>
  <div class="inCount" id="inCountRow"><span>현재 입실</span><b id="inCount">0명</b></div>
- <div class="bellWrap" id="bellWrap"><button id="bell" class="bell" type="button" disabled aria-label="톡 초인종 — 누르면 입장 확인을 시작합니다"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm7-6v-5a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2z"/></svg><span id="bellText">톡</span><small id="bellSub">준비 중</small><span class="finger" aria-hidden="true">👆</span></button></div>
- <div class="quick" id="quickRow"><button id="btnNew" class="qNew" type="button">🙋 처음 왔어요<small>신규 등록</small></button><button id="btnPin" class="qPin" type="button">🔢 번호로 입장<small>얼굴 인식이 안 될 때</small></button></div>
+ <div class="bellWrap" id="bellWrap"><button id="bell" class="bell" type="button" disabled aria-label="톡 초인종 — 누르면 입장 확인을 시작합니다"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm7-6v-5a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2z"/></svg><span id="bellText">톡</span><small id="bellSub">준비 중</small><span class="finger" aria-hidden="true">👆</span></button><div class="quick" id="quickRow"><button id="btnNew" class="qNew" type="button">🙋 처음 왔어요<small>신규 등록</small></button><button id="btnPin" class="qPin" type="button">🔢 번호로 입장<small>얼굴 인식이 안 될 때</small></button></div></div>
 </div>
 </main>
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.06</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.07</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -332,7 +332,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
    <b>번호로 입장:</b> 회원인데 얼굴 인식이 안 되면(마스크·역광 등) 휴대폰 뒷자리 4자리로 입장합니다. 같은 번호가 여러 명이면 이름을 고릅니다. 번호 입장은 관리자 웹 기록에 "번호"로 표시됩니다.<br>
    <b>정확도:</b> 등록 때 정면 8장, 확인 때 4장을 평균하고 두 눈이 수평이 되도록 정렬한 뒤 비교합니다. 1·2순위 차이가 작으면 비슷한 분들만 골라 보여 줍니다.<br>
    얼굴 분석은 기기에서만 수행하며 사진·영상을 저장하거나 보내지 않습니다(얼굴 특징값 숫자만 이 기기에 저장). 생체 위조(사진) 검출 기능은 없습니다.</p>
-   <p class="hint" id="footerVer">Q24 입장 등록 v1.06 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
+   <p class="hint" id="footerVer">Q24 입장 등록 v1.07 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
   </section>
  </div>
 </section>
@@ -588,7 +588,7 @@ const Ntfy=(()=>{
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='1.06',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='1.07',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
