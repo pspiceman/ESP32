@@ -176,6 +176,8 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 .regBody{flex:1;min-height:0;padding:6px 18px 14px;overflow:auto}
 .q{font-size:clamp(20px,3.4vh,28px);font-weight:800;margin:4px 0 10px;display:block}
 .stepName .bigInput{font-size:clamp(26px,4.6vh,36px);min-height:clamp(60px,9vh,76px);margin:0 0 8px;border:3px solid var(--green)}
+.stepName .q small{font-size:.7em;font-weight:600;color:var(--muted)}
+.stepName #regNick{border-color:#5b95c8}
 .stepNum{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.9fr);gap:18px;height:100%;min-height:0}
 .numLeft{display:flex;flex-direction:column;min-height:0}
 .numShow{display:flex;align-items:baseline;gap:10px;background:#fff;border:3px solid var(--green);border-radius:16px;padding:10px 18px;min-height:clamp(64px,11vh,96px)}
@@ -250,7 +252,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.21</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.22</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -339,7 +341,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
    <b>번호로 입장:</b> 회원인데 얼굴 인식이 안 되면(마스크·역광 등) 휴대폰 뒷자리 4자리로 입장합니다. 같은 번호가 여러 명이면 이름을 고릅니다. 번호 입장은 관리자 웹 기록에 "번호"로 표시됩니다.<br>
    <b>정확도:</b> 등록 때 정면 8장, 확인 때 4장을 평균하고 두 눈이 수평이 되도록 정렬한 뒤 비교합니다. 1·2순위 차이가 작으면 비슷한 분들만 골라 보여 줍니다.<br>
    얼굴 분석은 기기에서만 수행하며 사진·영상을 저장하거나 보내지 않습니다(얼굴 특징값 숫자만 이 기기에 저장). 생체 위조(사진) 검출 기능은 없습니다.</p>
-   <p class="hint" id="footerVer">Q24 입장 등록 v1.21 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
+   <p class="hint" id="footerVer">Q24 입장 등록 v1.22 · face-api.js 0.22.2 + SFace(OpenCV Zoo, Apache-2.0) · ONNX Runtime Web 1.20.1</p>
   </section>
  </div>
 </section>
@@ -357,9 +359,11 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
  <div class="regBody">
   <div data-step="0" class="stepName">
    <div class="regNote" id="regNote" hidden><img id="regPhotoPrev" class="thumb" alt=""><span>📷 얼굴 인식이 되지 않았습니다. <u>전화번호 입력으로 등록 가능합니다.</u><br>찍은 사진으로 등록되며, 다음부터는 <b>[번호로 입장]</b> → 휴대폰 뒷자리 4자리로 입장합니다.</span></div>
-   <label for="regName" class="q">이름 또는 닉네임을 입력해 주세요</label>
-   <input id="regName" class="bigInput" maxlength="20" placeholder="예: 김회원 / 큐왕" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="next">
-   <p class="hint">입력 후 키보드의 <b>다음(완료)</b> 또는 위쪽 <b>다음 ▶</b>을 누르세요. 같은 이름의 회원이 있으면 숫자나 별명을 붙여 주세요.</p>
+   <label for="regName" class="q">이름 <small>(필수 · 관리자만 봅니다)</small></label>
+   <input id="regName" class="bigInput" maxlength="20" placeholder="예: 김회원" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="next">
+   <label for="regNick" class="q">닉네임 <small>(선택 · 경기 현황판에 표시)</small></label>
+   <input id="regNick" class="bigInput" maxlength="12" placeholder="예: 큐왕 (없으면 비워 두세요)" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="next">
+   <p class="hint">현황판에는 이름 대신 <b>닉네임</b>이 나옵니다. 닉네임이 없으면 GUEST1, GUEST2…로 표시됩니다. 입력 후 키보드의 <b>다음</b> 또는 위쪽 <b>다음 ▶</b>을 누르세요.</p>
   </div>
   <div data-step="1" class="stepNum" hidden>
    <div class="numLeft">
@@ -599,7 +603,7 @@ const Ntfy=(()=>{
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='1.21',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='1.22',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
@@ -641,7 +645,7 @@ function rollDay(){}  // 입실 중 기록은 자정을 넘겨도 유지 (퇴실
 function openVisitOf(id){return visits.open[id]||null}
 function checkedAt(id){return visits.open[id]?.inAt||0}
 function visitKey(){return 'V'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
-function memberInfo(m){const H=handiOf(m);return{id:m.id,name:m.name,game:m.game||'',handi:m.handi??'',handi3:H.h3,handi4:H.h4,phone:m.phone||'',faceless:!!m.noFace}}
+function memberInfo(m){const H=handiOf(m);return{id:m.id,name:m.name,nick:String(m.nick||'').trim(),game:m.game||'',handi:m.handi??'',handi3:H.h3,handi4:H.h4,phone:m.phone||'',faceless:!!m.noFace}}
 /* via: 얼굴 · 번호(휴대폰 뒷자리) · 사진등록(얼굴 인식 없이 신규 등록) */
 function markChecked(id,t,isNew=false,via='얼굴'){
  const m=members.find(x=>x.id===id);if(!m)return null;
@@ -735,12 +739,12 @@ function renderMembers(){
  if(!members.length){const p=document.createElement('p');p.className='hint';p.textContent='아직 등록된 회원이 없습니다. 입장 화면의 [처음 왔어요]를 누르면 등록 창이 열립니다.';$('members').append(p)}
  const qy=($('memberSearch')?.value||'').trim().toLowerCase();
  const qd=qy.replace(/\D/g,'');
- const list=[...members].filter(m=>!qy||m.name.toLowerCase().includes(qy)||String(m.id).toLowerCase().includes(qy)||(qd.length>=3&&String(m.phone||'').replace(/\D/g,'').includes(qd))).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+ const list=[...members].filter(m=>!qy||m.name.toLowerCase().includes(qy)||String(m.nick||'').toLowerCase().includes(qy)||String(m.id).toLowerCase().includes(qy)||(qd.length>=3&&String(m.phone||'').replace(/\D/g,'').includes(qd))).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
  if(qy&&!list.length){const p=document.createElement('p');p.className='hint';p.textContent='검색 결과가 없습니다.';$('members').append(p)}
  for(const m of list){
   const row=document.createElement('div');row.className='item';
   const info=document.createElement('div'),name=document.createElement('strong'),id=document.createElement('small'),chk=document.createElement('small');
-  name.textContent=m.name;const badge=document.createElement('span');
+  name.textContent=m.name+(m.nick?' · '+m.nick:'');const badge=document.createElement('span');
   if(m.noFace){badge.className='badge photo';badge.textContent='사진 등록 · 번호 입장'}
   else{badge.className='badge '+(memberLegacy(m)?'legacy':'ok');badge.textContent=memberLegacy(m)?'재등록 권장':'표본 '+(m.descriptors?.length||0)}
   name.append(badge);
@@ -1544,10 +1548,13 @@ function showRegStep(s){
  const last=s==='face'||s===1;
  $('regSave').textContent=last?(regMode==='edit'?'저장 ✓':regMode==='photo'?'등록 완료 ✓':regMode==='face'||!regSamples?'촬영 시작 ▶':'등록 완료 ✓'):'다음 ▶';
  $('regCancel').textContent=s===1?'◀ 이전':'취소';
- if((regMode==='new'||regMode==='photo')&&typeof s==='number')speak(s===0?(regMode==='photo'?'얼굴 인식이 되지 않았습니다. 전화번호 입력으로 등록 가능합니다. 이름이나 닉네임을 입력해 주세요.':'처음 오셨네요. 이름이나 닉네임을 입력해 주세요.'):'3구 핸디, 4구 점수, 휴대폰 번호를 차례로 눌러 주세요. 안 치는 종목은 안 쳐요를 눌러 주세요.','reg'+s,0);
+ if((regMode==='new'||regMode==='photo')&&typeof s==='number')speak(s===0?(regMode==='photo'?'얼굴 인식이 되지 않았습니다. 전화번호 입력으로 등록 가능합니다. 이름과 닉네임을 입력해 주세요. 닉네임은 없으면 비워 두셔도 됩니다.':'처음 오셨네요. 이름과 닉네임을 입력해 주세요. 닉네임은 없으면 비워 두셔도 됩니다.'):'3구 핸디, 4구 점수, 휴대폰 번호를 차례로 눌러 주세요. 안 치는 종목은 안 쳐요를 눌러 주세요.','reg'+s,0);
  if(s===0)setTimeout(()=>{const n=$('regName');n.focus();try{n.setSelectionRange(n.value.length,n.value.length)}catch{}},120);
 }
 $('regName').addEventListener('input',()=>{regIdleAt=Date.now();$('regError').textContent=''});
+$('regNick').addEventListener('input',()=>{regIdleAt=Date.now();$('regError').textContent=''});
+// 이름 칸에서 엔터(다음) → 닉네임 칸으로
+$('regName').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();$('regNick').focus()}});
 $('regConsent').addEventListener('change',touchReg);
 $('regConsentFace').addEventListener('change',()=>{regIdleAt=Date.now();$('regError').textContent=''});
 /* mode: 'new' 신규 등록 · 'photo' 얼굴 인식 없이 사진으로 신규 등록 · 'face' 얼굴 재등록 · 'edit' 정보 수정 */
@@ -1568,7 +1575,7 @@ function openRegister(existing,samples,mode){
  $('regSub').textContent=regMode==='face'?'기존 얼굴 정보를 새로 바꿉니다':regMode==='edit'?'얼굴 정보는 그대로입니다':regMode==='photo'?'얼굴 인식 없이 사진으로 등록합니다':regSamples?'입력이 끝나면 방금 확인한 얼굴로 등록됩니다':'입력이 끝나면 약 2초간 얼굴을 촬영합니다';
  $('regNote').hidden=regMode!=='photo';$('regPhotoPrev').hidden=!regPhoto;if(regPhoto)$('regPhotoPrev').src=regPhoto;
  $('regId').textContent=existing?existing.id:fmtId(nextNum());
- $('regName').value=existing?existing.name:'';
+ $('regName').value=existing?existing.name:'';$('regNick').value=existing?.nick||'';
  const H=handiOf(existing);REG.h3=H.h3;REG.h4=H.h4;REG.skip3=!!existing&&!H.h3;REG.skip4=!!existing&&!H.h4;
  REG.phone=String(existing?.phone||'').replace(/\D/g,'');REG.active='h3';
  $('regConsent').checked=true;$('regConsentFace').checked=true;
@@ -1578,8 +1585,13 @@ function openRegister(existing,samples,mode){
 }
 function regValidate(s){
  const bad=f=>{REG.active=f;renderNum();document.querySelector('.field[data-f="'+f+'"]').classList.add('bad')};
- if(s===0){const n=$('regName').value.trim();if(!n){$('regName').focus();return '이름 또는 닉네임을 입력해 주세요.'}
-  const dup=members.find(m=>m.name===n&&m.id!==regTarget?.id);if(dup&&(regMode==='new'||regMode==='photo'))return '같은 이름('+dup.id+')이 있습니다. 구분되도록 숫자나 별명을 붙여 주세요. (예: '+n+'2)'}
+ if(s===0){const n=$('regName').value.trim();
+  if(!n){$('regName').focus();return '이름을 입력해 주세요.'}
+  const k=$('regNick').value.trim();
+  if(k&&/^guest\s*\d*$/i.test(k)){$('regNick').focus();return 'GUEST는 닉네임으로 쓸 수 없습니다. 다른 닉네임을 넣거나 비워 두세요.'}
+  const dk=k&&members.find(m=>String(m.nick||'').trim().toLowerCase()===k.toLowerCase()&&m.id!==regTarget?.id);
+  if(dk){$('regNick').focus();return '같은 닉네임을 쓰는 회원이 있습니다. 다른 닉네임을 넣어 주세요. (예: '+k+'2)'}
+  const dup=members.find(m=>m.name===n&&m.id!==regTarget?.id);if(dup&&(regMode==='new'||regMode==='photo')&&!k)return '같은 이름('+dup.id+')이 있습니다. 닉네임을 넣거나 이름에 숫자를 붙여 주세요. (예: '+n+'2)'}
  if(s===1){
   if(!REG.skip3&&!/^\d{1,3}$/.test(REG.h3)){bad('h3');return '3구 핸디를 누르거나, 안 치시면 "안 쳐요"를 눌러 주세요.'}
   if(!REG.skip4&&!/^\d{1,4}$/.test(REG.h4)){bad('h4');return '4구 점수를 누르거나, 안 치시면 "안 쳐요"를 눌러 주세요.'}
@@ -1601,7 +1613,7 @@ $('regForm').onsubmit=async e=>{
  const err=regValidate(regStep);if(err){$('regError').textContent=err;if(regMode==='new'||regMode==='photo')speak(err,'regerr',3000);return}
  if(regStep===0){showRegStep(1);return}
  const h3=REG.skip3?'':REG.h3,h4=REG.skip4?'':REG.h4;
- const info={name:$('regName').value.trim(),handi3:h3,handi4:h4,game:h3?'3구':'4구',handi:h3||h4,phone:fmtPhone(REG.phone)};
+ const info={name:$('regName').value.trim(),nick:$('regNick').value.trim(),handi3:h3,handi4:h4,game:h3?'3구':'4구',handi:h3||h4,phone:fmtPhone(REG.phone)};
  if(regMode==='edit'){await saveInfo(regTarget,info);return}
  if(regMode==='photo'){await savePhotoMember(info);return}
  $('regDialog').close();
@@ -1691,7 +1703,7 @@ async function saveEnroll(){
   const hp=sfl.length>=3?{sf:sfl,sfTemplate:norm(vmean(sfl))}:{sf:undefined,sfTemplate:undefined};
   const photo=E.photo||snapPhoto();
   const member=E.existing?{...E.existing,descriptors,template:vmean(descriptors),...hp,pipeline:PIPE,noFace:false,photo:photo||E.existing.photo||'',updatedAt:now,reenrolledAt:now}
-   :{id:E.id,name:E.name,game:E.game||'',handi:E.handi??'',handi3:E.handi3||'',handi4:E.handi4||'',phone:E.phone||'',descriptors,template:vmean(descriptors),...hp,pipeline:PIPE,photo,createdAt:now};
+   :{id:E.id,name:E.name,nick:E.nick||'',game:E.game||'',handi:E.handi??'',handi3:E.handi3||'',handi4:E.handi4||'',phone:E.phone||'',descriptors,template:vmean(descriptors),...hp,pipeline:PIPE,photo,createdAt:now};
   await writeDB(s=>s.put(member));
   const i=members.findIndex(x=>x.id===member.id);if(i>=0)members[i]=member;else members.push(member);
   if(!E.existing){const x=/^Q(\d+)$/.exec(member.id);if(x)store.set(NEXT_KEY,String(Number(x[1])+1))}
