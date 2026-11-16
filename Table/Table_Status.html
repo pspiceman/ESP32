@@ -32,7 +32,7 @@ main{display:grid;grid-template-columns:minmax(230px,14.5%) minmax(250px,16%) 1f
 .dan i{width:calc(14px*var(--fs));height:calc(14px*var(--fs));border-radius:50%;background:rgba(255,255,255,.85);flex-shrink:0;box-shadow:inset 0 -2px 0 rgba(0,0,0,.2)}
 .dan span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .dan.two{height:calc(58px*var(--fs));border-radius:20px;padding:0 16px 0 8px}
-.dan .dTx{display:flex;flex-direction:column;justify-content:center;line-height:1.15}
+.dan .dTx{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;line-height:1.15}
 .dan .dTx b,.dan .dTx small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dan .dTx small{font-size:.76em;font-weight:800;color:rgba(255,255,255,.88);font-variant-numeric:tabular-nums}
 .dan.two.sm{height:calc(52px*var(--fs));border-radius:17px;padding:0 14px;font-size:calc(17px*var(--fs))}
@@ -286,7 +286,7 @@ fieldset{border:1px solid var(--line);border-radius:14px;margin:14px 0 0;padding
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
-const BOARD_VERSION='1.07',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
+const BOARD_VERSION='1.08',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
 const LIBS=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
 const DEF_TICKER='가브리엘 당구장에 오신 것을 환영합니다.',OLD_TICKERS=['가브리엘 당구장에 오신 것을 환영합니다. 본 당구장은 정액제 당구장으로 4시간에 1만원, 그 이상은 1만 5천원입니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.','가브리엘 당구장에 오신 것을 환영합니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.'];
 /* 기본 배치 (매장 그림 기준, 배치 영역의 % 좌표) */
