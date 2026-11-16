@@ -205,7 +205,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 .q{font-size:clamp(20px,3.4vh,28px);font-weight:800;margin:4px 0 10px;display:block}
 .stepName .bigInput{font-size:clamp(26px,4.6vh,36px);min-height:clamp(60px,9vh,76px);margin:0 0 8px;border:3px solid var(--green)}
 .stepName .q small{font-size:.7em;font-weight:600;color:var(--muted)}
-.stepName #regNick{border-color:#5b95c8}
+
 .stepNum{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.9fr);gap:18px;height:100%;min-height:0}
 .numLeft{display:flex;flex-direction:column;min-height:0}
 .numShow{display:flex;align-items:baseline;gap:10px;background:#fff;border:3px solid var(--green);border-radius:16px;padding:10px 18px;min-height:clamp(64px,11vh,96px)}
@@ -304,7 +304,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.31</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.32</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -357,6 +357,11 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
    <div class="row" style="margin-top:10px"><button id="rmSave" class="primary" type="button">저장하고 연결</button><button id="rmSync" type="button">지금 다시 보내기</button><span id="rmStatus" class="hint">원격 관리 꺼짐</span></div>
    <p class="hint" id="mwStatus" style="margin:6px 0 0">회원 웹: 원격 연결 후 표시</p>
    <p class="hint">관리자 웹: <b id="rmAdminUrl">Face_Checkin_Tablet_admin.html</b> · 같은 <b>브로커 · 매장 코드 · 암호 키</b>를 넣으면 입실 현황을 보고 결제 확인 후 퇴실을 처리할 수 있습니다. 퍼블릭 브로커는 누구나 접속할 수 있으므로 회원 정보는 암호 키로 <b>AES-GCM 암호화</b>해서 보냅니다(얼굴 특징값은 보내지 않음). 암호 키를 비우면 암호화 없이 전송되니 꼭 설정하세요.</p>
+  </section>
+  <section class="card wide"><h2>신규 등록 입력 항목</h2>
+   <div class="row" style="align-items:center;margin-top:6px"><label for="hiSel" style="font-weight:700">핸디 입력</label>
+    <select id="hiSel"><option value="34">3구 핸디 + 4구 점수 (둘 다)</option><option value="3">3구 핸디만</option><option value="4">4구 점수만</option></select></div>
+   <p class="hint" style="margin:6px 0 0">신규 등록 2단계에서 고른 항목만 보입니다. 휴대폰 번호는 항상 입력합니다.</p>
   </section>
   <section class="card wide"><h2>흐르는 안내 문구 (화면 위쪽)</h2>
    <label for="gkText" style="display:block;margin:6px 0 4px;font-weight:700">문구</label>
@@ -412,18 +417,17 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 <dialog id="regDialog" class="regFull"><form id="regForm" method="dialog" novalidate>
  <div class="regTop">
   <div class="regTitle"><h2 id="regTitle">처음 오셨네요!</h2><small>회원번호 <b id="regId">—</b> · <span id="regSub">순서대로 입력해 주세요</span></small></div>
-  <div class="steps" id="regSteps"><span data-s="0">① 이름 · 닉네임</span><span data-s="1">② 핸디 · 휴대폰</span></div>
+  <div class="steps" id="regSteps"><span data-s="0">① 닉네임/이름</span><span data-s="1" id="regStep2">② 핸디 · 휴대폰</span></div>
   <div class="regAct"><button type="button" id="regCancel">취소</button><button class="primary" id="regSave" type="submit">다음 ▶</button><button type="button" id="regClose" aria-label="등록 취소">✕</button></div>
  </div>
  <p id="regError" class="err big"></p>
  <div class="regBody">
   <div data-step="0" class="stepName">
    <div class="regNote" id="regNote" hidden><img id="regPhotoPrev" class="thumb" alt=""><span>📷 얼굴 인식이 되지 않았습니다. <u>전화번호 입력으로 등록 가능합니다.</u><br>찍은 사진으로 등록되며, 다음부터는 <b>[번호로 입장]</b> → 휴대폰 뒷자리 4자리로 입장합니다.</span></div>
-   <label for="regName" class="q">이름 <small>(필수 · 관리자만 봅니다)</small></label>
-   <input id="regName" class="bigInput" maxlength="20" placeholder="예: 김회원" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="next">
-   <label for="regNick" class="q">닉네임 <small>(선택 · 경기 현황판에 표시)</small></label>
-   <input id="regNick" class="bigInput" maxlength="12" placeholder="예: 큐왕 (없으면 비워 두세요)" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="next">
-   <p class="hint">현황판에는 이름 대신 <b>닉네임</b>이 나옵니다. 닉네임이 없으면 GUEST1, GUEST2…로 표시됩니다. 입력 후 키보드의 <b>다음</b> 또는 위쪽 <b>다음 ▶</b>을 누르세요.</p>
+   <label for="regName" class="q">닉네임/이름 <small>(필수 · 입장 안내·현황판에 이 이름으로 나옵니다)</small></label>
+   <input id="regName" class="bigInput" maxlength="12" placeholder="예: 큐왕" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="next">
+   <input id="regNick" type="hidden">
+   <p class="hint">본명이 아니어도 됩니다. 매장에서 부를 <b>닉네임이나 이름</b>을 넣어 주세요. 입력 후 키보드의 <b>다음</b> 또는 위쪽 <b>다음 ▶</b>을 누르세요.</p>
   </div>
   <div data-step="1" class="stepNum" hidden>
    <div class="numLeft">
@@ -551,7 +555,7 @@ const Remote=(()=>{
   return{type:'state',ver:VERSION,open:Object.values(visits.open).sort((a,b)=>a.inAt-b.inAt),closed:visits.closed.filter(v=>v.outAt>=t0-6*864e5),memberCount:members.length,at:Date.now()};   // 최근 7일 퇴실 (관리자 웹 연속 출전 계산용)
  }
  function pushState(){if(!client)return;clearTimeout(stateTimer);stateTimer=setTimeout(()=>pub('state',snapshot(),true),300);window.MG?.schedulePub()}
- function pushMembers(){if(!client)return;clearTimeout(memberTimer);memberTimer=setTimeout(()=>pub('members',{type:'members',list:members.map(m=>({...memberInfo(m),web:window.MG?.uidOf(m.id)||'',createdAt:m.createdAt||0,updatedAt:m.updatedAt||0}))},true),500)}
+ function pushMembers(){if(!client)return;clearTimeout(memberTimer);memberTimer=setTimeout(()=>pub('members',{type:'members',list:members.map(m=>({...memberInfo(m),web:window.MG?.uidOf(m.id)||'',hasPhoto:!!m.photo,memo:m.memo||'',createdAt:m.createdAt||0,updatedAt:m.updatedAt||0}))},true),500)}
  function event(e){pub('event',{...e,eid:visitKey()})}
  async function onMessage(topic,buf){
   if(!topic.startsWith(base+'/cmd/')){const t=typeof buf==='string'?buf:dec.decode(buf);window.MG?.onMsg(topic.slice(base.length+1),t);return}   // 회원 웹·장부·현황판·회원 웹 설정
@@ -563,15 +567,18 @@ const Remote=(()=>{
   if(cmd.type==='checkout'){
    const v=closeVisit(cmd.key,{at:cmd.outAt||Date.now(),method:cmd.method,amount:cmd.amount,memo:cmd.memo,by:cmd.by||'관리자'});
    res=v?{ok:true,visit:v}:{ok:false,reason:'이미 퇴실되었거나 입실 기록이 없음'};
-   if(v)toast('관리자 퇴실 처리 · '+v.name+' 님 ('+durText(v.outAt-v.inAt)+(v.amount!==''&&v.amount!=null?' · '+Number(v.amount).toLocaleString('ko-KR')+'원':'')+')',5000);
+   if(v)toast('관리자 퇴실 처리 · '+(v.nick||v.name)+' 님 ('+durText(v.outAt-v.inAt)+(v.amount!==''&&v.amount!=null?' · '+Number(v.amount).toLocaleString('ko-KR')+'원':'')+')',5000);
   }else if(cmd.type==='cancel'){
    const id=Object.keys(visits.open).find(k=>visits.open[k].key===cmd.key);
-   if(id){const v=visits.open[id];undoVisit(id);res={ok:true,visit:v};toast('관리자 입실 취소 · '+v.name+' 님')}else res={ok:false,reason:'입실 기록 없음'};
+   if(id){const v=visits.open[id];undoVisit(id);res={ok:true,visit:v};toast('관리자 입실 취소 · '+(v.nick||v.name)+' 님')}else res={ok:false,reason:'입실 기록 없음'};
   }else if(cmd.type==='sync'){pushState();pushMembers();res={ok:true}}
   else if(cmd.type==='checkin'){   // 🧪 임시: 관리자 강제 입실 (테스트용)
    if(!members.some(m=>m.id===cmd.memberId))res={ok:false,reason:'등록 회원 아님'};
    else if(visits.open[cmd.memberId])res={ok:false,reason:'이미 입실 중'};
-   else{const v=markChecked(cmd.memberId,Date.now(),false,'관리자');res=v?{ok:true,visit:v}:{ok:false,reason:'입실 실패'};if(v)toast('관리자 입실 처리 · '+v.name+' 님')}
+   else{const v=markChecked(cmd.memberId,Date.now(),false,'관리자');res=v?{ok:true,visit:v}:{ok:false,reason:'입실 실패'};if(v)toast('관리자 입실 처리 · '+(v.nick||v.name)+' 님')}
+  }
+  else if(cmd.type==='memberEdit'||cmd.type==='memberDelete'||cmd.type==='memberPhoto'){   // 관리자 웹 회원 관리
+   res=await window.adminMember?.(cmd)||{ok:false,reason:'인식기 준비 중'};
   }
   else if(cmd.type==='createCheckin'){   // 🧪 임시: 관리자가 신규 회원 만들고 바로 입실 (테스트용)
    res=await window.testCreateMember?.(cmd.info||{})||{ok:false,reason:'인식기 준비 중'};
@@ -642,7 +649,7 @@ const Ntfy=(()=>{
   if(!cfg.enabled||!v)return;
   if(type==='register'&&!cfg.register)return;if(type==='checkin'&&!cfg.checkin)return;
   // 신규: "신규 OOO님이 등록하셨습니다." · 기존 회원: "OOO님이 입장하셨습니다." + 입장 시간
-  const line=type==='register'?'신규 '+v.name+'님이 등록하셨습니다.':v.name+'님이 입장하셨습니다.';
+  const vn=v.nick||v.name,line=type==='register'?'신규 '+vn+'님이 등록하셨습니다.':vn+'님이 입장하셨습니다.';
   const via=v.via==='번호'?' (번호로 입장)':v.via==='사진등록'?' (사진으로 등록)':'';
   post({title:line,message:line+'\n입장 시간 '+tm(v.inAt||Date.now())+via,
    tags:[type==='register'?'new':'white_check_mark','q24-'+type],priority:type==='register'?4:3});
@@ -652,7 +659,7 @@ const Ntfy=(()=>{
   if(!topic)return false;const headers={'Content-Type':'application/json'};if(cfg.token.trim())headers.Authorization='Bearer '+cfg.token.trim();
   try{const r=await fetch(cfg.server.replace(/\/+$/,'')+'/',{method:'POST',headers,body:JSON.stringify({topic,title:msg.title,message:msg.message,tags:msg.tags||[],priority:msg.priority||3})});return r.ok}catch{return false}
  }
- function outRequest(v){if(!cfg.enabled||!cfg.topic.trim())return;post({title:v.name+'님 퇴실 요청',message:v.name+'님이 회원 웹에서 퇴실을 요청했습니다.\n입실 '+tm(v.inAt)+' · 결제 확인 후 관리자 웹에서 퇴실 처리해 주세요.',tags:['wave','q24-outreq'],priority:4})}
+ function outRequest(v){if(!cfg.enabled||!cfg.topic.trim())return;post({title:(v.nick||v.name)+'님 퇴실 요청',message:(v.nick||v.name)+'님이 회원 웹에서 퇴실을 요청했습니다.\n입실 '+tm(v.inAt)+' · 결제 확인 후 관리자 웹에서 퇴실 처리해 주세요.',tags:['wave','q24-outreq'],priority:4})}
  function fill(){g('ntEnabled').checked=cfg.enabled;g('ntServer').value=cfg.server;g('ntTopic').value=cfg.topic;g('ntToken').value=cfg.token;g('ntCheckin').checked=cfg.checkin;g('ntRegister').checked=cfg.register;ui()}
  const newTopic=()=>{const a=crypto.getRandomValues(new Uint8Array(8));return 'q24-'+[...a].map(b=>'abcdefghjkmnpqrstuvwxyz23456789'[b%31]).join('')};
  function fail(msg){ui('⚠ '+msg);toast('⚠ '+msg,5000);return false}
@@ -680,7 +687,7 @@ const Ntfy=(()=>{
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='1.31',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='1.32',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
@@ -708,8 +715,9 @@ let lastLoopAt=0,nextRetryAt=0,wakeLock=null,wakeRequesting=false,welcomeTimer=n
 const chip=document.createElement('canvas');chip.width=chip.height=150;const cctx=chip.getContext('2d',{willReadFrequently:true});
 const store={get(k){try{return localStorage.getItem(k)}catch{return null}},set(k,v){try{localStorage.setItem(k,v)}catch{}}};
 const hhmm=t=>new Date(t).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
-const settings=Object.assign({level:'normal',adapt:true,fill:true,engine:'basic',confirm:'phone'},(()=>{try{return JSON.parse(store.get(SET_KEY))||{}}catch{return {}}})());
+const settings=Object.assign({level:'normal',adapt:true,fill:true,engine:'basic',confirm:'phone',handiIn:'34'},(()=>{try{return JSON.parse(store.get(SET_KEY))||{}}catch{return {}}})());
 function saveSettings(){store.set(SET_KEY,JSON.stringify(settings))}
+document.addEventListener('DOMContentLoaded',()=>{const h=document.getElementById('hiSel');if(!h)return;h.value=settings.handiIn||'34';h.onchange=()=>{settings.handiIn=h.value;saveSettings();toast('신규 등록 핸디 입력: '+h.options[h.selectedIndex].text)}});
 if(settings.sv!==2){settings.engine='basic';settings.sv=2;saveSettings()}  // 4.2: 인식 엔진 기본형으로 전환
 function level(){return LEVELS[settings.level]||LEVELS.normal}
 
@@ -722,7 +730,9 @@ function rollDay(){}  // 입실 중 기록은 자정을 넘겨도 유지 (퇴실
 function openVisitOf(id){return visits.open[id]||null}
 function checkedAt(id){return visits.open[id]?.inAt||0}
 function visitKey(){return 'V'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
-function memberInfo(m){const H=handiOf(m);return{id:m.id,name:m.name,nick:String(m.nick||'').trim(),game:m.game||'',handi:m.handi??'',handi3:H.h3,handi4:H.h4,phone:m.phone||'',faceless:!!m.noFace}}
+/* 닉네임/이름: 매장에서 쓰는 이름 (없으면 등록 이름) · m.name 은 관리자 웹에서 관리하는 실제 이름 */
+function dn(m){return String(m?.nick||'').trim()||String(m?.name||'')}
+function memberInfo(m){const H=handiOf(m);return{id:m.id,name:m.name,nick:dn(m),game:m.game||'',handi:m.handi??'',handi3:H.h3,handi4:H.h4,phone:m.phone||'',faceless:!!m.noFace}}
 /* via: 얼굴 · 번호(휴대폰 뒷자리) · 사진등록(얼굴 인식 없이 신규 등록) */
 function markChecked(id,t,isNew=false,via='얼굴'){
  const m=members.find(x=>x.id===id);if(!m)return null;
@@ -822,7 +832,7 @@ function renderMembers(){
  for(const m of list){
   const row=document.createElement('div');row.className='item';
   const info=document.createElement('div'),name=document.createElement('strong'),id=document.createElement('small'),chk=document.createElement('small');
-  name.textContent=m.name+(m.nick?' · '+m.nick:'');const badge=document.createElement('span');
+  name.textContent=dn(m)+(m.name&&m.name!==dn(m)?' ('+dn(m)+')':'');const badge=document.createElement('span');
   if(m.noFace){badge.className='badge photo';badge.textContent='사진 등록 · 번호 입장'}
   else{badge.className='badge '+(memberLegacy(m)?'legacy':'ok');badge.textContent=memberLegacy(m)?'재등록 권장':'표본 '+(m.descriptors?.length||0)}
   name.append(badge);
@@ -844,11 +854,11 @@ function renderMembers(){
 }
 function announce(m,mode,t){
  const box=$('welcome');box.classList.toggle('already',mode==='already');
- if(mode==='already'){$('welcomeText').textContent=m.name+' 님, 이미 입실 중입니다';$('welcomeSub').textContent='회원번호 '+m.id+' · 입실 '+hhmm(t)+' · '+durText(Date.now()-t)+' 경과';speak(m.name+' 님, 이미 입실 중입니다.','already:'+m.id,0)}
- else if(mode==='reenroll'){$('welcomeText').textContent=m.name+' 님 얼굴을 다시 등록했습니다';$('welcomeSub').textContent='회원번호 '+m.id;speak(m.name+' 님, 얼굴을 다시 등록했습니다.','re:'+m.id,0)}
- else if(mode==='newpin'){$('welcomeText').textContent=m.name+' 님 등록 · 입장 확인';const l4=String(m.phone||'').replace(/\D/g,'').slice(-4);$('welcomeSub').textContent='회원번호 '+m.id+' · 다음부터는 [번호로 입장] → '+(l4||'휴대폰 뒷자리')+' 를 눌러 주세요';speak(m.name+' 님, 등록되었습니다. 다음부터는 번호로 입장 버튼을 누르고 휴대폰 뒷자리 네 자리를 눌러 주세요.','newpin:'+m.id,0)}
- else if(mode==='edited'){$('welcomeText').textContent=m.name+' 님 정보를 수정했습니다';$('welcomeSub').textContent='회원번호 '+m.id+(handiText(m)?' · '+handiText(m):'')}
- else{$('welcomeText').textContent=m.name+' 님 입장 확인';$('welcomeSub').textContent=(mode==='new'?'신규 등록 완료 · ':'')+'회원번호 '+m.id+(handiText(m)?' · '+handiText(m):'')+' · 입실 '+hhmm(Date.now());speak(mode==='new'?m.name+' 님, 등록되었습니다. 입장을 환영합니다.':m.name+' 님, 입장 확인되었습니다. 환영합니다.','welcome:'+m.id,0)}
+ if(mode==='already'){$('welcomeText').textContent=dn(m)+' 님, 이미 입실 중입니다';$('welcomeSub').textContent='회원번호 '+m.id+' · 입실 '+hhmm(t)+' · '+durText(Date.now()-t)+' 경과';speak(dn(m)+' 님, 이미 입실 중입니다.','already:'+m.id,0)}
+ else if(mode==='reenroll'){$('welcomeText').textContent=dn(m)+' 님 얼굴을 다시 등록했습니다';$('welcomeSub').textContent='회원번호 '+m.id;speak(dn(m)+' 님, 얼굴을 다시 등록했습니다.','re:'+m.id,0)}
+ else if(mode==='newpin'){$('welcomeText').textContent=dn(m)+' 님 등록 · 입장 확인';const l4=String(m.phone||'').replace(/\D/g,'').slice(-4);$('welcomeSub').textContent='회원번호 '+m.id+' · 다음부터는 [번호로 입장] → '+(l4||'휴대폰 뒷자리')+' 를 눌러 주세요';speak(dn(m)+' 님, 등록되었습니다. 다음부터는 번호로 입장 버튼을 누르고 휴대폰 뒷자리 네 자리를 눌러 주세요.','newpin:'+m.id,0)}
+ else if(mode==='edited'){$('welcomeText').textContent=dn(m)+' 님 정보를 수정했습니다';$('welcomeSub').textContent='회원번호 '+m.id+(handiText(m)?' · '+handiText(m):'')}
+ else{$('welcomeText').textContent=dn(m)+' 님 입장 확인';$('welcomeSub').textContent=(mode==='new'?'신규 등록 완료 · ':'')+'회원번호 '+m.id+(handiText(m)?' · '+handiText(m):'')+' · 입실 '+hhmm(Date.now());speak(mode==='new'?dn(m)+' 님, 등록되었습니다. 입장을 환영합니다.':dn(m)+' 님, 입장 확인되었습니다. 환영합니다.','welcome:'+m.id,0)}
  box.hidden=false;clearTimeout(welcomeTimer);welcomeTimer=setTimeout(()=>box.hidden=true,mode==='newpin'?12000:6500);
 }
 /* 실제로 보이는 화면 높이(주소창·하단 버튼 줄 제외)에 맞춰 화면 높이 설정 */
@@ -1257,8 +1267,8 @@ function showCandidates(cands,title,hint){
  const wrap=$('pickList');wrap.replaceChildren();
  for(const m of session.cands){
   const b=document.createElement('button');b.type='button';b.className='pickBtn';
-  const av=document.createElement('span');av.className='avatar';av.style.background=avatarColor(m.name);av.textContent=avatarText(m.name);if(m.photo){av.textContent='';av.style.background='center/cover url('+m.photo+')'}
-  const tx=document.createElement('span');const st=document.createElement('strong');st.textContent=m.name;const sm=document.createElement('small');sm.textContent=m.id;tx.append(st,sm);
+  const av=document.createElement('span');av.className='avatar';av.style.background=avatarColor(dn(m));av.textContent=avatarText(dn(m));if(m.photo){av.textContent='';av.style.background='center/cover url('+m.photo+')'}
+  const tx=document.createElement('span');const st=document.createElement('strong');st.textContent=dn(m);const sm=document.createElement('small');sm.textContent=m.id;tx.append(st,sm);
   b.append(av,tx);b.onclick=()=>selectMember(m);wrap.append(b);
  }
  const nb=document.createElement('button');nb.type='button';nb.className='pickBtn newBtn';nb.textContent='🙋 목록에 없어요 · 신규 등록';nb.onclick=()=>startNewcomer();wrap.append(nb);
@@ -1353,8 +1363,8 @@ function selectMember(m){
  if(session.byPin){addLog({mode:'번호 입장',sel:m.name,result:'환영(이름 선택)',dSel:null,other:null,dOther:null});success('번호 확인',m,null,null,null,{via:'번호'});return}
  const fresh=session.sampleAt&&Date.now()-session.sampleAt<2000?session.samples.slice(-VERIFY_FRAMES):[];
  session.mode='verify';session.member=m;session.samples=fresh;session.attempts=0;session.until=Date.now()+VERIFY_MS;
- $('pickTitle').textContent=m.name+' 님 확인 중';$('pickHint').textContent='정면을 바라봐 주세요.';
- showResult(m.name+' 님 확인 중…','점선 안에서 정면을 바라봐 주세요.');controls();
+ $('pickTitle').textContent=dn(m)+' 님 확인 중';$('pickHint').textContent='정면을 바라봐 주세요.';
+ showResult(dn(m)+' 님 확인 중…','점선 안에서 정면을 바라봐 주세요.');controls();
 }
 
 /* ---------- 처음 왔어요 · 번호로 입장 ----------
@@ -1410,7 +1420,7 @@ function newscanStep(desc){
  // 이미 얼굴이 등록된 회원이 잘못 누른 경우 → 그대로 입장 처리
  if(hasFaces()){
   const q=robustMean(S),l=scoreAll(q),t=l[0],g=l[1]?l[1].d-t.d:Infinity;
-  if(t&&t.d<=level().verify-.02&&g>=UNIQUE_GAP){addLog({mode:'처음 왔어요',sel:t.m.name,result:'이미 회원 → 입장',dSel:t.d,other:l[1]?.m.name??null,dOther:l[1]?.d??null});toast(t.m.name+' 님은 이미 등록된 회원입니다.',4000);success('얼굴 인식',t.m,t.d,l[1]||null,q);return ''}
+  if(t&&t.d<=level().verify-.02&&g>=UNIQUE_GAP){addLog({mode:'처음 왔어요',sel:t.m.name,result:'이미 회원 → 입장',dSel:t.d,other:l[1]?.m.name??null,dOther:l[1]?.d??null});toast(dn(t.m)+' 님은 이미 등록된 회원입니다.',4000);success('얼굴 인식',t.m,t.d,l[1]||null,q);return ''}
  }
  addLog({mode:'처음 왔어요',sel:null,result:'얼굴 인식 → 등록',dSel:null,other:null,dOther:null});
  regPhoto=snapPhoto();openRegister(null,S.slice());return '';
@@ -1502,7 +1512,7 @@ function verifyStep(desc){
  const m=session.member,S=session.samples;
  consistentPush(S,desc,8);session.sampleAt=Date.now();
  $('streakCount').textContent=Math.min(S.length,VERIFY_FRAMES)+' / '+VERIFY_FRAMES;
- if(S.length<VERIFY_FRAMES){showResult(m.name+' 님 확인 중…','잠시 정면을 바라봐 주세요.');return m.name+' 확인 중'}
+ if(S.length<VERIFY_FRAMES){showResult(dn(m)+' 님 확인 중…','잠시 정면을 바라봐 주세요.');return dn(m)+' 확인 중'}
  const q=robustMean(S.slice(-VERIFY_FRAMES)),list=scoreAll(q),sel=list.find(x=>x.m.id===m.id),o=list.find(x=>x.m.id!==m.id)||null;
  if(!sel){endSession();return ''}
  const thr=level().verify+(sel.legacy?LEGACY_BONUS:0)+.03;   // 본인이 고른 경우 약간 완화
@@ -1514,22 +1524,22 @@ function verifyStep(desc){
  if(o&&o.d<sel.d&&(session.cands.some(c=>c.id===o.m.id)||o.d<sel.d-.02)){
   addLog({mode:'선택 확인',sel:m.name,result:'다른 사람',dSel:sel.d,other:o.m.name,dOther:o.d});
   session.mode='choose';session.member=null;session.until=Date.now()+15000;
-  $('pickTitle').textContent='본인 이름을 다시 눌러 주세요';$('pickHint').textContent=m.name+' 님보다 다른 분 얼굴과 더 비슷합니다.';
+  $('pickTitle').textContent='본인 이름을 다시 눌러 주세요';$('pickHint').textContent=dn(m)+' 님보다 다른 분 얼굴과 더 비슷합니다.';
   showResult('선택한 이름과 얼굴이 다릅니다','본인 이름을 다시 눌러 주세요.');speak('선택한 이름과 얼굴이 다릅니다. 다시 눌러 주세요.','wrong',0);controls();
   return '';
  }
  session.attempts++;S.length=0;
- if(session.attempts<3){showResult(m.name+' 님 한 번 더 확인합니다','정면을 바라보고 점선 가운데로 와 주세요.');return m.name+' 재확인'}
+ if(session.attempts<3){showResult(dn(m)+' 님 한 번 더 확인합니다','정면을 바라보고 점선 가운데로 와 주세요.');return dn(m)+' 재확인'}
  addLog({mode:'선택 확인',sel:m.name,result:'불일치',dSel:sel.d,other:o?.m.name,dOther:o?.d});
- endSession();showResult('확인하지 못했습니다',m.name+' 님 등록 얼굴과 충분히 일치하지 않습니다. 관리자에게 얼굴 재등록을 요청해 주세요.');speak('얼굴을 확인하지 못했습니다.','fail',0);
+ endSession();showResult('확인하지 못했습니다',dn(m)+' 님 등록 얼굴과 충분히 일치하지 않습니다. 관리자에게 얼굴 재등록을 요청해 주세요.');speak('얼굴을 확인하지 못했습니다.','fail',0);
  return '';
 }
 function hideWelcome(){$('welcome').hidden=true;$('notMe').hidden=true;clearTimeout(undoTimer)}
 function success(mode,m,d,o,q,opt={}){
  const before=checkedAt(m.id),now=Date.now(),samples=session?.samples?.slice()||[];
  endSession();
- if(before){announce(m,'already',before);showResult(m.name+' 님, 이미 입실 중','회원번호 '+m.id+' · 입실 '+hhmm(before)+' · 퇴실은 관리자에게 결제 후 처리됩니다')}
- else{markChecked(m.id,now,false,opt.via||'얼굴');announce(m,'welcome');showResult(m.name+' 님 입장 확인','회원번호 '+m.id+' · 입실 '+hhmm(now))}
+ if(before){announce(m,'already',before);showResult(dn(m)+' 님, 이미 입실 중','회원번호 '+m.id+' · 입실 '+hhmm(before)+' · 퇴실은 관리자에게 결제 후 처리됩니다')}
+ else{markChecked(m.id,now,false,opt.via||'얼굴');announce(m,'welcome');showResult(dn(m)+' 님 입장 확인','회원번호 '+m.id+' · 입실 '+hhmm(now))}
  addLog({mode,sel:m.name,result:'환영',dSel:d,other:o?.m.name??null,dOther:o?.d??null});
  // "제가 아니에요" 6초 동안 표시 → 누르면 체크 취소 후 비슷한 분/신규 등록
  lastSuccess={m,q,d,o,mode,wasNew:!before,samples,at:now};
@@ -1610,6 +1620,7 @@ function renderNum(){
   b.onclick=()=>{const a=REG.active;REG[a]=String(c);if(FIELDS[a].skipKey)REG[FIELDS[a].skipKey]=false;touchReg();REG.active=FIELDS[a].next||a;renderNum()};return b}));
  $('numChips').style.visibility=F.chips.length?'visible':'hidden';
  $('numQ').textContent=REG.active==='phone'?'휴대폰 번호를 눌러 주세요':FIELDS[REG.active].label+'를 누르거나 아래에서 고르세요';
+ const hi=settings.handiIn||'34';$('regStep2').textContent='② '+(hi==='3'?'3구 핸디':hi==='4'?'4구 점수':'핸디')+' · 휴대폰';
 }
 for(const row of document.querySelectorAll('.field'))row.addEventListener('click',e=>{if(e.target.closest('.skipBtn'))return;touchReg();setActive(row.dataset.f)});
 for(const b of document.querySelectorAll('.field .skipBtn'))b.onclick=e=>{e.stopPropagation();const f=b.dataset.skip,k=FIELDS[f].skipKey;REG[k]=!REG[k];if(REG[k]){REG[f]='';REG.active=FIELDS[f].next}else REG.active=f;touchReg();renderNum()};
@@ -1619,6 +1630,10 @@ function showRegStep(s){
  $('regSteps').hidden=s==='face';
  for(const el of $('regSteps').children){const i=Number(el.dataset.s);el.className=s==='face'?'':i<s?'done':i===s?'on':''}
  if(s===1){
+  const hi=settings.handiIn||'34';   // 설정: 3구만 · 4구만 · 둘 다
+  document.querySelector('.field[data-f="h3"]').hidden=hi==='4';document.querySelector('.field[data-f="h4"]').hidden=hi==='3';
+  for(const b of document.querySelectorAll('.field .skipBtn'))b.hidden=hi!=='34';
+  if(hi==='3'){REG.skip4=true;REG.skip3=false}else if(hi==='4'){REG.skip3=true;REG.skip4=false}
   if(!REG.phone)REG.phone='010';
   REG.active=!REG.skip3&&!REG.h3?'h3':!REG.skip4&&!REG.h4?'h4':'phone';
   renderNum();try{document.activeElement?.blur?.()}catch{}   // 시스템 키보드 닫기
@@ -1626,13 +1641,13 @@ function showRegStep(s){
  const last=s==='face'||s===1;
  $('regSave').textContent=last?(regMode==='edit'?'저장 ✓':regMode==='photo'?'등록 완료 ✓':regMode==='face'||!regSamples?'촬영 시작 ▶':'등록 완료 ✓'):'다음 ▶';
  $('regCancel').textContent=s===1?'◀ 이전':'취소';
- if((regMode==='new'||regMode==='photo')&&typeof s==='number')speak(s===0?(regMode==='photo'?'얼굴 인식이 되지 않았습니다. 전화번호 입력으로 등록 가능합니다. 이름과 닉네임을 입력해 주세요. 닉네임은 없으면 비워 두셔도 됩니다.':'처음 오셨네요. 이름과 닉네임을 입력해 주세요. 닉네임은 없으면 비워 두셔도 됩니다.'):'3구 핸디, 4구 점수, 휴대폰 번호를 차례로 눌러 주세요. 안 치는 종목은 안 쳐요를 눌러 주세요.','reg'+s,0);
+ if((regMode==='new'||regMode==='photo')&&typeof s==='number')speak(s===0?(regMode==='photo'?'얼굴 인식이 되지 않았습니다. 전화번호 입력으로 등록 가능합니다. 닉네임이나 이름을 입력해 주세요.':'처음 오셨네요. 닉네임이나 이름을 입력해 주세요.'):(settings.handiIn==='3'?'3구 핸디와 휴대폰 번호를 차례로 눌러 주세요.':settings.handiIn==='4'?'4구 점수와 휴대폰 번호를 차례로 눌러 주세요.':'3구 핸디, 4구 점수, 휴대폰 번호를 차례로 눌러 주세요. 안 치는 종목은 안 쳐요를 눌러 주세요.'),'reg'+s,0);
  if(s===0)setTimeout(()=>{const n=$('regName');n.focus();try{n.setSelectionRange(n.value.length,n.value.length)}catch{}},120);
 }
 $('regName').addEventListener('input',()=>{regIdleAt=Date.now();$('regError').textContent=''});
 $('regNick').addEventListener('input',()=>{regIdleAt=Date.now();$('regError').textContent=''});
 // 이름 칸에서 엔터(다음) → 닉네임 칸으로
-$('regName').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();$('regNick').focus()}});
+$('regName').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();$('regForm').requestSubmit()}});
 $('regConsent').addEventListener('change',touchReg);
 $('regConsentFace').addEventListener('change',()=>{regIdleAt=Date.now();$('regError').textContent=''});
 /* mode: 'new' 신규 등록 · 'photo' 얼굴 인식 없이 사진으로 신규 등록 · 'face' 얼굴 재등록 · 'edit' 정보 수정 */
@@ -1653,7 +1668,7 @@ function openRegister(existing,samples,mode){
  $('regSub').textContent=regMode==='face'?'기존 얼굴 정보를 새로 바꿉니다':regMode==='edit'?'얼굴 정보는 그대로입니다':regMode==='photo'?'얼굴 인식 없이 사진으로 등록합니다':regSamples?'입력이 끝나면 방금 확인한 얼굴로 등록됩니다':'입력이 끝나면 약 2초간 얼굴을 촬영합니다';
  $('regNote').hidden=regMode!=='photo';$('regPhotoPrev').hidden=!regPhoto;if(regPhoto)$('regPhotoPrev').src=regPhoto;
  $('regId').textContent=existing?existing.id:fmtId(nextNum());
- $('regName').value=existing?existing.name:'';$('regNick').value=existing?.nick||'';
+ $('regName').value=existing?dn(existing):'';$('regNick').value='';
  const H=handiOf(existing);REG.h3=H.h3;REG.h4=H.h4;REG.skip3=!!existing&&!H.h3;REG.skip4=!!existing&&!H.h4;
  REG.phone=String(existing?.phone||'').replace(/\D/g,'');REG.active='h3';
  $('regConsent').checked=true;$('regConsentFace').checked=true;
@@ -1664,18 +1679,17 @@ function openRegister(existing,samples,mode){
 function regValidate(s){
  const bad=f=>{REG.active=f;renderNum();document.querySelector('.field[data-f="'+f+'"]').classList.add('bad')};
  if(s===0){const n=$('regName').value.trim();
-  if(!n){$('regName').focus();return '이름을 입력해 주세요.'}
-  const k=$('regNick').value.trim();
-  if(k&&/^guest\s*\d*$/i.test(k)){$('regNick').focus();return 'GUEST는 닉네임으로 쓸 수 없습니다. 다른 닉네임을 넣거나 비워 두세요.'}
-  const dk=k&&members.find(m=>String(m.nick||'').trim().toLowerCase()===k.toLowerCase()&&m.id!==regTarget?.id);
-  if(dk){$('regNick').focus();return '같은 닉네임을 쓰는 회원이 있습니다. 다른 닉네임을 넣어 주세요. (예: '+k+'2)'}
-  const dup=members.find(m=>m.name===n&&m.id!==regTarget?.id);if(dup&&(regMode==='new'||regMode==='photo')&&!k)return '같은 이름('+dup.id+')이 있습니다. 닉네임을 넣거나 이름에 숫자를 붙여 주세요. (예: '+n+'2)'}
+  if(!n){$('regName').focus();return '닉네임/이름을 입력해 주세요.'}
+  if(/^guest\s*\d*$/i.test(n)){$('regName').focus();return 'GUEST는 쓸 수 없습니다. 다른 닉네임/이름을 넣어 주세요.'}
+  const dk=members.find(m=>m.id!==regTarget?.id&&dn(m).toLowerCase()===n.toLowerCase());
+  if(dk){$('regName').focus();return '같은 닉네임/이름을 쓰는 회원이 있습니다. 숫자를 붙이거나 다른 이름을 넣어 주세요. (예: '+n+'2)'}}
  if(s===1){
-  if(!REG.skip3&&!/^\d{1,3}$/.test(REG.h3)){bad('h3');return '3구 핸디를 누르거나, 안 치시면 "안 쳐요"를 눌러 주세요.'}
-  if(!REG.skip4&&!/^\d{1,4}$/.test(REG.h4)){bad('h4');return '4구 점수를 누르거나, 안 치시면 "안 쳐요"를 눌러 주세요.'}
+  const hi=settings.handiIn||'34';
+  if(!REG.skip3&&!/^\d{1,3}$/.test(REG.h3)){bad('h3');return hi==='34'?'3구 핸디를 누르거나, 안 치시면 "안 쳐요"를 눌러 주세요.':'3구 핸디를 눌러 주세요.'}
+  if(!REG.skip4&&!/^\d{1,4}$/.test(REG.h4)){bad('h4');return hi==='34'?'4구 점수를 누르거나, 안 치시면 "안 쳐요"를 눌러 주세요.':'4구 점수를 눌러 주세요.'}
   if(REG.skip3&&REG.skip4){bad('h3');return '3구 또는 4구 중 하나는 입력해 주세요.'}
   const d=REG.phone;if(!/^01\d{8,9}$/.test(d)){bad('phone');return '휴대폰 번호를 정확히 눌러 주세요. (010으로 시작 10~11자리)'}
-  const dup=members.find(m=>String(m.phone||'').replace(/\D/g,'')===d&&m.id!==regTarget?.id);if(dup){bad('phone');return '이미 등록된 번호입니다('+dup.id+' '+dup.name+'). 같은 분이면 관리자에게 얼굴 재등록을 요청해 주세요.'}
+  const dup=members.find(m=>String(m.phone||'').replace(/\D/g,'')===d&&m.id!==regTarget?.id);if(dup){bad('phone');return '이미 등록된 번호입니다('+dup.id+' '+dn(dup)+'). 같은 분이면 관리자에게 얼굴 재등록을 요청해 주세요.'}
   if(!$('regConsent').checked)return '아래 저장·전송 동의에 체크해 주세요.'}
  if(s==='face'&&!$('regConsentFace').checked)return '얼굴 저장 동의에 체크해 주세요.';
  return '';
@@ -1691,27 +1705,55 @@ $('regForm').onsubmit=async e=>{
  const err=regValidate(regStep);if(err){$('regError').textContent=err;if(regMode==='new'||regMode==='photo')speak(err,'regerr',3000);return}
  if(regStep===0){showRegStep(1);return}
  const h3=REG.skip3?'':REG.h3,h4=REG.skip4?'':REG.h4;
- const info={name:$('regName').value.trim(),nick:$('regNick').value.trim(),handi3:h3,handi4:h4,game:h3?'3구':'4구',handi:h3||h4,phone:fmtPhone(REG.phone)};
+ const nn=$('regName').value.trim(),keepReal=regTarget&&regTarget.name&&regTarget.name!==dn(regTarget);
+ const info={name:keepReal?regTarget.name:nn,nick:nn,handi3:h3,handi4:h4,game:h3?'3구':'4구',handi:h3||h4,phone:fmtPhone(REG.phone)};   // name=실제 이름(관리자 웹에서 관리) · nick=닉네임/이름
  if(regMode==='edit'){await saveInfo(regTarget,info);return}
  if(regMode==='photo'){await savePhotoMember(info);return}
  $('regDialog').close();
  if(!session)newSession('enroll',ENROLL_MS);
  session.mode='enroll';session.member=null;session.until=Date.now()+ENROLL_MS;
- const base=regMode==='face'?{name:regTarget.name}:info;
+ const base=regMode==='face'?{name:dn(regTarget)}:info;
  session.enroll={...base,id:regTarget?regTarget.id:fmtId(nextNum()),existing:regMode==='face'?regTarget:null,photo:regPhoto||'',phase:0,count:0,collected:[],sideSign:0,pauseUntil:Date.now()+900,lastAt:0};regPhoto='';
  if(regSamples&&regMode==='new'){session.enroll.collected=regSamples.slice();regSamples=null;finishEnroll();return}
  $('pickCard').hidden=true;renderPhase();
  showResult('등록 촬영 · '+ENROLL_PLAN[0].label,ENROLL_PLAN[0].say);
  speak(base.name+' 님, '+ENROLL_PLAN[0].say,'en0',0);controls();
 };
+/* 관리자 웹 회원 관리: 정보 수정 · 삭제 · 사진 보기 (인식기 설정의 회원 관리와 같은 동작) */
+window.adminMember=async function(cmd){
+ if(!db)return{ok:false,reason:'인식기 저장소 준비 중'};
+ const m=members.find(x=>x.id===cmd.memberId);if(!m)return{ok:false,reason:'회원 없음'};
+ if(cmd.type==='memberPhoto')return{ok:true,id:m.id,photo:m.photo||''};
+ if(cmd.type==='memberDelete'){
+  if(session&&session.member?.id===m.id)return{ok:false,reason:'지금 인식 중인 회원'};
+  await writeDB(st=>st.delete(m.id));members=members.filter(x=>x.id!==m.id);delete visits.open[m.id];
+  saveVisits();renderMembers();renderInCount();Remote.pushMembers();Remote.pushState();toast('관리자 웹에서 회원 삭제 · '+dn(m)+' ('+m.id+')');
+  return{ok:true,id:m.id};
+ }
+ const f=cmd.fields||{},next={...m};
+ if('nick' in f){const k=String(f.nick||'').trim().slice(0,12);if(!k)return{ok:false,reason:'닉네임/이름이 비었습니다'};
+  if(/^guest\s*\d*$/i.test(k))return{ok:false,reason:'GUEST는 쓸 수 없습니다'};
+  if(members.some(x=>x.id!==m.id&&dn(x).toLowerCase()===k.toLowerCase()))return{ok:false,reason:'같은 닉네임/이름이 있습니다'};next.nick=k}
+ if('name' in f)next.name=String(f.name||'').trim().slice(0,20)||next.nick||m.name;
+ if('phone' in f){const d=String(f.phone||'').replace(/\D/g,'');if(d&&!/^01\d{8,9}$/.test(d))return{ok:false,reason:'휴대폰 번호 형식'};
+  if(d&&members.some(x=>x.id!==m.id&&String(x.phone||'').replace(/\D/g,'')===d))return{ok:false,reason:'이미 등록된 휴대폰 번호'};next.phone=d?fmtPhone(d):''}
+ if('handi3' in f)next.handi3=String(f.handi3??'').replace(/\D/g,'').slice(0,3);
+ if('handi4' in f)next.handi4=String(f.handi4??'').replace(/\D/g,'').slice(0,4);
+ if('memo' in f)next.memo=String(f.memo||'').slice(0,300);
+ next.game=next.handi3||!next.handi4?'3구':'4구';next.handi=next.handi3||next.handi4||'';next.updatedAt=Date.now();
+ await writeDB(st=>st.put(next));const i=members.findIndex(x=>x.id===m.id);if(i>=0)members[i]=next;
+ const v=visits.open[m.id];if(v){Object.assign(v,memberInfo(next));saveVisits();Remote.pushState()}
+ renderMembers();Remote.pushMembers();toast('관리자 웹에서 정보 수정 · '+dn(next)+' ('+m.id+')');
+ return{ok:true,id:m.id};
+};
 /* 🧪 임시: 관리자 웹에서 신규 회원 만들고 바로 입실 (테스트용 · 얼굴 없음, 다음부터 번호로 입장 가능) */
 window.testCreateMember=async function(i){
- const name=String(i.name||'').trim().slice(0,20),nick=String(i.nick||'').trim().slice(0,12),digits=String(i.phone||'').replace(/\D/g,'');
+ const nick=String(i.nick||i.name||'').trim().slice(0,12),name=String(i.name||'').trim().slice(0,20)||nick,digits=String(i.phone||'').replace(/\D/g,'');
  const h3=String(i.handi3||'').replace(/\D/g,''),h4=String(i.handi4||'').replace(/\D/g,'');
- if(!name)return{ok:false,reason:'이름이 없습니다'};
+ if(!nick)return{ok:false,reason:'닉네임/이름이 없습니다'};
  if(!db)return{ok:false,reason:'인식기 저장소 준비 중'};
- if(nick&&/^guest\s*\d*$/i.test(nick))return{ok:false,reason:'GUEST는 닉네임으로 쓸 수 없습니다'};
- if(nick&&members.some(m=>String(m.nick||'').trim().toLowerCase()===nick.toLowerCase()))return{ok:false,reason:'이미 쓰는 닉네임입니다'};
+ if(/^guest\s*\d*$/i.test(nick))return{ok:false,reason:'GUEST는 쓸 수 없습니다'};
+ if(members.some(m=>dn(m).toLowerCase()===nick.toLowerCase()))return{ok:false,reason:'이미 쓰는 닉네임/이름입니다'};
  if(digits&&digits.length<10)return{ok:false,reason:'휴대폰 번호가 짧습니다'};
  if(digits&&members.some(m=>String(m.phone||'').replace(/\D/g,'')===digits))return{ok:false,reason:'이미 등록된 휴대폰 번호입니다'};
  const now=Date.now(),id=fmtId(nextNum());
@@ -1734,7 +1776,7 @@ async function savePhotoMember(info){
   addLog({mode:'등록',sel:member.name,result:'사진 등록(얼굴 없음)',dSel:null,other:null,dOther:null});
   if(session)endSession();
   markChecked(id,now,true,'사진등록');announce(member,'newpin');
-  showResult(member.name+' 님 입장 확인','신규 등록 완료 · 회원번호 '+id+' · 다음부터는 [번호로 입장]을 이용해 주세요');
+  showResult(dn(member)+' 님 입장 확인','신규 등록 완료 · 회원번호 '+id+' · 다음부터는 [번호로 입장]을 이용해 주세요');
   renderMembers();Remote.pushMembers();SF.info();
  }catch(err){$('regError').textContent='저장 실패: '+err.message}
  finally{mutating=false;controls()}
@@ -1746,7 +1788,7 @@ async function saveInfo(m,info){
   await writeDB(s=>s.put(next));
   const i=members.findIndex(x=>x.id===m.id);if(i>=0)members[i]=next;
   const v=visits.open[m.id];if(v){Object.assign(v,memberInfo(next));saveVisits()}
-  $('regDialog').close();regTarget=null;renderMembers();announce(next,'edited');toast(next.name+' 님 정보를 저장했습니다.');
+  $('regDialog').close();regTarget=null;renderMembers();announce(next,'edited');toast(dn(next)+' 님 정보를 저장했습니다.');
   Remote.pushMembers();if(v)Remote.pushState();
  }catch(err){$('regError').textContent='저장 실패: '+err.message}
  finally{mutating=false;controls()}
@@ -1780,7 +1822,7 @@ function finishEnroll(){
  E.near=near;
  if(near&&near.d<SIMILAR_WARN&&!E.existing){
   session.mode='enroll-confirm';controls();
-  $('simText').textContent='이미 등록된 '+near.m.name+' 님('+near.m.id+')과 거의 같은 얼굴입니다(거리 '+near.d.toFixed(3)+'). 다른 사람(쌍둥이 등)이 맞으면 등록하세요. 같은 분이면 취소해 주세요.';
+  $('simText').textContent='이미 등록된 '+dn(near.m)+' 님('+near.m.id+')과 거의 같은 얼굴입니다(거리 '+near.d.toFixed(3)+'). 다른 사람(쌍둥이 등)이 맞으면 등록하세요. 같은 분이면 취소해 주세요.';
   $('simDialog').showModal();speak('비슷한 얼굴이 있습니다. 화면을 확인해 주세요.','sim',0);
   return;
  }
@@ -1805,8 +1847,8 @@ async function saveEnroll(){
   if(!E.existing){const x=/^Q(\d+)$/.exec(member.id);if(x)store.set(NEXT_KEY,String(Number(x[1])+1))}
   addLog({mode:'등록',sel:member.name,result:E.existing?'재등록':'신규',dSel:null,other:E.near?.m.name??null,dOther:E.near?.d??null});
   endSession();
-  if(E.existing){announce(member,'reenroll');showResult(member.name+' 님 얼굴 재등록 완료','이제 톡 → 이름 선택으로 확인해 보세요.')}
-  else{markChecked(member.id,now,true);announce(member,'new');showResult(member.name+' 님 입장 확인','신규 등록 완료 · 회원번호 '+member.id+' · 입실 '+hhmm(now))}
+  if(E.existing){announce(member,'reenroll');showResult(dn(member)+' 님 얼굴 재등록 완료','이제 톡 → 이름 선택으로 확인해 보세요.')}
+  else{markChecked(member.id,now,true);announce(member,'new');showResult(dn(member)+' 님 입장 확인','신규 등록 완료 · 회원번호 '+member.id+' · 입실 '+hhmm(now))}
   renderMembers();Remote.pushMembers();SF.info();
  }catch(err){status('저장 실패: '+err.message,true);endSession()}
  finally{mutating=false;regTarget=null;controls()}
@@ -2028,7 +2070,7 @@ const MemberGate=(()=>{
  /* ----- 공개 정보 (닉네임만) ----- */
  function summary(){
   const nos=(board?.layout&&board.layout.length?board.layout:Object.keys(board?.tables||{}).map(Number)).slice().sort((a,b)=>a-b);
-  const tables=nos.map(no=>{const t=board?.tables?.[no],ps=t?.players||[];return{no,busy:ps.length>0,since:ps.length?t.since||0:0,team:t?.type||'p',names:ps.map(dispOf)}});
+  const tables=nos.map(no=>{const t=board?.tables?.[no],ps=t?.players||[];return{no,busy:ps.length>0,since:ps.length?t.since||0:0,team:t?.type||'p',practice:!!t?.practice,names:ps.map(dispOf)}});
   const used=new Set();for(const t of Object.values(board?.tables||{}))for(const id of t.players||[])used.add(id);
   const groups=(board?.groups||[]).map(g=>{for(const id of g.members||[])used.add(id);return{type:g.type||'p',names:(g.members||[]).map(dispOf)}});
   const ids=Object.keys(visits.open);
