@@ -316,7 +316,7 @@ fieldset{border:1px solid var(--line);border-radius:14px;margin:14px 0 0;padding
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
-const BOARD_VERSION='1.12',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
+const BOARD_VERSION='1.13',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
 const LIBS=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
 const DEF_TICKER='가브리엘 당구장에 오신 것을 환영합니다.',OLD_TICKERS=['가브리엘 당구장에 오신 것을 환영합니다. 본 당구장은 정액제 당구장으로 4시간에 1만원, 그 이상은 1만 5천원입니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.','가브리엘 당구장에 오신 것을 환영합니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.'];
 /* 기본 배치 (매장 그림 기준, 배치 영역의 % 좌표) */
@@ -716,7 +716,7 @@ window.addEventListener('resize',()=>{clearTimeout(setupTicker.t);setupTicker.t=
 matchMedia('(max-width:600px)').addEventListener?.('change',()=>render());   // 폰 세로/가로 바뀌면 테이블 배치 다시
 
 /* ---------- 연결 (MQTT · 인식기와 같은 채널, 읽기 전용) ---------- */
-async function deriveKey(){if(!cfg.pass){aesKey=null;return}const raw=await crypto.subtle.importKey('raw',enc.encode(cfg.pass),'PBKDF2',false,['deriveKey']);aesKey=await crypto.subtle.deriveKey({name:'PBKDF2',salt:enc.encode('q24-face-checkin:'+cfg.site.trim()),iterations:120000,hash:'SHA-256'},raw,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
+async function deriveKey(){const pw=String(cfg.pass||'').trim();if(!pw){aesKey=null;return}const raw=await crypto.subtle.importKey('raw',enc.encode(pw),'PBKDF2',false,['deriveKey']);aesKey=await crypto.subtle.deriveKey({name:'PBKDF2',salt:enc.encode('q24-face-checkin:'+cfg.site.trim()),iterations:120000,hash:'SHA-256'},raw,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
 async function seal(obj){if(!aesKey)return JSON.stringify({v:1,enc:0,data:obj});const iv=crypto.getRandomValues(new Uint8Array(12)),ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},aesKey,enc.encode(JSON.stringify(obj)));return JSON.stringify({v:1,enc:1,iv:b64(iv),ct:b64(new Uint8Array(ct))})}
 async function unseal(s){const o=JSON.parse(s);if(o.enc){if(!aesKey)throw Error('암호 키 필요');return JSON.parse(dec.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(o.iv)},aesKey,unb64(o.ct))))}if(aesKey)throw Error('암호화되지 않은 메시지');return o.data}
 function loadLib(){if(window.mqtt)return Promise.resolve();if(libP)return libP;libP=(async()=>{for(const src of LIBS){try{await new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.crossOrigin='anonymous';const t=setTimeout(()=>{s.remove();no()},20000);s.onload=()=>{clearTimeout(t);ok()};s.onerror=()=>{clearTimeout(t);s.remove();no()};document.head.append(s)});if(window.mqtt)return}catch{}}throw Error('MQTT 라이브러리를 받지 못했습니다')})().catch(e=>{libP=null;throw e});return libP}
@@ -752,11 +752,23 @@ async function pubBoard(){
 }
 async function clearBoard(){try{if(client&&online)client.publish(base+'/board','',{qos:1,retain:true})}catch{}}
 setInterval(()=>{if(!cfg.demo&&cfg.remote)pubBoard()},60000);
+/* 복호화 실패 안정화: 다른 키/암호 없이 보낸 예전 메시지 하나 때문에 '실패'로 바꾸지 않음.
+ 내 키가 맞는 것이 확인되면(다른 메시지를 풀었음) 내가 관리하는 retain(현황·설정)을 내 내용으로 덮어 정리 */
+let keyOk=false,badSeen={},badPend=[];
+function badMsg(sub,text){
+ let plain=false;try{plain=JSON.parse(text).enc===0}catch{}
+ console.warn('풀지 못한 메시지',sub,plain?'(암호 없음)':'(다른 키)');
+ if(!keyOk){badPend.push([sub,text]);const g0=gen;setTimeout(()=>{if(!keyOk&&online&&g0===gen)conn('err','복호화 실패 · 암호 키 확인')},4000);return}
+ if(!badSeen[sub]){badSeen[sub]=1;toast((plain?'암호 키를 비워 둔 기기':'다른 암호 키를 쓰는 기기(또는 예전 기록)')+'의 메시지를 무시했습니다 ('+sub+')',5000)}
+ if(sub==='board')setTimeout(pubBoard,1500);else if(sub==='boardcfg'&&cfg.cfgAt)setTimeout(pubCfg,1500);
+}
 async function connect(){
  gen++;const my=gen;online=false;if(client){try{client.end(true)}catch{}client=null}
  if(cfg.demo){conn('demo','데모 모드');seedDemo();lights={};syncLights();render();return}
  A=normA(loadJ(ASG_KEY,{}));state={open:[],at:0};firstData=true;seen=new Set();render();
  if(!cfg.site){conn('err','연결 설정 필요');return}
+ if(!String(cfg.pass||'').trim()){conn('err','암호 키 필요 (설정)');return}
+ keyOk=false;badSeen={};badPend=[];
  if(!window.crypto?.subtle){conn('err','HTTPS 필요');return}
  conn('warn','연결 중…');
  try{await loadLib();await deriveKey();base='q24/v1/'+(await sha256hex('q24:'+cfg.site.trim())).slice(0,20)}catch(e){conn('err',e.message);setTimeout(()=>{if(my===gen)connect()},30000);return}
@@ -770,7 +782,8 @@ async function connect(){
   if(my!==gen)return;const text=dec.decode(buf);if(!text)return;const sub=topic.slice(base.length+1);
   if(sub==='status')return;
   if(sub.startsWith('score/')){let o=null;try{o=JSON.parse(text);if(o&&o.enc!=null&&o.v)o=await unseal(text)}catch{return}onScore(sub.slice(6),o);return}
-  let o;try{o=await unseal(text)}catch{conn('err','복호화 실패 · 암호 키 확인');return}
+  let o;try{o=await unseal(text)}catch{badMsg(sub,text);return}
+  if(!keyOk){keyOk=true;conn('on','연결됨');const pend=badPend;badPend=[];for(const [s0,t0] of pend)badMsg(s0,t0)}
   if(sub==='state'){const first=!state.at;state={open:o.open||[],at:o.at||Date.now()};render();if(first)pubBoard()}
   else if(sub==='boardcfg')onCfg(o);
   else if(sub==='board'&&o&&o.dev!==DEVICE&&(o.at||0)>(A.at||0)){A=normA(o);try{localStorage.setItem(ASG_KEY,JSON.stringify(A))}catch{}render();syncLights()}
@@ -802,6 +815,7 @@ $('fmSet').onsubmit=e=>{
  const wasLight=!!cfg.light?.on;cfg.light={on:$('sLight').checked,codes:readLightRows()};
  cfg.facs.zone.on=$('sZone').checked;
  if(!cfg.demo&&!cfg.site){$('sErr').textContent='데모 모드를 끄려면 매장 코드를 입력해 주세요.';return}
+ if(!cfg.demo&&!String(cfg.pass||'').trim()){$('sErr').textContent='암호 키를 입력해 주세요. (인식기·관리자 웹과 같은 값)';return}
  touchCfg();$('dlgSet').close();applyFs();setupTicker();
  if(prev.broker!==cfg.broker||prev.site!==cfg.site||prev.pass!==cfg.pass||prev.demo!==cfg.demo)connect();else{render();if(prev.remote&&!cfg.remote)clearBoard();else if(cfg.remote)pubBoard();if(cfg.light.on)syncLights(!wasLight)}
  toast('설정을 저장했습니다.');
