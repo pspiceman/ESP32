@@ -41,6 +41,8 @@ main{display:grid;grid-template-columns:minmax(230px,14.5%) minmax(250px,16%) 1f
 .tp.held{box-shadow:0 0 0 3px var(--cyan)}
 .grp.held{box-shadow:0 0 0 4px var(--cyan),0 0 22px rgba(56,198,255,.6)}
 .chip .dan{flex-shrink:0}
+.restTag{flex-shrink:0;font-size:calc(13px*var(--fs));font-weight:900;border-radius:9px;padding:3px 8px;background:#cfd8dc;color:#263238}.restTag.out{background:#ff6b5e;color:#fff}
+.chip.rest{opacity:.62}.tp.rest{opacity:.6}
 .tyTag{margin-left:auto;flex-shrink:0;font-size:calc(14px*var(--fs));font-weight:900;border-radius:9px;padding:3px 9px}
 .tyTag.f{background:#35d39a;color:#062a1d}.tyTag.t{background:#ff8a2a;color:#3a1600}
 .tyMenu{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.tyMenu button{min-height:76px;font-size:20px;border-width:3px}
@@ -288,7 +290,7 @@ fieldset{border:1px solid var(--line);border-radius:14px;margin:14px 0 0;padding
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
-const BOARD_VERSION='1.09',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
+const BOARD_VERSION='1.11',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
 const LIBS=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
 const DEF_TICKER='가브리엘 당구장에 오신 것을 환영합니다.',OLD_TICKERS=['가브리엘 당구장에 오신 것을 환영합니다. 본 당구장은 정액제 당구장으로 4시간에 1만원, 그 이상은 1만 5천원입니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.','가브리엘 당구장에 오신 것을 환영합니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.'];
 /* 기본 배치 (매장 그림 기준, 배치 영역의 % 좌표) */
@@ -356,7 +358,7 @@ function makeDemo(){
  return list.map(([nick,h3,h4],i)=>({id:'D'+pad(i+1),nick,h3:h3===''?'':String(h3),h4:String(h4||''),inAt:now-(200-i*9)*M}));
 }
 function players(){
- const raw=cfg.demo?demoPlayers:state.open.map(v=>{const {h3,h4}=hd(v);return{id:v.id,nick:String(v.nick??v.nickname??'').trim(),h3,h4,inAt:v.inAt,isNew:v.isNew,via:v.via}});
+ const raw=cfg.demo?demoPlayers:state.open.map(v=>{const {h3,h4}=hd(v);return{id:v.id,nick:String(v.nick??v.nickname??'').trim(),h3,h4,inAt:v.inAt,isNew:v.isNew,via:v.via,rest:!!v.rest,outReq:!!v.outReq}});
  // 입장 순으로 GUEST 번호를 매기고, 표시 이름(disp)은 닉네임만
  return [...raw].sort((a,b)=>a.inAt-b.inAt).map(p=>{const nick=String(p.nick||'').trim();return{...p,disp:nick||'GUEST'+guestNo(p.id),guest:!nick}});
 }
@@ -448,7 +450,11 @@ function toWait(ids,gid){
    // 개인·정액팀: 앞선 1인 대기조가 있으면 새 조를 못 만들고 그 조로 들어감
    // 시간팀: 요금이 더 비싸므로 1인 대기조가 있어도 새 조를 만들 수 있음 (그 조에 넣으려면 조 위에 놓기)
    if(cur&&cur.members.length===1&&T!=='t')continue;   // 이미 혼자 대기 중 → 그대로 (순서 유지)
-   if(T!=='t'){g=A.groups.find(x=>x.type===T&&x.members.length===1&&x.members[0]!==id);
+   if(T!=='t'){
+    // 앞선 개인·정액팀 1인 대기조(종류 무관)가 있으면 새 조 금지: 같은 종류면 그 조로, 다른 종류면 대기 불가
+    const lone=A.groups.find(x=>x.type!=='t'&&x.members.length===1&&x.members[0]!==id);
+    if(lone&&lone.type!==T){toast('앞선 '+TYPES[lone.type].name+' 1인 대기조('+names(lone.members)+' 님)가 상대를 기다리는 중이라 새 대기조를 만들 수 없습니다.',5000);return false}
+    g=lone||null;
     if(g)toast(TYPES[T].name+' 1인 대기조가 있어 그 조로 들어갑니다 · '+names(g.members)+' 님과 매치',4000)}
    else if(cur&&cur.members.length===1)continue;
   }
@@ -510,8 +516,8 @@ function render(){
  if(!room.length)rl.append(el('div',{className:'empty',textContent:state.at||cfg.demo?'손님방이 비어 있습니다.':'인식기 연결을 기다리는 중…'}));
  room.forEach((p,i)=>{
   const T=typeOf(p.id);
-  const row=el('div',{className:'chip ty-'+T+(fresh.has(p.id)?' new':'')+(isSel([p.id])?' sel':'')},el('span',{className:'ord',textContent:i+1}),dan(p,false,true),
-   (Date.now()-p.inAt<10*60000||fresh.has(p.id))?el('span',{className:'newTag',textContent:'NEW'}):null,T!=='p'?el('span',{className:'tyTag '+T,textContent:TYPES[T].name}):null);
+  const row=el('div',{className:'chip ty-'+T+(p.rest?' rest':'')+(fresh.has(p.id)?' new':'')+(isSel([p.id])?' sel':'')},el('span',{className:'ord',textContent:i+1}),dan(p,false,true),
+   (Date.now()-p.inAt<10*60000||fresh.has(p.id))?el('span',{className:'newTag',textContent:'NEW'}):null,p.rest?el('span',{className:'restTag',textContent:'☕ 휴식'}):p.outReq?el('span',{className:'restTag out',textContent:'퇴실 요청'}):null,T!=='p'?el('span',{className:'tyTag '+T,textContent:TYPES[T].name}):null);
   bindDrag(row,{ids:[p.id],label:p.disp,src:'room',typeMenu:true});rl.append(row);
  });
  // 대기방
@@ -542,7 +548,7 @@ function renderFloor(all,room){
   const felt=el('div',{className:'felt'},el('div',{className:'tNo',textContent:t.no}),el('div',{className:'tState',textContent:ended?'경기 끝 · 정리 중':isOn?'경기 중':'빈 테이블'}));
   if(isOn){
    if(a.type&&a.type!=='p')felt.append(el('div',{className:'tType t-'+a.type,textContent:TYPES[a.type].name}));
-   const box=el('div',{className:'tPlayers'});for(const p of ps){const tp=el('div',{className:'tp'},el('i',{className:'tDot',style:'background:'+(p.guest?'#9fb3bb':avColor(p.disp))}),el('b',{textContent:p.disp}));bindDrag(tp,{ids:[p.id],label:p.disp,src:'table',no:t.no});box.append(tp)}
+   const box=el('div',{className:'tPlayers'});for(const p of ps){const tp=el('div',{className:'tp'+(p.rest?' rest':'')},el('i',{className:'tDot',style:'background:'+(p.guest?'#9fb3bb':avColor(p.disp))}),el('b',{textContent:(p.rest?'☕ ':'')+p.disp}));bindDrag(tp,{ids:[p.id],label:p.disp,src:'table',no:t.no});box.append(tp)}
    const ms=Date.now()-(a.since||Date.now()),m=Math.floor(ms/60000);felt.append(box,el('div',{className:'tTime'},'⏱ ',el('span',{className:'tLong',textContent:durShort(ms)}),el('span',{className:'tShort',textContent:Math.floor(m/60)+':'+pad(m%60)})))}
   else felt.append(el('div',{className:'tEmptyTxt',innerHTML:'단추를<br>여기로 옮기면<br>바로 시작'}),el('div',{className:'balls',innerHTML:'<i style="background:#f4f4f4"></i><i style="background:#f2d23c"></i><i style="background:#e0392b"></i>'}));
   if(cfg.light?.on){const b=el('span',{className:'bulb',title:isOn?'전등 켜짐':'전등 꺼짐'});b.innerHTML=isOn?'<svg viewBox="0 0 24 24"><path d="M9 18h6v1.5a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 19.5z" fill="#cfd8dc"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z" fill="#ffe27a"/></svg>':'<svg viewBox="0 0 24 24"><path d="M9 18h6v1.5a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 19.5z" fill="#5c6b70"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z" fill="none" stroke="#6f8790" stroke-width="1.6"/></svg>';felt.append(b)}
@@ -708,7 +714,7 @@ function showRemote(){const e=$('sRemoteSt');if(e)e.textContent=remoteStatus()}
 async function pubBoard(){
  if(!client||!online||cfg.demo||!cfg.remote){showRemote();return}
  try{const as=assignedIds();
-  client.publish(base+'/board',await seal({type:'board',ver:BOARD_VERSION,tables:A.tables,groups:A.groups,types:A.types,room:A.room,timeDone:A.timeDone,ended:A.ended,at:A.at||Date.now(),sent:Date.now(),dev:DEVICE,layout:cfg.tables.map(t=>t.no).sort((a,b)=>a-b),waiting:waitingIds()}),{qos:1,retain:true});
+  client.publish(base+'/board',await seal({type:'board',ver:BOARD_VERSION,tables:A.tables,groups:A.groups,types:A.types,room:A.room,timeDone:A.timeDone,ended:A.ended,at:A.at||Date.now(),sent:Date.now(),dev:DEVICE,disp:Object.fromEntries(players().map(p=>[p.id,p.disp])),layout:cfg.tables.map(t=>t.no).sort((a,b)=>a-b),waiting:waitingIds()}),{qos:1,retain:true});
   lastPub=Date.now();pubErr='';
  }catch(e){pubErr=e.message||String(e)}
  showRemote();
