@@ -1,0 +1,2 @@
+{"id":"./Face_Checkin_Tablet_admin.html","name":"큐24 업주","short_name":"큐24 업주","description":"Q24 무인 당구장 업주용 관리자 웹","start_url":"./Face_Checkin_Tablet_admin.html","scope":"./Face_Checkin_Tablet_admin.html","display":"standalone","orientation":"portrait","background_color":"#0e121a","theme_color":"#15333e","lang":"ko",
+ "icons":[{"src":"admin-192.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"admin-512.png","sizes":"512x512","type":"image/png","purpose":"any"},{"src":"admin-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]}
