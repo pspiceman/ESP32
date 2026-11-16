@@ -1,5 +1,33 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>당구장 현황판</title>
+<html lang="ko"><head><meta charset="utf-8">
+<script>
+/* ---------- 설정 지키기 (업데이트·저장 공간 정리 후에도 마지막 상태 유지) ----------
+ 1) navigator.storage.persist(): 크롬이 저장 공간이 부족할 때 이 사이트 데이터를 지우지 않게 요청
+ 2) q24… 로 시작하는 설정을 IndexedDB(q24keep)에도 복사해 두고,
+    localStorage 가 비어 있으면(정리·초기화) 복사본으로 되살린 뒤 한 번 새로고침 */
+(()=>{
+ const SENTINEL='q24BoardCfg',DB='q24keep',ST='kv';
+ try{navigator.storage?.persist?.()}catch{}
+ let dbp=null;const open=()=>dbp||(dbp=new Promise((ok,no)=>{try{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.createObjectStore(ST);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)}catch(e){no(e)}}));
+ const keys=()=>{const a=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.startsWith('q24')||k.startsWith('faceCheckin')))a.push(k)}}catch{}return a};
+ const last={};
+ async function mirror(){try{const d=await open(),tx=d.transaction(ST,'readwrite'),s=tx.objectStore(ST);for(const k of keys()){const v=localStorage.getItem(k);if(v!=null&&last[k]!==v){s.put(v,k);last[k]=v}}}catch{}}
+ async function restore(){
+  const d=await open();const all=await new Promise(ok=>{const out={},r=d.transaction(ST).objectStore(ST).openCursor();r.onsuccess=()=>{const c=r.result;if(c){out[c.key]=c.value;c.continue()}else ok(out)};r.onerror=()=>ok(out)});
+  let n=0;for(const [k,v] of Object.entries(all))if(!had.has(k)){localStorage.setItem(k,v);n++}return n;   // 시작할 때 없던 것만 (그새 기본값이 써졌어도 덮어씀)
+ }
+ const had=new Set(keys());let missing=false,hold=false;try{missing=localStorage.getItem(SENTINEL)==null}catch{}
+ if(!missing)sessionStorage.removeItem('q24keepTried');
+ else if(!sessionStorage.getItem('q24keepTried')){
+  hold=true;   // 되살리기 전에는 기본값을 복사본에 덮어쓰지 않음
+  restore().then(n=>{if(n>0){sessionStorage.setItem('q24keepTried','1');location.reload()}else hold=false}).catch(()=>{hold=false});   // 되살렸을 때만 한 번 새로고침
+ }
+ const mir=()=>{if(!hold)mirror()};
+ setTimeout(mir,4000);setInterval(mir,20000);
+ addEventListener('pagehide',mir);document.addEventListener('visibilitychange',()=>{if(document.hidden)mir()});
+})();
+</script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>당구장 현황판</title>
 <meta name="theme-color" content="#0a141a"><meta name="mobile-web-app-capable" content="yes"><meta name="robots" content="noindex,nofollow">
 <style>
 :root{--bg:#0a141a;--panel:#111f27;--panel2:#162a34;--ink:#eef6f8;--muted:#93aab1;--line:#24414d;--cyan:#38c6ff;--orange:#ff8a2a;--green:#35d39a;--felt:#1d6fd6;--feltOff:#1a3340;--fs:1}
@@ -319,7 +347,7 @@ fieldset{border:1px solid var(--line);border-radius:14px;margin:14px 0 0;padding
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
-const BOARD_VERSION='1.14',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
+const BOARD_VERSION='1.15',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
 const LIBS=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
 const DEF_TICKER='가브리엘 당구장에 오신 것을 환영합니다.',OLD_TICKERS=['가브리엘 당구장에 오신 것을 환영합니다. 본 당구장은 정액제 당구장으로 4시간에 1만원, 그 이상은 1만 5천원입니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.','가브리엘 당구장에 오신 것을 환영합니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.'];
 /* 기본 배치 (매장 그림 기준, 배치 영역의 % 좌표) */
@@ -347,7 +375,7 @@ if((cfg.layoutVer||1)<LAYOUT_VER){cfg.tables=clone(DEF_TABLES);cfg.facs=clone(FA
 cfg.facs={zone:Object.assign({},FAC_DEF.zone,cfg.facs?.zone||{})};
 if(OLD_TICKERS.includes(cfg.ticker)){cfg.ticker=DEF_TICKER;saveCfgSoon=true}
 if(!cfg.boardVer3){if(!cfg.maxPer||cfg.maxPer<6)cfg.maxPer=6;cfg.boardVer3=1;saveCfgSoon=true}
-if(cfg.demo==null)cfg.demo=!cfg.site;   // 처음엔 연결 정보가 없으면 데모로 보여 줌
+if(typeof cfg.demo!=='boolean')cfg.demo=!cfg.site;   // 처음 실행(저장된 설정 없음)에만 데모 · 한 번 정하면 업데이트해도 그대로
 let A=Object.assign({tables:{},at:0},loadJ(ASG_KEY,{}));   // 테이블 배정 {번호:{players:[회원번호],since}}
 const DEVICE=(()=>{let d=localStorage.getItem('q24BoardDev');if(!d){d='B'+Math.random().toString(36).slice(2,8);localStorage.setItem('q24BoardDev',d)}return d})();
 function saveCfg(){try{localStorage.setItem(CFG_KEY,JSON.stringify(cfg))}catch{}}
@@ -812,14 +840,15 @@ $('sCancel').onclick=()=>{$('dlgSet').close();render()};
 $('fmSet').onsubmit=e=>{
  e.preventDefault();const b=$('sBroker').value.trim()||DEF_BROKER;
  if(!/^wss?:\/\//.test(b)){$('sErr').textContent='브로커 주소는 wss:// 로 시작해야 합니다.';return}
+ const nDemo=$('sDemo').checked,nSite=$('sSite').value.trim(),nPass=$('sPass').value;
+ if(!nDemo&&!nSite){$('sErr').textContent='데모 모드를 끄려면 매장 코드를 입력해 주세요.';return}
+ if(!nDemo&&!String(nPass||'').trim()){$('sErr').textContent='암호 키를 입력해 주세요. (인식기·관리자 웹과 같은 값)';return}
  const prev={broker:cfg.broker,site:cfg.site,pass:cfg.pass,demo:cfg.demo,remote:cfg.remote};
  Object.assign(cfg,{ticker:$('sTicker').value.trim()||DEF_TICKER,speed:Number($('sSpeed').value),fs:Number($('sFs').value),broker:b,site:$('sSite').value.trim(),pass:$('sPass').value,demo:$('sDemo').checked,remote:$('sRemote').checked,
   maxPer:Number($('sMax').value),autoClean:$('sAuto').value==='1',handiMode:$('sHandi').value});
  const wasLight=!!cfg.light?.on;cfg.light={on:$('sLight').checked,codes:readLightRows()};
  cfg.facs.zone.on=$('sZone').checked;
- if(!cfg.demo&&!cfg.site){$('sErr').textContent='데모 모드를 끄려면 매장 코드를 입력해 주세요.';return}
- if(!cfg.demo&&!String(cfg.pass||'').trim()){$('sErr').textContent='암호 키를 입력해 주세요. (인식기·관리자 웹과 같은 값)';return}
- touchCfg();$('dlgSet').close();applyFs();setupTicker();
+ cfg.setup=1;touchCfg();$('dlgSet').close();applyFs();setupTicker();
  if(prev.broker!==cfg.broker||prev.site!==cfg.site||prev.pass!==cfg.pass||prev.demo!==cfg.demo)connect();else{render();if(prev.remote&&!cfg.remote)clearBoard();else if(cfg.remote)pubBoard();if(cfg.light.on)syncLights(!wasLight)}
  toast('설정을 저장했습니다.');
 };
