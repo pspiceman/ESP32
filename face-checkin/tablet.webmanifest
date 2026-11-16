@@ -1,0 +1,2 @@
+{"id":"./Face_Checkin_Tablet.html","name":"인식기","short_name":"인식기","description":"Q24 무인 당구장 얼굴 인식 입장기","start_url":"./Face_Checkin_Tablet.html","scope":"./Face_Checkin_Tablet.html","display":"fullscreen","orientation":"any","background_color":"#0e121a","theme_color":"#15333e","lang":"ko",
+ "icons":[{"src":"tablet-192.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"tablet-512.png","sizes":"512x512","type":"image/png","purpose":"any"},{"src":"tablet-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]}
