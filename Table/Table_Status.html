@@ -214,7 +214,7 @@ fieldset{border:1px solid var(--line);border-radius:14px;margin:14px 0 0;padding
  <section class="box waitBox" id="waitBox"><h2>⏳ 대기방 <small id="waitInfo">들어온 순</small></h2><div class="scroll" id="waitList"></div></section>
  <section class="box floorBox" id="floorBox">
   <div class="floorHead"><h2>🎱 테이블</h2><div class="summary" id="summary"></div>
-  <div class="legend"><span><i style="background:#2f7ee6;box-shadow:0 0 6px #38c6ff"></i>경기 중</span><span><i style="background:#4f6a80;border:1px dashed #ffd27a"></i>정리 중</span><span><i style="background:#1f3c49;border:1px dashed #5a8798"></i>빈 테이블</span><span><i style="background:#35d39a"></i>정액팀</span><span><i style="background:#ff8a2a"></i>시간팀</span></div></div>
+  <div class="legend"><span><i style="background:#2f7ee6;box-shadow:0 0 6px #38c6ff"></i>경기 중</span><span><i style="background:#1f3c49;border:1px dashed #5a8798"></i>빈 테이블</span><span><i style="background:#35d39a"></i>정액팀</span><span><i style="background:#ff8a2a"></i>시간팀</span></div></div>
   <div class="floor" id="floor"></div>
  </section>
 </main>
@@ -286,7 +286,7 @@ fieldset{border:1px solid var(--line);border-radius:14px;margin:14px 0 0;padding
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
-const BOARD_VERSION='1.06',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
+const BOARD_VERSION='1.07',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
 const LIBS=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
 const DEF_TICKER='가브리엘 당구장에 오신 것을 환영합니다.',OLD_TICKERS=['가브리엘 당구장에 오신 것을 환영합니다. 본 당구장은 정액제 당구장으로 4시간에 1만원, 그 이상은 1만 5천원입니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.','가브리엘 당구장에 오신 것을 환영합니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.'];
 /* 기본 배치 (매장 그림 기준, 배치 영역의 % 좌표) */
@@ -363,11 +363,11 @@ function seedDemo(){
  A=normA({
   tables:{1:{players:['D01','D02'],since:now-95*M},3:{players:['D03','D04'],since:now-62*M,type:'t'},5:{players:['D07','D08'],since:now-120*M,type:'f'},
    8:{players:['D09','D10','D14','D15'],since:now-35*M},6:{players:['D05','D06'],since:now-58*M}},
-  ended:{6:now-2*M},   // 6번: 점수판에서 경기 끝 → 정리 중 (다음 분이 누르면 비워짐)
+  ended:{},
   groups:[{id:'G1',type:'p',members:['D13','D17'],at:now-30*M},{id:'G2',type:'f',members:['D11','D12'],at:now-25*M},{id:'G3',type:'t',members:['D16'],at:now-20*M},{id:'G4',type:'p',members:['D18'],at:now-12*M}],
   types:{D03:'t',D04:'t',D07:'f',D08:'f',D11:'f',D12:'f',D16:'t',D21:'f',D22:'t'},at:now});
 }
-function normA(o){o=o||{};return{tables:o.tables||{},groups:o.groups||[],types:o.types||{},room:o.room||{},timeDone:o.timeDone||{},ended:o.ended||{},at:o.at||0,dev:o.dev}}
+function normA(o){o=o||{};return{tables:o.tables||{},groups:o.groups||[],types:o.types||{},room:o.room||{},timeDone:o.timeDone||{},ended:{},at:o.at||0,dev:o.dev}}
 A=normA(A);
 const typeOf=id=>A.types[id]||'p';
 function tableOf(id){for(const n in A.tables)if(A.tables[n].players.includes(id))return Number(n);return null}
@@ -423,7 +423,7 @@ function endGame(no,why,quiet){
 }
 function onScore(no,o){
  if(!o||!cfg.tables.some(t=>String(t.no)===String(no)))return;
- if((o.type==='end'||o.type==='finish'||o.end===true)&&A.tables[no]){A.ended[no]=Date.now();saveAssign();render();toast(no+'번 테이블 경기 끝 · 다음 분이 테이블을 누르면 비워집니다',5000)}
+ if((o.type==='end'||o.type==='finish'||o.end===true)&&A.tables[no]){endGame(no,'점수판');render();syncLights()}   // 정리 중 없이 바로 빈 테이블
 }
 
 /* ---------- 옮기기 규칙 ---------- */
@@ -478,7 +478,7 @@ function names(ids){const by=Object.fromEntries(players().map(p=>[p.id,p.disp]))
 function dan(p,sm,hd){const bg='background:'+(p.guest?'#5d727b':avColor(p.disp));
  if(!hd)return el('span',{className:'dan'+(sm?' sm':''),style:bg},el('i'),el('span',{textContent:p.disp}));
  const h=handiOf(p);   // 닉네임 바로 아래에 핸디
- return el('span',{className:'dan two'+(sm?' sm':''),style:bg},el('i'),el('span',{className:'dTx'},el('b',{textContent:p.disp}),el('small',{textContent:cfg.handiMode==='34'?h:'핸디 '+h})))}
+ return el('span',{className:'dan two'+(sm?' sm':''),style:bg},el('i'),el('span',{className:'dTx'},el('b',{textContent:p.disp}),el('small',{textContent:'('+h+')'})))}
 /* 손님방에서 단추 밖을 누르면: 개인 / 정액팀 / 시간팀 (회원마다 기억 → 다음에 와도 그대로) */
 let tyTarget=null;
 function openType(p){
@@ -532,7 +532,7 @@ function renderFloor(all,room){
  if(z.on){const ze=el('div',{className:'item zone',style:pct(z)});ze.innerHTML=ICONS.chair;ze.append(el('div',{textContent:'대기'}),el('div',{className:'zc',textContent:A.groups.reduce((a,g)=>a+g.members.length,0)+'명'}),el('span',{className:'rz'}));ze.dataset.kind='zone';fl.append(ze);bindEdit(ze,z,true)}
  let on=0;
  for(const t of [...cfg.tables].sort((a,b)=>a.no-b.no)){
-  const a=A.tables[t.no],ps=(a?.players||[]).map(id=>byId[id]||{id,disp:'?',h3:'',h4:''}),isOn=ps.length>0,ended=isOn&&!!A.ended[t.no];if(isOn)on++;
+  const a=A.tables[t.no],ps=(a?.players||[]).map(id=>byId[id]||{id,disp:'?',h3:'',h4:''}),isOn=ps.length>0,ended=false;if(isOn)on++;
   const felt=el('div',{className:'felt'},el('div',{className:'tNo',textContent:t.no}),el('div',{className:'tState',textContent:ended?'경기 끝 · 정리 중':isOn?'경기 중':'빈 테이블'}));
   if(isOn){
    if(a.type&&a.type!=='p')felt.append(el('div',{className:'tType t-'+a.type,textContent:TYPES[a.type].name}));
@@ -621,7 +621,7 @@ function onTableTap(no){
 let moveFrom=null;
 function openTable(no){
  const a=A.tables[no],byId=Object.fromEntries(players().map(p=>[p.id,p])),ps=(a?.players||[]),ended=!!A.ended[no];
- $('tTitle').textContent=no+'번 테이블 · '+(ps.length?(ended?'경기 끝 · 정리 중':'경기 중 '+durShort(Date.now()-a.since)):'비어 있음');
+ $('tTitle').textContent=no+'번 테이블 · '+(ps.length?(ended?'':'경기 중 '+durShort(Date.now()-a.since)):'비어 있음');
  const body=$('tBody');body.replaceChildren();
  if(!ps.length)body.append(el('p',{className:'hint',textContent:'손님방이나 대기방의 단추를 이 테이블로 끌어다 놓거나, 단추를 누른 뒤 이 테이블을 누르면 바로 시작합니다.'}));
  else body.append(el('p',{className:'hint',style:'margin:0 0 6px',textContent:'경기를 끝내면 개인·정액팀 손님은 손님방 맨 아래로 가고, 시간팀 손님은 현황판에서 빠져 관리자에게 정산 요청이 갑니다.'}));
