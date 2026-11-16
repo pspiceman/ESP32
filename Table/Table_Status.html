@@ -23,16 +23,22 @@ header{display:flex;align-items:center;gap:18px;padding:8px 18px;background:line
 .dot.on i{background:var(--green)}.dot.err i{background:#ff6b5b}.dot.warn i{background:#f0b23c}.dot.demo i{background:var(--orange)}
 .gear{width:56px;min-height:56px;padding:0;display:grid;place-items:center;border-radius:14px}.gear svg{width:28px;height:28px}
 /* ---------- 본문 ---------- */
-main{display:grid;grid-template-columns:minmax(270px,18%) minmax(280px,19%) 1fr;gap:12px;padding:12px 14px 14px;min-height:0}
+main{display:grid;grid-template-columns:minmax(230px,14.5%) minmax(250px,16%) 1fr;gap:12px;padding:12px 14px 14px;min-height:0}
 .box{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px;display:flex;flex-direction:column;min-height:0}
 .box h2{margin:0 0 8px;font-size:calc(21px*var(--fs));display:flex;align-items:center;gap:8px}.box h2 small{margin-left:auto;font-size:.65em;color:var(--muted);font-weight:600}
-:root{--rowH:calc(58px*var(--fs))}
+:root{--rowH:calc(70px*var(--fs))}
 /* 닉네임 단추: 끌어서 옮기는 손잡이 (영어 6자·한글 4자 정도) */
 .dan{display:inline-flex;align-items:center;gap:7px;max-width:calc(150px*var(--fs));min-width:0;flex-shrink:1;height:calc(42px*var(--fs));padding:0 14px 0 6px;border-radius:999px;color:#fff;font-weight:900;font-size:calc(18px*var(--fs));box-shadow:inset 0 -3px 0 rgba(0,0,0,.25),0 2px 6px rgba(0,0,0,.35);cursor:grab;touch-action:pan-y}
 .dan i{width:calc(14px*var(--fs));height:calc(14px*var(--fs));border-radius:50%;background:rgba(255,255,255,.85);flex-shrink:0;box-shadow:inset 0 -2px 0 rgba(0,0,0,.2)}
 .dan span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.dan.two{height:calc(58px*var(--fs));border-radius:20px;padding:0 16px 0 8px}
+.dan .dTx{display:flex;flex-direction:column;justify-content:center;line-height:1.15}
+.dan .dTx b,.dan .dTx small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dan .dTx small{font-size:.76em;font-weight:800;color:rgba(255,255,255,.88);font-variant-numeric:tabular-nums}
+.dan.two.sm{height:calc(52px*var(--fs));border-radius:17px;padding:0 14px;font-size:calc(17px*var(--fs))}
 .dan.sm{height:calc(36px*var(--fs));font-size:calc(16px*var(--fs));padding:0 11px;max-width:calc(122px*var(--fs))}.dan.sm i{display:none}
 .sel .dan,.dan.sel{animation:pulse 1s ease-in-out infinite;box-shadow:0 0 0 3px var(--cyan)}
+.chip .dan{flex-shrink:0}
 .tyTag{margin-left:auto;flex-shrink:0;font-size:calc(14px*var(--fs));font-weight:900;border-radius:9px;padding:3px 9px}
 .tyTag.f{background:#35d39a;color:#062a1d}.tyTag.t{background:#ff8a2a;color:#3a1600}
 .tyMenu{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.tyMenu button{min-height:76px;font-size:20px;border-width:3px}
@@ -62,7 +68,8 @@ main{display:grid;grid-template-columns:minmax(270px,18%) minmax(280px,19%) 1fr;
 /* 대기방: 대기조 카드 (종류별 바탕색) */
 .grp{border-radius:16px;padding:8px 10px 10px;margin-bottom:10px;border:2px solid transparent;touch-action:pan-y;cursor:grab}
 .grp.g-p{background:#1d3d52;border-color:#3a7aa3}.grp.g-f{background:#1f5240;border-color:#3fa37a}.grp.g-t{background:#5a3a1f;border-color:#b97a3c}
-.gRow{display:grid;grid-template-columns:minmax(0,max-content) minmax(10px,1fr) minmax(0,max-content);align-items:center;gap:5px}
+.gRow{display:grid;grid-template-columns:auto minmax(8px,1fr) auto;align-items:center;gap:6px;padding:0 4px}
+.gRow .gm .dan{flex-shrink:0}
 .gLine{border-top:3px dashed #ffd27a;height:0;opacity:.9}
 .gRow .gm{min-width:0}
 .grp.sel{box-shadow:0 0 0 3px var(--cyan)}
@@ -73,7 +80,7 @@ main{display:grid;grid-template-columns:minmax(270px,18%) minmax(280px,19%) 1fr;
 .gCnt{margin-left:auto;font-size:calc(13px*var(--fs));color:var(--muted);font-weight:800}
 .gMem{display:flex;flex-direction:column;gap:5px}
 .gm{display:flex;align-items:center;gap:5px;padding:2px 0;touch-action:pan-y;cursor:grab;border:2px solid transparent;border-radius:999px}
-.gm .hd{flex-shrink:0;font-size:calc(14px*var(--fs))}.gm .dan{flex-shrink:0}
+.gm .dan{flex-shrink:0}
 .gm.sel{border-color:var(--cyan)}
 .gm .av{width:calc(34px*var(--fs));height:calc(34px*var(--fs));font-size:calc(13px*var(--fs))}.gm .cName{flex:1;min-width:0;font-size:calc(17px*var(--fs))}
 .gSlot{border:2px dashed rgba(255,255,255,.18);border-radius:10px;padding:6px 8px;text-align:center;color:var(--muted);font-size:calc(13px*var(--fs));font-weight:700}
@@ -251,7 +258,7 @@ fieldset{border:1px solid var(--line);border-radius:14px;margin:14px 0 0;padding
   <div class="grid2"><label>테이블당 최대 인원<select id="sMax"><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option></select></label>
   <label>빈 테이블 자동 정리<select id="sAuto"><option value="1">퇴실하면 자동으로 빼기</option><option value="0">직접 빼기</option></select></label></div>
   <div class="row"><button type="button" id="sEdit">✏️ 배치 편집 시작</button><button type="button" id="sReset" class="danger">기본 배치로</button></div>
-  <label class="check" style="margin-top:12px"><input id="sZone" type="checkbox"><span>대기 장소 표시</span></label>
+  <label class="check" style="margin-top:12px"><input id="sZone" type="checkbox"><span>테이블 영역에 '대기' 표시</span></label>
  </fieldset>
  <fieldset><legend>손님방 표시</legend>
   <label>핸디 표시<select id="sHandi"><option value="3">3구 전용 구장 · 닉네임(3구 핸디)</option><option value="34">3구·4구 혼합 구장 · 3구 핸디와 4구 점수 모두</option></select></label>
@@ -279,14 +286,14 @@ fieldset{border:1px solid var(--line);border-radius:14px;margin:14px 0 0;padding
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
-const BOARD_VERSION='1.05',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
+const BOARD_VERSION='1.06',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
 const LIBS=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
 const DEF_TICKER='가브리엘 당구장에 오신 것을 환영합니다.',OLD_TICKERS=['가브리엘 당구장에 오신 것을 환영합니다. 본 당구장은 정액제 당구장으로 4시간에 1만원, 그 이상은 1만 5천원입니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.','가브리엘 당구장에 오신 것을 환영합니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.'];
 /* 기본 배치 (매장 그림 기준, 배치 영역의 % 좌표) */
-const LAYOUT_VER=3;   // v1.05: 손님방·대기방을 줄이고 테이블을 넓힘 (배치 영역 % 좌표, 제목 줄은 영역 밖)
-const DEF_TABLES=[{no:1,x:2.5,y:3,w:17,h:44},{no:2,x:22,y:3,w:17,h:44},{no:3,x:41.5,y:3,w:17,h:44},{no:4,x:61,y:3,w:17,h:44},{no:5,x:80.5,y:3,w:17,h:44},
- {no:8,x:30.5,y:53,w:17,h:44},{no:7,x:55.5,y:53,w:17,h:44},{no:6,x:80.5,y:53,w:17,h:44}];
-const FAC_DEF={zone:{name:'대기 장소',x:4,y:56,w:14,h:38,on:true}};
+const LAYOUT_VER=4;   // v1.06: 두 방을 줄이고 테이블을 더 넓힘 (배치 영역 % 좌표)
+const DEF_TABLES=[{no:1,x:1,y:3,w:18,h:44},{no:2,x:20.75,y:3,w:18,h:44},{no:3,x:40.5,y:3,w:18,h:44},{no:4,x:60.25,y:3,w:18,h:44},{no:5,x:80,y:3,w:18,h:44},
+ {no:8,x:30,y:53,w:18,h:44},{no:7,x:55,y:53,w:18,h:44},{no:6,x:80,y:53,w:18,h:44}];
+const FAC_DEF={zone:{name:'대기',x:4,y:57,w:14,h:36,on:true}};
 const ICONS={
  board:'<svg viewBox="0 0 24 24" fill="none" stroke="#ff8a2a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4M7 8h4M7 11h7"/></svg>',
  door:'<svg viewBox="0 0 24 24" fill="none" stroke="#7ddc9f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16h10"/><path d="M14 3l5 2v16l-5-1z"/><circle cx="16" cy="12" r=".6" fill="#7ddc9f"/></svg>',
@@ -468,7 +475,10 @@ function toTable(no,ids,gid){
 function names(ids){const by=Object.fromEntries(players().map(p=>[p.id,p.disp]));return ids.map(id=>by[id]||'?').join(', ')}
 
 /* ---------- 화면 ---------- */
-function dan(p,sm){return el('span',{className:'dan'+(sm?' sm':''),style:'background:'+(p.guest?'#5d727b':avColor(p.disp))},el('i'),el('span',{textContent:p.disp}))}
+function dan(p,sm,hd){const bg='background:'+(p.guest?'#5d727b':avColor(p.disp));
+ if(!hd)return el('span',{className:'dan'+(sm?' sm':''),style:bg},el('i'),el('span',{textContent:p.disp}));
+ const h=handiOf(p);   // 닉네임 바로 아래에 핸디
+ return el('span',{className:'dan two'+(sm?' sm':''),style:bg},el('i'),el('span',{className:'dTx'},el('b',{textContent:p.disp}),el('small',{textContent:cfg.handiMode==='34'?h:'핸디 '+h})))}
 /* 손님방에서 단추 밖을 누르면: 개인 / 정액팀 / 시간팀 (회원마다 기억 → 다음에 와도 그대로) */
 let tyTarget=null;
 function openType(p){
@@ -494,8 +504,7 @@ function render(){
  if(!room.length)rl.append(el('div',{className:'empty',textContent:state.at||cfg.demo?'손님방이 비어 있습니다.':'인식기 연결을 기다리는 중…'}));
  room.forEach((p,i)=>{
   const T=typeOf(p.id);
-  const hd=el('span',{className:'hd',textContent:cfg.handiMode==='34'?handiOf(p):'('+handiOf(p)+')'});
-  const row=el('div',{className:'chip ty-'+T+(fresh.has(p.id)?' new':'')+(isSel([p.id])?' sel':'')},el('span',{className:'ord',textContent:i+1}),dan(p),hd,
+  const row=el('div',{className:'chip ty-'+T+(fresh.has(p.id)?' new':'')+(isSel([p.id])?' sel':'')},el('span',{className:'ord',textContent:i+1}),dan(p,false,true),
    (Date.now()-p.inAt<10*60000||fresh.has(p.id))?el('span',{className:'newTag',textContent:'NEW'}):null,T!=='p'?el('span',{className:'tyTag '+T,textContent:TYPES[T].name}):null);
   bindDrag(row,{ids:[p.id],label:p.disp,src:'room',typeMenu:true});rl.append(row);
  });
@@ -507,7 +516,7 @@ function render(){
   const head=el('div',{className:'gHead'},el('span',{className:'gNo',textContent:i+1}),el('b',{textContent:TYPES[g.type].name+' 대기조'}));
   const mem=el('div',{className:'gMem'});
   // 한 줄에 두 사람 · 점선으로 연결 · 핸디는 이름 옆 ( )
-  const mk=id=>{const p=byId[id]||{id,disp:'?',h3:'',h4:''};const m=el('div',{className:'gm'+(isSel([id])?' sel':'')},dan(p,true),el('span',{className:'hd',textContent:'('+handiOf(p)+')'}));
+  const mk=id=>{const p=byId[id]||{id,disp:'?',h3:'',h4:''};const m=el('div',{className:'gm'+(isSel([id])?' sel':'')},dan(p,true,true));
    bindDrag(m,{ids:[id],label:p.disp,src:'group',gid:g.id,single:true});m.addEventListener('pointerdown',e=>e.stopPropagation());return m};   // 사람만 옮기기 (대기조 통째로 끌기와 구분)
   for(let k=0;k<g.members.length;k+=2){const a=g.members[k],b=g.members[k+1];mem.append(el('div',{className:'gRow'},mk(a),b?el('span',{className:'gLine'}):el('span'),b?mk(b):el('span')))}
   const card=el('div',{className:'grp g-'+g.type+(sel?.gid===g.id&&!sel.single?' sel':'')},head,mem);card.dataset.gid=g.id;
@@ -520,7 +529,7 @@ function renderFloor(all,room){
  for(const x of [...fl.querySelectorAll('.item')])x.remove();
  const pct=(o)=>'left:'+o.x+'%;top:'+o.y+'%;'+(o.w!=null?'width:'+o.w+'%;height:'+o.h+'%;':'');
  const z=cfg.facs.zone;
- if(z.on){const ze=el('div',{className:'item zone',style:pct(z)});ze.innerHTML=ICONS.chair;ze.append(el('div',{textContent:'대기 장소'}),el('div',{className:'zc',textContent:A.groups.reduce((a,g)=>a+g.members.length,0)+'명'}),el('span',{className:'rz'}));ze.dataset.kind='zone';fl.append(ze);bindEdit(ze,z,true)}
+ if(z.on){const ze=el('div',{className:'item zone',style:pct(z)});ze.innerHTML=ICONS.chair;ze.append(el('div',{textContent:'대기'}),el('div',{className:'zc',textContent:A.groups.reduce((a,g)=>a+g.members.length,0)+'명'}),el('span',{className:'rz'}));ze.dataset.kind='zone';fl.append(ze);bindEdit(ze,z,true)}
  let on=0;
  for(const t of [...cfg.tables].sort((a,b)=>a.no-b.no)){
   const a=A.tables[t.no],ps=(a?.players||[]).map(id=>byId[id]||{id,disp:'?',h3:'',h4:''}),isOn=ps.length>0,ended=isOn&&!!A.ended[t.no];if(isOn)on++;
@@ -652,7 +661,7 @@ function bindEdit(node,obj,resizable){
 }
 function setEditing(on){editing=on;document.body.classList.toggle('editing',on);$('editBar').hidden=!on;clearSel(false);render()}
 $('edDone').onclick=()=>{setEditing(false);touchCfg();pubBoard();toast('배치를 저장했습니다. 다른 현황판에도 적용됩니다.')};
-$('edAdd').onclick=()=>{const no=Math.max(0,...cfg.tables.map(t=>t.no))+1;cfg.tables.push({no,x:42,y:28,w:17,h:44});saveCfg();render();toast(no+'번 테이블을 추가했습니다. 원하는 곳으로 끌어 주세요.')};
+$('edAdd').onclick=()=>{const no=Math.max(0,...cfg.tables.map(t=>t.no))+1;cfg.tables.push({no,x:41,y:28,w:18,h:44});saveCfg();render();toast(no+'번 테이블을 추가했습니다. 원하는 곳으로 끌어 주세요.')};
 function delTable(no){if(A.tables[no]?.players.length){toast(no+'번 테이블은 경기 중이라 삭제할 수 없습니다.');return}if(!confirm(no+'번 테이블을 삭제할까요?'))return;cfg.tables=cfg.tables.filter(t=>t.no!==no);touchCfg();render();pubBoard()}
 
 /* ---------- 안내 문구 흐르기 ---------- */
@@ -757,7 +766,7 @@ $('fmSet').onsubmit=e=>{
 };
 $('sPinSave').onclick=async()=>{const v=$('sPin').value.trim();if(!/^\d{4,8}$/.test(v)){$('sPinMsg').textContent='숫자 4~8자리로 입력해 주세요.';return}localStorage.setItem(PIN_KEY,await sha256hex('q24board:'+v));$('sPin').value='';$('sPinMsg').textContent='비밀번호를 바꿨습니다.'};
 $('sEdit').onclick=()=>{$('dlgSet').close();saveCfg();setEditing(true)};
-$('sReset').onclick=()=>{if(!confirm('테이블·대기 장소 배치를 처음 모양으로 되돌릴까요?'))return;cfg.tables=clone(DEF_TABLES);cfg.facs=clone(FAC_DEF);touchCfg();$('dlgSet').close();render();pubBoard()};
+$('sReset').onclick=()=>{if(!confirm('테이블·대기 배치를 처음 모양으로 되돌릴까요?'))return;cfg.tables=clone(DEF_TABLES);cfg.facs=clone(FAC_DEF);touchCfg();$('dlgSet').close();render();pubBoard()};
 $('sClearAll').onclick=()=>{if(!confirm('모든 테이블 배정을 비우고 손님을 대기자로 돌릴까요?'))return;A.tables={};saveAssign();$('dlgSet').close();render()};
 $('sReload').onclick=()=>location.reload();
 $('sRemoteNow').onclick=async()=>{if(cfg.demo){toast('데모 모드에서는 보내지 않습니다.');return}if(!$('sRemote').checked){toast('원격 모니터링을 먼저 켜 주세요.');return}cfg.remote=true;await pubBoard();toast(online?'관리자 웹으로 보냈습니다.':'연결되어 있지 않습니다.')};
