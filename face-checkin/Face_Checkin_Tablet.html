@@ -1,5 +1,33 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content"><title>Q24 입장 등록</title>
+<html lang="ko"><head><meta charset="utf-8">
+<script>
+/* ---------- 설정 지키기 (업데이트·저장 공간 정리 후에도 마지막 상태 유지) ----------
+ 1) navigator.storage.persist(): 크롬이 저장 공간이 부족할 때 이 사이트 데이터를 지우지 않게 요청
+ 2) q24… 로 시작하는 설정을 IndexedDB(q24keep)에도 복사해 두고,
+    localStorage 가 비어 있으면(정리·초기화) 복사본으로 되살린 뒤 한 번 새로고침 */
+(()=>{
+ const SENTINEL='q24Remote',DB='q24keep',ST='kv';
+ try{navigator.storage?.persist?.()}catch{}
+ let dbp=null;const open=()=>dbp||(dbp=new Promise((ok,no)=>{try{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.createObjectStore(ST);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)}catch(e){no(e)}}));
+ const keys=()=>{const a=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.startsWith('q24')||k.startsWith('faceCheckin')))a.push(k)}}catch{}return a};
+ const last={};
+ async function mirror(){try{const d=await open(),tx=d.transaction(ST,'readwrite'),s=tx.objectStore(ST);for(const k of keys()){const v=localStorage.getItem(k);if(v!=null&&last[k]!==v){s.put(v,k);last[k]=v}}}catch{}}
+ async function restore(){
+  const d=await open();const all=await new Promise(ok=>{const out={},r=d.transaction(ST).objectStore(ST).openCursor();r.onsuccess=()=>{const c=r.result;if(c){out[c.key]=c.value;c.continue()}else ok(out)};r.onerror=()=>ok(out)});
+  let n=0;for(const [k,v] of Object.entries(all))if(!had.has(k)){localStorage.setItem(k,v);n++}return n;   // 시작할 때 없던 것만 (그새 기본값이 써졌어도 덮어씀)
+ }
+ const had=new Set(keys());let missing=false,hold=false;try{missing=localStorage.getItem(SENTINEL)==null}catch{}
+ if(!missing)sessionStorage.removeItem('q24keepTried');
+ else if(!sessionStorage.getItem('q24keepTried')){
+  hold=true;   // 되살리기 전에는 기본값을 복사본에 덮어쓰지 않음
+  restore().then(n=>{if(n>0){sessionStorage.setItem('q24keepTried','1');location.reload()}else hold=false}).catch(()=>{hold=false});   // 되살렸을 때만 한 번 새로고침
+ }
+ const mir=()=>{if(!hold)mirror()};
+ setTimeout(mir,4000);setInterval(mir,20000);
+ addEventListener('pagehide',mir);document.addEventListener('visibilitychange',()=>{if(document.hidden)mir()});
+})();
+</script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content"><title>Q24 입장 등록</title>
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#15333e">
 <meta name="mobile-web-app-capable" content="yes">
@@ -276,7 +304,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.30</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.31</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -652,7 +680,7 @@ const Ntfy=(()=>{
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='1.30',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='1.31',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
