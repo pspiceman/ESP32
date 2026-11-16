@@ -273,7 +273,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.26</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.29</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -326,6 +326,13 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
    <div class="row" style="margin-top:10px"><button id="rmSave" class="primary" type="button">저장하고 연결</button><button id="rmSync" type="button">지금 다시 보내기</button><span id="rmStatus" class="hint">원격 관리 꺼짐</span></div>
    <p class="hint" id="mwStatus" style="margin:6px 0 0">회원 웹: 원격 연결 후 표시</p>
    <p class="hint">관리자 웹: <b id="rmAdminUrl">Face_Checkin_Tablet_admin.html</b> · 같은 <b>브로커 · 매장 코드 · 암호 키</b>를 넣으면 입실 현황을 보고 결제 확인 후 퇴실을 처리할 수 있습니다. 퍼블릭 브로커는 누구나 접속할 수 있으므로 회원 정보는 암호 키로 <b>AES-GCM 암호화</b>해서 보냅니다(얼굴 특징값은 보내지 않음). 암호 키를 비우면 암호화 없이 전송되니 꼭 설정하세요.</p>
+  </section>
+  <section class="card wide"><h2>흐르는 안내 문구 (화면 위쪽)</h2>
+   <label for="gkText" style="display:block;margin:6px 0 4px;font-weight:700">문구</label>
+   <input id="gkText" maxlength="120" style="width:100%" placeholder="예: 가브리엘 당구장에 오신 것을 환영합니다">
+   <div class="row" style="margin-top:10px;align-items:center"><label for="gkSpeed" style="font-weight:700">흐르는 속도</label><select id="gkSpeed"><option value="50">느리게</option><option value="75">보통</option><option value="110">빠르게</option></select>
+    <button id="gkSave" class="primary" type="button">저장</button><button id="gkReset" type="button">기본 문구로</button></div>
+   <p class="hint" style="margin:6px 0 0">오른쪽에서 왼쪽으로 흐릅니다. 문구 앞에 🎱 가 자동으로 붙습니다. 길이에 맞춰 같은 속도로 흐르게 맞춥니다.</p>
   </section>
   <section class="card wide"><h2>입장 알림 (ntfy)</h2>
    <div class="settings">
@@ -488,8 +495,9 @@ const Remote=(()=>{
   return libP;
  }
  async function deriveKey(){
-  if(!cfg.pass){aesKey=null;return}
-  const raw=await crypto.subtle.importKey('raw',enc.encode(cfg.pass),'PBKDF2',false,['deriveKey']);
+  const pw=String(cfg.pass||'').trim();   // 휴대폰 키보드가 붙인 앞뒤 공백 무시
+  if(!pw){aesKey=null;return}
+  const raw=await crypto.subtle.importKey('raw',enc.encode(pw),'PBKDF2',false,['deriveKey']);
   aesKey=await crypto.subtle.deriveKey({name:'PBKDF2',salt:enc.encode('q24-face-checkin:'+cfg.site.trim()),iterations:120000,hash:'SHA-256'},raw,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
  }
  async function topicBase(){return 'q24/v1/'+(await sha256hex('q24:'+cfg.site.trim())).slice(0,20)}
@@ -534,6 +542,9 @@ const Remote=(()=>{
    else if(visits.open[cmd.memberId])res={ok:false,reason:'이미 입실 중'};
    else{const v=markChecked(cmd.memberId,Date.now(),false,'관리자');res=v?{ok:true,visit:v}:{ok:false,reason:'입실 실패'};if(v)toast('관리자 입실 처리 · '+v.name+' 님')}
   }
+  else if(cmd.type==='createCheckin'){   // 🧪 임시: 관리자가 신규 회원 만들고 바로 입실 (테스트용)
+   res=await window.testCreateMember?.(cmd.info||{})||{ok:false,reason:'인식기 준비 중'};
+  }
   else if(cmd.type==='webReset'){res=window.MG?.reset(cmd.memberId)?{ok:true}:{ok:false,reason:'회원 웹 계정 없음'};if(res.ok)toast('회원 웹 계정을 초기화했습니다.')}
   if(cmd.cid){done.push(cmd.cid);done=done.slice(-200);try{localStorage.setItem(DONE_KEY,JSON.stringify(done))}catch{}}
   clear();pub('event',{type:'ack',cid:cmd.cid||'',cmd:cmd.type,...res,eid:visitKey()});pushState();
@@ -544,6 +555,7 @@ const Remote=(()=>{
   stop();const my=gen;
   if(!cfg.enabled){ui('off','원격 관리 꺼짐');return}
   if(!cfg.site.trim()||!/^wss?:\/\//.test(cfg.broker)){ui('err','브로커 주소(wss://)와 매장 코드를 입력해 주세요.');return}
+  if(!String(cfg.pass||'').trim()){ui('err','암호 키를 입력해 주세요. (암호 없이 보내면 다른 기기가 풀지 못합니다)');return}
   if(!window.crypto?.subtle){ui('err','HTTPS 주소에서만 암호화 연결을 쓸 수 있습니다.');return}
   ui('wait','연결 준비 중…');
   try{await loadLib();await deriveKey();base=await topicBase()}catch(e){if(my===gen){ui('err',e.message+' · 30초 후 재시도');setTimeout(()=>{if(my===gen)start()},30000)}return}
@@ -637,7 +649,7 @@ const Ntfy=(()=>{
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='1.26',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='1.29',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
@@ -1661,6 +1673,24 @@ $('regForm').onsubmit=async e=>{
  showResult('등록 촬영 · '+ENROLL_PLAN[0].label,ENROLL_PLAN[0].say);
  speak(base.name+' 님, '+ENROLL_PLAN[0].say,'en0',0);controls();
 };
+/* 🧪 임시: 관리자 웹에서 신규 회원 만들고 바로 입실 (테스트용 · 얼굴 없음, 다음부터 번호로 입장 가능) */
+window.testCreateMember=async function(i){
+ const name=String(i.name||'').trim().slice(0,20),nick=String(i.nick||'').trim().slice(0,12),digits=String(i.phone||'').replace(/\D/g,'');
+ const h3=String(i.handi3||'').replace(/\D/g,''),h4=String(i.handi4||'').replace(/\D/g,'');
+ if(!name)return{ok:false,reason:'이름이 없습니다'};
+ if(!db)return{ok:false,reason:'인식기 저장소 준비 중'};
+ if(nick&&/^guest\s*\d*$/i.test(nick))return{ok:false,reason:'GUEST는 닉네임으로 쓸 수 없습니다'};
+ if(nick&&members.some(m=>String(m.nick||'').trim().toLowerCase()===nick.toLowerCase()))return{ok:false,reason:'이미 쓰는 닉네임입니다'};
+ if(digits&&digits.length<10)return{ok:false,reason:'휴대폰 번호가 짧습니다'};
+ if(digits&&members.some(m=>String(m.phone||'').replace(/\D/g,'')===digits))return{ok:false,reason:'이미 등록된 휴대폰 번호입니다'};
+ const now=Date.now(),id=fmtId(nextNum());
+ const member={id,name,nick,handi3:h3,handi4:h4,game:h3||!h4?'3구':'4구',handi:h3||h4,phone:digits?fmtPhone(digits):'',descriptors:[],template:null,pipeline:PIPE,noFace:true,photo:'',createdAt:now,madeBy:'관리자(테스트)'};
+ await writeDB(st=>st.put(member));members.push(member);store.set(NEXT_KEY,String(Number(id.slice(1))+1));
+ addLog({mode:'등록',sel:member.name,result:'관리자 웹 테스트 등록',dSel:null,other:null,dOther:null});
+ const v=markChecked(id,now,true,'관리자 등록');renderMembers();Remote.pushMembers();try{SF.info()}catch{}
+ toast('관리자 신규 등록·입실 · '+name+' 님 ('+id+')',4000);
+ return{ok:true,visit:v,id};
+};
 /* 얼굴 인식 없이 사진만으로 신규 등록 → 바로 입실 (다음부터 번호로 입장) */
 async function savePhotoMember(info){
  mutating=true;controls();
@@ -2119,5 +2149,24 @@ const MemberGate=(()=>{
  function mwUi(){const e=document.getElementById('mwStatus');if(!e)return;
   e.textContent=webOn()?'회원 웹: ✅ 켜짐 · 매장 목록 이름 "'+storeInfo().name+'" · 가입 '+count()+'명 · '+(mcfg?'관리자 설정 받음':'관리자 설정 없음(기본값)'):'회원 웹: 꺼짐 (관리자 웹 설정에서 켤 수 있음)'}
  return window.MG={onConnect,onMsg,onClosed,uidOf,reset,schedulePub,count,_handle:handle};
+})();
+</script>
+<script>
+/* ---------- 흐르는 안내 문구 (설정에서 변경) ---------- */
+(()=>{
+ const KEY='q24Greet',DEF='가브리엘 당구장에 오신 것을 환영합니다';
+ let g=(()=>{try{return Object.assign({text:DEF,speed:75},JSON.parse(localStorage.getItem(KEY))||{})}catch{return{text:DEF,speed:75}}})();
+ const $g=id=>document.getElementById(id);
+ function apply(){
+  const sp=$g('greet'),box=sp?.parentElement;if(!sp||!box)return;
+  const t=String(g.text||DEF).trim()||DEF;sp.textContent='🎱 '+t;box.setAttribute('aria-label',t);
+  // 길이와 상관없이 같은 속도(px/초)로 흐르게
+  requestAnimationFrame(()=>{const dist=(box.clientWidth||600)+(sp.scrollWidth||400);sp.style.animationDuration=Math.max(6,dist/(Number(g.speed)||75)).toFixed(1)+'s'});
+ }
+ function fill(){$g('gkText').value=g.text||DEF;$g('gkSpeed').value=String(g.speed||75)}
+ $g('gkSave').onclick=()=>{g={text:$g('gkText').value.trim()||DEF,speed:Number($g('gkSpeed').value)||75};try{localStorage.setItem(KEY,JSON.stringify(g))}catch{}apply();toast('안내 문구를 바꿨습니다.')};
+ $g('gkReset').onclick=()=>{$g('gkText').value=DEF;$g('gkSpeed').value='75';$g('gkSave').onclick()};
+ window.addEventListener('resize',()=>{clearTimeout(apply.t);apply.t=setTimeout(apply,300)});
+ fill();apply();
 })();
 </script></body></html>
