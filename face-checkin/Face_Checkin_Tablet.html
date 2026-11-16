@@ -252,7 +252,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.24</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.25</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -508,6 +508,11 @@ const Remote=(()=>{
    const id=Object.keys(visits.open).find(k=>visits.open[k].key===cmd.key);
    if(id){const v=visits.open[id];undoVisit(id);res={ok:true,visit:v};toast('관리자 입실 취소 · '+v.name+' 님')}else res={ok:false,reason:'입실 기록 없음'};
   }else if(cmd.type==='sync'){pushState();pushMembers();res={ok:true}}
+  else if(cmd.type==='checkin'){   // 🧪 임시: 관리자 강제 입실 (테스트용)
+   if(!members.some(m=>m.id===cmd.memberId))res={ok:false,reason:'등록 회원 아님'};
+   else if(visits.open[cmd.memberId])res={ok:false,reason:'이미 입실 중'};
+   else{const v=markChecked(cmd.memberId,Date.now(),false,'관리자');res=v?{ok:true,visit:v}:{ok:false,reason:'입실 실패'};if(v)toast('관리자 입실 처리 · '+v.name+' 님')}
+  }
   else if(cmd.type==='webReset'){res=window.MG?.reset(cmd.memberId)?{ok:true}:{ok:false,reason:'회원 웹 계정 없음'};if(res.ok)toast('회원 웹 계정을 초기화했습니다.')}
   if(cmd.cid){done.push(cmd.cid);done=done.slice(-200);try{localStorage.setItem(DONE_KEY,JSON.stringify(done))}catch{}}
   clear();pub('event',{type:'ack',cid:cmd.cid||'',cmd:cmd.type,...res,eid:visitKey()});pushState();
@@ -611,7 +616,7 @@ const Ntfy=(()=>{
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='1.24',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='1.25',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
