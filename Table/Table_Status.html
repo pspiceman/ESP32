@@ -37,7 +37,9 @@ main{display:grid;grid-template-columns:minmax(230px,14.5%) minmax(250px,16%) 1f
 .dan .dTx small{font-size:.76em;font-weight:800;color:rgba(255,255,255,.88);font-variant-numeric:tabular-nums}
 .dan.two.sm{height:calc(52px*var(--fs));border-radius:17px;padding:0 14px;font-size:calc(17px*var(--fs))}
 .dan.sm{height:calc(36px*var(--fs));font-size:calc(16px*var(--fs));padding:0 11px;max-width:calc(122px*var(--fs))}.dan.sm i{display:none}
-.sel .dan,.dan.sel{animation:pulse 1s ease-in-out infinite;box-shadow:0 0 0 3px var(--cyan)}
+.dan.held{box-shadow:0 0 0 4px var(--cyan),0 0 18px rgba(56,198,255,.75);transform:scale(1.05);transition:transform .08s}
+.tp.held{box-shadow:0 0 0 3px var(--cyan)}
+.grp.held{box-shadow:0 0 0 4px var(--cyan),0 0 22px rgba(56,198,255,.6)}
 .chip .dan{flex-shrink:0}
 .tyTag{margin-left:auto;flex-shrink:0;font-size:calc(14px*var(--fs));font-weight:900;border-radius:9px;padding:3px 9px}
 .tyTag.f{background:#35d39a;color:#062a1d}.tyTag.t{background:#ff8a2a;color:#3a1600}
@@ -286,7 +288,7 @@ fieldset{border:1px solid var(--line);border-radius:14px;margin:14px 0 0;padding
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
-const BOARD_VERSION='1.08',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
+const BOARD_VERSION='1.09',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
 const LIBS=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
 const DEF_TICKER='가브리엘 당구장에 오신 것을 환영합니다.',OLD_TICKERS=['가브리엘 당구장에 오신 것을 환영합니다. 본 당구장은 정액제 당구장으로 4시간에 1만원, 그 이상은 1만 5천원입니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.','가브리엘 당구장에 오신 것을 환영합니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.'];
 /* 기본 배치 (매장 그림 기준, 배치 영역의 % 좌표) */
@@ -443,8 +445,12 @@ function toWait(ids,gid){
    if(g.type!==T){toast(TYPES[g.type].name+' 대기조에는 '+TYPES[g.type].name+' 손님만 들어갈 수 있습니다.',4000);return false}
    if(g.members.length>=GROUP_MAX){toast('대기조는 최대 '+GROUP_MAX+'명입니다.');return false}
   }else{
-   g=A.groups.find(x=>x.type===T&&x.members.length===1&&x.members[0]!==id);
-   if(g)toast(TYPES[T].name+' 1인 대기조에 함께 들어갑니다 · '+names(g.members)+' 님과 매치',4000);
+   // 개인·정액팀: 앞선 1인 대기조가 있으면 새 조를 못 만들고 그 조로 들어감
+   // 시간팀: 요금이 더 비싸므로 1인 대기조가 있어도 새 조를 만들 수 있음 (그 조에 넣으려면 조 위에 놓기)
+   if(cur&&cur.members.length===1&&T!=='t')continue;   // 이미 혼자 대기 중 → 그대로 (순서 유지)
+   if(T!=='t'){g=A.groups.find(x=>x.type===T&&x.members.length===1&&x.members[0]!==id);
+    if(g)toast(TYPES[T].name+' 1인 대기조가 있어 그 조로 들어갑니다 · '+names(g.members)+' 님과 매치',4000)}
+   else if(cur&&cur.members.length===1)continue;
   }
   detach(id);
   if(g){g=A.groups.find(x=>x.id===g.id)||g;if(!A.groups.includes(g))A.groups.push(g);g.members.push(id)}
@@ -552,8 +558,13 @@ function renderFloor(all,room){
  놓는 곳: 테이블 · 대기방(빈 곳=새 대기조 또는 같은 종류 1인 대기조) · 대기조 카드 · 손님방 */
 let drag=null,lastDragEnd=0;
 function bindDrag(node,info){
- node.addEventListener('pointerdown',e=>{if(editing||e.button>0||drag)return;const ids=typeof info.ids==='function'?info.ids():info.ids;drag={...info,ids,sx:e.clientX,sy:e.clientY,node,moved:false,ghost:null,pid:e.pointerId,onDan:!!e.target.closest?.('.dan')}});
+ node.addEventListener('pointerdown',e=>{if(editing||e.button>0||drag)return;const ids=typeof info.ids==='function'?info.ids():info.ids;const dn=e.target.closest?.('.dan');
+  // 누르는 순간 외곽선: 단추를 누르면 그 단추, 대기조 빈 곳을 누르면 대기조 전체 (손님방은 단추만 옮김)
+  const hl=dn&&node.contains(dn)&&!(info.src==='group'&&!info.single)?dn:(info.src==='group'&&!info.single||info.src==='table'?node:null);
+  if(hl)hl.classList.add('held');
+  drag={...info,ids,sx:e.clientX,sy:e.clientY,node,moved:false,ghost:null,pid:e.pointerId,onDan:!!dn,hl}});
 }
+function unheld(){for(const x of document.querySelectorAll('.held'))x.classList.remove('held')}
 const pById=id=>players().find(p=>p.id===id)||{id,disp:'?'};
 function makeGhost(ids,label){
  const g=el('div',{className:'ghost'}),row=el('div',{className:'gAvs'});
@@ -578,7 +589,7 @@ function clearHover(){for(const x of document.querySelectorAll('.hover'))x.class
 document.addEventListener('pointermove',e=>{
  if(!drag||e.pointerId!==drag.pid)return;
  const dx=e.clientX-drag.sx,dy=e.clientY-drag.sy;
- if(!drag.moved){if(Math.hypot(dx,dy)<10)return;if(!drag.ids.length){drag=null;return}drag.moved=true;try{drag.node.setPointerCapture(e.pointerId)}catch{}
+ if(!drag.moved){if(Math.hypot(dx,dy)<10)return;if(!drag.ids.length||!drag.hl){unheld();drag=null;return}drag.moved=true;try{drag.node.setPointerCapture(e.pointerId)}catch{}
   const g=makeGhost(drag.ids,drag.label);document.body.append(g);drag.ghost=g;document.body.classList.add('dragging');clearSel(false)}
  drag.ghost.style.left=e.clientX+'px';drag.ghost.style.top=e.clientY+'px';
  const t=targetAt(e.clientX,e.clientY);clearHover();if(t)t.node.classList.add('hover');
@@ -595,20 +606,14 @@ function place(d,t,pt){
  if(t.kind==='room'){if(d.src==='room')return;toRoom(d.ids)}
 }
 function endDrag(e,cancel){
- if(!drag||e.pointerId!==drag.pid)return;const d=drag;drag=null;
+ if(!drag||e.pointerId!==drag.pid)return;const d=drag;drag=null;unheld();
  if(d.moved){d.ghost?.remove();document.body.classList.remove('dragging');lastDragEnd=Date.now();clearHover();
   if(!cancel)place(d,targetAt(e.clientX,e.clientY),{x:e.clientX,y:e.clientY});render()}
- else if(!cancel&&d.typeMenu&&!d.onDan&&!sel){const p=players().find(x=>x.id===d.ids[0]);if(p)openType(p)}   // 손님방 단추 밖 → 종류 선택
- else if(!cancel&&d.src!=='table'){ // 누르기 → 고른 뒤 테이블·대기방·손님방을 누르면 옮김
-  const same=sel&&sel.ids.join()===d.ids.join()&&!!sel.gid===!!d.gid&&!!sel.single===!!d.single;
-  if(sel&&!same){const t=targetAt(e.clientX,e.clientY),s0=sel;
-   const ok=t&&t.kind!=='table'&&!(t.kind==='room'&&s0.src==='room')&&!(t.kind==='group'&&s0.gid===t.gid);
-   if(ok){clearSel(false);place(s0,t,null);lastDragEnd=Date.now();render();return}}
-  if(same)clearSel();
-  else{sel=d;document.body.classList.add('picking');$('pickText').textContent='👉 '+d.label+(d.src==='group'&&!d.single?'':' 님')+' · 옮길 곳(테이블·대기방'+(d.src!=='room'?'·손님방':'')+')을 누르세요';$('pickBar').hidden=false;render()}}
+ else if(!cancel&&d.typeMenu&&!d.onDan){const p=players().find(x=>x.id===d.ids[0]);if(p)openType(p)}   // 손님방 단추 밖 → 종류 선택
+ // 누르기만 하고 놓으면 아무것도 안 함 (옮기기는 끌어서만)
 }
 document.addEventListener('pointerup',e=>endDrag(e,false));
-document.addEventListener('pointercancel',e=>{if(drag&&!drag.moved&&e.pointerId===drag.pid)drag=null;else endDrag(e,true)});
+document.addEventListener('pointercancel',e=>{if(drag&&!drag.moved&&e.pointerId===drag.pid){drag=null;unheld()}else endDrag(e,true)});
 function clearSel(r=true){sel=null;document.body.classList.remove('picking');$('pickBar').hidden=true;if(r)render()}
 $('pickCancel').onclick=()=>clearSel();
 // 고른 상태에서 대기방·대기조·손님방을 누르면 그리로
@@ -623,7 +628,7 @@ function openTable(no){
  const a=A.tables[no],byId=Object.fromEntries(players().map(p=>[p.id,p])),ps=(a?.players||[]),ended=!!A.ended[no];
  $('tTitle').textContent=no+'번 테이블 · '+(ps.length?(ended?'':'경기 중 '+durShort(Date.now()-a.since)):'비어 있음');
  const body=$('tBody');body.replaceChildren();
- if(!ps.length)body.append(el('p',{className:'hint',textContent:'손님방이나 대기방의 단추를 이 테이블로 끌어다 놓거나, 단추를 누른 뒤 이 테이블을 누르면 바로 시작합니다.'}));
+ if(!ps.length)body.append(el('p',{className:'hint',textContent:'손님방이나 대기방의 단추(또는 대기조)를 이 테이블로 끌어다 놓으면 바로 시작합니다.'}));
  else body.append(el('p',{className:'hint',style:'margin:0 0 6px',textContent:'경기를 끝내면 개인·정액팀 손님은 손님방 맨 아래로 가고, 시간팀 손님은 현황판에서 빠져 관리자에게 정산 요청이 갑니다.'}));
  for(const id of ps){const p=byId[id]||{id,disp:'?'},T=typeOf(id);body.append(el('div',{className:'tpRow'},av(p),el('div',{className:'cInfo'},el('div',{className:'cName',textContent:p.disp}),el('div',{className:'cSub',textContent:TYPES[T].name+' · '+handiOf(p)+(p.inAt?' · 입장 '+hhmm(p.inAt):'')})),
   el('button',{type:'button',className:'small',textContent:'손님방으로',onclick:()=>{toRoom([id]);openTable(no);render()}})))}
