@@ -55,14 +55,14 @@ header{display:flex;align-items:center;gap:18px;padding:8px 18px;background:line
 main{display:grid;grid-template-columns:minmax(230px,14.5%) minmax(250px,16%) 1fr;gap:12px;padding:12px 14px 14px;min-height:0}
 .box{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px;display:flex;flex-direction:column;min-height:0}
 .box h2{margin:0 0 8px;font-size:calc(21px*var(--fs));display:flex;align-items:center;gap:8px}.box h2 small{margin-left:auto;font-size:.65em;color:var(--muted);font-weight:600}
-:root{--rowH:calc(76px*var(--fs));
+:root{--rowH:calc(64px*var(--fs));
  --kP:#2e8a74;--kPt:#f2fffb;--kPbg:rgba(46,138,116,.16);--kPln:rgba(70,165,140,.45);
  --kF:#a77bff;--kFt:#ffffff;--kFbg:rgba(167,123,255,.17);--kFln:rgba(167,123,255,.6);
  --kT:#ff9b3d;--kTt:#2e1300;--kTbg:rgba(255,155,61,.17);--kTln:rgba(255,155,61,.6)}
-/* 닉네임 단추: 한글 4글자가 들어가는 고정 크기 · 닉네임과 (핸디)는 가운데 · 길면 글자를 줄여 단추 안에 */
+/* 닉네임 단추: 한글 3글자가 들어가는 고정 크기 · 닉네임과 (핸디)는 가운데 · 길면 글자를 줄여 단추 안에 */
 .dan.k-p{background:var(--kP);color:var(--kPt)}.dan.k-f{background:var(--kF);color:var(--kFt)}.dan.k-t{background:var(--kT);color:var(--kTt)}
-.dan.two{width:calc(128px*var(--fs));max-width:none;height:calc(62px*var(--fs));padding:0 8px;border-radius:18px;justify-content:center;font-size:calc(20px*var(--fs))}
-.dan.two.sm{width:calc(118px*var(--fs));height:calc(58px*var(--fs));padding:0 7px;font-size:calc(19px*var(--fs))}
+.dan.two{width:calc(92px*var(--fs));max-width:none;height:calc(52px*var(--fs));padding:0 6px;border-radius:15px;justify-content:center;font-size:calc(18px*var(--fs))}
+.dan.two.sm{width:calc(90px*var(--fs));height:calc(50px*var(--fs));padding:0 6px;font-size:calc(17px*var(--fs))}
 .dan .dTx{width:100%;min-width:0}.dan .dTx b{display:block;width:100%;text-align:center;line-height:1.15}
 .dan.k-t .dTx small{color:rgba(0,0,0,.72)}.dan.k-p .dTx small{color:rgba(235,255,248,.82)}
 .k-dot.k-p{background:var(--kP)}.k-dot.k-f{background:var(--kF)}.k-dot.k-t{background:var(--kT)}
@@ -70,11 +70,9 @@ main{display:grid;grid-template-columns:minmax(230px,14.5%) minmax(250px,16%) 1f
 .dan{display:inline-flex;align-items:center;gap:7px;max-width:calc(150px*var(--fs));min-width:0;flex-shrink:1;height:calc(42px*var(--fs));padding:0 14px 0 6px;border-radius:999px;color:#fff;font-weight:900;font-size:calc(18px*var(--fs));box-shadow:inset 0 -3px 0 rgba(0,0,0,.25),0 2px 6px rgba(0,0,0,.35);cursor:grab;touch-action:pan-y}
 .dan i{width:calc(14px*var(--fs));height:calc(14px*var(--fs));border-radius:50%;background:rgba(255,255,255,.85);flex-shrink:0;box-shadow:inset 0 -2px 0 rgba(0,0,0,.2)}
 .dan span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.dan.two{height:calc(58px*var(--fs));border-radius:20px;padding:0 16px 0 8px}
 .dan .dTx{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;line-height:1.15}
 .dan .dTx b,.dan .dTx small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dan .dTx small{font-size:.76em;font-weight:800;color:rgba(255,255,255,.88);font-variant-numeric:tabular-nums}
-.dan.two.sm{height:calc(52px*var(--fs));border-radius:17px;padding:0 14px;font-size:calc(17px*var(--fs))}
 .dan.sm{height:calc(36px*var(--fs));font-size:calc(16px*var(--fs));padding:0 11px;max-width:calc(122px*var(--fs))}.dan.sm i{display:none}
 .dan.held{box-shadow:0 0 0 4px var(--cyan),0 0 18px rgba(56,198,255,.75);transform:scale(1.05);transition:transform .08s}
 .tp.held{box-shadow:0 0 0 3px var(--cyan)}
@@ -364,7 +362,7 @@ fieldset{border:1px solid var(--line);border-radius:14px;margin:14px 0 0;padding
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
-const BOARD_VERSION='1.18',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
+const BOARD_VERSION='1.19',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
 const LIBS=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
 const DEF_TICKER='가브리엘 당구장에 오신 것을 환영합니다.',OLD_TICKERS=['가브리엘 당구장에 오신 것을 환영합니다. 본 당구장은 정액제 당구장으로 4시간에 1만원, 그 이상은 1만 5천원입니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.','가브리엘 당구장에 오신 것을 환영합니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.'];
 /* 기본 배치 (매장 그림 기준, 배치 영역의 % 좌표) */
@@ -572,10 +570,10 @@ function handiOf(p){
  if(cfg.handiMode==='34'){const a=[p.h3?'3구 '+p.h3:'',p.h4?'4구 '+p.h4:''].filter(Boolean).join(' · ');return a||'—'}
  return p.h3||'—';
 }
-function fitDans(){for(const b of document.querySelectorAll('.dan.two .dTx b')){b.style.fontSize='';let f=parseFloat(getComputedStyle(b).fontSize)||18,n=0;while(b.scrollWidth>b.clientWidth+1&&f>10&&n++<14){f-=1;b.style.fontSize=f+'px'}}}
-function render(){
+function fitDans(){for(const b of document.querySelectorAll('.dan.two .dTx b')){b.style.fontSize='';let f=parseFloat(getComputedStyle(b).fontSize)||18,n=0;while(b.scrollWidth>b.clientWidth&&f>9&&n++<16){f-=1;b.style.fontSize=f+'px'}}}
+function render(){_render();if(!drag?.moved)fitDans()}   // 그린 즉시 긴 닉네임은 단추 안에 맞게 줄임
+function _render(){
  if(drag?.moved)return;
- requestAnimationFrame(fitDans);   // 그린 뒤 긴 닉네임은 단추 안에 맞게 줄임
  cleanAssign();
  const all=players(),room=roomList(all),byId=Object.fromEntries(all.map(p=>[p.id,p]));
  const fresh=new Set();for(const p of all){if(!seen.has(p.id)){if(!firstData)fresh.add(p.id);seen.add(p.id)}}
