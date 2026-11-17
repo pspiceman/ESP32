@@ -304,7 +304,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.34</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.35</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -659,7 +659,7 @@ const Ntfy=(()=>{
   if(!topic)return false;const headers={'Content-Type':'application/json'};if(cfg.token.trim())headers.Authorization='Bearer '+cfg.token.trim();
   try{const r=await fetch(cfg.server.replace(/\/+$/,'')+'/',{method:'POST',headers,body:JSON.stringify({topic,title:msg.title,message:msg.message,tags:msg.tags||[],priority:msg.priority||3})});return r.ok}catch{return false}
  }
- function outRequest(v){if(!cfg.enabled||!cfg.topic.trim())return;post({title:(v.nick||v.name)+'님 퇴실 요청',message:(v.nick||v.name)+'님이 회원 웹에서 퇴실을 요청했습니다.\n입실 '+tm(v.inAt)+' · 결제 확인 후 관리자 웹에서 퇴실 처리해 주세요.',tags:['wave','q24-outreq'],priority:4})}
+ function outRequest(v){if(!cfg.enabled||!cfg.topic.trim())return;post({title:(v.nick||v.name)+'님 퇴실 (정산 대기)',message:(v.nick||v.name)+'님이 회원 웹에서 퇴실했습니다.\n입실 '+tm(v.inAt)+' · 결제·미수 확인 후 관리자 웹에서 퇴실 처리해 주세요.',tags:['wave','q24-outreq'],priority:4})}
  function fill(){g('ntEnabled').checked=cfg.enabled;g('ntServer').value=cfg.server;g('ntTopic').value=cfg.topic;g('ntToken').value=cfg.token;g('ntCheckin').checked=cfg.checkin;g('ntRegister').checked=cfg.register;ui()}
  const newTopic=()=>{const a=crypto.getRandomValues(new Uint8Array(8));return 'q24-'+[...a].map(b=>'abcdefghjkmnpqrstuvwxyz23456789'[b%31]).join('')};
  function fail(msg){ui('⚠ '+msg);toast('⚠ '+msg,5000);return false}
@@ -687,7 +687,7 @@ const Ntfy=(()=>{
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='1.34',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='1.35',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
@@ -732,7 +732,7 @@ function checkedAt(id){return visits.open[id]?.inAt||0}
 function visitKey(){return 'V'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 /* 닉네임/이름: 매장에서 쓰는 이름 (없으면 등록 이름) · m.name 은 관리자 웹에서 관리하는 실제 이름 */
 function dn(m){return String(m?.nick||'').trim()||String(m?.name||'')}
-function memberInfo(m){const H=handiOf(m);return{id:m.id,name:m.name,nick:dn(m),game:m.game||'',handi:m.handi??'',handi3:H.h3,handi4:H.h4,phone:m.phone||'',faceless:!!m.noFace}}
+function memberInfo(m){const H=handiOf(m);return{id:m.id,name:m.name,realName:m.realName??null,nick:dn(m),game:m.game||'',handi:m.handi??'',handi3:H.h3,handi4:H.h4,phone:m.phone||'',faceless:!!m.noFace}}
 /* via: 얼굴 · 번호(휴대폰 뒷자리) · 사진등록(얼굴 인식 없이 신규 등록) */
 function markChecked(id,t,isNew=false,via='얼굴'){
  const m=members.find(x=>x.id===id);if(!m)return null;
@@ -1735,6 +1735,7 @@ window.adminMember=async function(cmd){
   if(/^guest\s*\d*$/i.test(k))return{ok:false,reason:'GUEST는 쓸 수 없습니다'};
   if(members.some(x=>x.id!==m.id&&dn(x).toLowerCase()===k.toLowerCase()))return{ok:false,reason:'같은 닉네임/이름이 있습니다'};next.nick=k}
  if('name' in f)next.name=String(f.name||'').trim().slice(0,20)||next.nick||m.name;
+ if('realName' in f){next.realName=String(f.realName||'').trim().slice(0,20);next.name=next.realName||next.nick||m.name}   // 실제 이름(관리용): 닉네임과 같아도 그대로 저장
  if('phone' in f){const d=String(f.phone||'').replace(/\D/g,'');if(d&&!/^01\d{8,9}$/.test(d))return{ok:false,reason:'휴대폰 번호 형식'};
   if(d&&members.some(x=>x.id!==m.id&&String(x.phone||'').replace(/\D/g,'')===d))return{ok:false,reason:'이미 등록된 휴대폰 번호'};next.phone=d?fmtPhone(d):''}
  if('handi3' in f)next.handi3=String(f.handi3??'').replace(/\D/g,'').slice(0,3);
@@ -2065,7 +2066,7 @@ const MemberGate=(()=>{
  }
  function me(u){
   const m=members.find(x=>x.id===u.memberId);if(!m)return null;const H=handiOf(m),v=visits.open[m.id],mo=monthlyOf(m.id);
-  return{uid:u.uid,name:m.name,nick:String(m.nick||'').trim(),disp:dispOf(m.id),game:m.game||'',h3:H.h3??'',h4:H.h4??'',monthly:mo?{end:mo.end||''}:null,prepaid:balanceOf(m.id),coupons:couponsOf(m.id),
+  return{uid:u.uid,name:dn(m),nick:dn(m),phone:m.phone||'',test:!!u.test,disp:dispOf(m.id),game:m.game||'',h3:H.h3??'',h4:H.h4??'',monthly:mo?{end:mo.end||''}:null,prepaid:balanceOf(m.id),coupons:couponsOf(m.id),
    attend:attendOf(m.id),visit:v?{inAt:v.inAt,rest:!!v.rest,restAt:v.restAt||0,outReq:v.outReq||0}:null,where:whereOf(m.id),team:board?.types?.[m.id]||'p',push:u.topic||'',
    avg:null,win:null,since:m.createdAt||0};   // 에버리지·승률: 점수판 연동 후 채움
  }
@@ -2078,7 +2079,7 @@ const MemberGate=(()=>{
   const ids=Object.keys(visits.open);
   return{tables,groups,room:ids.filter(id=>!used.has(id)).length,inCount:ids.length,live:!!board,at:Date.now()};
  }
- function storeInfo(){return{id:storeId(),name:mcfg?.name||Remote.config().site.trim()||'Q24 당구장',addr:mcfg?.addr||'',tier:mcfg?.tier==='pro'?'pro':'std',info:mcfg?.info||'',geo:!!mcfg?.geo?.on,door:!!mcfg?.door?.on,push:(Ntfy.config().server||'https://ntfy.sh').replace(/\/+$/,''),noticeTopic:noticeTopic()}}
+ function storeInfo(){return{id:storeId(),name:mcfg?.name||Remote.config().site.trim()||'Q24 당구장',addr:mcfg?.addr||'',tier:mcfg?.tier==='pro'?'pro':'std',info:mcfg?.info||'',geo:mcfg?.geo?.on!==false?.on,door:!!mcfg?.door?.on,push:(Ntfy.config().server||'https://ntfy.sh').replace(/\/+$/,''),noticeTopic:noticeTopic()}}
  function activeNotices(){const t=ymdL(Date.now());return(mcfg?.notices||[]).filter(n=>!n.until||n.until>=t).sort((a,b)=>(!!b.pin-!!a.pin)||(b.at||0)-(a.at||0)).slice(0,20)}
  async function publishDir(){
   const {base}=R();if(!base)return;const t='q24/v1/dir/'+storeId();
@@ -2120,16 +2121,28 @@ const MemberGate=(()=>{
   if(!webOn())return E('이 매장은 지금 회원 웹을 쓰지 않습니다.');
   if(q.op==='signup'){
    const uid=norm(q.uid);if(!/^[a-z0-9_]{4,16}$/.test(uid))return E('아이디는 영문 소문자·숫자 4~16자로 정해 주세요.');
+   if(uid==='admin')return E('admin은 쓸 수 없는 아이디입니다.');
    if(String(q.pw||'').length<6)return E('비밀번호는 6자 이상으로 정해 주세요.');
    if(acc.users[uid])return E('이미 쓰고 있는 아이디입니다. 다른 아이디를 정해 주세요.');
-   const nm=norm(q.name),ph=digits(q.phone);if(ph.length<10)return E('휴대폰 번호 전체를 입력해 주세요.');
-   const m=members.find(x=>(norm(x.name)===nm||(x.nick&&norm(x.nick)===nm))&&digits(x.phone)===ph);
-   if(!m)return E('인식기에 등록된 회원 정보와 맞지 않습니다. 이름(또는 닉네임)과 휴대폰 번호를 확인해 주세요. 처음 오셨다면 매장 인식기에서 먼저 회원 등록을 해 주세요.');
+   // 본인 확인: 닉네임 · 실제 이름 · 휴대폰 번호 중 하나 (여러 명이 겹치면 다른 정보로 다시)
+   const who=norm(q.who??q.name??''),ph=digits(q.who??q.phone??'');if(!who)return E('닉네임·이름·휴대폰 번호 중 하나를 입력해 주세요.');
+   const hits=members.filter(x=>(ph.length>=10&&digits(x.phone)===ph)||norm(dn(x))===who||norm(x.name)===who||(x.realName&&norm(x.realName)===who));
+   if(hits.length>1)return E('같은 정보의 회원이 여러 명입니다. 휴대폰 번호 전체로 다시 확인해 주세요.');
+   const m=hits[0];
+   if(!m)return E('이 매장에 등록된 회원이 아닙니다. 닉네임·이름·휴대폰 번호를 확인해 주세요. 처음 오셨다면 매장 인식기에서 먼저 회원 등록을 해 주세요.');
    if(Object.values(acc.users).some(u=>u.memberId===m.id))return E('이미 회원 웹에 가입된 회원입니다. 아이디·비밀번호를 잊었다면 매장에 초기화를 요청해 주세요.');
    const salt=b64(rnd(16));acc.users[uid]={uid,memberId:m.id,salt,hash:await pwHash(q.pw,salt),createdAt:now,topic:'',fails:0,lock:0};
    const token=newToken(uid);saveAcc();Remote.pushMembers();
    return{ok:true,token,me:me(acc.users[uid]),msg:'가입되었습니다. 환영합니다!'};
   }
+  if(q.op==='login'&&norm(q.uid)==='admin'&&String(q.pw)==='0000'&&!acc.users.admin){   // 🧪 테스트 계정
+   let tm=members.find(x=>x.testAcct)||members.find(x=>dn(x)==='테스트');
+   if(!tm){const r=await window.testCreateMember?.({nick:'테스트',name:'테스트(관리)',handi3:'15'});tm=r?.ok&&members.find(x=>x.id===r.id);if(tm){tm.testAcct=true;await writeDB(st=>st.put(tm));const vv=visits.open[tm.id];if(vv){delete visits.open[tm.id];saveVisits();Remote.pushState()}}}
+   if(!tm)return E('테스트 회원을 만들지 못했습니다.');
+   acc.users.admin={uid:'admin',memberId:tm.id,salt:b64(rnd(16)),hash:'-',createdAt:now,topic:'',fails:0,lock:0,test:true};
+   const token=newToken('admin');saveAcc();return{ok:true,token,me:me(acc.users.admin),msg:'테스트 계정으로 로그인했습니다.'};
+  }
+  if(q.op==='login'&&norm(q.uid)==='admin'&&String(q.pw)==='0000'&&acc.users.admin?.test){const token=newToken('admin');saveAcc();const r=me(acc.users.admin);if(r)return{ok:true,token,me:r};delete acc.users.admin;saveAcc();return E('테스트 회원이 없습니다. 다시 로그인해 주세요.')}
   if(q.op==='login'){
    const u=acc.users[norm(q.uid)];if(!u)return E('아이디 또는 비밀번호가 맞지 않습니다.');
    if((u.lock||0)>now)return E('비밀번호를 여러 번 틀려 '+Math.ceil((u.lock-now)/60000)+'분 동안 로그인할 수 없습니다.');
@@ -2145,12 +2158,14 @@ const MemberGate=(()=>{
   switch(q.op){
    case 'me':return{ok:true,me:me(u)};
    case 'enter':{
-    if(mcfg.geo?.on){
-     if(q.lat==null||q.lng==null)return E('매장 근처인지 확인해야 합니다. 휴대폰의 위치 권한을 허용해 주세요.');
-     const d=dist(+q.lat,+q.lng,+mcfg.geo.lat,+mcfg.geo.lng),r=+mcfg.geo.r||150;if(d>r)return E('매장 가까이(약 '+r+'m 안)에서만 입실할 수 있습니다. 지금 거리 약 '+Math.round(d)+'m');
+    const geoOn=mcfg.geo?.on!==false,hasPos=String(mcfg.geo?.lat??'').trim()!==''&&String(mcfg.geo?.lng??'').trim()!=='';
+    if(geoOn){
+     if(q.lat==null||q.lng==null)return E('위치(GPS)를 확인해야 입장할 수 있습니다. 휴대폰의 위치를 켜 주세요.');
+     if(hasPos){const d=dist(+q.lat,+q.lng,+mcfg.geo.lat,+mcfg.geo.lng),r=+mcfg.geo.r||1000;if(d>r)return E('매장 주변 '+(r>=1000?(r/1000)+'km':r+'m')+' 안에서만 입장할 수 있습니다. 지금 거리 약 '+(d>=1000?(d/1000).toFixed(1)+'km':Math.round(d)+'m'))}
     }
     let msg;
-    if(!v){markChecked(m.id,now,false,'회원 웹');msg='입실되었습니다.'}
+    if(!v){markChecked(m.id,now,false,'회원 웹');msg='입장했습니다! 현황판 휴식방에 표시됩니다.'}
+    else if(v.outReq){delete v.outReq;delete v.rest;delete v.restAt;saveVisits();renderMembers();Remote.pushState();msg='다시 입장했습니다. (퇴실을 취소했습니다)'}
     else if(v.rest){delete v.rest;delete v.restAt;saveVisits();renderMembers();Remote.pushState();msg='다시 오셨네요! 휴식을 마쳤습니다.'}
     else msg='이미 입실 중입니다.';
     const door=await openDoor(m);
@@ -2165,8 +2180,8 @@ const MemberGate=(()=>{
    case 'out':{
     if(!v)return E('입실 중이 아닙니다.');
     if(monthlyOf(m.id)){closeVisit(v.key,{method:'월회원',amount:0,by:'회원 웹(본인)'});return{ok:true,msg:'월회원 퇴실이 완료되었습니다. 안녕히 가세요!',done:true,me:me(u)}}
-    if(!v.outReq){v.outReq=now;saveVisits();renderMembers();Remote.pushState();Ntfy.outRequest(v)}
-    return{ok:true,msg:'퇴실 요청을 보냈습니다. 업주가 결제를 확인하면 퇴실 처리되고 알림이 갑니다.',me:me(u)};
+    if(!v.outReq){v.outReq=now;delete v.rest;saveVisits();renderMembers();Remote.pushState();Ntfy.outRequest(v)}
+    return{ok:true,msg:'퇴실했습니다. 안녕히 가세요!\n이용 요금(결제·미수)은 관리자가 확인해 정리합니다.',done:true,me:me(u)};
    }
    case 'outCancel':{if(v?.outReq){delete v.outReq;saveVisits();renderMembers();Remote.pushState()}return{ok:true,msg:'퇴실 요청을 취소했습니다.',me:me(u)}}
    case 'push':{
@@ -2181,6 +2196,12 @@ const MemberGate=(()=>{
     u.salt=b64(rnd(16));u.hash=await pwHash(q.pw,u.salt);
     for(const [k,x] of Object.entries(acc.tokens))if(x.uid===u.uid&&k!==q.token)delete acc.tokens[k];   // 다른 기기는 로그아웃
     saveAcc();return{ok:true,msg:'비밀번호를 바꿨습니다.'};
+   }
+   case 'profile':{
+    const f={};const pf=q.fields||{};
+    if('nick' in pf)f.nick=pf.nick;if('phone' in pf)f.phone=pf.phone;if('handi3' in pf)f.handi3=pf.handi3;if('handi4' in pf)f.handi4=pf.handi4;
+    const r=await window.adminMember({type:'memberEdit',memberId:m.id,fields:f});
+    if(!r.ok)return E(r.reason||'저장하지 못했습니다.');return{ok:true,msg:'내 정보를 저장했습니다.',me:me(u)};
    }
    case 'logout':delete acc.tokens[q.token];saveAcc();return{ok:true};
   }
@@ -2213,6 +2234,7 @@ const MemberGate=(()=>{
   }
  }
  function onConnect(){ensureKeys().then(()=>{publishDir();schedulePub()}).catch(e=>console.warn('member keys',e))}
+ setInterval(()=>{if(R().online){dirSent='';publishDir()}},60000);   // 생존 신호
  function onClosed(v){   // 퇴실이 끝나면 본인에게 알림
   const u=Object.values(acc.users).find(x=>x.memberId===v.id);if(!u?.topic)return;
   const amt=v.amount!==''&&v.amount!=null&&Number(v.amount)>0?' · '+Number(v.amount).toLocaleString('ko-KR')+'원':'';
