@@ -363,18 +363,24 @@ details.tbl{margin-top:8px}details.tbl summary{cursor:pointer;color:var(--muted)
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
-const ADMIN_VERSION='2.20',CFG_KEY='q24AdminRemote',HIST_KEY='q24AdminHistory',LEDGER_KEY='q24AdminLedger',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
+const ADMIN_VERSION='2.21',CFG_KEY='q24AdminRemote';let HIST_KEY='q24AdminHistory',LEDGER_KEY='q24AdminLedger';const DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
 const LIBS=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
 const enc=new TextEncoder(),dec=new TextDecoder();
 const b64=u=>{let s='';for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode(...u.subarray(i,i+8192));return btoa(s)},unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const CFG_DEF={broker:DEF_BROKER,site:'',pass:'',by:'관리자',beep:true,batWarn:true,ntOn:false,ntServer:'https://ntfy.sh',ntTopic:'',ntToken:'',ntPush:true,baseHours:4,baseFee:10000,overFee:15000,monthFee:0,timeRate:0,timeUnit:10,cpOn:true,cpDays:6};
-const MC_KEY='q24AdminMcfg';
+
+let cfg=Object.assign({},CFG_DEF,(()=>{try{return JSON.parse(localStorage.getItem(CFG_KEY))||{}}catch{return {}}})());
+/* 매장마다 따로 저장 (매장 코드를 바꿔도 다른 매장의 이름·장부가 섞이지 않게) */
+const SITE=String(cfg.site||'').trim(),MC_KEY='q24AdminMcfg@'+SITE;
+for(const k of ['q24AdminHistory','q24AdminLedger'])try{const old=localStorage.getItem(k);if(old!=null&&localStorage.getItem(k+'@'+SITE)==null&&localStorage.getItem('q24AdminLegacySite')==null){localStorage.setItem(k+'@'+SITE,old)}}catch{}
+try{if(localStorage.getItem('q24AdminLegacySite')==null){localStorage.setItem('q24AdminLegacySite',SITE);localStorage.removeItem('q24AdminMcfg');localStorage.removeItem('q24AdminHistory');localStorage.removeItem('q24AdminLedger')}}catch{}
+HIST_KEY+='@'+SITE;LEDGER_KEY+='@'+SITE;
 let MC=Object.assign({type:'mcfg',webOn:true,name:'',addr:'',tier:'std',info:'',geo:{on:true,lat:'',lng:'',r:1000},door:{on:false,secret:''},notices:[],at:0},(()=>{try{return JSON.parse(localStorage.getItem(MC_KEY))||{}}catch{return {}}})());
 let mcSeen=false;
 function saveMC(){try{localStorage.setItem(MC_KEY,JSON.stringify(MC))}catch{}}
-async function pubMC(){MC.at=Date.now();saveMC();if(!client||!online)return;try{client.publish(base+'/mcfg',await seal({...MC,type:'mcfg'}),{qos:1,retain:true})}catch(e){console.warn('mcfg pub',e)}}
+async function pubMC(){MC.at=Date.now();saveMC();if(!client||!online)return;try{client.publish(base+'/mcfg',await seal({...MC,type:'mcfg',site:SITE}),{qos:1,retain:true})}catch(e){console.warn('mcfg pub',e)}}
 const memberUrl=()=>{try{const u=new URL(location.href);u.search=base?'?s='+base.split('/').pop():'';u.hash='';u.pathname=u.pathname.replace(/[^/]*$/,'Member/Member.html');return u.href}catch{return 'CUE24_Member.html'}};
-let cfg=Object.assign({},CFG_DEF,(()=>{try{return JSON.parse(localStorage.getItem(CFG_KEY))||{}}catch{return {}}})());
+
 let client=null,aesKey=null,base='',online=false,gen=0,libP=null,tab='in',audioCtx=null;
 let board=null,state={open:[],closed:[],at:0},roster=[],tabletStatus=null,logs=[],pending={},firstState=true,undoMap={};
 let hist=(()=>{try{return JSON.parse(localStorage.getItem(HIST_KEY))||{}}catch{return {}}})();
@@ -1141,6 +1147,7 @@ $('fmConn').onsubmit=e=>{
  if((cfg.batWarn||cfg.ntPush)&&window.Notification&&Notification.permission==='default')try{Notification.requestPermission()}catch{}
  try{localStorage.setItem(CFG_KEY,JSON.stringify(cfg))}catch{}
  $('dlgConn').close();
+ if(String(prev.site||'').trim()!==String(cfg.site||'').trim()){toast('매장 코드를 바꿨습니다. 그 매장 설정으로 다시 엽니다…');setTimeout(()=>location.reload(),600);return}   // 매장마다 설정·장부를 따로 씀
  if(prev.broker!==cfg.broker||prev.site!==cfg.site||prev.pass!==cfg.pass||!client)connect();
  if(prev.ntOn!==cfg.ntOn||prev.ntServer!==cfg.ntServer||prev.ntTopic!==cfg.ntTopic||prev.ntToken!==cfg.ntToken)NT.start();
  const nm={webOn:$('wOn').checked,name:$('wName').value.trim(),addr:$('wAddr').value.trim(),tier:$('wTier').value,info:$('wInfo').value.trim(),
