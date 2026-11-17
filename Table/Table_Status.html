@@ -117,8 +117,13 @@ main{display:grid;grid-template-columns:minmax(230px,14.5%) minmax(250px,16%) 1f
 .gHead{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .gNo{display:grid;place-items:center;width:calc(28px*var(--fs));height:calc(28px*var(--fs));border-radius:8px;background:#0a141a;font-weight:900;font-size:calc(15px*var(--fs))}
 .gHead b{font-size:calc(17px*var(--fs))}.g-p .gHead b{color:#7fd3bd}.g-f .gHead b{color:#c9b3ff}.g-t .gHead b{color:var(--kT)}
-.gIn{margin-left:auto;min-height:calc(40px*var(--fs));padding:0 16px;border-radius:12px;font-size:calc(16px*var(--fs));font-weight:900;border:2px solid #6fb7ff;background:#1d3a5c;color:#e6f4ff;box-shadow:0 2px 0 rgba(0,0,0,.3)}
-.gIn.on{background:#ffd27a;color:#3a2a00}
+/* [입장] 블록 화살표 버튼 (몸통 + 위아래로 튀어나온 화살촉) · 남색 바탕 · 하늘색 테두리 · 입체감 */
+.gIn{margin-left:auto;position:relative;width:calc(90px*var(--fs));height:calc(48px*var(--fs));min-height:0;padding:0;border:0;background:none;color:#fff;cursor:pointer;filter:drop-shadow(0 3px 0 #08182b) drop-shadow(0 5px 6px rgba(0,0,0,.45));transition:transform .06s,filter .06s}
+.gIn svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.gIn span{position:absolute;left:3%;top:0;bottom:0;width:82%;display:flex;align-items:center;justify-content:center;font-size:calc(16.5px*var(--fs));font-weight:900;letter-spacing:-.02em;white-space:nowrap;text-shadow:0 1px 0 rgba(0,0,0,.5)}
+.gIn:active{transform:translateY(3px);filter:drop-shadow(0 0 0 #08182b) drop-shadow(0 2px 3px rgba(0,0,0,.4))}
+.gIn.on span{color:#3a2a00;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+
 .grp.picked{box-shadow:0 0 0 4px #ffd27a,0 0 22px rgba(255,210,122,.55)}
 .gSt{font-size:calc(13px*var(--fs));font-weight:800;border-radius:8px;padding:2px 8px;background:#0f8a74;color:#fff}.gSt.wait{background:#5a4a10;color:#ffe08a}
 .gCnt{margin-left:auto;font-size:calc(13px*var(--fs));color:var(--muted);font-weight:800}
@@ -159,6 +164,8 @@ body.dragging .roomBox,body.dragging .waitBox,body.picking .roomBox,body.picking
 .tbl.on .tState.k-p{background:var(--kP);color:var(--kPt);box-shadow:0 0 0 1px rgba(160,230,210,.55),0 0 10px rgba(46,138,116,.5)}.tbl.on .tState.k-f{background:var(--kF);color:var(--kFt);box-shadow:0 0 12px rgba(167,123,255,.6)}.tbl.on .tState.k-t{background:var(--kT);color:var(--kTt);box-shadow:0 0 12px rgba(255,155,61,.6)}
 .tbl.on .tState.solo{background:#ffd27a;color:#3a2a00;box-shadow:none}.tbl.on .tState.prac{background:#38c6ff;color:#06253a;box-shadow:0 0 12px rgba(56,198,255,.6)}
 .tPlayers{display:flex;flex-direction:column;gap:5px;width:100%;flex:1;justify-content:safe center;min-height:0;overflow:hidden}
+.tPlayers:has(.tpd){flex-direction:row;flex-wrap:wrap;align-content:center;justify-content:center;gap:calc(6px*var(--fs))}
+.tp.tpd{background:none;padding:0;border-radius:15px;justify-content:center}.tp.tpd .dan{cursor:grab}
 .tbl{container-type:inline-size}
 .tbl.many .tNo{font-size:calc(26px*var(--fs))}.tbl.many .felt{gap:4px;padding:6px 5px}.tbl.many .tp{padding:3px 5px}.tbl.many .tState{font-size:calc(12px*var(--fs));padding:2px 8px}
 @container (max-width:118px){
@@ -266,6 +273,7 @@ fieldset{border:1px solid var(--line);border-radius:14px;margin:14px 0 0;padding
  .tNo{font-size:17px!important}.tState{font-size:9.5px!important;padding:1px 6px!important}.bulb,.tEmptyTxt{display:none}
  .tPlayers{gap:3px}.tp{padding:2px 4px!important;border-radius:6px}.tp b{font-size:12.5px!important}.tDot{display:none}
  .tTime{font-size:10px!important;padding:1px 5px!important}.tType{display:none}
+ .tbl .dan.two{width:62px;height:36px;padding:0 3px;border-radius:9px;font-size:11px}.tbl .dan .dTx small{font-size:9px}
 }
 @media (max-height:500px) and (min-width:601px){
  :root{--fs:.55!important}
@@ -292,6 +300,10 @@ fieldset{border:1px solid var(--line);border-radius:14px;margin:14px 0 0;padding
   <div class="floorHead"><h2>🎱 테이블</h2><div class="summary" id="summary"></div>
   <div class="legend"><span><i style="background:#2e8a74"></i>정액</span><span><i style="background:#a77bff"></i>정액팀</span><span><i style="background:#ff9b3d"></i>시간팀</span><span><i style="background:#ffd27a"></i>대기중</span><span><i style="background:#38c6ff"></i>연습중</span><span><i style="background:#1f3c49;border:1px dashed #5a8798"></i>빈 테이블</span></div></div>
   <div class="floor" id="floor"></div>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+   <linearGradient id="gInB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a6ea6"/><stop offset=".5" stop-color="#1d3a5c"/><stop offset="1" stop-color="#122842"/></linearGradient>
+   <linearGradient id="gInY" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0b8"/><stop offset=".55" stop-color="#ffd27a"/><stop offset="1" stop-color="#e8a93a"/></linearGradient>
+  </defs></svg>
  </section>
 </main>
 <div class="pickBar" id="pickBar" hidden><span id="pickText"></span><button type="button" id="pickCancel">취소</button></div>
@@ -362,7 +374,7 @@ fieldset{border:1px solid var(--line);border-radius:14px;margin:14px 0 0;padding
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
-const BOARD_VERSION='1.19',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
+const BOARD_VERSION='1.26',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
 const LIBS=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
 const DEF_TICKER='가브리엘 당구장에 오신 것을 환영합니다.',OLD_TICKERS=['가브리엘 당구장에 오신 것을 환영합니다. 본 당구장은 정액제 당구장으로 4시간에 1만원, 그 이상은 1만 5천원입니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.','가브리엘 당구장에 오신 것을 환영합니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.'];
 /* 기본 배치 (매장 그림 기준, 배치 영역의 % 좌표) */
@@ -430,7 +442,7 @@ function makeDemo(){
  return list.map(([nick,h3,h4],i)=>({id:'D'+pad(i+1),nick,h3:h3===''?'':String(h3),h4:String(h4||''),inAt:now-(200-i*9)*M}));
 }
 function players(){
- const raw=cfg.demo?demoPlayers:state.open.map(v=>{const {h3,h4}=hd(v);return{id:v.id,nick:String(v.nick??v.nickname??'').trim(),h3,h4,inAt:v.inAt,isNew:v.isNew,via:v.via,rest:!!v.rest,outReq:!!v.outReq}});
+ const raw=cfg.demo?demoPlayers:state.open.filter(v=>!v.outReq).map(v=>{const {h3,h4}=hd(v);return{id:v.id,nick:String(v.nick??v.nickname??'').trim(),h3,h4,inAt:v.inAt,isNew:v.isNew,via:v.via,rest:!!v.rest,outReq:!!v.outReq}});
  // 입장 순으로 GUEST 번호를 매기고, 표시 이름(disp)은 닉네임만
  return [...raw].sort((a,b)=>a.inAt-b.inAt).map(p=>{const nick=String(p.nick||'').trim();return{...p,disp:nick||'GUEST'+guestNo(p.id),guest:!nick}});
 }
@@ -596,7 +608,8 @@ function _render(){
  if(!A.groups.length)wl.append(el('div',{className:'empty',innerHTML:'빈 테이블이 없으면<br>단추를 여기로 옮겨 대기하세요.'}));
  A.groups.forEach((g,i)=>{
   const picked=sel&&sel.gid===g.id&&sel.enter;
-  const inBtn=el('button',{type:'button',className:'gIn'+(picked?' on':''),textContent:picked?'취소':'입장'});
+  const inBtn=el('button',{type:'button',className:'gIn'+(picked?' on':''),'aria-label':picked?'취소':'게임입장'});
+  inBtn.innerHTML='<svg viewBox="0 0 120 60" preserveAspectRatio="none" aria-hidden="true"><path d="M3 10H88V2L117 30L88 58V50H3Z" fill="url(#'+(picked?'gInY':'gInB')+')" stroke="'+(picked?'#fff3c4':'#6fb7ff')+'" stroke-width="3" stroke-linejoin="round"/><path d="M6 13H91V7" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2" stroke-linecap="round"/></svg><span>'+(picked?'취소':'게임입장')+'</span>';
   inBtn.addEventListener('pointerdown',e=>e.stopPropagation());   // 대기조 끌기와 구분
   inBtn.onclick=e=>{e.stopPropagation();if(picked){clearSel();return}pickGroup(g,i)};
   const head=el('div',{className:'gHead'},el('span',{className:'gNo',textContent:i+1}),el('b',{textContent:TYPES[g.type].name}),inBtn);
@@ -627,7 +640,7 @@ function renderFloor(all,room){
   const felt=el('div',{className:'felt'},el('div',{className:'tNo',textContent:t.no}),el('div',{className:'tState'+(!isOn?'':ps.length===1?(a.practice?' prac':' solo'):' k-'+(a.type||'p')),textContent:st}));
   if(isOn){
 
-   const box=el('div',{className:'tPlayers'});for(const p of ps){const tp=el('div',{className:'tp'+(p.rest?' rest':'')},el('i',{className:'tDot k-dot k-'+(a.type||'p')}),el('b',{textContent:(p.rest?'☕ ':'')+p.disp}));bindDrag(tp,{ids:[p.id],label:p.disp,src:'table',no:t.no});box.append(tp)}
+   const box=el('div',{className:'tPlayers'});for(const p of ps){const tp=el('div',{className:'tp tpd'+(p.rest?' rest':'')},dan(p,true,true));/* 휴식방과 같은 닉네임(핸디) 단추 · 종류 색 */bindDrag(tp,{ids:[p.id],label:p.disp,src:'table',no:t.no});box.append(tp)}
    const ms=Date.now()-(a.since||Date.now()),m=Math.floor(ms/60000);felt.append(box,el('div',{className:'tTime'},'⏱ ',el('span',{className:'tLong',textContent:durShort(ms)}),el('span',{className:'tShort',textContent:Math.floor(m/60)+':'+pad(m%60)})))}
   else felt.append(el('div',{className:'tEmptyTxt',innerHTML:'단추를<br>여기로 옮기면<br>바로 시작'}),el('div',{className:'balls',innerHTML:'<i style="background:#f4f4f4"></i><i style="background:#f2d23c"></i><i style="background:#e0392b"></i>'}));
   if(cfg.light?.on){const b=el('span',{className:'bulb',title:isOn?'전등 켜짐':'전등 꺼짐'});b.innerHTML=isOn?'<svg viewBox="0 0 24 24"><path d="M9 18h6v1.5a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 19.5z" fill="#cfd8dc"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z" fill="#ffe27a"/></svg>':'<svg viewBox="0 0 24 24"><path d="M9 18h6v1.5a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 19.5z" fill="#5c6b70"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z" fill="none" stroke="#6f8790" stroke-width="1.6"/></svg>';felt.append(b)}
