@@ -363,7 +363,7 @@ details.tbl{margin-top:8px}details.tbl summary{cursor:pointer;color:var(--muted)
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
-const ADMIN_VERSION='2.21',CFG_KEY='q24AdminRemote';let HIST_KEY='q24AdminHistory',LEDGER_KEY='q24AdminLedger';const DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
+const ADMIN_VERSION='2.22',CFG_KEY='q24AdminRemote';let HIST_KEY='q24AdminHistory',LEDGER_KEY='q24AdminLedger';const DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
 const LIBS=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
 const enc=new TextEncoder(),dec=new TextDecoder();
 const b64=u=>{let s='';for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode(...u.subarray(i,i+8192));return btoa(s)},unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
@@ -377,6 +377,13 @@ try{if(localStorage.getItem('q24AdminLegacySite')==null){localStorage.setItem('q
 HIST_KEY+='@'+SITE;LEDGER_KEY+='@'+SITE;
 let MC=Object.assign({type:'mcfg',webOn:true,name:'',addr:'',tier:'std',info:'',geo:{on:true,lat:'',lng:'',r:1000},door:{on:false,secret:''},notices:[],at:0},(()=>{try{return JSON.parse(localStorage.getItem(MC_KEY))||{}}catch{return {}}})());
 let mcSeen=false;
+let legacyAsked=false;
+function fixLegacyName(){   // 예전 버전이 올린 설정(어느 매장 것인지 표시 없음) → 이름 확인 후 이 매장 것으로 다시 올림
+ if(legacyAsked)return;legacyAsked=true;
+ setTimeout(()=>{const nm=String(MC.name||'').trim();
+  if(nm&&nm!==SITE&&!confirm('회원 웹 매장 이름 확인\n\n지금 접속한 매장 코드: '+SITE+'\n회원 웹에 올라간 이름: '+nm+'\n\n이 이름이 맞으면 [확인]\n매장 코드('+SITE+')로 바꾸려면 [취소]')){MC.name=SITE;MC.addr='';MC.geo={...(MC.geo||{}),lat:'',lng:''}}
+  pubMC();toast('회원 웹 매장 이름: '+(MC.name||SITE))},800);
+}
 function saveMC(){try{localStorage.setItem(MC_KEY,JSON.stringify(MC))}catch{}}
 async function pubMC(){MC.at=Date.now();saveMC();if(!client||!online)return;try{client.publish(base+'/mcfg',await seal({...MC,type:'mcfg',site:SITE}),{qos:1,retain:true})}catch(e){console.warn('mcfg pub',e)}}
 const memberUrl=()=>{try{const u=new URL(location.href);u.search=base?'?s='+base.split('/').pop():'';u.hash='';u.pathname=u.pathname.replace(/[^/]*$/,'Member/Member.html');return u.href}catch{return 'CUE24_Member.html'}};
@@ -517,7 +524,10 @@ async function connect(){
   else if(sub==='members'){roster=o.list||[];render();if($('dlgForce').open)renderForce()}
   else if(sub==='event')onEvent(o);
   else if(sub==='board')onBoard(o&&o.type==='board'?o:null);
-  else if(sub==='mcfg'){mcSeen=true;if(o&&o.type==='mcfg'&&(o.at||0)>(MC.at||0)){MC=o;saveMC();if($('dlgNotice').open)renderNotices()}else if((MC.at||0)>(o?.at||0))pubMC()}
+  else if(sub==='mcfg'){mcSeen=true;
+   if(o&&o.site&&String(o.site).trim()!==SITE){pubMC();return}   // 다른 매장 설정이 올라와 있으면 이 매장 것으로 덮음
+   if(o&&o.type==='mcfg'&&(o.at||0)>(MC.at||0)){MC=o;saveMC();if($('dlgNotice').open)renderNotices()}else if((MC.at||0)>(o?.at||0))pubMC();
+   if(o&&o.type==='mcfg'&&!o.site)fixLegacyName();}
   else if(sub==='ledger'){ledgerSeen=true;const r=mergeLedger(o);if(r.gotNew){saveLedger();evaluateCoupons();render()}if(r.remoteStale){clearTimeout(ledgerTimer);ledgerTimer=setTimeout(pubLedger,1500)}}
  });
 }
