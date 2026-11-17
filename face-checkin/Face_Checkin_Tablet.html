@@ -304,7 +304,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.35</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.36</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -558,6 +558,7 @@ const Remote=(()=>{
  function pushMembers(){if(!client)return;clearTimeout(memberTimer);memberTimer=setTimeout(()=>pub('members',{type:'members',list:members.map(m=>({...memberInfo(m),web:window.MG?.uidOf(m.id)||'',hasPhoto:!!m.photo,memo:m.memo||'',createdAt:m.createdAt||0,updatedAt:m.updatedAt||0}))},true),500)}
  function event(e){pub('event',{...e,eid:visitKey()})}
  async function onMessage(topic,buf){
+  if(topic===base+'/status'){seenStatus(typeof buf==='string'?buf:dec.decode(buf));return}
   if(!topic.startsWith(base+'/cmd/')){const t=typeof buf==='string'?buf:dec.decode(buf);window.MG?.onMsg(topic.slice(base.length+1),t);return}   // 회원 웹·장부·현황판·회원 웹 설정
   const text=typeof buf==='string'?buf:dec.decode(buf);if(!text)return;   // 빈 메시지 = 명령 삭제
   let cmd;try{cmd=await unseal(text)}catch(e){console.warn('cmd 거부',e.message);return}
@@ -587,7 +588,19 @@ const Remote=(()=>{
   if(cmd.cid){done.push(cmd.cid);done=done.slice(-200);try{localStorage.setItem(DONE_KEY,JSON.stringify(done))}catch{}}
   clear();pub('event',{type:'ack',cid:cmd.cid||'',cmd:cmd.type,...res,eid:visitKey()});pushState();
  }
- function pushStatus(){if(!client||!online)return;try{client.publish(base+'/status',JSON.stringify({online:true,at:Date.now(),ver:VERSION,bat:BAT.level,chg:BAT.charging}),{qos:1,retain:true})}catch{}}
+ const DEV_ID=(()=>{let d=localStorage.getItem('q24DevId');if(!d){d=[...crypto.getRandomValues(new Uint8Array(4))].map(b=>b.toString(16).padStart(2,'0')).join('');localStorage.setItem('q24DevId',d)}return d})();
+ function pushStatus(){if(!client||!online)return;try{client.publish(base+'/status',JSON.stringify({online:true,at:Date.now(),ver:VERSION,dev:DEV_ID,bat:BAT.level,chg:BAT.charging}),{qos:1,retain:true})}catch{}}
+ /* 같은 매장 코드로 다른 인식기가 켜져 있으면 경고 (회원 웹·현황판이 엉뚱한 인식기와 섞임) */
+ const others={};let dupT=0;
+ function seenStatus(text){let o;try{o=JSON.parse(text)}catch{return}if(!o?.online||o.dev===DEV_ID||Date.now()-(o.at||0)>180000)return;others[o.dev||'구버전']={at:o.at,ver:o.ver||'?'};dupUi()}
+ function dupUi(){
+  for(const k in others)if(Date.now()-others[k].at>180000)delete others[k];
+  let b=document.getElementById('dupWarn');const ks=Object.keys(others);
+  if(!ks.length){b?.remove();return}
+  if(!b){b=document.createElement('div');b.id='dupWarn';b.style.cssText='position:fixed;left:0;right:0;top:0;z-index:99999;background:#c62828;color:#fff;font:700 18px/1.4 system-ui,sans-serif;padding:10px 16px;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.4)';document.body.append(b)}
+  b.textContent='⚠ 같은 매장 코드('+cfg.site.trim()+')로 다른 인식기가 켜져 있습니다 · 기기 '+ks.map(k=>k+' v'+others[k].ver).join(', ')+' · 이 기기 '+DEV_ID+'\n회원 웹·현황판이 엉뚱한 인식기와 섞이니 한 매장에는 인식기 1대만 켜 두세요.';b.style.whiteSpace='pre-line';
+  clearTimeout(dupT);dupT=setTimeout(dupUi,60000);
+ }
  function stop(){gen++;clearInterval(hb);hb=null;online=false;if(client){try{client.end(true)}catch{}client=null}}
  async function start(){
   stop();const my=gen;
@@ -603,7 +616,7 @@ const Remote=(()=>{
   client=c;
   c.on('connect',()=>{if(my!==gen)return;online=true;ui('on','연결됨 · '+cfg.broker.replace(/^wss?:\/\//,'')+' · 매장 '+cfg.site.trim()+' · 채널 '+base.slice(-6).toUpperCase()+' · '+(aesKey?'암호화 사용':'⚠ 암호화 없음'));
    pushStatus();
-   c.subscribe([base+'/cmd/#',base+'/ledger',base+'/board',base+'/mcfg',base+'/m/req'],{qos:1});pushState();pushMembers();window.MG?.onConnect()});
+   c.subscribe([base+'/cmd/#',base+'/ledger',base+'/board',base+'/mcfg',base+'/m/req',base+'/status'],{qos:1});pushState();pushMembers();window.MG?.onConnect()});
   c.on('reconnect',()=>{if(my===gen)ui('wait','다시 연결 중…')});
   c.on('offline',()=>{if(my===gen){online=false;ui('err','연결 끊김 · 자동 재연결 중')}});
   c.on('error',e=>{if(my===gen)ui('err','오류: '+(e?.message||e))});
@@ -687,7 +700,7 @@ const Ntfy=(()=>{
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='1.35',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='1.36',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
@@ -2085,7 +2098,7 @@ const MemberGate=(()=>{
   const {base}=R();if(!base)return;const t='q24/v1/dir/'+storeId();
   if(!webOn()){if(dirSent!=='off'){pubRaw(t,'',true);dirSent='off'}mwUi();return}
   const k=await ensureKeys(),s=storeInfo();
-  const payload=await signed({type:'q24store',v:1,id:s.id,name:s.name,addr:s.addr,tier:s.tier,base,dh:k.dhPub,at:Date.now()});
+  const payload=await signed({type:'q24store',v:1,id:s.id,name:s.name,addr:s.addr,tier:s.tier,base,dh:k.dhPub,dev:localStorage.getItem('q24DevId')||'',ver:VERSION,at:Date.now()});
   pubRaw(t,payload,true);dirSent='on';mwUi();
  }
  function schedulePub(){clearTimeout(pubTimer);pubTimer=setTimeout(async()=>{
@@ -2244,7 +2257,7 @@ const MemberGate=(()=>{
  function reset(id){const u=Object.values(acc.users).find(x=>x.memberId===id);if(!u)return false;for(const [k,x] of Object.entries(acc.tokens))if(x.uid===u.uid)delete acc.tokens[k];delete acc.users[u.uid];saveAcc();Remote.pushMembers();return true}
  const count=()=>Object.keys(acc.users).length;
  function mwUi(){const e=document.getElementById('mwStatus');if(!e)return;
-  e.textContent=webOn()?'회원 웹: ✅ 켜짐 · 매장 목록 이름 "'+storeInfo().name+'" · 가입 '+count()+'명 · '+(mcfg?'관리자 설정 받음':'관리자 설정 없음(기본값)'):'회원 웹: 꺼짐 (관리자 웹 설정에서 켤 수 있음)'}
+  e.textContent=webOn()?'회원 웹: ✅ 켜짐 · 매장 목록 이름 "'+storeInfo().name+'" · 매장 번호 '+storeId().slice(0,6).toUpperCase()+' · 이 기기 '+(localStorage.getItem('q24DevId')||'')+' · 가입 '+count()+'명 · '+(mcfg?'관리자 설정 받음':'관리자 설정 없음(기본값)'):'회원 웹: 꺼짐 (관리자 웹 설정에서 켤 수 있음)'}
  return window.MG={onConnect,onMsg,onClosed,uidOf,reset,schedulePub,count,_handle:handle};
 })();
 </script>
