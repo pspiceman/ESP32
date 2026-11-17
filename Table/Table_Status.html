@@ -55,7 +55,17 @@ header{display:flex;align-items:center;gap:18px;padding:8px 18px;background:line
 main{display:grid;grid-template-columns:minmax(230px,14.5%) minmax(250px,16%) 1fr;gap:12px;padding:12px 14px 14px;min-height:0}
 .box{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px;display:flex;flex-direction:column;min-height:0}
 .box h2{margin:0 0 8px;font-size:calc(21px*var(--fs));display:flex;align-items:center;gap:8px}.box h2 small{margin-left:auto;font-size:.65em;color:var(--muted);font-weight:600}
-:root{--rowH:calc(70px*var(--fs))}
+:root{--rowH:calc(76px*var(--fs));
+ --kP:#8fd14f;--kPt:#11300a;--kPbg:rgba(143,209,79,.17);--kPln:rgba(143,209,79,.55);
+ --kF:#a77bff;--kFt:#ffffff;--kFbg:rgba(167,123,255,.17);--kFln:rgba(167,123,255,.6);
+ --kT:#ff9b3d;--kTt:#2e1300;--kTbg:rgba(255,155,61,.17);--kTln:rgba(255,155,61,.6)}
+/* 닉네임 단추: 한글 4글자가 들어가는 고정 크기 · 닉네임과 (핸디)는 가운데 · 길면 글자를 줄여 단추 안에 */
+.dan.k-p{background:var(--kP);color:var(--kPt)}.dan.k-f{background:var(--kF);color:var(--kFt)}.dan.k-t{background:var(--kT);color:var(--kTt)}
+.dan.two{width:calc(128px*var(--fs));max-width:none;height:calc(62px*var(--fs));padding:0 8px;border-radius:18px;justify-content:center;font-size:calc(20px*var(--fs))}
+.dan.two.sm{width:calc(118px*var(--fs));height:calc(58px*var(--fs));padding:0 7px;font-size:calc(19px*var(--fs))}
+.dan .dTx{width:100%;min-width:0}.dan .dTx b{display:block;width:100%;text-align:center;line-height:1.15}
+.dan.k-p .dTx small,.dan.k-t .dTx small{color:rgba(0,0,0,.72)}
+.k-dot.k-p{background:var(--kP)}.k-dot.k-f{background:var(--kF)}.k-dot.k-t{background:var(--kT)}
 /* 닉네임 단추: 끌어서 옮기는 손잡이 (영어 6자·한글 4자 정도) */
 .dan{display:inline-flex;align-items:center;gap:7px;max-width:calc(150px*var(--fs));min-width:0;flex-shrink:1;height:calc(42px*var(--fs));padding:0 14px 0 6px;border-radius:999px;color:#fff;font-weight:900;font-size:calc(18px*var(--fs));box-shadow:inset 0 -3px 0 rgba(0,0,0,.25),0 2px 6px rgba(0,0,0,.35);cursor:grab;touch-action:pan-y}
 .dan i{width:calc(14px*var(--fs));height:calc(14px*var(--fs));border-radius:50%;background:rgba(255,255,255,.85);flex-shrink:0;box-shadow:inset 0 -2px 0 rgba(0,0,0,.2)}
@@ -73,17 +83,17 @@ main{display:grid;grid-template-columns:minmax(230px,14.5%) minmax(250px,16%) 1f
 .restTag{flex-shrink:0;font-size:calc(13px*var(--fs));font-weight:900;border-radius:9px;padding:3px 8px;background:#cfd8dc;color:#263238}.restTag.out{background:#ff6b5e;color:#fff}
 .chip.rest{opacity:.62}.tp.rest{opacity:.6}
 .tyTag{margin-left:auto;flex-shrink:0;font-size:calc(14px*var(--fs));font-weight:900;border-radius:9px;padding:3px 9px}
-.tyTag.p{background:#38c6ff;color:#06253a}.tyTag.f{background:#35d39a;color:#062a1d}.tyTag.t{background:#ff8a2a;color:#3a1600}
+.tyTag.p{background:var(--kP);color:var(--kPt)}.tyTag.f{background:var(--kF);color:var(--kFt)}.tyTag.t{background:var(--kT);color:var(--kTt)}
 .tyMenu{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.tyMenu button{min-height:76px;font-size:20px;border-width:3px}
-.tyMenu .p{border-color:#38c6ff}.tyMenu .f{border-color:#35d39a}.tyMenu .t{border-color:#ff8a2a}
-.tyMenu .on.p{background:#1d5a82}.tyMenu .on.f{background:#1d6b4f}.tyMenu .on.t{background:#8a4a17}
+.tyMenu .p{border-color:var(--kP)}.tyMenu .f{border-color:var(--kF)}.tyMenu .t{border-color:var(--kT)}
+.tyMenu .on.p{background:var(--kP);color:var(--kPt)}.tyMenu .on.f{background:var(--kF);color:var(--kFt)}.tyMenu .on.t{background:var(--kT);color:var(--kTt)}
 .roomBox{border-top:5px solid #38c6ff}.waitBox{border-top:5px solid #ffd27a}.floorBox{border-top:5px solid #35d39a;padding:10px 12px 12px}
 .floorHead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}.floorHead h2{margin:0}
 .scroll{overflow:auto;min-height:0;flex:1;scrollbar-width:thin;padding-right:2px}
 .empty{color:var(--muted);text-align:center;padding:18px 6px;font-size:.95em;line-height:1.6}.empty small{font-size:.85em}
-/* 손님방 한 줄: 순번 · 단추 · 닉네임(핸디) · [정액팀] [시간팀] */
-.chip{display:flex;align-items:center;gap:8px;height:var(--rowH);padding:0 10px 0 6px;border-radius:14px;background:#1d3d52;border:2px solid transparent;margin-bottom:7px;touch-action:pan-y;cursor:pointer;position:relative}
-.chip.ty-f{background:#1f5240}.chip.ty-t{background:#5a3a1f}
+/* 휴식방 한 줄: 순번 · 단추 · 닉네임(핸디) · [정액팀] [시간팀] */
+.chip{display:flex;align-items:center;gap:10px;height:var(--rowH);padding:0 10px 0 6px;border-radius:14px;background:var(--kPbg);border:2px solid var(--kPln);margin-bottom:7px;touch-action:pan-y;cursor:pointer;position:relative}
+.chip.ty-f{background:var(--kFbg);border-color:var(--kFln)}.chip.ty-t{background:var(--kTbg);border-color:var(--kTln)}
 .chip.sel{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,198,255,.25)}
 .chip.new{animation:newIn 1.2s ease-in-out 4}
 @keyframes newIn{50%{background:#2a4a2a;border-color:var(--green)}}
@@ -100,7 +110,7 @@ main{display:grid;grid-template-columns:minmax(230px,14.5%) minmax(250px,16%) 1f
 .tBtn.t-f.on{background:#35d39a;border-color:#35d39a;color:#062a1d}.tBtn.t-t.on{background:#ff8a2a;border-color:#ff8a2a;color:#3a1600}
 /* 대기방: 대기조 카드 (종류별 바탕색) */
 .grp{border-radius:16px;padding:8px 10px 10px;margin-bottom:10px;border:2px solid transparent;touch-action:pan-y;cursor:grab}
-.grp.g-p{background:#1d3d52;border-color:#3a7aa3}.grp.g-f{background:#1f5240;border-color:#3fa37a}.grp.g-t{background:#5a3a1f;border-color:#b97a3c}
+.grp.g-p{background:var(--kPbg);border-color:var(--kPln)}.grp.g-f{background:var(--kFbg);border-color:var(--kFln)}.grp.g-t{background:var(--kTbg);border-color:var(--kTln)}
 .gRow{display:grid;grid-template-columns:auto minmax(8px,1fr) auto;align-items:center;gap:6px;padding:0 4px}
 .gRow .gm .dan{flex-shrink:0}
 .gLine{border-top:3px dashed #ffd27a;height:0;opacity:.9}
@@ -108,7 +118,10 @@ main{display:grid;grid-template-columns:minmax(230px,14.5%) minmax(250px,16%) 1f
 .grp.sel{box-shadow:0 0 0 3px var(--cyan)}
 .gHead{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .gNo{display:grid;place-items:center;width:calc(28px*var(--fs));height:calc(28px*var(--fs));border-radius:8px;background:#0a141a;font-weight:900;font-size:calc(15px*var(--fs))}
-.gHead b{font-size:calc(17px*var(--fs))}.g-p .gHead b{color:#9fdcff}.g-f .gHead b{color:#7ff0c0}.g-t .gHead b{color:#ffc28a}
+.gHead b{font-size:calc(17px*var(--fs))}.g-p .gHead b{color:var(--kP)}.g-f .gHead b{color:#c9b3ff}.g-t .gHead b{color:var(--kT)}
+.gIn{margin-left:auto;min-height:calc(40px*var(--fs));padding:0 16px;border-radius:12px;font-size:calc(16px*var(--fs));font-weight:900;border:0;background:#0f8a74;color:#fff;box-shadow:0 2px 0 rgba(0,0,0,.3)}
+.gIn.on{background:#ffd27a;color:#3a2a00}
+.grp.picked{box-shadow:0 0 0 4px #ffd27a,0 0 22px rgba(255,210,122,.55)}
 .gSt{font-size:calc(13px*var(--fs));font-weight:800;border-radius:8px;padding:2px 8px;background:#0f8a74;color:#fff}.gSt.wait{background:#5a4a10;color:#ffe08a}
 .gCnt{margin-left:auto;font-size:calc(13px*var(--fs));color:var(--muted);font-weight:800}
 .gMem{display:flex;flex-direction:column;gap:5px}
@@ -122,9 +135,10 @@ body.dragging .roomBox,body.dragging .waitBox,body.picking .roomBox,body.picking
 .roomBox.hover,.waitBox.hover{outline:3px dashed #ffd27a!important;background:#16303c}
 .grp.hover{box-shadow:0 0 0 4px #ffd27a}
 /* 테이블 종류 · 경기 끝 */
-.tType{font-size:calc(12px*var(--fs));font-weight:900;border-radius:8px;padding:1px 8px}.tType.t-f{background:#35d39a;color:#062a1d}.tType.t-t{background:#ff8a2a;color:#3a1600}
-.tbl.tt-f.on{box-shadow:0 0 0 2px rgba(53,211,154,.7),0 0 22px rgba(53,211,154,.35),0 8px 22px rgba(0,0,0,.45)}
-.tbl.tt-t.on{box-shadow:0 0 0 2px rgba(255,138,42,.7),0 0 22px rgba(255,138,42,.35),0 8px 22px rgba(0,0,0,.45)}
+.tType{font-size:calc(12px*var(--fs));font-weight:900;border-radius:8px;padding:1px 8px}.tType.t-f{background:var(--kF);color:var(--kFt)}.tType.t-t{background:var(--kT);color:var(--kTt)}
+.tbl.tt-f.on{box-shadow:0 0 0 2px rgba(167,123,255,.8),0 0 22px rgba(167,123,255,.4),0 8px 22px rgba(0,0,0,.45)}
+.tbl.tt-t.on{box-shadow:0 0 0 2px rgba(255,155,61,.8),0 0 22px rgba(255,155,61,.4),0 8px 22px rgba(0,0,0,.45)}
+.tbl.tt-p.on{box-shadow:0 0 0 2px rgba(143,209,79,.7),0 0 22px rgba(143,209,79,.3),0 8px 22px rgba(0,0,0,.45)}
 .tbl.on.ended .felt{background:radial-gradient(circle at 50% 30%,#4f6a80,#2c4250);border:2px dashed #ffd27a}
 .tbl.on.ended .tState{background:#ffd27a;color:#3a2a00;box-shadow:none;animation:blinkE 1.6s ease-in-out infinite}
 @keyframes blinkE{50%{opacity:.55}}
@@ -144,8 +158,8 @@ body.dragging .roomBox,body.dragging .waitBox,body.picking .roomBox,body.picking
 .tNo{font-size:calc(34px*var(--fs));font-weight:900;line-height:1;text-shadow:0 2px 6px rgba(0,0,0,.4)}
 .tState{font-size:calc(14px*var(--fs));font-weight:900;border-radius:20px;padding:3px 10px;background:rgba(0,0,0,.35);color:#b9ccd2;white-space:nowrap}
 .tbl.on .tState{background:#ff8a2a;color:#fff;box-shadow:0 0 12px rgba(255,138,42,.6)}
-.tbl.on .tState.k-p{background:#e8f2ff;color:#0b3d91;box-shadow:0 0 12px rgba(255,255,255,.45)}.tbl.on .tState.k-f{background:#1fae7a;box-shadow:0 0 12px rgba(53,211,154,.6)}.tbl.on .tState.k-t{background:#ff8a2a}
-.tbl.on .tState.solo{background:#ffd27a;color:#3a2a00;box-shadow:none}.tbl.on .tState.prac{background:#a78bfa;color:#1d0f45;box-shadow:0 0 12px rgba(167,139,250,.6)}
+.tbl.on .tState.k-p{background:var(--kP);color:var(--kPt);box-shadow:0 0 12px rgba(143,209,79,.6)}.tbl.on .tState.k-f{background:var(--kF);color:var(--kFt);box-shadow:0 0 12px rgba(167,123,255,.6)}.tbl.on .tState.k-t{background:var(--kT);color:var(--kTt);box-shadow:0 0 12px rgba(255,155,61,.6)}
+.tbl.on .tState.solo{background:#ffd27a;color:#3a2a00;box-shadow:none}.tbl.on .tState.prac{background:#38c6ff;color:#06253a;box-shadow:0 0 12px rgba(56,198,255,.6)}
 .tPlayers{display:flex;flex-direction:column;gap:5px;width:100%;flex:1;justify-content:safe center;min-height:0;overflow:hidden}
 .tbl{container-type:inline-size}
 .tbl.many .tNo{font-size:calc(26px*var(--fs))}.tbl.many .felt{gap:4px;padding:6px 5px}.tbl.many .tp{padding:3px 5px}.tbl.many .tState{font-size:calc(12px*var(--fs));padding:2px 8px}
@@ -274,11 +288,11 @@ fieldset{border:1px solid var(--line);border-radius:14px;margin:14px 0 0;padding
   <button class="gear" id="btnSet" type="button" aria-label="설정"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6a.5.5 0 0 0 .1-.6l-2-3.5a.5.5 0 0 0-.6-.2l-2.5 1a7.4 7.4 0 0 0-1.7-1l-.4-2.6a.5.5 0 0 0-.5-.4h-4a.5.5 0 0 0-.5.4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.5-1a.5.5 0 0 0-.6.2l-2 3.5a.5.5 0 0 0 .1.6L4.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6a.5.5 0 0 0-.1.6l2 3.5c.1.2.4.3.6.2l2.5-1c.5.4 1.1.7 1.7 1l.4 2.6c0 .2.3.4.5.4h4c.2 0 .5-.2.5-.4l.4-2.6c.6-.3 1.2-.6 1.7-1l2.5 1c.2.1.5 0 .6-.2l2-3.5a.5.5 0 0 0-.1-.6L19.4 13zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg></button></div>
 </header>
 <main>
- <section class="box roomBox" id="roomBox"><h2>🙋 손님방 <small id="roomInfo">입장 순</small></h2><div class="scroll" id="roomList"></div></section>
+ <section class="box roomBox" id="roomBox"><h2>🙋 휴식방 <small id="roomInfo">입장 순</small></h2><div class="scroll" id="roomList"></div></section>
  <section class="box waitBox" id="waitBox"><h2>⏳ 대기방 <small id="waitInfo">들어온 순</small></h2><div class="scroll" id="waitList"></div></section>
  <section class="box floorBox" id="floorBox">
   <div class="floorHead"><h2>🎱 테이블</h2><div class="summary" id="summary"></div>
-  <div class="legend"><span><i style="background:#e8f2ff"></i>정액</span><span><i style="background:#35d39a"></i>정액팀</span><span><i style="background:#ff8a2a"></i>시간팀</span><span><i style="background:#ffd27a"></i>대기중</span><span><i style="background:#a78bfa"></i>연습중</span><span><i style="background:#1f3c49;border:1px dashed #5a8798"></i>빈 테이블</span></div></div>
+  <div class="legend"><span><i style="background:#8fd14f"></i>정액</span><span><i style="background:#a77bff"></i>정액팀</span><span><i style="background:#ff9b3d"></i>시간팀</span><span><i style="background:#ffd27a"></i>대기중</span><span><i style="background:#38c6ff"></i>연습중</span><span><i style="background:#1f3c49;border:1px dashed #5a8798"></i>빈 테이블</span></div></div>
   <div class="floor" id="floor"></div>
  </section>
 </main>
@@ -292,7 +306,7 @@ fieldset{border:1px solid var(--line);border-radius:14px;margin:14px 0 0;padding
 <!-- 사용 중 테이블 -->
 <dialog id="dlgAsk" style="width:min(520px,94vw)"><h2 id="aTitle"></h2><p class="hint" id="aText" style="font-size:16px"></p>
  <div style="display:grid;gap:10px;margin-top:12px"><button type="button" class="primary" id="aEnd" style="min-height:60px">기존 경기 종료하고 시작</button><button type="button" id="aJoin" style="min-height:52px">이 경기에 함께 하기</button><button type="button" id="aCancel">취소</button></div>
- <p class="hint" style="margin:10px 0 0">기존 경기를 종료하면 개인·정액팀 손님은 손님방 맨 아래로 가고, 시간팀 손님은 정산 요청 후 현황판에서 빠집니다.</p></dialog>
+ <p class="hint" style="margin:10px 0 0">기존 경기를 종료하면 정액·정액팀 손님은 휴식방 맨 아래로 가고, 시간팀 손님은 정산 요청 후 현황판에서 빠집니다.</p></dialog>
 <!-- 손님 종류 -->
 <dialog id="dlgType" style="width:min(520px,94vw)"><h2 id="tyTitle"></h2><p class="hint" style="margin:0">손님 종류를 고르세요. 한 번 정하면 다음에 오셔도 그대로 유지됩니다.</p>
  <div class="tyMenu" id="tyMenu"></div><div class="btns" style="grid-template-columns:1fr"><button type="button" onclick="this.closest('dialog').close()">닫기</button></div></dialog>
@@ -324,9 +338,9 @@ fieldset{border:1px solid var(--line);border-radius:14px;margin:14px 0 0;padding
   <div class="row"><button type="button" id="sEdit">✏️ 배치 편집 시작</button><button type="button" id="sReset" class="danger">기본 배치로</button></div>
   <label class="check" style="margin-top:12px"><input id="sZone" type="checkbox"><span>테이블 영역에 '대기' 표시</span></label>
  </fieldset>
- <fieldset><legend>손님방 표시</legend>
+ <fieldset><legend>휴식방 표시</legend>
   <label>핸디 표시<select id="sHandi"><option value="3">3구 전용 구장 · 닉네임(3구 핸디)</option><option value="34">3구·4구 혼합 구장 · 3구 핸디와 4구 점수 모두</option></select></label>
-  <p class="hint" style="margin:6px 0 0">손님방 버튼: <b>[정액팀]</b> 누르면 정액팀, <b>[시간팀]</b> 누르면 시간팀(시간제 정산), 안 누르면 개인 손님입니다. 한 번 더 누르면 개인으로 돌아갑니다.</p>
+  <p class="hint" style="margin:6px 0 0">휴식방에서 닉네임 단추 밖을 누르면 <b>정액 · 정액팀 · 시간팀</b>을 고를 수 있습니다. 색: 정액=연두, 정액팀=보라, 시간팀=주황 (시간팀은 시간제 정산).</p>
  </fieldset>
  <fieldset><legend>테이블 전등 · 점수판 (준비)</legend>
   <label class="check" style="margin-top:10px"><input id="sLight" type="checkbox"><span><b>이 화면이 전등 담당</b> · 테이블 전등 자동 켜기/끄기 (ESP32 · 433MHz)</span></label>
@@ -350,7 +364,7 @@ fieldset{border:1px solid var(--line);border-radius:14px;margin:14px 0 0;padding
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
-const BOARD_VERSION='1.16',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
+const BOARD_VERSION='1.17',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
 const LIBS=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
 const DEF_TICKER='가브리엘 당구장에 오신 것을 환영합니다.',OLD_TICKERS=['가브리엘 당구장에 오신 것을 환영합니다. 본 당구장은 정액제 당구장으로 4시간에 1만원, 그 이상은 1만 5천원입니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.','가브리엘 당구장에 오신 것을 환영합니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.'];
 /* 기본 배치 (매장 그림 기준, 배치 영역의 % 좌표) */
@@ -408,8 +422,8 @@ function toast(m,ms=3200){const t=$('toast');t.textContent=m;t.hidden=false;clea
 async function sha256hex(t){const h=await crypto.subtle.digest('SHA-256',enc.encode(t));return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('')}
 
 /* ---------- 손님 (입실 중) ----------
- 무인 정액제 구장 · 3구 기본. 화면 3구역: 손님방 | 대기방 | 테이블
- 손님 종류: 개인(p) · 정액팀(f) · 시간팀(t) — 손님방에서 [정액팀] [시간팀] 버튼으로 정함 */
+ 무인 정액제 구장 · 3구 기본. 화면 3구역: 휴식방 | 대기방 | 테이블
+ 손님 종류: 개인(p) · 정액팀(f) · 시간팀(t) — 휴식방에서 [정액팀] [시간팀] 버튼으로 정함 */
 const TYPES={p:{name:'정액',color:'#38c6ff'},f:{name:'정액팀',color:'#35d39a'},t:{name:'시간팀',color:'#ff8a2a'}};
 const GROUP_MAX=6,GROUP_DEF=2;
 function makeDemo(){
@@ -437,7 +451,7 @@ const typeOf=id=>A.types[id]||'p';
 function tableOf(id){for(const n in A.tables)if(A.tables[n].players.includes(id))return Number(n);return null}
 function groupOf(id){return A.groups.find(g=>g.members.includes(id))||null}
 function assignedIds(){const s=new Set();for(const n in A.tables)for(const id of A.tables[n].players)s.add(id);return s}
-/* 손님방 = 테이블·대기방에 없고, 경기 끝난 시간팀(정산 대기)도 아닌 손님. 입장 순 (경기 끝나고 돌아온 손님은 맨 아래) */
+/* 휴식방 = 테이블·대기방에 없고, 경기 끝난 시간팀(정산 대기)도 아닌 손님. 입장 순 (경기 끝나고 돌아온 손님은 맨 아래) */
 function roomList(all){
  const as=assignedIds(),gs=new Set(A.groups.flatMap(g=>g.members));
  return all.filter(p=>!as.has(p.id)&&!gs.has(p.id)&&!A.timeDone[p.id]).sort((a,b)=>(A.room[a.id]||a.inAt)-(A.room[b.id]||b.inAt));
@@ -477,12 +491,12 @@ function syncLights(force=false){
  // 경기 끝(정리 중)도 이름이 남아 있으므로 정리할 수 있게 불은 켜 둠 → 테이블이 비면 끔
  for(const t of cfg.tables){const st=(A.tables[t.no]?.players||[]).length?'on':'off';sendLight(t.no,st,force)}
 }
-/* 경기 종료: 개인·정액팀 → 손님방 맨 아래로, 시간팀 → 현황판에서 빠지고 관리자에게 정산 요청 */
+/* 경기 종료: 정액·정액팀 → 휴식방 맨 아래로, 시간팀 → 현황판에서 빠지고 관리자에게 정산 요청 */
 function endGame(no,why,quiet){
  const t=A.tables[no];if(!t)return false;const now=Date.now();let back=0,tt=0;
  t.players.forEach((id,i)=>{if(typeOf(id)==='t'){A.timeDone[id]={at:now,table:Number(no),since:t.since};tt++}else{A.room[id]=now+i;back++}});
  delete A.tables[no];delete A.ended[no];saveAssign();
- if(!quiet)toast(no+'번 테이블 경기 종료'+(why?' ('+why+')':'')+(back?' · '+back+'명 손님방으로':'')+(tt?' · 시간팀 '+tt+'명 정산 요청':''),4500);
+ if(!quiet)toast(no+'번 테이블 경기 종료'+(why?' ('+why+')':'')+(back?' · '+back+'명 휴식방으로':'')+(tt?' · 시간팀 '+tt+'명 정산 요청':''),4500);
  return true;
 }
 function onScore(no,o){
@@ -496,7 +510,7 @@ function detach(id){
  for(const g of A.groups)g.members=g.members.filter(x=>x!==id);A.groups=A.groups.filter(g=>g.members.length);
  delete A.timeDone[id];
 }
-function toRoom(ids){const now=Date.now();ids.forEach((id,i)=>{detach(id);A.room[id]=now+i});saveAssign();toast(names(ids)+' 님 → 손님방')}
+function toRoom(ids){const now=Date.now();ids.forEach((id,i)=>{detach(id);A.room[id]=now+i});saveAssign();toast(names(ids)+' 님 → 휴식방')}
 /* 대기방: 같은 종류끼리만 · 같은 종류의 1인 대기조가 있으면 그 대기조로 (1인 대기조는 종류마다 하나) · 최대 6인 */
 function toWait(ids,gid){
  for(const id of ids){
@@ -543,11 +557,11 @@ function toTable(no,ids,gid){
 function names(ids){const by=Object.fromEntries(players().map(p=>[p.id,p.disp]));return ids.map(id=>by[id]||'?').join(', ')}
 
 /* ---------- 화면 ---------- */
-function dan(p,sm,hd){const bg='background:'+(p.guest?'#5d727b':avColor(p.disp));
- if(!hd)return el('span',{className:'dan'+(sm?' sm':''),style:bg},el('span',{textContent:p.disp}));
+function dan(p,sm,hd){const bg='';const kc=' k-'+typeOf(p.id);
+ if(!hd)return el('span',{className:'dan'+kc+(sm?' sm':'')},el('span',{textContent:p.disp}));
  const h=handiOf(p);   // 닉네임 바로 아래에 핸디
- return el('span',{className:'dan two'+(sm?' sm':''),style:bg},el('span',{className:'dTx'},el('b',{textContent:p.disp}),el('small',{textContent:'('+h+')'})))}
-/* 손님방에서 단추 밖을 누르면: 개인 / 정액팀 / 시간팀 (회원마다 기억 → 다음에 와도 그대로) */
+ return el('span',{className:'dan two'+kc+(sm?' sm':'')},el('span',{className:'dTx'},el('b',{textContent:p.disp}),el('small',{textContent:'('+h+')'})))}
+/* 휴식방에서 단추 밖을 누르면: 개인 / 정액팀 / 시간팀 (회원마다 기억 → 다음에 와도 그대로) */
 let tyTarget=null;
 function openType(p){
  tyTarget=p.id;$('tyTitle').textContent=p.disp+' 님';const box=$('tyMenu');box.replaceChildren();
@@ -558,18 +572,20 @@ function handiOf(p){
  if(cfg.handiMode==='34'){const a=[p.h3?'3구 '+p.h3:'',p.h4?'4구 '+p.h4:''].filter(Boolean).join(' · ');return a||'—'}
  return p.h3||'—';
 }
+function fitDans(){for(const b of document.querySelectorAll('.dan.two .dTx b')){b.style.fontSize='';let f=parseFloat(getComputedStyle(b).fontSize)||18,n=0;while(b.scrollWidth>b.clientWidth+1&&f>10&&n++<14){f-=1;b.style.fontSize=f+'px'}}}
 function render(){
  if(drag?.moved)return;
+ requestAnimationFrame(fitDans);   // 그린 뒤 긴 닉네임은 단추 안에 맞게 줄임
  cleanAssign();
  const all=players(),room=roomList(all),byId=Object.fromEntries(all.map(p=>[p.id,p]));
  const fresh=new Set();for(const p of all){if(!seen.has(p.id)){if(!firstData)fresh.add(p.id);seen.add(p.id)}}
  if(fresh.size&&!cfg.demo)toast('🎱 '+all.filter(p=>fresh.has(p.id)).map(p=>p.disp).join(', ')+' 님 입장');
  firstData=false;
  const isSel=ids=>sel&&!sel.gid&&sel.ids.length===ids.length&&sel.ids.every(x=>ids.includes(x));
- // 손님방
+ // 휴식방
  const rl=$('roomList');rl.replaceChildren();
  $('roomInfo').textContent=room.length?room.length+'명 · 입장 순':'입장 순';
- if(!room.length)rl.append(el('div',{className:'empty',textContent:state.at||cfg.demo?'손님방이 비어 있습니다.':'인식기 연결을 기다리는 중…'}));
+ if(!room.length)rl.append(el('div',{className:'empty',textContent:state.at||cfg.demo?'휴식방이 비어 있습니다.':'인식기 연결을 기다리는 중…'}));
  room.forEach((p,i)=>{
   const T=typeOf(p.id);
   const row=el('div',{className:'chip ty-'+T+(p.rest?' rest':'')+(fresh.has(p.id)?' new':'')+(isSel([p.id])?' sel':'')},el('span',{className:'ord',textContent:i+1}),dan(p,false,true),
@@ -581,13 +597,17 @@ function render(){
  $('waitInfo').textContent=A.groups.length?A.groups.length+'개 조':'';
  if(!A.groups.length)wl.append(el('div',{className:'empty',innerHTML:'빈 테이블이 없으면<br>단추를 여기로 옮겨 대기하세요.'}));
  A.groups.forEach((g,i)=>{
-  const head=el('div',{className:'gHead'},el('span',{className:'gNo',textContent:i+1}),el('b',{textContent:TYPES[g.type].name+' 대기조'}));
+  const picked=sel&&sel.gid===g.id&&sel.enter;
+  const inBtn=el('button',{type:'button',className:'gIn'+(picked?' on':''),textContent:picked?'취소':'입장'});
+  inBtn.addEventListener('pointerdown',e=>e.stopPropagation());   // 대기조 끌기와 구분
+  inBtn.onclick=e=>{e.stopPropagation();if(picked){clearSel();return}pickGroup(g,i)};
+  const head=el('div',{className:'gHead'},el('span',{className:'gNo',textContent:i+1}),el('b',{textContent:TYPES[g.type].name}),inBtn);
   const mem=el('div',{className:'gMem'});
   // 한 줄에 두 사람 · 점선으로 연결 · 핸디는 이름 옆 ( )
   const mk=id=>{const p=byId[id]||{id,disp:'?',h3:'',h4:''};const m=el('div',{className:'gm'+(isSel([id])?' sel':'')},dan(p,true,true));
    bindDrag(m,{ids:[id],label:p.disp,src:'group',gid:g.id,single:true});m.addEventListener('pointerdown',e=>e.stopPropagation());return m};   // 사람만 옮기기 (대기조 통째로 끌기와 구분)
   for(let k=0;k<g.members.length;k+=2){const a=g.members[k],b=g.members[k+1];mem.append(el('div',{className:'gRow'},mk(a),b?el('span',{className:'gLine'}):el('span'),b?mk(b):el('span')))}
-  const card=el('div',{className:'grp g-'+g.type+(sel?.gid===g.id&&!sel.single?' sel':'')},head,mem);card.dataset.gid=g.id;
+  const card=el('div',{className:'grp g-'+g.type+(sel?.enter&&sel.gid===g.id?' picked':sel?.gid===g.id&&!sel.single?' sel':'')},head,mem);card.dataset.gid=g.id;
   bindDrag(card,{ids:()=>A.groups.find(x=>x.id===g.id)?.members||[],label:TYPES[g.type].name+' 대기조 '+(i+1),src:'group',gid:g.id});wl.append(card);
  });
  renderFloor(all,room);
@@ -609,25 +629,25 @@ function renderFloor(all,room){
   const felt=el('div',{className:'felt'},el('div',{className:'tNo',textContent:t.no}),el('div',{className:'tState'+(!isOn?'':ps.length===1?(a.practice?' prac':' solo'):' k-'+(a.type||'p')),textContent:st}));
   if(isOn){
 
-   const box=el('div',{className:'tPlayers'});for(const p of ps){const tp=el('div',{className:'tp'+(p.rest?' rest':'')},el('i',{className:'tDot',style:'background:'+(p.guest?'#9fb3bb':avColor(p.disp))}),el('b',{textContent:(p.rest?'☕ ':'')+p.disp}));bindDrag(tp,{ids:[p.id],label:p.disp,src:'table',no:t.no});box.append(tp)}
+   const box=el('div',{className:'tPlayers'});for(const p of ps){const tp=el('div',{className:'tp'+(p.rest?' rest':'')},el('i',{className:'tDot k-dot k-'+(a.type||'p')}),el('b',{textContent:(p.rest?'☕ ':'')+p.disp}));bindDrag(tp,{ids:[p.id],label:p.disp,src:'table',no:t.no});box.append(tp)}
    const ms=Date.now()-(a.since||Date.now()),m=Math.floor(ms/60000);felt.append(box,el('div',{className:'tTime'},'⏱ ',el('span',{className:'tLong',textContent:durShort(ms)}),el('span',{className:'tShort',textContent:Math.floor(m/60)+':'+pad(m%60)})))}
   else felt.append(el('div',{className:'tEmptyTxt',innerHTML:'단추를<br>여기로 옮기면<br>바로 시작'}),el('div',{className:'balls',innerHTML:'<i style="background:#f4f4f4"></i><i style="background:#f2d23c"></i><i style="background:#e0392b"></i>'}));
   if(cfg.light?.on){const b=el('span',{className:'bulb',title:isOn?'전등 켜짐':'전등 꺼짐'});b.innerHTML=isOn?'<svg viewBox="0 0 24 24"><path d="M9 18h6v1.5a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 19.5z" fill="#cfd8dc"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z" fill="#ffe27a"/></svg>':'<svg viewBox="0 0 24 24"><path d="M9 18h6v1.5a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 19.5z" fill="#5c6b70"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z" fill="none" stroke="#6f8790" stroke-width="1.6"/></svg>';felt.append(b)}
-  const te=el('div',{className:'item tbl'+(isOn?' on':'')+(ended?' ended':'')+(ps.length>=3?' many':'')+(isOn&&a.type&&a.type!=='p'?' tt-'+a.type:'')+' canDrop',style:tpos(t)},felt,el('span',{className:'rz'}),el('button',{type:'button',className:'del',textContent:'✕',title:'테이블 삭제',onclick:e=>{e.stopPropagation();delTable(t.no)}}));
+  const te=el('div',{className:'item tbl'+(isOn?' on':'')+(ended?' ended':'')+(ps.length>=3?' many':'')+(isOn&&ps.length>=2?' tt-'+(a.type||'p'):'')+' canDrop',style:tpos(t)},felt,el('span',{className:'rz'}),el('button',{type:'button',className:'del',textContent:'✕',title:'테이블 삭제',onclick:e=>{e.stopPropagation();delTable(t.no)}}));
   te.dataset.no=t.no;te.addEventListener('click',()=>{if(editing||Date.now()-lastDragEnd<300)return;onTableTap(t.no)});
   if(isOn)bindDrag(te,{ids:()=>A.tables[t.no]?.players.slice()||[],label:t.no+'번 테이블 '+ps.length+'명',src:'table',no:t.no,whole:true});   // 닉네임 밖을 누르고 끌면 테이블 전체
   fl.append(te);bindEdit(te,t,true);
  }
  const tot=cfg.tables.length,gN=A.groups.length,td=Object.keys(A.timeDone).length;
- $('summary').replaceChildren(el('span',{},'사용 중 ',el('b',{textContent:on})),el('span',{},'빈 테이블 ',el('b',{textContent:tot-on})),el('span',{},'대기조 ',el('b',{textContent:gN})),el('span',{},'손님방 ',el('b',{textContent:room.length}),'명'));
+ $('summary').replaceChildren(el('span',{},'사용 중 ',el('b',{textContent:on})),el('span',{},'빈 테이블 ',el('b',{textContent:tot-on})),el('span',{},'대기조 ',el('b',{textContent:gN})),el('span',{},'휴식방 ',el('b',{textContent:room.length}),'명'));
 }
 
 /* ---------- 끌어다 놓기 · 눌러서 고르기 ----------
- 놓는 곳: 테이블 · 대기방(빈 곳=새 대기조 또는 같은 종류 1인 대기조) · 대기조 카드 · 손님방 */
+ 놓는 곳: 테이블 · 대기방(빈 곳=새 대기조 또는 같은 종류 1인 대기조) · 대기조 카드 · 휴식방 */
 let drag=null,lastDragEnd=0;
 function bindDrag(node,info){
  node.addEventListener('pointerdown',e=>{if(editing||e.button>0||drag)return;const ids=typeof info.ids==='function'?info.ids():info.ids;const dn=e.target.closest?.('.dan');
-  // 누르는 순간 외곽선: 단추를 누르면 그 단추, 대기조 빈 곳을 누르면 대기조 전체 (손님방은 단추만 옮김)
+  // 누르는 순간 외곽선: 단추를 누르면 그 단추, 대기조 빈 곳을 누르면 대기조 전체 (휴식방은 단추만 옮김)
   const hl=dn&&node.contains(dn)&&!(info.src==='group'&&!info.single)?dn:(info.src==='group'&&!info.single||info.src==='table'?node:null);
   if(hl)hl.classList.add('held');
   drag={...info,ids,sx:e.clientX,sy:e.clientY,node,moved:false,ghost:null,pid:e.pointerId,onDan:!!dn,hl}});
@@ -671,22 +691,30 @@ function place(d,t,pt){
   const g=A.groups.find(x=>x.id===t.gid);if(g&&d.ids.every(id=>typeOf(id)===g.type)){toWait(d.ids,t.gid);return}
   toWait(d.ids,null);return}   // 다른 종류 대기조에 놓으면 자기 종류 대기조로
  if(t.kind==='wait'){if(wholeGroup)return;toWait(d.ids,null);return}
- if(t.kind==='room'){if(d.src==='room')return;if(d.whole){endGame(d.no);toast(d.no+'번 테이블 경기 종료 · 손님방으로');return}toRoom(d.ids)}
+ if(t.kind==='room'){if(d.src==='room')return;if(d.whole){endGame(d.no);toast(d.no+'번 테이블 경기 종료 · 휴식방으로');return}toRoom(d.ids)}
 }
 function endDrag(e,cancel){
  if(!drag||e.pointerId!==drag.pid)return;const d=drag;drag=null;unheld();
  if(d.moved){d.ghost?.remove();document.body.classList.remove('dragging');lastDragEnd=Date.now();clearHover();
   if(!cancel)place(d,targetAt(e.clientX,e.clientY),{x:e.clientX,y:e.clientY});render()}
- else if(!cancel&&d.typeMenu&&!d.onDan){const p=players().find(x=>x.id===d.ids[0]);if(p)openType(p)}   // 손님방 단추 밖 → 종류 선택
+ else if(!cancel&&d.typeMenu&&!d.onDan){const p=players().find(x=>x.id===d.ids[0]);if(p)openType(p)}   // 휴식방 단추 밖 → 종류 선택
  // 누르기만 하고 놓으면 아무것도 안 함 (옮기기는 끌어서만)
 }
 document.addEventListener('pointerup',e=>endDrag(e,false));
 document.addEventListener('pointercancel',e=>{if(drag&&!drag.moved&&e.pointerId===drag.pid){drag=null;unheld()}else endDrag(e,true)});
+/* [입장]: 대기조를 고른 뒤 빈 테이블을 누르면 멤버 전체가 그 테이블로 (끌어서 옮기기도 그대로 됨) */
+function pickGroup(g,i){
+ sel={ids:g.members.slice(),label:(i+1)+'번 '+TYPES[g.type].name,src:'group',gid:g.id,enter:true};
+ document.body.classList.add('picking');$('pickText').textContent='👉 '+(i+1)+'번 '+TYPES[g.type].name+' ('+names(g.members)+') → 빈 테이블을 누르세요';$('pickBar').hidden=false;
+ clearTimeout(pickGroup.t);pickGroup.t=setTimeout(()=>{if(sel?.enter)clearSel()},45000);render();
+}
 function clearSel(r=true){sel=null;document.body.classList.remove('picking');$('pickBar').hidden=true;if(r)render()}
 $('pickCancel').onclick=()=>clearSel();
-// 고른 상태에서 대기방·대기조·손님방을 누르면 그리로
+// 고른 상태에서 대기방·대기조·휴식방을 누르면 그리로
 for(const id of ['waitBox','roomBox'])$(id).addEventListener('click',e=>{if(!sel||Date.now()-lastDragEnd<300)return;const t=targetAt(e.clientX,e.clientY);if(!t||t.kind==='table')return;const d=sel;clearSel(false);place(d,t,null);render()});
 function onTableTap(no){
+ if(sel?.enter){const g=A.groups.find(x=>x.id===sel.gid);if(!g){clearSel();return}if((A.tables[no]?.players.length||0)>=2){toast(no+'번 테이블은 경기 중입니다. 빈 테이블을 눌러 주세요.');return}
+  const ids=g.members.slice(),gid=g.id;clearSel(false);toTable(no,ids,gid);render();return}
  if(sel){const d=sel,src=document.querySelector('.sel .dan,.dan.sel'),r=src?.getBoundingClientRect();clearSel(false);place(d,{kind:'table',no},r?{x:r.left+r.width/2,y:r.top+r.height/2}:null);render();return}
  if(moveFrom!=null){const ids=A.tables[moveFrom]?.players||[];if(no!==moveFrom&&ids.length){const tgt=A.tables[no];if(tgt?.players.length){toast(no+'번 테이블은 사용 중입니다.');return}const o=A.tables[moveFrom];delete A.tables[moveFrom];delete A.ended[moveFrom];A.tables[no]={...o};saveAssign();toast(moveFrom+'번 → '+no+'번 테이블로 옮겼습니다.')}moveFrom=null;clearSel();return}
  openTable(no);
@@ -696,10 +724,10 @@ function openTable(no){
  const a=A.tables[no],byId=Object.fromEntries(players().map(p=>[p.id,p])),ps=(a?.players||[]),ended=!!A.ended[no];
  $('tTitle').textContent=no+'번 테이블 · '+(ps.length===1?(a.practice?'연습중':'대기중 (상대 기다림)'):ps.length?TYPES[a.type||'p'].name+' '+durShort(Date.now()-a.since):'비어 있음');
  const body=$('tBody');body.replaceChildren();
- if(!ps.length)body.append(el('p',{className:'hint',textContent:'손님방이나 대기방의 단추(또는 대기조)를 이 테이블로 끌어다 놓으면 바로 시작합니다.'}));
- else body.append(el('p',{className:'hint',style:'margin:0 0 6px',textContent:'경기를 끝내면 개인·정액팀 손님은 손님방 맨 아래로 가고, 시간팀 손님은 현황판에서 빠져 관리자에게 정산 요청이 갑니다.'}));
+ if(!ps.length)body.append(el('p',{className:'hint',textContent:'휴식방이나 대기방의 단추(또는 대기조)를 이 테이블로 끌어다 놓으면 바로 시작합니다.'}));
+ else body.append(el('p',{className:'hint',style:'margin:0 0 6px',textContent:'경기를 끝내면 정액·정액팀 손님은 휴식방 맨 아래로 가고, 시간팀 손님은 현황판에서 빠져 관리자에게 정산 요청이 갑니다.'}));
  for(const id of ps){const p=byId[id]||{id,disp:'?'},T=typeOf(id);body.append(el('div',{className:'tpRow'},av(p),el('div',{className:'cInfo'},el('div',{className:'cName',textContent:p.disp}),el('div',{className:'cSub',textContent:TYPES[T].name+' · '+handiOf(p)+(p.inAt?' · 입장 '+hhmm(p.inAt):'')})),
-  el('button',{type:'button',className:'small',textContent:'손님방으로',onclick:()=>{toRoom([id]);openTable(no);render()}})))}
+  el('button',{type:'button',className:'small',textContent:'휴식방으로',onclick:()=>{toRoom([id]);openTable(no);render()}})))}
  const acts=$('tActs');acts.replaceChildren();
  if(ps.length===1)acts.append(el('button',{type:'button',className:a.practice?'':'primary',textContent:a.practice?'연습 끝내기 (대기중으로)':'🎯 연습경기 (혼자 치기)',onclick:()=>{if(a.practice)delete a.practice;else a.practice=Date.now();saveAssign();$('dlgTbl').close();render();toast(no+'번 테이블 '+(a.practice?'연습중':'대기중'))}}));
  if(ps.length){acts.append(el('button',{type:'button',className:'primary',textContent:'경기 종료',onclick:()=>{$('dlgTbl').close();endGame(no);render()}}),
