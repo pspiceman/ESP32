@@ -304,7 +304,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.37</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.38</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -700,7 +700,7 @@ const Ntfy=(()=>{
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='1.37',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='1.38',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
@@ -2093,7 +2093,8 @@ const MemberGate=(()=>{
   const ids=Object.keys(visits.open);
   return{tables,groups,room:ids.filter(id=>!used.has(id)).length,inCount:ids.length,live:!!board,at:Date.now()};
  }
- function storeInfo(){return{id:storeId(),name:mcfg?.name||Remote.config().site.trim()||'Q24 당구장',addr:mcfg?.addr||'',tier:mcfg?.tier==='pro'?'pro':'std',info:mcfg?.info||'',geo:mcfg?.geo?.on!==false,door:!!mcfg?.door?.on,push:(Ntfy.config().server||'https://ntfy.sh').replace(/\/+$/,''),noticeTopic:noticeTopic()}}
+ const ownCfg=()=>!!mcfg&&String(mcfg.site||'').trim()===siteNow();   // 이 매장용으로 표시된 설정만 이름·주소·위치에 씀
+ function storeInfo(){const own=ownCfg();return{id:storeId(),name:(own&&mcfg.name)||siteNow()||'Q24 당구장',addr:own?mcfg.addr||'':'',tier:mcfg?.tier==='pro'?'pro':'std',info:mcfg?.info||'',geo:mcfg?.geo?.on!==false,door:!!mcfg?.door?.on,push:(Ntfy.config().server||'https://ntfy.sh').replace(/\/+$/,''),noticeTopic:noticeTopic()}}
  function activeNotices(){const t=ymdL(Date.now());return(mcfg?.notices||[]).filter(n=>!n.until||n.until>=t).sort((a,b)=>(!!b.pin-!!a.pin)||(b.at||0)-(a.at||0)).slice(0,20)}
  async function publishDir(){
   const {base}=R();if(!base)return;const t='q24/v1/dir/'+storeId();
@@ -2172,7 +2173,7 @@ const MemberGate=(()=>{
   switch(q.op){
    case 'me':return{ok:true,me:me(u)};
    case 'enter':{
-    const geoOn=mcfg.geo?.on!==false,hasPos=String(mcfg.geo?.lat??'').trim()!==''&&String(mcfg.geo?.lng??'').trim()!=='';
+    const geoOn=mcfg.geo?.on!==false,hasPos=ownCfg()&&String(mcfg.geo?.lat??'').trim()!==''&&String(mcfg.geo?.lng??'').trim()!=='';
     if(geoOn){
      if(q.lat==null||q.lng==null)return E('위치(GPS)를 확인해야 입장할 수 있습니다. 휴대폰의 위치를 켜 주세요.');
      if(hasPos){const d=dist(+q.lat,+q.lng,+mcfg.geo.lat,+mcfg.geo.lng),r=+mcfg.geo.r||1000;if(d>r)return E('매장 주변 '+(r>=1000?(r/1000)+'km':r+'m')+' 안에서만 입장할 수 있습니다. 지금 거리 약 '+(d>=1000?(d/1000).toFixed(1)+'km':Math.round(d)+'m'))}
