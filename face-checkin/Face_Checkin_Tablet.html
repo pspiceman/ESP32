@@ -304,7 +304,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.33</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.34</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -438,7 +438,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
      <div class="field" data-f="phone" role="button" tabindex="0"><span class="fl">휴대폰</span><b class="fv" id="fv_phone">010-</b></div>
     </div>
     <div class="chips" id="numChips"></div>
-    <label class="consent" id="consentWrap"><input id="regConsent" type="checkbox"><span>이름/닉네임·핸디·휴대폰 번호·얼굴 사진·특징값을 이 기기에 저장하고, 입실 관리를 위해 매장 관리자에게 전송(얼굴 정보 제외)하는 데 동의합니다.</span></label>
+    <label class="consent" id="consentWrap"><input id="regConsent" type="checkbox"><span>닉네임/이름·핸디·휴대폰 번호·얼굴 사진·특징값을 이 기기에 저장하고, 입실 관리를 위해 매장 관리자에게 전송(얼굴 정보 제외)하는 데 동의합니다.</span></label>
    </div>
    <div class="numPad" id="numPad"></div>
   </div>
@@ -687,7 +687,7 @@ const Ntfy=(()=>{
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='1.33',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='1.34',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
@@ -1586,8 +1586,8 @@ let regTarget=null;
 let regSamples=null,regMode='new',regStep=0,regIdleAt=0;
 const REG={h3:'',h4:'',phone:'',skip3:false,skip4:false,active:'h3'};
 const FIELDS={
- h3:{max:3,chips:[8,10,13,15,18,20,22,25,28,30,35],skipKey:'skip3',next:'h4',label:'3구 핸디'},
- h4:{max:4,chips:[50,80,100,120,150,200,250,300,400,500],skipKey:'skip4',next:'phone',label:'4구 점수'},
+ h3:{max:3,chips:[],skipKey:'skip3',next:'h4',label:'3구 핸디',ask:'3구 핸디 점수를 넣어 주세요'},
+ h4:{max:4,chips:[],skipKey:'skip4',next:'phone',label:'4구 점수',ask:'4구 점수를 넣어 주세요'},
  phone:{max:11,chips:[],next:null,label:'휴대폰'}
 };
 function fmtPhone(s){const d=String(s).replace(/\D/g,'').slice(0,11);if(d.length<4)return d;if(d.length<8)return d.slice(0,3)+'-'+d.slice(3);return d.slice(0,3)+'-'+d.slice(3,d.length-4)+'-'+d.slice(-4)}
@@ -1618,8 +1618,8 @@ function renderNum(){
  const F=FIELDS[REG.active],cur=REG[REG.active];
  $('numChips').replaceChildren(...F.chips.map(c=>{const b=document.createElement('button');b.type='button';b.textContent=c;b.dataset.v=String(c);if(String(c)===cur)b.className='sel';
   b.onclick=()=>{const a=REG.active;REG[a]=String(c);if(FIELDS[a].skipKey)REG[FIELDS[a].skipKey]=false;touchReg();REG.active=FIELDS[a].next||a;renderNum()};return b}));
- $('numChips').style.visibility=F.chips.length?'visible':'hidden';
- $('numQ').textContent=REG.active==='phone'?'휴대폰 번호를 눌러 주세요':FIELDS[REG.active].label+'를 누르거나 아래에서 고르세요';
+ $('numChips').style.display='none';   // 표준 핸디·점수 버튼 없음 (오른쪽 숫자판으로 입력)
+ $('numQ').textContent=REG.active==='phone'?'휴대폰 번호를 넣어 주세요':FIELDS[REG.active].ask;
  const hi=settings.handiIn||'34';$('regStep2').textContent='② '+(hi==='3'?'3구 핸디':hi==='4'?'4구 점수':'핸디')+' · 휴대폰';
 }
 for(const row of document.querySelectorAll('.field'))row.addEventListener('click',e=>{if(e.target.closest('.skipBtn'))return;touchReg();setActive(row.dataset.f)});
