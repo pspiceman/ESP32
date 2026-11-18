@@ -317,7 +317,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v2.02</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v2.03</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -597,6 +597,11 @@ const Remote=(()=>{
   else if(cmd.type==='createCheckin'){   // 🧪 임시: 관리자가 신규 회원 만들고 바로 입실 (테스트용)
    res=await window.testCreateMember?.(cmd.info||{})||{ok:false,reason:'인식기 준비 중'};
   }
+  else if(cmd.type==='outReq'){   // 현황판 휴식방에서 퇴실 → 정산 대기 (최종 퇴실은 관리자)
+   const v=visits.open[cmd.memberId];
+   if(!v)res={ok:false,reason:'입실 기록 없음'};
+   else{if(!v.outReq){v.outReq=Date.now();delete v.rest;delete v.restAt;saveVisits();renderMembers();Ntfy.outRequest(v,cmd.by||'현황판');toast((v.nick||v.name)+' 님 퇴실 ('+(cmd.by||'현황판')+') · 관리자 정산 대기',5000)}res={ok:true,visit:v}}
+  }
   else if(cmd.type==='webReset'){res=window.MG?.reset(cmd.memberId)?{ok:true}:{ok:false,reason:'회원 웹 계정 없음'};if(res.ok)toast('회원 웹 계정을 초기화했습니다.')}
   if(cmd.cid){done.push(cmd.cid);done=done.slice(-200);try{localStorage.setItem(DONE_KEY,JSON.stringify(done))}catch{}}
   clear();pub('event',{type:'ack',cid:cmd.cid||'',cmd:cmd.type,...res,eid:visitKey()});pushState();
@@ -685,7 +690,7 @@ const Ntfy=(()=>{
   if(!topic)return false;const headers={'Content-Type':'application/json'};if(cfg.token.trim())headers.Authorization='Bearer '+cfg.token.trim();
   try{const r=await fetch(cfg.server.replace(/\/+$/,'')+'/',{method:'POST',headers,body:JSON.stringify({topic,title:msg.title,message:msg.message,tags:msg.tags||[],priority:msg.priority||3})});return r.ok}catch{return false}
  }
- function outRequest(v){if(!cfg.enabled||!cfg.topic.trim())return;post({title:(v.nick||v.name)+'님 퇴실 (정산 대기)',message:(v.nick||v.name)+'님이 회원 웹에서 퇴실했습니다.\n입실 '+tm(v.inAt)+' · 결제·미수 확인 후 관리자 웹에서 퇴실 처리해 주세요.',tags:['wave','q24-outreq'],priority:4})}
+ function outRequest(v,src='회원 웹'){if(!cfg.enabled||!cfg.topic.trim())return;post({title:(v.nick||v.name)+'님 퇴실 (정산 대기)',message:(v.nick||v.name)+'님이 '+src+'에서 퇴실했습니다.\n입실 '+tm(v.inAt)+' · 결제·미수 확인 후 관리자 웹에서 퇴실 처리해 주세요.',tags:['wave','q24-outreq'],priority:4})}
  function fill(){g('ntEnabled').checked=cfg.enabled;g('ntServer').value=cfg.server;g('ntTopic').value=cfg.topic;g('ntToken').value=cfg.token;g('ntCheckin').checked=cfg.checkin;g('ntRegister').checked=cfg.register;ui()}
  const newTopic=()=>{const a=crypto.getRandomValues(new Uint8Array(8));return 'q24-'+[...a].map(b=>'abcdefghjkmnpqrstuvwxyz23456789'[b%31]).join('')};
  function fail(msg){ui('⚠ '+msg);toast('⚠ '+msg,5000);return false}
@@ -713,7 +718,7 @@ const Ntfy=(()=>{
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='2.02',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='2.03',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
