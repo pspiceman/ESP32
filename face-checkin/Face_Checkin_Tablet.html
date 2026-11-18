@@ -27,6 +27,19 @@
  addEventListener('pagehide',mir);document.addEventListener('visibilitychange',()=>{if(document.hidden)mir()});
 })();
 </script>
+<script>
+/* 설치 링크 (관리자 웹 → 연결 안내 → 링크 보내기): 주소 #q24setup=… 로 열리면 매장 연결 설정을 한 번에 넣음 */
+(()=>{const h=location.hash;if(!h.startsWith('#q24setup='))return;
+ const q=new URLSearchParams(h.slice(10)),s=(q.get('s')||'').trim(),p=(q.get('p')||'').trim(),n=(q.get('n')||s).trim();
+ try{history.replaceState(null,'',location.pathname+location.search)}catch{}
+ if(!s||!p){alert('설치 링크가 올바르지 않습니다. 관리자 웹에서 링크를 다시 보내 주세요.');return}
+ if(!confirm('이 기기를 "'+n+'" (매장 코드 '+s+') 인식기(으)로 설정할까요?\n\n매장 연결 설정이 바뀝니다. 이 기기에 있던 다른 자료는 그대로 둡니다.'))return;
+ const J=k=>{try{return JSON.parse(localStorage.getItem(k))||{}}catch{return {}}},W=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+ const r=J('q24Remote');Object.assign(r,{enabled:true,broker:q.get('b')||r.broker||'wss://broker.emqx.io:8084/mqtt',site:s,pass:p});W('q24Remote',r);
+ if(q.get('t')){const nt=J('q24Ntfy');Object.assign(nt,{enabled:true,server:q.get('sv')||nt.server||'https://ntfy.sh',topic:q.get('t')});W('q24Ntfy',nt)}
+ alert('✅ "'+n+'" 인식기 설정을 마쳤습니다.\n\n크롬 메뉴(⋮) → 홈 화면에 추가 로 앱처럼 설치해 두세요.');
+})();
+</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content"><title>Q24 입장 등록</title>
 <link rel="manifest" href="./tablet.webmanifest">
 <meta name="theme-color" content="#15333e">
@@ -304,7 +317,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v1.39</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v2.01</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -351,8 +364,8 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
    <div class="settings">
     <label for="rmEnabled">원격 관리 사용</label><input id="rmEnabled" type="checkbox">
     <label for="rmBroker">브로커 주소 (wss)</label><input id="rmBroker" placeholder="wss://broker.emqx.io:8084/mqtt" autocomplete="off">
-    <label for="rmSite">매장 코드 (관리자와 동일)</label><input id="rmSite" placeholder="예: Q24-강남점" autocomplete="off">
-    <label for="rmPass">암호 키 (관리자와 동일)</label><input autocomplete="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore class="secret" id="rmPass" type="text" placeholder="8자 이상 권장">
+    <label for="rmSite">매장 코드 (관리자와 동일)</label><input id="rmSite" placeholder="예: Q24-0001" autocomplete="off">
+    <label for="rmPass">비밀번호 · 암호 키 (관리자와 동일)</label><input autocomplete="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore class="secret" id="rmPass" type="text" placeholder="8자 이상 권장">
    </div>
    <div class="row" style="margin-top:10px"><button id="rmSave" class="primary" type="button">저장하고 연결</button><button id="rmSync" type="button">지금 다시 보내기</button><span id="rmStatus" class="hint">원격 관리 꺼짐</span></div>
    <p class="hint" id="mwStatus" style="margin:6px 0 0">회원 웹: 원격 연결 후 표시</p>
@@ -700,7 +713,7 @@ const Ntfy=(()=>{
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='1.39',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='2.01',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
@@ -2094,7 +2107,7 @@ const MemberGate=(()=>{
   return{tables,groups,room:ids.filter(id=>!used.has(id)).length,inCount:ids.length,live:!!board,at:Date.now()};
  }
  const ownCfg=()=>!!mcfg&&String(mcfg.site||'').trim()===siteNow();   // 이 매장용으로 표시된 설정만 이름·주소·위치에 씀
- function storeInfo(){const own=ownCfg();return{id:storeId(),name:siteNow()||'Q24 당구장',addr:own?mcfg.addr||'':'',tier:mcfg?.tier==='pro'?'pro':'std',info:mcfg?.info||'',geo:mcfg?.geo?.on!==false,door:!!mcfg?.door?.on,push:(Ntfy.config().server||'https://ntfy.sh').replace(/\/+$/,''),noticeTopic:noticeTopic()}}
+ function storeInfo(){const own=ownCfg();return{id:storeId(),name:(own&&String(mcfg.name||'').trim())||siteNow()||'Q24 당구장',addr:own?mcfg.addr||'':'',tier:mcfg?.tier==='pro'?'pro':'std',info:mcfg?.info||'',geo:mcfg?.geo?.on!==false,door:!!mcfg?.door?.on,push:(Ntfy.config().server||'https://ntfy.sh').replace(/\/+$/,''),noticeTopic:noticeTopic()}}
  function activeNotices(){const t=ymdL(Date.now());return(mcfg?.notices||[]).filter(n=>!n.until||n.until>=t).sort((a,b)=>(!!b.pin-!!a.pin)||(b.at||0)-(a.at||0)).slice(0,20)}
  async function publishDir(){
   const {base}=R();if(!base)return;const t='q24/v1/dir/'+storeId();
@@ -2282,4 +2295,24 @@ const MemberGate=(()=>{
  window.addEventListener('resize',()=>{clearTimeout(apply.t);apply.t=setTimeout(apply,300)});
  fill();apply();
 })();
-</script></body></html>
+</script><style>
+.q24upd{position:fixed;left:8px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:2147483000;display:inline-flex;align-items:center;gap:5px;
+ padding:5px 11px 5px 8px;min-height:0;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(20,32,40,.72);color:#fff;
+ font:700 12px/1 system-ui,-apple-system,'Noto Sans KR',sans-serif;letter-spacing:.2px;box-shadow:0 2px 10px rgba(0,0,0,.25);cursor:pointer;-webkit-tap-highlight-color:transparent;opacity:.85}
+.q24upd:active{opacity:1;transform:scale(.97)}.q24upd i{font-style:normal;font-size:15px;display:inline-block}
+.q24upd.spin i{animation:q24spin .8s linear infinite}@keyframes q24spin{to{transform:rotate(360deg)}}
+</style>
+<script>
+/* 🧪 테스트 기간: 업데이트(↻) 버튼 + 버전 표시 — 누르면 서버의 최신 파일로 다시 불러옴 */
+(()=>{const V=()=>{try{return VERSION}catch{return '?'}},RE=/VERSION\s*=\s*'([^']+)'/;
+ function mk(){if(document.getElementById('q24upd'))return;const b=document.createElement('button');b.type='button';b.id='q24upd';b.className='q24upd';b.title='최신 버전으로 업데이트';
+  b.innerHTML='<i>↻</i><span></span>';b.querySelector('span').textContent='v'+V();
+  b.onclick=async e=>{e.stopPropagation();if(b.classList.contains('spin'))return;b.classList.add('spin');const sp=b.querySelector('span');sp.textContent='확인 중…';let nv=null;
+   try{const u=new URL(location.href);u.hash='';u.search='';u.searchParams.set('chk',Date.now().toString(36));const t=await(await fetch(u.href,{cache:'no-store'})).text();nv=(t.match(RE)||[])[1]||null}catch{}
+   sp.textContent=nv==null?'서버 확인 실패 · 새로 불러옴':nv!==V()?'v'+V()+' → v'+nv+' 업데이트':'최신 v'+V()+' · 새로 불러옴';
+   setTimeout(()=>{const u=new URL(location.href);u.searchParams.delete('chk');u.searchParams.set('v',(nv||V())+'-'+Date.now().toString(36));location.replace(u.href)},900)};
+  document.body.append(b)}
+ if(document.readyState==='loading')addEventListener('DOMContentLoaded',mk);else mk();
+})();
+</script>
+</body></html>
