@@ -317,7 +317,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v2.01</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v2.02</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -403,7 +403,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
   <section class="card"><h2>입장 화면 버튼 위치</h2>
    <div class="row"><label for="padB" style="font-weight:500">아래 여백</label><button id="padDown" type="button">▼ 5px 아래로</button><b id="padVal" style="min-width:64px;text-align:center;font-size:20px">15px</b><button id="padUp" type="button">▲ 5px 위로</button><button id="padReset" type="button">기본값</button></div>
    <input id="padB" type="range" min="0" max="200" step="1" value="15" style="margin:12px 0 4px">
-   <p class="hint">[처음 왔어요]·[번호로 입장] 버튼이 화면 아래(안드로이드 버튼 줄 등)에 가려지면 <b>▲ 위로</b>를 누르세요. 톡 버튼도 같이 움직입니다. 값은 이 태블릿에 저장됩니다. 현재 화면 크기는 <b>실행 정보 → 화면 크기</b>에서 볼 수 있습니다.</p>
+   <p class="hint">[처음 왔어요]·[번호로 입장] 버튼이 화면 아래(안드로이드 버튼 줄 등)에 가려지면 <b>▲ 위로</b>를 누르세요. 톡 버튼도 같이 움직입니다. 값은 이 인식기에 저장됩니다. 현재 화면 크기는 <b>실행 정보 → 화면 크기</b>에서 볼 수 있습니다.</p>
   </section>
   <section class="card"><h2>전체 화면</h2><div class="row"><label class="consent" style="margin:0"><input id="fsAuto" type="checkbox" checked> 화면을 터치하면 자동으로 전체 화면(주소창 숨김)</label></div><div class="row" style="margin-top:10px"><button id="fsBtn" type="button">지금 전체 화면</button><button id="fsExit" type="button">전체 화면 끄기</button><span id="fsMsg" class="hint"></span></div><p class="hint">"화면 새로고침"·아래로 당기기는 페이지를 다시 열지 않아 <b>전체 화면이 그대로 유지</b>됩니다. 페이지를 새로 열 때(최신 버전 새로고침·재부팅 등)는 브라우저 규칙상 <b>"화면을 터치해 주세요" 시작 화면을 한 번 터치</b>하면 전체 화면이 됩니다. 항상 주소창 없이 쓰려면 Chrome 메뉴 ⋮ → <b>홈 화면에 추가</b>로 아이콘을 만들어 실행하세요.</p></section>
   <section class="card"><h2>새로고침 · 업데이트</h2><div class="row"><button id="reloadBtn" type="button">화면 새로고침</button><button id="hardReloadBtn" type="button">최신 버전으로 새로고침</button><button id="updBtn" type="button">업데이트 확인</button></div><p class="hint" id="updInfo" style="font-weight:700;color:var(--ink)"></p><p class="hint">GitHub에 새 파일을 올리면 <b>5분 안에 자동으로 확인해 새 버전으로 바뀝니다</b>(손님이 쓰는 중에는 끝난 뒤 적용). 바로 바꾸려면 입장 화면을 <b>아래로 길게 당겼다 놓거나</b> "최신 버전으로 새로고침"을 누르세요. 회원·입실 기록·설정은 그대로 유지됩니다. GitHub Pages 반영에는 올린 뒤 1~2분이 걸릴 수 있습니다.</p></section>
@@ -413,7 +413,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
    <p class="hint">⚙ 설정은 항상 비밀번호로 잠겨 있습니다. 기본 비밀번호는 <b>0000</b>이니 설치 후 꼭 바꿔 주세요.</p>
   </section>
   <section class="card"><h2>실행 방법 · 정확도 안내</h2>
-   <p class="hint">HTTPS 주소(GitHub Pages 등)를 태블릿 Chrome에서 가로로 열어 사용하세요. 첫 실행 때 카메라 권한을 한 번 허용하면 이후 자동으로 켜집니다.<br>
+   <p class="hint">HTTPS 주소(GitHub Pages 등)를 인식기 Chrome에서 가로로 열어 사용하세요. 첫 실행 때 카메라 권한을 한 번 허용하면 이후 자동으로 켜집니다.<br>
    <b>사용 순서:</b> 톡 → 정면 바라보기(1~2초) → "OOO님 입장 확인". 퇴실은 관리자가 결제 확인 후 관리자 웹에서 처리합니다.<br>
    <b>처음 왔어요:</b> 얼굴을 약 2초 촬영 → 인식되면 얼굴로 등록, 인식이 안 되면(마스크 등) "전화번호 입력으로 등록 가능합니다" 안내 후 <b>사진만으로 등록</b>합니다. 이후 이름/닉네임 → 핸디 → 휴대폰 번호 입력은 같습니다.<br>
    <b>번호로 입장:</b> 회원인데 얼굴 인식이 안 되면(마스크·역광 등) 휴대폰 뒷자리 4자리로 입장합니다. 같은 번호가 여러 명이면 이름을 고릅니다. 번호 입장은 관리자 웹 기록에 "번호"로 표시됩니다.<br>
@@ -520,8 +520,8 @@ document.getElementById('pinSave').onclick=async()=>{
    state    (retain) 입실 중 목록 + 오늘 퇴실 목록 · 60초마다 갱신
    members  (retain) 회원 명단(얼굴 특징값 제외)
    event             입실·등록·퇴실·취소 이벤트
-   status   (retain) 태블릿 온라인 여부(LWT)
-   cmd/<id> (retain) 관리자 → 태블릿 명령(퇴실 등) · 처리 후 빈 메시지로 삭제 */
+   status   (retain) 인식기 온라인 여부(LWT)
+   cmd/<id> (retain) 관리자 → 인식기 명령(퇴실 등) · 처리 후 빈 메시지로 삭제 */
 /* 배터리 (Battery Status API · Chrome 안드로이드 지원) → 관리자 웹에 실시간 표시 */
 const BAT={level:null,charging:null};
 const Remote=(()=>{
@@ -713,7 +713,7 @@ const Ntfy=(()=>{
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='2.01',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='2.02',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
