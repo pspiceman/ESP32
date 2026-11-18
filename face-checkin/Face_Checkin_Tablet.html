@@ -317,7 +317,7 @@ dialog.regFull form{display:flex;flex-direction:column;width:100%;height:100%;mi
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v2.04</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v2.05</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -718,7 +718,7 @@ const Ntfy=(()=>{
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='2.04',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='2.05',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
@@ -2131,7 +2131,8 @@ const MemberGate=(()=>{
   const used=new Set();for(const t of Object.values(board?.tables||{}))for(const id of t.players||[])used.add(id);
   const groups=(board?.groups||[]).map(g=>{for(const id of g.members||[])used.add(id);return{type:g.type||'p',names:(g.members||[]).map(dispOf)}});
   const ids=Object.keys(visits.open);
-  return{tables,groups,room:ids.filter(id=>!used.has(id)).length,inCount:ids.length,live:!!board,at:Date.now()};
+  const roomIds=ids.filter(id=>!used.has(id)&&!visits.open[id]?.outReq);
+  return{tables,groups,room:roomIds.length,roomNames:roomIds.sort((a,b)=>visits.open[a].inAt-visits.open[b].inAt).map(dispOf),inCount:ids.length,live:!!board,at:Date.now()};
  }
  const ownCfg=()=>!!mcfg&&String(mcfg.site||'').trim()===siteNow();   // 이 매장용으로 표시된 설정만 이름·주소·위치에 씀
  function storeInfo(){const own=ownCfg();return{id:storeId(),name:(own&&String(mcfg.name||'').trim())||siteNow()||'Q24 당구장',addr:own?mcfg.addr||'':'',tier:mcfg?.tier==='pro'?'pro':'std',info:mcfg?.info||'',geo:mcfg?.geo?.on!==false,door:!!mcfg?.door?.on,push:(Ntfy.config().server||'https://ntfy.sh').replace(/\/+$/,''),noticeTopic:noticeTopic()}}
