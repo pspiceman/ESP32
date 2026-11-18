@@ -396,7 +396,7 @@ fieldset{border:1px solid var(--line);border-radius:14px;margin:14px 0 0;padding
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
-const BOARD_VERSION='2.03',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
+const BOARD_VERSION='2.04',GUEST_KEY='q24BoardGuests',LIGHT_KEY='q24BoardLights',CFG_KEY='q24BoardCfg',ASG_KEY='q24BoardAssign',PIN_KEY='q24BoardPin',DEF_BROKER='wss://broker.emqx.io:8084/mqtt';
 const LIBS=['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'];
 const DEF_TICKER='가브리엘 당구장에 오신 것을 환영합니다.',OLD_TICKERS=['가브리엘 당구장에 오신 것을 환영합니다. 본 당구장은 정액제 당구장으로 4시간에 1만원, 그 이상은 1만 5천원입니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.','가브리엘 당구장에 오신 것을 환영합니다. 고객 여러분들의 스마트한 경기 환경이 될 수 있도록 최선을 다하고 있습니다. 감사합니다.'];
 /* 기본 배치 (매장 그림 기준, 배치 영역의 % 좌표) */
@@ -631,7 +631,7 @@ function _render(){
  room.forEach((p,i)=>{
   const T=typeOf(p.id);
   const row=el('div',{className:'chip ty-'+T+(p.rest?' rest':'')+(fresh.has(p.id)?' new':'')+(isSel([p.id])?' sel':'')},el('span',{className:'ord',textContent:i+1}),dan(p,false,true),
-   (Date.now()-p.inAt<10*60000||fresh.has(p.id))?el('span',{className:'newTag',textContent:'NEW'}):null,p.rest?el('span',{className:'restTag',textContent:'☕ 휴식'}):p.outReq?el('span',{className:'restTag out',textContent:'퇴실 요청'}):null,el('span',{className:'tyTag '+T,textContent:TYPES[T].name}));
+   p.rest?el('span',{className:'restTag',textContent:'☕ 휴식'}):p.outReq?el('span',{className:'restTag out',textContent:'퇴실 요청'}):null,el('span',{className:'tyTag '+T,textContent:TYPES[T].name}));
   bindDrag(row,{ids:[p.id],label:p.disp,src:'room',typeMenu:true});rl.append(row);
  });
  // 대기방
