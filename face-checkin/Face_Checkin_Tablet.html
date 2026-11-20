@@ -292,7 +292,17 @@ main{grid-template-columns:minmax(0,1fr) minmax(360px,1.25fr)}
 .e3:active:not(:disabled){transform:translateY(2px) scale(.98);box-shadow:0 2px 0 rgba(0,0,0,.12)}
 .e3Pin{background:#e7f1fb;border-color:#5b95c8;color:#164a78}.e3Face{background:#e9f7f1;border-color:#3e9d7a;color:#0b5b45}.e3New{background:#fff4dc;border-color:#e0a040;color:#7a4b00}
 .side.phone .entry3,.side.picking .entry3{display:none}
-@media (orientation:portrait){main{grid-template-columns:1fr!important}.entry3{flex:1 1 100%;align-self:flex-start}.e3{min-height:clamp(100px,10vh,140px)}.side .result{flex:1 1 100%!important}.bellWrap{flex:1 1 100%;padding:0}.bellWrap .bell{top:0!important;margin:10px auto!important}}
+/* v2.11 톡 버튼 없앰 → [안면인식 입장]이 같은 동작 · 세 버튼 세로로 크게 */
+.bellWrap{display:none!important}
+.entry3{display:flex!important;flex-direction:column;gap:clamp(12px,2.2vh,22px);flex:1 1 auto;min-height:0}
+.e3{flex:1 1 0;min-height:clamp(96px,16vh,200px);flex-direction:row!important;justify-content:flex-start!important;gap:clamp(14px,2.4vw,28px)!important;padding:10px clamp(18px,3vw,36px)!important;border-width:4px!important;border-radius:26px!important}
+.e3 .ic{font-style:normal;font-size:clamp(52px,10vh,96px);line-height:1;flex-shrink:0;width:1.15em;text-align:center}
+.e3 span{flex:1;font-size:clamp(28px,5.2vh,50px)!important;font-weight:900;line-height:1.2;text-align:left!important;word-break:keep-all}
+.e3 small{display:block;font-size:clamp(15px,2.4vh,22px);font-weight:700;opacity:.8;margin-top:4px}.e3 small:empty{display:none}
+.e3Face.busy{background:#d3f0e3;border-color:#0b7a55;animation:e3pulse 1.4s ease-in-out infinite}
+@keyframes e3pulse{50%{box-shadow:0 0 0 8px rgba(62,157,122,.25)}}
+.e3:disabled{opacity:.6}
+@media (orientation:portrait){main{grid-template-columns:1fr!important}.entry3{flex:1 1 100%;align-self:flex-start}.e3{min-height:clamp(90px,11vh,170px)}.entry3{flex:1 1 100%!important}.side .result{flex:1 1 100%!important}.bellWrap{flex:1 1 100%;padding:0}.bellWrap .bell{top:0!important;margin:10px auto!important}}
 /* ===== 신규 등록: 닉네임 칸 + 취소·다음 ===== */
 .nameRow{display:flex;gap:10px;align-items:stretch}.nameRow .bigInput{flex:0 1 auto;width:min(11.5em,100%);margin:0}
 .nrBtn{flex:none;min-height:clamp(60px,9vh,76px);font-size:20px;padding:0 20px;border-radius:14px}.nrBtn.primary{background:#e8402f;border-color:#e8402f;color:#fff}
@@ -327,7 +337,7 @@ main{grid-template-columns:minmax(0,1fr) minmax(360px,1.25fr)}
 </div>
 <div class="side">
  <div class="result" aria-live="polite"><strong id="resultName">입장하시려면 선택해 주세요</strong><p id="resultId"></p><div class="phase" id="phaseBar" hidden></div></div>
- <div class="entry3" id="entry3"><button type="button" class="e3 e3Pin" id="btnPin2">🔢<span>전화번호<br>뒷자리로 입장</span></button><button type="button" class="e3 e3Face" id="btnFace">🙂<span>안면인식<br>입장</span></button><button type="button" class="e3 e3New" id="btnNew2">🙋<span>신규<br>등록할게요</span></button></div>
+ <div class="entry3" id="entry3"><button type="button" class="e3 e3Pin" id="btnPin2"><i class="ic" aria-hidden="true">🔢</i><span>전화번호 뒷자리로 입장</span></button><button type="button" class="e3 e3Face" id="btnFace"><i class="ic" aria-hidden="true">🙂</i><span>안면인식 입장<small id="faceSub"></small></span></button><button type="button" class="e3 e3New" id="btnNew2"><i class="ic" aria-hidden="true">🙋</i><span>신규 등록할게요</span></button></div>
  <section class="card pickCard" id="pickCard" hidden>
   <div class="row" style="justify-content:space-between"><h2 style="margin:0" id="pickTitle">혹시 이분이신가요?</h2><button id="pickCancel" type="button">취소</button></div>
   <p class="hint" id="pickHint" style="margin:6px 0 10px">얼굴이 비슷한 분이 있습니다. 본인 이름을 눌러 주세요.</p>
@@ -348,7 +358,7 @@ main{grid-template-columns:minmax(0,1fr) minmax(360px,1.25fr)}
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v2.09</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v2.11</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -358,7 +368,7 @@ main{grid-template-columns:minmax(0,1fr) minmax(360px,1.25fr)}
    <div class="row"><label class="consent" style="margin:0"><input id="voiceEnabled" type="checkbox" checked> 음성 안내</label><label for="voiceVolume">볼륨</label><input id="voiceVolume" type="range" min="0" max="1" step="0.1" value="0.8" style="width:140px;margin:0"><button id="voiceTest" type="button">음성 테스트</button><button id="chimeTest" type="button">딩동 테스트</button></div>
    <div class="row"><label for="voiceSel">목소리</label><select id="voiceSel" style="min-width:260px;flex:1"></select></div>
    <p class="hint" style="margin-top:2px">이 기기에 설치된 한국어 목소리 중에서 고릅니다. 고르면 바로 들려 드립니다. <b>기본</b>은 Google 한국어(인터넷) 목소리입니다. 인터넷이 끊기면 기기 목소리로 대신 안내합니다.</p>
-   <p id="ttsInfo" class="hint" style="font-weight:700;color:var(--ink)"></p><p id="voiceHint" class="hint">톡을 누르고 흰 점선 안에서 정면을 바라보면 1~2초 안에 인식합니다. 처음 오신 분은 등록 창이 자동으로 열립니다.</p>
+   <p id="ttsInfo" class="hint" style="font-weight:700;color:var(--ink)"></p><p id="voiceHint" class="hint">[안면인식 입장]을 누르고 흰 점선 안에서 정면을 바라보면 1~2초 안에 인식합니다. 처음 오신 분은 등록 창이 자동으로 열립니다.</p>
   </section>
   <section class="card wide"><h2>검출 결과</h2>
    <div class="metrics">
@@ -436,7 +446,7 @@ main{grid-template-columns:minmax(0,1fr) minmax(360px,1.25fr)}
   <section class="card"><h2>입장 화면 버튼 위치</h2>
    <div class="row"><label for="padB" style="font-weight:500">아래 여백</label><button id="padDown" type="button">▼ 5px 아래로</button><b id="padVal" style="min-width:64px;text-align:center;font-size:20px">15px</b><button id="padUp" type="button">▲ 5px 위로</button><button id="padReset" type="button">기본값</button></div>
    <input id="padB" type="range" min="0" max="200" step="1" value="15" style="margin:12px 0 4px">
-   <p class="hint">[처음 왔어요]·[번호로 입장] 버튼이 화면 아래(안드로이드 버튼 줄 등)에 가려지면 <b>▲ 위로</b>를 누르세요. 톡 버튼도 같이 움직입니다. 값은 이 인식기에 저장됩니다. 현재 화면 크기는 <b>실행 정보 → 화면 크기</b>에서 볼 수 있습니다.</p>
+   <p class="hint">[처음 왔어요]·[번호로 입장] 버튼이 화면 아래(안드로이드 버튼 줄 등)에 가려지면 <b>▲ 위로</b>를 누르세요. 값은 이 인식기에 저장됩니다. 현재 화면 크기는 <b>실행 정보 → 화면 크기</b>에서 볼 수 있습니다.</p>
   </section>
   <section class="card"><h2>전체 화면</h2><div class="row"><label class="consent" style="margin:0"><input id="fsAuto" type="checkbox" checked> 화면을 터치하면 자동으로 전체 화면(주소창 숨김)</label></div><div class="row" style="margin-top:10px"><button id="fsBtn" type="button">지금 전체 화면</button><button id="fsExit" type="button">전체 화면 끄기</button><span id="fsMsg" class="hint"></span></div><p class="hint">"화면 새로고침"·아래로 당기기는 페이지를 다시 열지 않아 <b>전체 화면이 그대로 유지</b>됩니다. 페이지를 새로 열 때(최신 버전 새로고침·재부팅 등)는 브라우저 규칙상 <b>"화면을 터치해 주세요" 시작 화면을 한 번 터치</b>하면 전체 화면이 됩니다. 항상 주소창 없이 쓰려면 Chrome 메뉴 ⋮ → <b>홈 화면에 추가</b>로 아이콘을 만들어 실행하세요.</p></section>
   <section class="card"><h2>새로고침 · 업데이트</h2><div class="row"><button id="reloadBtn" type="button">화면 새로고침</button><button id="hardReloadBtn" type="button">최신 버전으로 새로고침</button><button id="updBtn" type="button">업데이트 확인</button></div><p class="hint" id="updInfo" style="font-weight:700;color:var(--ink)"></p><p class="hint">GitHub에 새 파일을 올리면 <b>5분 안에 자동으로 확인해 새 버전으로 바뀝니다</b>(손님이 쓰는 중에는 끝난 뒤 적용). 바로 바꾸려면 입장 화면을 <b>아래로 길게 당겼다 놓거나</b> "최신 버전으로 새로고침"을 누르세요. 회원·입실 기록·설정은 그대로 유지됩니다. GitHub Pages 반영에는 올린 뒤 1~2분이 걸릴 수 있습니다.</p></section>
@@ -447,7 +457,7 @@ main{grid-template-columns:minmax(0,1fr) minmax(360px,1.25fr)}
   </section>
   <section class="card"><h2>실행 방법 · 정확도 안내</h2>
    <p class="hint">HTTPS 주소(GitHub Pages 등)를 인식기 Chrome에서 가로로 열어 사용하세요. 첫 실행 때 카메라 권한을 한 번 허용하면 이후 자동으로 켜집니다.<br>
-   <b>사용 순서:</b> 톡 → 정면 바라보기(1~2초) → "OOO님 입장 확인". 퇴실은 관리자가 결제 확인 후 관리자 웹에서 처리합니다.<br>
+   <b>사용 순서:</b> [안면인식 입장] → 정면 바라보기(1~2초) → "OOO님 입장 확인". 퇴실은 관리자가 결제 확인 후 관리자 웹에서 처리합니다.<br>
    <b>처음 왔어요:</b> 얼굴을 약 2초 촬영 → 인식되면 얼굴로 등록, 인식이 안 되면(마스크 등) "전화번호 입력으로 등록 가능합니다" 안내 후 <b>사진만으로 등록</b>합니다. 이후 이름/닉네임 → 핸디 → 휴대폰 번호 입력은 같습니다.<br>
    <b>번호로 입장:</b> 회원인데 얼굴 인식이 안 되면(마스크·역광 등) 휴대폰 뒷자리 4자리로 입장합니다. 같은 번호가 여러 명이면 이름을 고릅니다. 번호 입장은 관리자 웹 기록에 "번호"로 표시됩니다.<br>
    <b>정확도:</b> 등록 때 정면 8장, 확인 때 4장을 평균하고 두 눈이 수평이 되도록 정렬한 뒤 비교합니다. 1·2순위 차이가 작으면 비슷한 분들만 골라 보여 줍니다.<br>
@@ -752,7 +762,7 @@ const Ntfy=(()=>{
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='2.09',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='2.11',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
@@ -883,12 +893,12 @@ function chime(){
  }catch{}
 }
 document.addEventListener('pointerdown',()=>{
- if(needPlay&&video.srcObject)video.play().then(()=>{needPlay=false;status('카메라 화면이 켜졌습니다. 톡 버튼을 눌러 주세요.')}).catch(()=>{});
+ if(needPlay&&video.srcObject)video.play().then(()=>{needPlay=false;status('카메라 화면이 켜졌습니다. [안면인식 입장]을 눌러 주세요.')}).catch(()=>{});
  if(!stream&&!starting){nextRetryAt=0;startCamera()}
  requestWakeLock();
 },true);
 $('voiceSel').addEventListener('change',()=>{try{localStorage.setItem(VOICE_KEY,$('voiceSel').value)}catch{}ttsMode='voice';try{localStorage.setItem('q24TtsMode','voice')}catch{}lastVoiceKey='';speak('안녕하세요. 큐24 당구장입니다. 이 목소리로 안내합니다.','test',0)});
-$('voiceTest').onclick=()=>{speak('안녕하세요. 톡을 누르고 카메라를 바라봐 주세요.','test',0);setTimeout(ttsInfo,2500)};
+$('voiceTest').onclick=()=>{speak('안녕하세요. 안면인식 입장을 누르고 카메라를 바라봐 주세요.','test',0);setTimeout(ttsInfo,2500)};
 $('chimeTest').onclick=()=>chime();
 $('voiceEnabled').onchange=()=>{if(!$('voiceEnabled').checked)window.speechSynthesis?.cancel();else speak('음성 안내를 켰습니다.','on',0)};
 
@@ -1180,7 +1190,7 @@ function stopCamera(message){
 }
 function showCamBtn(text){if(stream)return;$('camBtn').hidden=false;$('phText').textContent=text||'카메라가 켜지지 않았습니다'}
 $('camBtn').onclick=e=>{e.stopPropagation();if(starting&&Date.now()-startAt>6000){generation++;starting=false}nextRetryAt=0;startCamera()};
-function retryModels(run){setTimeout(async()=>{if(run!==generation||ready)return;try{await loadModels();if(run!==generation)return;$('engine').textContent='대기 중';status('준비 완료. 톡 버튼을 눌러 주세요.');controls()}catch(e){if(run===generation){status('얼굴 모델 로딩 재시도 실패: '+e.message+'\n인터넷 연결을 확인해 주세요. 계속 재시도합니다.',true);retryModels(run)}}},10000)}
+function retryModels(run){setTimeout(async()=>{if(run!==generation||ready)return;try{await loadModels();if(run!==generation)return;$('engine').textContent='대기 중';status('준비 완료. [안면인식 입장]을 눌러 주세요.');controls()}catch(e){if(run===generation){status('얼굴 모델 로딩 재시도 실패: '+e.message+'\n인터넷 연결을 확인해 주세요. 계속 재시도합니다.',true);retryModels(run)}}},10000)}
 async function listDevices(){try{const d=await navigator.mediaDevices.enumerateDevices();const v=d.filter(x=>x.kind==='videoinput');$('devices').textContent=v.length+'개'+(v.length&&v[0].label?' · '+v.map(x=>x.label).join(', '):'')}catch{$('devices').textContent='확인 불가'}}
 $('diagBtn').onclick=async()=>{
  await listDevices();
@@ -1238,7 +1248,7 @@ async function startCamera(){
   }
   if(run!==generation||document.hidden)return;
   $('engine').textContent='대기 중';
-  if(!needPlay)status('준비 완료. 톡 버튼을 누르고 카메라를 바라봐 주세요.');
+  if(!needPlay)status('준비 완료. [안면인식 입장]을 누르고 카메라를 바라봐 주세요.');
   showIdle();controls();
   loop(run);
  }catch(e){
@@ -1321,6 +1331,7 @@ function updateBell(){
  const left=session?Math.max(0,Math.ceil((session.until-Date.now())/1000)):0;
  if(session){$('bellText').textContent={scan:'확인 중',choose:'선택 중',phone:'번호 입력',verify:'확인 중',enroll:'등록 촬영',register:'정보 입력',newscan:'신규 촬영','enroll-confirm':'확인 필요'}[session.mode]||'진행 중';$('bellSub').textContent=left+'초 · 누르면 취소'}
  else{$('bellText').textContent='톡';$('bellSub').textContent=canStart?'눌러서 입장':(!stream?'카메라 준비 중':!ready?'모델 준비 중':'잠시만요')}
+ const f=$('btnFace');if(f){const fs=$('faceSub');f.disabled=b.disabled;f.classList.toggle('busy',!!session&&session.mode!=='phone');fs.textContent=session?($('bellText').textContent+' · '+left+'초 · 누르면 취소'):canStart?'':$('bellSub').textContent}
 }
 function idleSoon(ms=7000){clearTimeout(idleTimer);idleTimer=setTimeout(()=>{if(!session){showIdle();clearMetrics()}},ms)}
 /* 가족은 성이 같으므로 아바타에는 이름(성 제외)을 표시 */
@@ -1398,10 +1409,10 @@ function phoneSubmit(){
  }
  session.phoneTries=(session.phoneTries||0)+1;phoneCode='';renderDots();
  addLog({mode:'번호 확인',sel:null,result:'번호 불일치 '+session.phoneTries+'회',dSel:null,other:null,dOther:null});
- if(session.phoneTries>=3){endSession();showResult('확인하지 못했습니다','번호가 일치하지 않습니다. 처음 오셨으면 다시 톡을 눌러 신규 등록하거나, 관리자에게 문의해 주세요.');speak('번호가 일치하지 않습니다. 관리자에게 문의해 주세요.','phonefail',0);return}
+ if(session.phoneTries>=3){endSession();showResult('확인하지 못했습니다','번호가 일치하지 않습니다. 처음 오셨으면 다시 [안면인식 입장]을 눌러 신규 등록하거나, 관리자에게 문의해 주세요.');speak('번호가 일치하지 않습니다. 관리자에게 문의해 주세요.','phonefail',0);return}
  $('phoneErr').textContent='일치하는 회원이 없습니다. 다시 눌러 주세요. ('+session.phoneTries+'/3)';speak('일치하는 번호가 없습니다. 다시 눌러 주세요.','phoneerr',0);
 }
-$('phoneCancel').onclick=()=>{endSession();showResult('취소했습니다','다시 하시려면 톡 버튼을 눌러 주세요.')};
+$('phoneCancel').onclick=()=>{endSession();showResult('취소했습니다','다시 하시려면 [안면인식 입장]을 눌러 주세요.')};
 $('phoneNew').onclick=()=>startNewcomer();
 $('phoneList').onclick=()=>{if(!session)return;const q=session.samples.length?robustMean(session.samples.slice(-UNKNOWN_FRAMES)):null,sc=q?scoreAll(q):[];
  const c=session.cands.map(m=>({m,d:sc.find(x=>x.m.id===m.id)?.d??1}));$('phoneCard').hidden=true;sideMode();
@@ -1419,13 +1430,13 @@ function tick(){
     if(c.length){askWho(c,'혹시 이분이신가요?','확실하지 않습니다. 본인 이름을 누르거나, 목록에 없으면 신규 등록을 눌러 주세요.','본인 이름을 눌러 주세요.');updateBell();return}
    }
    if(offerPin('얼굴을 확인하지 못했습니다. 회원이시면 휴대폰 뒷자리 4자리를 눌러 주세요. 처음 오셨으면 [신규 등록할게요]를 눌러 주세요.')){updateBell();return}
-   endSession();showResult('얼굴을 확인하지 못했습니다','밝은 곳에서 정면을 바라보고 다시 톡을 눌러 주세요.');speak('얼굴을 확인하지 못했습니다. 다시 시도해 주세요.','to-s',0);
+   endSession();showResult('얼굴을 확인하지 못했습니다','밝은 곳에서 정면을 바라보고 다시 [안면인식 입장]을 눌러 주세요.');speak('얼굴을 확인하지 못했습니다. 다시 시도해 주세요.','to-s',0);
   }else if(m==='newscan'){newcomerFallback();updateBell();return
   }else if(m==='verify'){
    addLog({mode:'선택 확인',sel:session.member?.name,result:'시간초과',dSel:session.lastSel??null,other:session.lastOther??null,dOther:session.lastOtherD??null});
-   endSession();showResult('확인하지 못했습니다','다시 톡을 눌러 주세요.');
-  }else if(m==='enroll'){endSession();showResult('등록 촬영 시간 초과','다시 톡을 눌러 주세요.')}
-  else{endSession();showResult('시간이 지났습니다','다시 하시려면 톡 버튼을 눌러 주세요.')}
+   endSession();showResult('확인하지 못했습니다','다시 [안면인식 입장]을 눌러 주세요.');
+  }else if(m==='enroll'){endSession();showResult('등록 촬영 시간 초과','다시 [안면인식 입장]을 눌러 주세요.')}
+  else{endSession();showResult('시간이 지났습니다','다시 하시려면 [안면인식 입장]을 눌러 주세요.')}
  }
  updateBell();
 }
@@ -1434,8 +1445,8 @@ function endSession(){
  $('pickCard').hidden=true;$('phoneCard').hidden=true;sideMode();phoneCode='';$('phaseBar').hidden=true;document.body.classList.remove('filllight');
  drawOverlay([]);idleSoon();controls();
 }
-$('pickCancel').onclick=()=>{endSession();showResult('취소했습니다','다시 하시려면 톡 버튼을 눌러 주세요.')};
-$('bell').onclick=()=>{if(session){if($('regDialog').open)$('regDialog').close();endSession();showResult('취소했습니다','다시 하시려면 톡 버튼을 눌러 주세요.');window.speechSynthesis?.cancel();return}startSession()};
+$('pickCancel').onclick=()=>{endSession();showResult('취소했습니다','다시 하시려면 [안면인식 입장]을 눌러 주세요.')};
+$('bell').onclick=()=>{if(session){if($('regDialog').open)$('regDialog').close();endSession();showResult('취소했습니다','다시 하시려면 [안면인식 입장]을 눌러 주세요.');window.speechSynthesis?.cancel();return}startSession()};
 function selectMember(m){
  if(!session)return;
  if(session.byPin){addLog({mode:'번호 입장',sel:m.name,result:'환영(이름 선택)',dSel:null,other:null,dOther:null});success('번호 확인',m,null,null,null,{via:'번호'});return}
@@ -1521,7 +1532,7 @@ function startPinEntry(){
 }
 $('btnNew').onclick=()=>startNewcomer();
 $('btnNew2').onclick=()=>$('btnNew').click();$('btnPin2').onclick=()=>$('btnPin').click();
-$('btnFace').onclick=()=>{if(!session&&!$('bell').disabled)$('bell').click()};
+$('btnFace').onclick=()=>{if(!$('bell').disabled)$('bell').click()};   // 진행 중이면 누르면 취소
 $('btnPin').onclick=()=>startPinEntry();
 
 async function handleFrame(dets,t0){
@@ -1784,7 +1795,7 @@ function regValidate(s){
  if(s==='face'&&!$('regConsentFace').checked)return '얼굴 저장 동의에 체크해 주세요.';
  return '';
 }
-function regCancelAll(){$('regDialog').close();regTarget=null;regSamples=null;regPhoto='';if(session){endSession();showResult('등록을 취소했습니다','다시 하시려면 톡 버튼을 눌러 주세요.')}}
+function regCancelAll(){$('regDialog').close();regTarget=null;regSamples=null;regPhoto='';if(session){endSession();showResult('등록을 취소했습니다','다시 하시려면 [안면인식 입장]을 눌러 주세요.')}}
 $('regCancel').onclick=()=>{if(regStep===1){showRegStep(0);return}if(regStep===2){showRegStep(1);return}regCancelAll()};
 $('regCancel0').onclick=()=>regCancelAll();$('regNextN').onclick=()=>$('regForm').requestSubmit();$('regPrevN').onclick=()=>$('regCancel').click();$('regNext0').onclick=()=>$('regForm').requestSubmit();
 $('regDialog').addEventListener('cancel',e=>{e.preventDefault();regCancelAll()});
@@ -1960,7 +1971,7 @@ async function saveEnroll(){
   addLog({mode:'등록',sel:member.name,result:E.existing?'재등록':'신규',dSel:null,other:E.near?.m.name??null,dOther:E.near?.d??null});
   endSession();
   if(E.merge){markChecked(member.id,now,true);announce(member,'new');showResult(dn(member)+' 님 입장 확인','기존 회원 정보와 합쳐 얼굴을 등록했습니다 · 회원번호 '+member.id)}
-  else if(E.existing){announce(member,'reenroll');showResult(dn(member)+' 님 얼굴 재등록 완료','이제 톡 → 이름 선택으로 확인해 보세요.')}
+  else if(E.existing){announce(member,'reenroll');showResult(dn(member)+' 님 얼굴 재등록 완료','이제 [안면인식 입장]으로 확인해 보세요.')}
   else{markChecked(member.id,now,true);announce(member,'new');showResult(dn(member)+' 님 입장 확인','신규 등록 완료 · 회원번호 '+member.id+' · 입실 '+hhmm(now))}
   renderMembers();Remote.pushMembers();SF.info();
  }catch(err){status('저장 실패: '+err.message,true);endSession()}
@@ -2164,6 +2175,20 @@ const MemberGate=(()=>{
  function monthlyOf(id){const m=ledger?.monthly?.[id];if(!m||m.void||!m.active)return null;if(m.end&&m.end<ymdL(Date.now()))return null;return m}
  function balanceOf(id){let s=0;for(const e of live(ledger?.prepaid))if(e.memberId===id)s+=e.type==='deposit'?num(e.amount):-num(e.amount);return s}
  function couponsOf(id){return live(ledger?.coupons).filter(c=>c.memberId===id&&!c.usedAt).length}
+ function monBalOf(id){let s=0;for(const f of live(ledger?.fees))if(f.memberId===id)s+=num(f.amount);for(const p of live(ledger?.pays))if(p.memberId===id)s-=num(p.monUse);return s}
+ function msgsOf(id){const lim=Date.now()-30*864e5;return live(ledger?.msgs).filter(x=>x.memberId===id&&(x.at||0)>lim).sort((a,b)=>b.at-a.at).slice(0,10).map(x=>({text:String(x.text||''),at:x.at}))}
+ /* 관리자가 보낸 알림 · 월회원 만기 3일 전 → 회원 개인 알림(ntfy)으로 보내기 (한 번씩만) */
+ const SENT_K='q24MemPushSent';
+ function pushPending(){
+  if(!ledger)return;let sent={};try{sent=JSON.parse(store.get(SENT_K))||{}}catch{}
+  const now=Date.now(),users=Object.values(acc.users||{}).filter(u=>u.topic),tpOf=id=>users.filter(u=>u.memberId===id).map(u=>u.topic);let ch=false;
+  for(const x of live(ledger.msgs)){if(sent[x.id]||(x.at||0)<now-2*864e5)continue;sent[x.id]=now;ch=true;for(const tp of tpOf(x.memberId))Ntfy.sendTo(tp,{title:storeInfo().name||'CUE24',message:String(x.text||''),tags:['bell']})}
+  const t=ymdL(now);
+  for(const m of live(ledger.monthly)){if(!m.active||!m.end)continue;const left=Math.round((new Date(m.end+'T00:00:00')-new Date(t+'T00:00:00'))/864e5);if(left<0||left>3)continue;const k='mx-'+m.memberId+'-'+m.end;if(sent[k])continue;sent[k]=now;ch=true;
+   const d=new Date(m.end+'T00:00:00');for(const tp of tpOf(m.memberId))Ntfy.sendTo(tp,{title:storeInfo().name||'CUE24',message:'월회원 만기일이 '+(d.getMonth()+1)+'월 '+d.getDate()+'일입니다.',tags:['calendar']})}
+  if(ch){for(const k in sent)if(sent[k]<now-40*864e5)delete sent[k];store.set(SENT_K,JSON.stringify(sent))}
+ }
+ setInterval(()=>{try{pushPending()}catch{}},3600e3);
  function attendOf(id){
   const days=new Set(Object.keys(ledger?.attend?.[id]||{}));const v=visits.open[id];if(v)days.add(ymdL(v.inAt));for(const c of visits.closed)if(c.id===id)days.add(ymdL(c.inAt));
   const mon=ymdL(Date.now()).slice(0,7),arr=[...days];
@@ -2183,7 +2208,7 @@ const MemberGate=(()=>{
  }
  function me(u){
   const m=members.find(x=>x.id===u.memberId);if(!m)return null;const H=handiOf(m),v=visits.open[m.id],mo=monthlyOf(m.id);
-  return{uid:u.uid,name:dn(m),nick:dn(m),phone:m.phone||'',test:!!u.test,disp:dispOf(m.id),game:m.game||'',h3:H.h3??'',h4:H.h4??'',monthly:mo?{end:mo.end||''}:null,prepaid:balanceOf(m.id),coupons:couponsOf(m.id),
+  return{uid:u.uid,name:dn(m),nick:dn(m),phone:m.phone||'',test:!!u.test,disp:dispOf(m.id),game:m.game||'',h3:H.h3??'',h4:H.h4??'',monthly:mo?{end:mo.end||'',bal:monBalOf(m.id)}:null,msgs:msgsOf(m.id),prepaid:balanceOf(m.id),coupons:couponsOf(m.id),
    attend:attendOf(m.id),visit:v?{inAt:v.inAt,rest:!!v.rest,restAt:v.restAt||0,outReq:v.outReq||0}:null,where:whereOf(m.id),team:board?.types?.[m.id]||'p',push:u.topic||'',
    avg:null,win:null,since:m.createdAt||0};   // 에버리지·승률: 점수판 연동 후 채움
  }
@@ -2354,7 +2379,7 @@ const MemberGate=(()=>{
  async function onMsg(sub,text){
   if(sub==='m/req'){queue=queue.then(()=>onReq(text)).catch(()=>{});return}
   if(!text)return;let o;try{o=await Remote._unseal(text)}catch{return}
-  if(sub==='ledger')ledger=o;
+  if(sub==='ledger'){ledger=o;try{pushPending()}catch(e){console.warn('push',e)}}
   else if(sub==='board'){board=o&&o.type==='board'?o:null;schedulePub()}
   else if(sub==='mcfg'&&o?.type==='mcfg'){
    if(o.site&&String(o.site).trim()!==siteNow())return;   // 다른 매장용 설정은 무시
