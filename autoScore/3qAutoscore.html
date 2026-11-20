@@ -118,7 +118,7 @@
  v1.00  기준 버전 (엔진 v58.45)
 -->
 
-<html lang="ko"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/><meta content="dark" name="color-scheme"/><title>3Q Score · AI 자동 득점 v1.19 ALL</title><link rel="manifest" href="manifest.json"/><meta name="theme-color" content="#0e121a"/><meta name="mobile-web-app-capable" content="yes"/><link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
+<html lang="ko"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/><meta content="dark" name="color-scheme"/><title>3Q Score · AI 자동 득점 v2.00 ALL</title>
 <script id="v117Compat">
 /* v1.17 compatibility (old syntax only so that it runs on any browser):
    - Chrome/WebView older than 85 cannot parse this app: show why instead of a blank screen.
@@ -562,7 +562,7 @@ header h1{margin:0}
 }
 </style>
 </head><body><main>
-<header><div><h1>3Q Score <span class="v3qVer">v1.19</span><span class="sub">v1.19 ALL</span></h1><div class="sub">AI가 수구·쿠션·목적구·득점·이닝을 독립 판정합니다. 득점/무득점 수동 입력은 분석 중에도 가능하며 수동 입력이 항상 우선합니다.</div></div><div class="status-chip" id="mode">영상 선택 대기</div></header>
+<header><div><h1>3Q Score <span class="v3qVer">Ver2.00</span><span class="sub">Ver2.00 ALL</span></h1><div class="sub">AI가 수구·쿠션·목적구·득점·이닝을 독립 판정합니다. 득점/무득점 수동 입력은 분석 중에도 가능하며 수동 입력이 항상 우선합니다.</div></div><div class="status-chip" id="mode">영상 선택 대기</div></header>
 <div class="layout"><section class="panel"><div class="head video-head"><div class="video-head-left"><h2>경기 영상</h2><span aria-live="polite" class="video-status" id="videoInfo" role="status">MP4 / CAMERA</span></div><span class="sub" id="fileName">MP4 또는 카메라를 선택하세요</span></div>
 <div class="stage" id="stage"><video id="video" muted="" playsinline="" preload="metadata"></video><canvas id="accuracyPreview"></canvas><canvas id="overlay"></canvas></div>
 <div class="corner-instructions" hidden="" id="dragNote">안쪽 쿠션 접촉선의 네 모서리 ①→④를 손가락/마우스로 끌어 맞춘 뒤 [보정 완료]를 누르세요.</div>
@@ -571,7 +571,7 @@ header h1{margin:0}
 
 <div id="v5817QualityStatus" role="status" aria-live="polite" style="margin:6px 12px 5px;padding:9px 11px;border:1px solid #38576b;border-radius:8px;background:#102536;color:#d9eaf6;font-size:11px;line-height:1.5">PC 기본: 1배속 Adaptive · AI 640px/최대 30fps · 의심 샷만 종료 후 정밀 재검증</div>
 <div class="progress"><div id="bar"></div></div>
-<div class="js-has-recover" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:5px 0 8px"><button id="recoverNowBtn" style="border:1px solid #be9f6c;background:#304251;color:#fff;padding:6px 12px;border-radius:7px" type="button">영상·AI 복구</button><span class="sub" id="recoveryHint" style="font-size:11px">영상이 멈추면 자동 복구를 시도합니다. 필요 시 이 버튼으로 재시도하세요.</span></div></section><aside class="panel scores"><div class="head score-head"><h2>AI 자동 득점 · 검증 v1.19</h2><strong aria-live="polite" class="result-chip" id="verdict">분석 대기</strong><label class="sound-enable"><input checked="" id="soundEnabled" type="checkbox"/> ♪ 벨소리</label><span class="sub" id="shotCount">0샷</span><span class="sub" id="inningCount">0이닝</span></div>
+<div class="js-has-recover" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:5px 0 8px"><button id="recoverNowBtn" style="border:1px solid #be9f6c;background:#304251;color:#fff;padding:6px 12px;border-radius:7px" type="button">영상·AI 복구</button><span class="sub" id="recoveryHint" style="font-size:11px">영상이 멈추면 자동 복구를 시도합니다. 필요 시 이 버튼으로 재시도하세요.</span></div></section><aside class="panel scores"><div class="head score-head"><h2>AI 자동 득점 · 검증 v1.24</h2><strong aria-live="polite" class="result-chip" id="verdict">분석 대기</strong><label class="sound-enable"><input checked="" id="soundEnabled" type="checkbox"/> ♪ 벨소리</label><span class="sub" id="shotCount">0샷</span><span class="sub" id="inningCount">0이닝</span></div>
 <div class="point-mode-toolbar"><label for="pointMode">득점 기준</label><select aria-label="득점 기준" id="pointMode"><option selected="" value="one">1점제 · 유효 득점 +1</option><option value="two">2점제 · 뱅크 +2 / 일반 +1</option></select><label style="margin-left:10px" title="기본은 꺼짐: AI가 모든 샷을 판정하고, △ 애매 표시 샷은 경기자가 확인해 수동 정정합니다. 켜면 애매한 샷(얇은 스침·레일 스침·쐐기 이중 쿠션)만 다음 타격 수구로 자동 정정합니다."><input type="checkbox" id="v5844TurnTie"> 애매한 샷 다음 타격으로 자동 정정 (무인·사후 분석용)</label><span class="sub" id="pointModeNote">득점·이닝·CSV에 동일 기준 적용</span></div><div class="score-banner"><div class="score" id="playerBox0"><small>1P · 흰 수구</small><strong id="sc0">0</strong><span aria-label="1P 무득점 횟수" class="miss-count" id="mc0">0</span></div><div class="score" id="playerBox1"><small>2P · 노란 수구</small><strong id="sc1">0</strong><span aria-label="2P 무득점 횟수" class="miss-count" id="mc1">0</span></div></div>
 <div aria-live="polite" class="turn-row"><span>현재/최근 타격: <b id="currentPlayer">—</b></span><span>다음 턴: <b id="nextPlayer">타격 감지 대기</b></span></div>
 <div class="metrics-focus"><div class="flags"><div class="flag"><span class="sub">쿠션 횟수</span><b id="rails">0/3</b></div><div class="flag"><span class="sub">목적구 접촉</span><b id="objects">0/2</b></div></div><small aria-live="off" id="contactHoldHint">진행 중 접촉 카운트</small></div>
@@ -16588,7 +16588,7 @@ renderLog();
  btn.title='\uD604\uC7AC \uC0F7\uBCC4 \uD310\uC815\uACFC \uBCF4\uC644 \uADFC\uAC70\uB97C \uC800\uC7A5\uD569\uB2C8\uB2E4.';
  btn.addEventListener('click',function(){
   const rt=window.ScoreRuntime;
-  const data={version:'58.19',appVersion:'v1.19',video:rt?.sourceFile?.name||null,
+  const data={version:'58.19',appVersion:'v2.00',video:rt?.sourceFile?.name||null,
    createdAt:new Date().toISOString(),
    validationScope:'Software tests only; full-match ground-truth accuracy not certified.',
    runtime:rt?.state||null,config:rt?.config||null,
@@ -17478,6 +17478,829 @@ function v118IsPlacement(s){
 })();
 </script>
 
+<script id="v120ScreenSide">
+/* v1.20 (screen side): veto of an implausible "vanished striker" cue correction (v58.25-D).
+   6101 #55: yellow launched and travelled 291 px (rest 384,181 -> 988,461) while the white ended at EXACTLY
+   the rest it had after the previous stroke (196,258.5 vs 196.1,258.5) - a corrected white striker would have
+   had to hit the yellow and return to the same pixel. The white 'pre-shot' pose was a tracking glitch at the rail
+   (x=8). The wrong white cue turned a normal 2P turn into a same-ball violation and shifted the
+   player order by one half-turn for the following 15 strokes.
+   Restore the ORIGINAL cue only when ALL hold: automatic correction (no manual cue/result/validity), the verdict
+   result is unchanged by the correction, the corrected striker's final rest equals its rest after the previous
+   counted stroke (<= 0.5 D) while the original cue ball's final rest differs from its previous rest by >= 3 D. */
+function v120CueRestore(){
+ try{
+  if(!Array.isArray(shots))return 0;
+  const D=21.6,ord=shots.filter(s=>s&&!s.active&&v43Counted(s)).sort((p,q)=>Number(p.start)-Number(q.start));
+  let n=0;
+  for(let i=1;i<ord.length;i++){
+   const s=ord[i],prev=ord[i-1],fx=s.v5825CueCorrection;
+   if(s.v120CueRestored||!fx||![0,1].includes(fx.from)||![0,1].includes(fx.to)||s.cue!==fx.to)continue;
+   if(s.manualCue!=null||s.manualResult!=null||s.manualShotValidityV43)continue;
+   if(fx.before&&fx.before.result!=null&&fx.before.result!==effectiveResult(s))continue;
+   const pe=prev.v5825EndPose||prev.v105EndPose,se=s.v5825EndPose||s.v105EndPose;
+   const pn=pe?.[fx.to],sn=se?.[fx.to],po=pe?.[fx.from],so=se?.[fx.from];
+   if(![pn,sn,po,so].every(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)))continue;
+   const dn=Math.hypot(sn.x-pn.x,sn.y-pn.y)/D,dOrig=Math.hypot(so.x-po.x,so.y-po.y)/D;
+   if(!(dn<=0.5&&dOrig>=3))continue;
+   s.v120CueRestored={from:fx.to,to:fx.from,correctedStrikerNetD:+dn.toFixed(2),originalCueNetD:+dOrig.toFixed(1),source:'v1.20-vanished-striker-veto'};
+   s.cue=fx.from;
+   s.reviewReasons=[...new Set([...(s.reviewReasons||[]),'v1.20 수구 보정 취소 · 보정된 수구 순이동 '+dn.toFixed(2)+'D / 원래 수구 '+dOrig.toFixed(1)+'D 이동'])];
+   n++;
+  }
+  return n;
+ }catch(_){return 0;}
+}
+(function(){
+ if(typeof v5830ApplyTurnArbiter==='function'){const p=v5830ApplyTurnArbiter;
+  v5830ApplyTurnArbiter=function(){v120CueRestore();return p.apply(this,arguments);};}
+ if(typeof buildInnings==='function'){const q=buildInnings;
+  buildInnings=function(){v120CueRestore();return q.apply(this,arguments);};}
+})();
+
+/* v1.20-B: order-mismatch miss that is only marginally late. 6101 #69 (31:43): red first, rails 2 before the white
+   contact, the 3rd rail 0.31 s AFTER the white contact time (the engine's contact time is a motion fit that trails
+   the true touch); the same cue struck again 15 s later (2P kept the table -> the sheet gives the point).
+   Turn-continuity only (v58.30 style, review flag kept): AI miss, 2 objects, cushionsAtSecond==2, >=3 rails, the 3rd rail
+   within 0.5 s after the second ball contact, same cue next shot (confirmed independent stroke) 1-40 s later,
+   the opponent's ball did not move in between, nothing manual. */
+(function(){
+ if(typeof v5830TurnEvidence!=='function')return;
+ const prior=v5830TurnEvidence;
+ v5830TurnEvidence=function(a,b){
+  const r=prior.apply(this,arguments);
+  if(r)return r;
+  try{
+   if(!a||!b||cameraActive||!v55ReviewReady)return null;
+   if(a.manualResult!=null||a.autoResult!=='miss'||a.v5284TurnCorroboration||a.v123RailDup)return null;
+   if(!v43Counted(a)||!v43Counted(b)||a.stopConfirmed!==true)return null;
+   if(![0,1].includes(a.cue)||a.cue!==b.cue)return null;
+   if(a.cueRejudgePending||b.cueRejudgePending||a.manualCue!=null||b.manualCue!=null||
+      a.manualShotValidityV43==='exclude'||b.manualShotValidityV43==='exclude')return null;
+   const gap=Number(b.start)-Number(a.end);if(!(gap>=1&&gap<=40))return null;
+   const y=b.physicalStrokeAuditV5261;if(y?.status!=='confirmed'||y.cue!==b.cue)return null;
+   if(!Array.isArray(a.objects)||a.objects.length!==2||Number(a.cushionsAtSecond)!==2||Number(a.cushionsTotal??a.cushions)!==3)return null;
+   const ev=(a.events||[]).filter(e=>e&&Number.isFinite(e.t)).sort((p,q)=>p.t-q.t);
+   const balls=ev.filter(e=>e.type==='ball'),rails=ev.filter(e=>e.type==='cushion');
+   const seen=new Set(),order=[];for(const e of balls){if(!seen.has(e.target)){seen.add(e.target);order.push(e);}}
+   if(order.length<2||rails.length<3)return null;
+   const margin=rails[2].t-order[1].t;if(!(margin>0&&(margin<=0.5||(a.orderMismatch===true&&a.v5268BestEffort?.plausibleScore===true))))return null;
+   if(typeof v108OppMoved==='function'&&v108OppMoved(a,b))return null;
+   return {source:'v58.30-turn-continuity',previousShot:a.id,nextShot:b.id,cue:a.cue,nextCue:b.cue,gap:+gap.toFixed(3),
+    rails:Number(a.cushionsTotal??a.cushions),objects:2,missingInputFrames:Number(a.v5279GapFrames||0),
+    to:'score',kind:'v1.20-late-third-rail-same-cue-next',
+    note:'v1.20: 3쿠션이 두 번째 공 접촉보다 '+margin.toFixed(2)+'초 늦게 관측(접촉시각 오차 범위) + 같은 수구가 '+gap.toFixed(1)+'초 뒤 다시 타격 → 득점 보정'};
+  }catch(_){return null;}
+ };
+})();
+
+/* v1.20-C: truncated tail fragment. 6101 #129 (3669.9-3672.7 s): a 2.8 s miss that ends exactly at the end of the
+   video, after the game was already over (the reference has 38 innings; #125-#128 are the last real strokes).
+   The video ends mid-stroke, so the stroke can neither be a complete 3-cushion attempt nor change the score.
+   Excluded only when ALL hold: it is the last shot by start time, it ends within 0.3 s of the video end, it lasts < 5 s,
+   the result is a miss, nothing manual. (Every other game's last stroke lasts >= 10 s.) */
+(function(){
+ if(typeof v43StrokeAudit!=='function')return;
+ const prior=v43StrokeAudit;
+ v43StrokeAudit=function(s){
+  const r=prior.apply(this,arguments);
+  try{
+   if(!s||s.active||s.manualShotValidityV43||s.manualResult!=null||s.manualCue!=null)return r;
+   if(r&&r.status==='excluded')return r;
+   if(typeof v116VideoDuration!=='function')return r;
+   const dur=v116VideoDuration();if(!Number.isFinite(dur))return r;
+   const len=Number(s.end)-Number(s.start);
+   if(!(len>0&&len<5&&Number(s.end)>=dur-0.3))return r;
+   if(s.autoResult!=='miss')return r;
+   if(shots.some(o=>o&&o!==s&&!o.active&&Number(o.start)>Number(s.start)))return r;
+   return {status:'excluded',source:'v1.20-truncated-tail-fragment',reason:'영상 끝에서 잘린 '+len.toFixed(1)+'초 조각 · 경기 종료 후',maxHighQualityOffset:0};
+  }catch(_){return r;}
+ };
+})();
+
+/* v1.20-D: the engine's own best-effort physical verdict was SCORE (v5268BestEffort.score===true, e.g. a response of the
+   second object ball was measured) but a later veto turned it into a miss (v58.26 'second object unreachable'), and the SAME cue
+   ball then struck again 1-40 s later with the opponent's ball unmoved -> the player kept the table -> score.
+   6101 #80 (37:19, reference inning 23). Turn-continuity only, review flag kept. */
+(function(){
+ if(typeof v5830TurnEvidence!=='function')return;
+ const prior=v5830TurnEvidence;
+ v5830TurnEvidence=function(a,b){
+  const r=prior.apply(this,arguments);
+  if(r)return r;
+  try{
+   if(!a||!b||cameraActive||!v55ReviewReady)return null;
+   if(a.manualResult!=null||a.autoResult!=='miss'||a.v5284TurnCorroboration||a.v123RailDup)return null;
+   if(!v43Counted(a)||!v43Counted(b)||a.stopConfirmed!==true)return null;
+   if(![0,1].includes(a.cue)||a.cue!==b.cue)return null;
+   if(a.cueRejudgePending||b.cueRejudgePending||a.manualCue!=null||b.manualCue!=null||
+      a.manualShotValidityV43==='exclude'||b.manualShotValidityV43==='exclude')return null;
+   const gap=Number(b.start)-Number(a.end);if(!(gap>=1&&gap<=40))return null;
+   const x=a.physicalStrokeAuditV5261,y=b.physicalStrokeAuditV5261;
+   if(x?.status!=='confirmed'||y?.status!=='confirmed'||x.cue!==a.cue||y.cue!==b.cue||(x.heldOther??0)<2||(y.heldOther??0)<1)return null;
+   if(a.v5268BestEffort?.score!==true||a.v5268BestEffort?.orderingNegative===true)return null;
+   if(!(Number(a.cushionsTotal??a.cushions)>=3))return null;
+   if(typeof v108OppMoved==='function'&&v108OppMoved(a,b))return null;
+   return {source:'v58.30-turn-continuity',previousShot:a.id,nextShot:b.id,cue:a.cue,nextCue:b.cue,gap:+gap.toFixed(3),
+    rails:Number(a.cushionsTotal??a.cushions),objects:(a.objects||[]).length,missingInputFrames:Number(a.v5279GapFrames||0),
+    to:'score',kind:'v1.20-best-effort-score-same-cue-next',
+    note:'v1.20: 엔진 물리 판정은 득점이었으나 후속 보정으로 취소됨 + 같은 수구가 '+gap.toFixed(1)+'초 뒤 다시 타격 → 득점 보정'};
+  }catch(_){return null;}
+ };
+})();
+
+/* v1.20-E: same cue struck again after a miss with NO sign of an opponent stroke (opponent ball unmoved <0.5 D between the two
+   strokes, both strokes physically confirmed or the first one badly gapped) -> the first stroke must have scored (the player kept
+   the table). Narrow: first stroke lost >=40 input frames, exactly 1 object ball seen, >=3 rails, gap 3-30 s, not a ball-swap game
+   situation (no v5824 swap run touching either stroke). 6047 #94 (reference inning 35, 1P=1). */
+(function(){
+ if(typeof v5830TurnEvidence!=='function')return;
+ const prior=v5830TurnEvidence;
+ v5830TurnEvidence=function(a,b){
+  const r=prior.apply(this,arguments);
+  if(r)return r;
+  try{
+   if(!a||!b||cameraActive||!v55ReviewReady)return null;
+   if(a.manualResult!=null||a.autoResult!=='miss'||a.v5284TurnCorroboration||a.v123RailDup)return null;
+   if(!v43Counted(a)||!v43Counted(b)||a.stopConfirmed!==true)return null;
+   if(![0,1].includes(a.cue)||a.cue!==b.cue)return null;
+   if(a.cueRejudgePending||b.cueRejudgePending||a.manualCue!=null||b.manualCue!=null)return null;
+   if(a.v5824TurnPlayer!=null||b.v5824TurnPlayer!=null||a.v5825WrongBall||b.v5825WrongBall)return null;
+   const gap=Number(b.start)-Number(a.end);if(!(gap>=3&&gap<=30))return null;
+   if(Number(a.v5279GapFrames||0)<40)return null;
+   if((a.objects||[]).length!==1||!(Number(a.cushionsTotal??a.cushions)>=3))return null;
+   const y=b.physicalStrokeAuditV5261;if(y?.status!=='confirmed'||y.cue!==b.cue)return null;
+   const opp=1-a.cue,eo=a.v105EndPose?.[opp],po=Array.isArray(b.preShotPose)?b.preShotPose[opp]:null;
+   if(!(eo&&po&&Number.isFinite(eo.x)&&Number.isFinite(po.x)))return null;
+   if(Math.hypot(eo.x-po.x,eo.y-po.y)/21.6>=0.5)return null;
+   if(typeof v108OppMoved==='function'&&v108OppMoved(a,b))return null;
+   return {source:'v58.30-turn-continuity',previousShot:a.id,nextShot:b.id,cue:a.cue,nextCue:b.cue,gap:+gap.toFixed(3),
+    rails:Number(a.cushionsTotal??a.cushions),objects:1,missingInputFrames:Number(a.v5279GapFrames||0),
+    to:'score',kind:'v1.20-same-cue-continuation-gapped',
+    note:'v1.20: 입력 누락 다수 + 같은 수구가 '+gap.toFixed(1)+'초 뒤 상대 공 이동 없이 다시 타격 → 득점 연속 보정'};
+  }catch(_){return null;}
+ };
+})();
+
+/* v1.20-F: cue ball that did not move. A recorded stroke whose assigned cue ball ends within 0.5 D of the rest it had after the
+   previous counted stroke while the OTHER player ball travelled >= 5 D (and the red ball stayed within 1 D) was struck by that other ball.
+   6101 #55 (v1.21 run): white 'cue' never moved, yellow went 384,181 -> 987,461. Only miss results are re-attributed (no score change). */
+function v120CueMoved(){
+ try{
+  if(!Array.isArray(shots))return 0;
+  const D=21.6,ord=shots.filter(s=>s&&!s.active&&v43Counted(s)).sort((p,q)=>Number(p.start)-Number(q.start));
+  let n=0;
+  for(let i=1;i<ord.length;i++){
+   const s=ord[i],prev=ord[i-1];
+   if(s.v120CueMovedFix||![0,1].includes(s.cue)||s.manualCue!=null||s.manualResult!=null||effectiveResult(s)!=='miss')continue;
+   const pe=prev.v105EndPose,se=s.v105EndPose;if(!pe||!se)continue;
+   const net=k=>{const a=pe[k],b=se[k];return(a&&b&&Number.isFinite(a.x)&&Number.isFinite(b.x))?Math.hypot(a.x-b.x,a.y-b.y)/D:null;};
+   const c=s.cue,o=1-c,nc=net(c),no=net(o),nr=net(2);
+   if(nc==null||no==null||nr==null)continue;
+   if(!(nc<=0.5&&no>=5&&nr<=1))continue;
+   s.v120CueMovedFix={from:c,to:o,cueNetD:+nc.toFixed(2),otherNetD:+no.toFixed(1)};
+   s.cue=o;
+   s.reviewReasons=[...new Set([...(s.reviewReasons||[]),'v1.20 수구 재귀속 · 지정 수구 순이동 '+nc.toFixed(2)+'D / 상대 공 '+no.toFixed(1)+'D 이동'])];
+   n++;
+  }
+  return n;
+ }catch(_){return 0;}
+}
+(function(){
+ if(typeof v5830ApplyTurnArbiter==='function'){const p=v5830ApplyTurnArbiter;
+  v5830ApplyTurnArbiter=function(){v120CueMoved();return p.apply(this,arguments);};}
+ if(typeof buildInnings==='function'){const q=buildInnings;
+  buildInnings=function(){v120CueMoved();return q.apply(this,arguments);};}
+})();
+
+/* v1.23-G: duplicated rail detections around ONE bounce. 4848 #83 (v1.22 run): right-rail events at 0.96 / 1.07 / 1.15 s (three
+   detections within 0.2 s = one bounce, the later one a 4.6 deg graze) put a 3rd rail before the red contact, flipping a true miss
+   into a score; the engine itself marked it v58.45 'skim-rail would miss'. The turn tie could not veto it because the next stroke
+   had the same cue (balls swapped between the players). Narrow gate: auto result SCORE, v5845Ambiguous skim-rail would-miss, the
+   skim rail's side has another rail event on the SAME side <= 0.25 s before it, and without that skim rail (and its duplicates) fewer
+   than 3 rails precede the second object ball. Result -> miss (review flag kept). */
+function v123RailBounceDup(){
+ try{
+  if(!Array.isArray(shots))return 0;let n=0;
+  for(const s of shots){
+   if(!s||s.active||s.v123RailDup||s.manualResult!=null||s.autoResult!=='score')continue;
+   const a=s.v5845Ambiguous;if(!a||a.kind!=='skim-rail'||a.would!=='miss')continue;
+   const ev=(s.events||[]).filter(e=>e&&Number.isFinite(e.t)).sort((p,q)=>p.t-q.t);
+   const rails=ev.filter(e=>e.type==='cushion'),balls=ev.filter(e=>e.type==='ball');
+   const sk=rails.find(e=>Math.abs(e.t-a.t)<0.002&&e.side===a.side);if(!sk)continue;
+   {const i=ev.indexOf(sk),adj=[ev[i-1],ev[i+1]].filter(e=>e&&e.type==='cushion'&&e.side===sk.side&&Math.abs(e.t-sk.t)<=0.25);
+    if(!adj.length)continue;}
+   const seen=new Set(),order=[];for(const e of balls){if(!seen.has(e.target)){seen.add(e.target);order.push(e);}}
+   if(order.length<2)continue;const second=order[1].t;
+   const dedup=[];for(const e of rails){const last=dedup.filter(x=>x.side===e.side).pop();if(last&&e.t-last.t<=0.25)continue;dedup.push(e);}
+   const before=dedup.filter(e=>e.t<second).length;if(before>=3)continue;
+   s.v123RailDup={from:'score',to:'miss',railsBeforeSecondDeduped:before,skimT:a.t,side:a.side};
+   s.autoResult='miss';if(s.result!=null)s.result='miss';
+   s.reviewReasons=[...new Set([...(s.reviewReasons||[]),'v1.23 같은 쿠션 중복 검출 정리 → 두 번째 공 전 쿠션 '+before+'개 · 무득점'])];
+   n++;
+  }
+  return n;
+ }catch(_){return 0;}
+}
+(function(){
+ if(typeof v5830ApplyTurnArbiter==='function'){const p=v5830ApplyTurnArbiter;
+  v5830ApplyTurnArbiter=function(){v123RailBounceDup();return p.apply(this,arguments);};}
+ if(typeof buildInnings==='function'){const q=buildInnings;
+  buildInnings=function(){v123RailBounceDup();return q.apply(this,arguments);};}
+})();
+
+/* v1.23-G (cont.): a shot demoted by the rail-duplicate cleanup is not re-scored by any turn-continuity evidence
+   (the original v58.30 same-cue-continued rule would otherwise undo it when the next stroke has the same cue). */
+(function(){
+ if(typeof v5830TurnEvidence!=='function')return;
+ const prior=v5830TurnEvidence;
+ v5830TurnEvidence=function(a,b){
+  if(a&&a.v123RailDup)return null;
+  return prior.apply(this,arguments);
+ };
+})();
+</script>
+
+<script id="v124NNoise">
+/* v1.24N: 프레임 단위(정밀) 모드에서 영상 시작 직후 손/세팅 움직임이 가짜 샷으로 잡히는 경우 제거.
+   조건이 모두 맞을 때만: 첫 샷, 시작 8초 이내, 무득점, 쿠션0·목적구0, 불확실, 다음 샷과 3초 이상 간격 */
+function v124NStartNoise(){ try{ if(!Array.isArray(shots)||shots.length<2)return 0;
+  const s=shots[0],n=shots[1]; if(!s||!n||s.active||s.manualResult!=null)return 0;
+  if(!(s.start<8)||s.autoResult!=='miss')return 0;
+  if((s.cushionsTotal||0)!==0||(s.objects||[]).length>0||!s.v57AIUncertain)return 0;
+  if(!(n.start-s.end>=3))return 0;
+  shots.splice(0,1);return 1;
+ }catch(_){return 0;} }
+if(typeof v5830ApplyTurnArbiter==='function'){const p=v5830ApplyTurnArbiter;
+  v5830ApplyTurnArbiter=function(){v124NStartNoise();return p.apply(this,arguments);};}
+if(typeof buildInnings==='function'){const p=buildInnings;
+  buildInnings=function(){v124NStartNoise();return p.apply(this,arguments);};}
+</script>
+<script id="cntLive">
+/* 3qAutoscoreALL Ver2.00 — 카운터·알림·점수판 연동 레이어 (판정 코어는 변경하지 않음; 코어 위에서 결과를 읽고 알림만 수행)
+   모듈: [입력] [음성/벨] [점수판 연동] [점수·경기 구분] [시작 배치 인식] [조기 무득점] [파울] [하이런] [화면] */
+(function(){'use strict';
+const LS='cnt-set-v2';
+const C={lean:false,gameNo:0,ended:false,adj:[0,0],archive:[],announced:{},prevLen:0,lastActivity:Date.now(),
+ log:[],sV:true,sB:false,mV:true,mB:true,eV:true,hr:true,hrN:5,as:true,fl:true,players:2,seq:0,mode:'voice',eM:true,em:'mid',male:false,restSec:90,autoGame:true,tgt:[0,0],src:'camera',url:'http://127.0.0.1:1984',cam:'cam',
+ voiceName:'',rate:1,vol:1,hook:'',injected:null,pc:null,speakQ:[],speaking:false,frozen:null,
+ early:{},ek:null,hrDone:{},foulDone:{},badVoice:{},vs:'확인 전',fbWarned:false,safe:false,stall:0,stallMax:0,stallRun:0,cost:{},rdy:0,rdyLock:false,startDone:null,bellLog:[],link:'없음'};
+try{const o=JSON.parse(localStorage.getItem(LS)||'{}');for(const k of ['sV','sB','mV','mB','eV','hr','hrN','as','fl','players','mode','eM','em','male','restSec','autoGame','tgt','src','url','cam','voiceName','rate','vol','hook'])if(o[k]!==undefined)C[k]=o[k];}catch(_){}
+if(!(function(){try{return JSON.parse(localStorage.getItem(LS)||'{}').emv===2;}catch(_){return false;}})())C.em='mid';
+function save(){try{localStorage.setItem(LS,JSON.stringify({sV:C.sV,sB:C.sB,mV:C.mV,mB:C.mB,eV:C.eV,hr:C.hr,hrN:C.hrN,as:C.as,fl:C.fl,players:C.players,mode:C.mode,eM:C.eM,em:C.em,emv:2,male:C.male,restSec:C.restSec,autoGame:C.autoGame,tgt:C.tgt,src:C.src,url:C.url,cam:C.cam,voiceName:C.voiceName,rate:C.rate,vol:C.vol,hook:C.hook}));}catch(_){}}
+window.cntState=C;
+
+/* ---------- 입력: 스트림 주소(go2rtc WebRTC) → getUserMedia 경로 재사용 ---------- */
+try{if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
+ const orig=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+ navigator.mediaDevices.getUserMedia=function(c){if(C.injected){const s=C.injected;C.injected=null;return Promise.resolve(s);}return orig(c);};
+}}catch(_){}
+async function streamConnect(){
+ const base=String(C.url||'').replace(/\/+$/,''),src=String(C.cam||'cam');
+ if(!base)throw Error('스트림 주소가 비어 있습니다');
+ if(C.pc){try{C.pc.close();}catch(_){}C.pc=null;}
+ const pc=new RTCPeerConnection({iceServers:[]});C.pc=pc;
+ pc.addTransceiver('video',{direction:'recvonly'});
+ const got=new Promise((res,rej)=>{pc.ontrack=e=>res(e.streams&&e.streams[0]?e.streams[0]:new MediaStream([e.track]));setTimeout(()=>rej(Error('스트림 수신 시간 초과 (주소·카메라 이름 확인)')),15000);});
+ const offer=await pc.createOffer();await pc.setLocalDescription(offer);
+ await new Promise(r=>{if(pc.iceGatheringState==='complete')return r();const f=()=>{if(pc.iceGatheringState==='complete'){pc.removeEventListener('icegatheringstatechange',f);r();}};pc.addEventListener('icegatheringstatechange',f);setTimeout(r,2500);});
+ const resp=await fetch(base+'/api/webrtc?src='+encodeURIComponent(src),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'offer',sdp:pc.localDescription.sdp})});
+ if(!resp.ok)throw Error('스트림 서버 응답 오류 '+resp.status);
+ const txt=await resp.text();let ans;
+ try{ans=JSON.parse(txt);}catch(_){ans={type:'answer',sdp:txt};}
+ await pc.setRemoteDescription(ans);
+ return await got;
+}
+async function connectInput(){
+ if(C.src==='file'){if(!loaded){status('MP4 파일을 선택하세요 (위쪽 [MP4 불러오기])');$('fileBtn').click();}return !!loaded;}
+ if(C.src==='stream'){status('스트림 연결 중…');C.injected=await streamConnect();}
+ status('카메라 연결 중…');
+ await loadCamera();
+ return !!loaded;
+}
+
+/* ---------- 음성 ---------- */
+function allKo(){try{return (speechSynthesis.getVoices()||[]).filter(v=>/^ko/i.test(v.lang));}catch(_){return[];}}
+function voices(){return allKo().filter(v=>!/microsoft/i.test(v.name));}   // 목록에는 마이크로소프트 음성 제외
+const FEM=/sunhi|heami|yuna|seoyeon|sohee|female|여성|google.*(한국|korean)/i, MAL=/injoon|hyunsu|minho|male|남성/i;
+function pickVoice(){
+ const vs=voices().filter(x=>!C.badVoice[x.name]);
+ let v=vs.length?((C.voiceName&&vs.find(x=>x.name===C.voiceName))||vs.find(x=>FEM.test(x.name)&&!MAL.test(x.name))||vs[0]):null;
+ if(!v){ // 선택 가능한 음성이 모두 실패/없음 → 마지막 수단으로 PC에 있는 다른 한국어 음성(마이크로소프트 포함)
+  const rest=allKo().filter(x=>!C.badVoice[x.name]);v=rest.find(x=>x.localService)||rest[0]||null;
+  if(v&&!C.fbWarned){C.fbWarned=true;status('선택한 음성이 소리를 못 내서 PC의 다른 한국어 음성('+v.name+')으로 대신합니다');}}
+ return v;}
+function vstat(t){C.vs=t;const e=$c('cntVS');if(e)e.textContent='음성: '+t;}
+function pump(){
+ if(C.speaking||!C.speakQ.length)return;
+ const it=C.speakQ.shift();
+ if(Date.now()-it.at>7000){pump();return;}
+ try{const u=new SpeechSynthesisUtterance(it.text);u.lang='ko-KR';const v=pickVoice();if(v)u.voice=v;u.rate=Number(C.rate)||1;u.pitch=C.male?0.6:1;u.volume=Math.max(0,Math.min(1,Number(C.vol)));
+  C.speaking=true;let done=false,started=false,t0=0;
+  const fin=()=>{if(done)return;done=true;C.speaking=false;pump();};
+  const fail=why=>{ // 소리 못 냄: 이 음성을 제외하고 같은 문구를 다른 음성으로 한 번 더
+   if(done)return;vstat('오류('+why+')'+(v?' · '+v.name:''));logLine('음성 오류: '+why+(v?' ('+v.name+')':''));
+   if(v&&!it.retry){C.badVoice[v.name]=true;C.speakQ.unshift({text:it.text,at:Date.now(),retry:1});}
+   try{speechSynthesis.cancel();}catch(_){}fin();};
+  u.onstart=()=>{started=true;t0=performance.now();vstat('정상'+(v?' · '+v.name:' · 기본 음성'));};
+  u.onend=()=>{if(done)return;const d=performance.now()-t0;if(!started||(d<150&&it.text.length>=2)){fail('소리 없음(인터넷/음성 엔진 확인)');return;}fin();};   // 시작하자마자 끝나면 구글 음성의 무음 실패
+  u.onerror=e=>{const er=String(e&&e.error||'error');if(er==='interrupted'||er==='canceled'){fin();return;}fail(er);};
+  setTimeout(()=>{if(!started&&!done)fail('시작 안 됨');},3500);          // 구글 음성은 인터넷이 없으면 조용히 실패함
+  setTimeout(()=>{if(!done){try{speechSynthesis.cancel();}catch(_){}fin();}},9000);   // 음성 엔진이 멈추면 초기화하고 계속
+  speechSynthesis.speak(u);}catch(_){C.speaking=false;vstat('오류(예외)');}
+}
+function speak(text){logLine(text);if(!('speechSynthesis' in window))return;
+ C.speakQ.push({text,at:Date.now()});while(C.speakQ.length>3)C.speakQ.shift();pump();}
+function logLine(t){const d=new Date();C.log.unshift(d.toTimeString().slice(0,8)+'  '+t);if(C.log.length>12)C.log.pop();paintLog();}
+
+function inBatch(){try{return !!(window.mgAll&&window.mgAll.state&&window.mgAll.state.running);}catch(_){return false;}}   // ALL 일괄 검증 중에는 CNT 기능 전부 쉼
+/* ---------- 외부(점수판) 연동: WebSocket 또는 HTTP ----------
+   내보내기: {type:'shot'|'correct'|'adjust'|'game_start'|'game_end'|'state'|'ack', score:[a,b], say:'읽을 문구', ...}
+   받기   : {cmd:'set_score',score:[a,b]} {cmd:'adjust',player:0|1,delta:±1} {cmd:'correct',kind:'score'|'miss'|'ai',shot?}
+            {cmd:'game_start'} {cmd:'game_end'} {cmd:'ping'} */
+let ws=null,wsRetry=null,pollT=null,hbT=null;
+function setLink(s){C.link=s;const e=$c('cntLink');if(e)e.textContent='연동: '+s;}
+function emit(o){try{o.proto=1;o.seq=++C.seq;o.at=Date.now();o.game=C.gameNo;window.dispatchEvent(new CustomEvent('cnt-event',{detail:o}));
+ const u=C.hook;if(!u)return;const body=JSON.stringify(o);
+ if(/^wss?:/i.test(u)){if(ws&&ws.readyState===1)ws.send(body);}
+ else fetch(u,{method:'POST',mode:'cors',keepalive:true,headers:{'Content-Type':'text/plain'},body}).then(()=>{if(C.link!=='연결됨')setLink('연결됨');}).catch(()=>{if(C.link!=='끊김')setLink('끊김');});
+ }catch(_){}}
+function linkStop(){try{if(ws){ws.onclose=null;ws.close();}}catch(_){}ws=null;clearTimeout(wsRetry);clearInterval(pollT);clearInterval(hbT);pollT=null;hbT=null;}
+function linkStart(){
+ linkStop();const u=C.hook;if(!u){setLink('없음');return;}
+ if(/^wss?:/i.test(u)){
+  const open=()=>{try{ws=new WebSocket(u);setLink('연결 중…');
+   ws.onopen=()=>{setLink('연결됨');emit({type:'hello',app:'3qAutoscoreALL',ver:'2.00',players:Number(C.players)||2,score:score(),running:!!running});};
+   ws.onmessage=e=>{try{handleCmd(JSON.parse(e.data));}catch(_){}};
+   ws.onclose=()=>{setLink('끊김');wsRetry=setTimeout(open,3000);};ws.onerror=()=>{};}catch(_){wsRetry=setTimeout(open,3000);}};
+  open();
+ }else{
+  setLink('확인 중…');
+  pollT=setInterval(async()=>{try{const r=await fetch(u+(u.includes('?')?'&':'?')+'poll=1',{cache:'no-store',mode:'cors'});
+   if(!r.ok)throw 0;if(C.link!=='연결됨')setLink('연결됨');const j=await r.json();const a=Array.isArray(j)?j:Array.isArray(j.cmds)?j.cmds:(j&&j.cmd?[j]:[]);a.forEach(handleCmd);}catch(_){if(C.link!=='끊김')setLink('끊김');}},700);
+ }
+ hbT=setInterval(()=>emit({type:'state',players:Number(C.players)||2,score:score(),inning:$('inningCount').textContent,running:!!running,ended:C.ended}),3000);
+}
+function handleCmd(o){
+ if(!o||typeof o!=='object')return;const cmd=o.cmd||o.type;let ok=true;
+ try{
+  if(cmd==='ping'){}
+  else if(cmd==='set_players'){C.players=Math.max(2,Math.min(6,Number(o.players)||2));const e=$c('cntPL');if(e)e.value=String(C.players);save();}
+  else if(cmd==='game_start'){if(C.gameNo===0||C.ended||shots.length===0)startGame('점수판');else newGame('점수판');}
+  else if(cmd==='game_end'){endGame('점수판');}
+  else if(cmd==='set_score'&&Array.isArray(o.score)){const raw=rawScore();C.adj=[Number(o.score[0])-raw[0],Number(o.score[1])-raw[1]];C.frozen=C.ended?score():null;const s=score();
+   if(C.eV)speak('정정되었습니다. '+say(s[0],s[1]));else logLine('점수판 정정 '+s[0]+':'+s[1]);}
+  else if(cmd==='adjust'){const p=Number(o.player),d=Number(o.delta)||0;if(p===0||p===1){C.adj[p]+=d;const s=score();if(C.eV)speak('정정되었습니다. '+say(s[0],s[1]));}}
+  else if(cmd==='correct'||cmd==='shot_result'){
+   const kind=o.kind;
+   if(o.shot!=null&&shots.find(x=>x&&x.id===Number(o.shot))){const s=shots.find(x=>x&&x.id===Number(o.shot));
+    if(kind==='ai'){s.manualResult=null;s.manualSource=null;}else if(kind==='score'||kind==='miss'){s.manualResult=kind;s.manualSource='scoreboard';s.manualEditedAt=new Date().toISOString();s.manualShotValidityV43='valid';}
+    try{render();}catch(_){}}
+   else{const id=kind==='score'?'quickScore':kind==='miss'?'quickMiss':kind==='ai'?'quickAuto':null;const b=id&&$(id);if(b&&!b.disabled)b.click();else ok=false;}
+  }else ok=false;
+ }catch(_){ok=false;}
+ paint();emit({type:'ack',cmd,ok,score:score()});
+}
+
+/* ---------- 점수 ---------- */
+function rawScore(){return [Number($('sc0').textContent)||0,Number($('sc1').textContent)||0];}
+function score(){if(C.ended&&C.frozen)return C.frozen.slice();const r=rawScore();return [r[0]+C.adj[0],r[1]+C.adj[1]];}
+function say(a,b){return a+' 대 '+b;}
+function scoreSay(){return '득점';}
+function resultOf(id){const s=shots.find(x=>x&&x.id===id);return s?effectiveResult(s):null;}
+function uncertainOf(id){const s=shots.find(x=>x&&x.id===id);try{return !!(s&&!s.manualResult&&(s.v57AIUncertain||s.reviewRecommended||(typeof v5845AmbKind==='function'&&v5845AmbKind(s))));}catch(_){return false;}}
+function pointsOf(id){const s=shots.find(x=>x&&x.id===id);let p=1;try{if(s)p=Number(v39ScorePoints(s))||1;}catch(_){}return Math.max(1,p);}
+
+/* 득점/무득점 확정 시점(기존 벨 타이밍과 동일) */
+function onShotBell(id,kind){
+ if(C.ended||inBatch())return;
+ C.announced[id]=kind;C.lastActivity=Date.now();checkFoul(id);
+ if(kind==='score'){
+  if(C.mode==='voice'&&C.sV)speak(scoreSay());
+  setTimeout(()=>{paint();checkHighRun(id);emit({type:'shot',shot:id,kind:'score',points:pointsOf(id),score:score(),uncertain:uncertainOf(id),say:scoreSay()});},150);
+ }else{
+  if(C.early[id]){C.lastActivity=Date.now();return;}   // 조기 무득점으로 이미 알림
+  if(C.mode==='voice'&&C.mB)speak('무득점');
+  setTimeout(()=>{const s=score();if(C.mode==='voice'&&C.mV)speak(say(s[0],s[1]));paint();emit({type:'shot',shot:id,kind:'miss',points:0,score:s,uncertain:uncertainOf(id),say:'무득점. '+say(s[0],s[1])});checkTarget();},250);
+ }
+}
+function runInfo(id){ // 같은 선수가 이어서 득점한 연속 점수(이닝 내 연속 득점)
+ const i=shots.findIndex(x=>x&&x.id===id);if(i<0)return null;
+ let pl=null;try{pl=playerForShot(shots[i]);}catch(_){}
+ let run=0,first=id;
+ for(let k=i;k>=0;k--){const x=shots[k];if(!x||effectiveResult(x)!=='score')break;
+  let p=null;try{p=playerForShot(x);}catch(_){}
+  if(pl!=null&&p!=null&&p!==pl)break;
+  run+=pointsOf(x.id);first=x.id;}
+ return {run,first,player:pl};}
+/* 파울: 직전 샷 결과로 정해지는 '이번 차례 수구'와 실제 친 수구가 다르면 (2인 경기만)
+   - 직전 샷 득점 → 같은 수구, 무득점 → 상대 수구가 차례. 직전/현재 샷이 불확실하거나 현재 샷의 수구 식별 근거(큐대 확인)가 없으면 판단하지 않음. */
+function foulOf(id){
+ try{
+  if(!C.fl||Number(C.players)!==2)return false;
+  const list=v43EligibleShots();const i=list.findIndex(x=>x&&x.id===id);if(i<1)return false;
+  const cur=list[i],prev=list[i-1];
+  if(cur.v57AIUncertain||prev.v57AIUncertain)return false;
+  if(!(cur.manualCue===0||cur.manualCue===1||cur.cueStickEvidence?.detected||cur.cueRoleAuditV5227?.status==='confirmed'))return false;   // 수구 식별 근거(큐대 확인) 없으면 판단 보류
+  const cc=observedCue(cur),pc=observedCue(prev);
+  if(!((cc===0||cc===1)&&(pc===0||pc===1)))return false;
+  const pr=effectiveResult(prev);if(pr!=='score'&&pr!=='miss')return false;
+  return cc!==(pr==='score'?pc:1-pc);
+ }catch(_){return false;}
+}
+function checkFoul(id){
+ if(C.foulDone[id]||inBatch())return;C.foulDone[id]=true;
+ if(!foulOf(id))return;
+ speak('파울');emit({type:'foul',shot:id,score:score(),say:'파울'});logLine('파울 SHOT #'+id);}
+function checkHighRun(id){
+ if(!C.hr||C.ended)return;const n=Number(C.hrN)||5;const r=runInfo(id);
+ if(!r||r.run<n||C.hrDone[r.first])return;
+ C.hrDone[r.first]=true;speak('하이런 축하드립니다');
+ emit({type:'highrun',shot:id,run:r.run,player:r.player,score:score(),say:'하이런 축하드립니다'});}
+function checkTarget(){if(C.ended)return;const s=score();
+ for(let i=0;i<2;i++)if(Number(C.tgt[i])>0&&s[i]>=Number(C.tgt[i])){endGame('목표 점수 도달');return;}}
+function endGame(reason){if(C.ended||C.gameNo===0)return;const s=score();C.frozen=s.slice();C.ended=true;
+ if(C.eV)speak('경기 종료');else logLine('경기 종료');emit({type:'game_end',score:s,say:'경기 종료'});logLine('최종 '+s[0]+':'+s[1]+(reason?' ('+reason+')':''));paint();}
+function startGame(reason){C.gameNo=C.gameNo||0;C.gameNo+=C.gameNo===0?1:0;C.ended=false;C.frozen=null;C.lastActivity=Date.now();
+ if(C.eV)speak('경기 시작');else logLine('경기 시작');emit({type:'game_start',score:[0,0],say:'경기 시작'});logLine('게임 '+C.gameNo+' 시작'+(reason?' ('+reason+')':''));paint();}
+function newGame(reason){
+ const s=score();
+ if(C.gameNo>0)C.archive.push({game:C.gameNo,score:s.slice(),adj:C.adj.slice(),shots:shots.map(x=>({id:x.id,start:x.start,end:x.end,player:(()=>{try{return playerForShot(x);}catch(_){return null;}})(),ai:x.aiInitialResultV43||x.autoResult,final:effectiveResult(x),manual:x.manualResult||null})),at:new Date().toISOString()});
+ C.hrDone={};C.foulDone={};shots.length=0;C.adj=[0,0];C.announced={};C.prevLen=0;C.ended=false;C.frozen=null;C.gameNo++;C.lastActivity=Date.now();
+ try{render();}catch(_){}
+ if(C.eV)speak('경기 시작');else logLine('경기 시작');emit({type:'game_start',score:[0,0],say:'경기 시작'});logLine('게임 '+C.gameNo+' 시작'+(reason?' ('+reason+')':''));paint();}
+
+/* ---------- 시작 배치 인식 ---------- */
+const TPL=[[250,312],[252,251],[750,251]];
+function variants(){const o=[];for(const fx of[0,1])for(const fy of[0,1])o.push(TPL.map(([x,y])=>[fx?1000-x:x,fy?500-y:y]));return o;}
+const PERMS=[[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
+function layoutMatch(pose,tol=45){
+ if(!Array.isArray(pose)||pose.length!==3)return false;
+ const pts=pose.map(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)?[p.x,p.y]:null);if(pts.some(p=>!p))return false;
+ return variants().some(T=>PERMS.some(pm=>pm.every((j,i)=>Math.hypot(pts[i][0]-T[j][0],pts[i][1]-T[j][1])<=tol)));}
+window.cntLayoutMatch=layoutMatch;
+
+function waiting(){ // 새 경기를 기다리는 상태인가
+ return C.gameNo===0||C.ended||(shots.length>0&&(Date.now()-C.lastActivity)/1000>=Number(C.restSec));
+}
+/* 초구 배치가 안정적으로 보이면(약 1.5초) 샷을 치기 전에 바로 경기 시작 */
+function watchSetup(){
+ try{
+  if(inBatch())return;
+  if(!running||!loaded||paused||(!cameraActive&&v.ended))return;
+  const cs=(typeof currentShot!=='undefined')?currentShot:null;
+  if(cs&&cs.active){C.rdy=0;return;}
+  if(!waiting()){C.rdy=0;C.rdyLock=false;return;}
+  if(C.gameNo>0&&!C.autoGame)return;
+  if(!cfg||!cfg.corners||typeof BallDetector==='undefined')return;
+  const c=C.cv||(C.cv=document.createElement('canvas'));c.width=640;c.height=360;
+  const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(v,0,0,640,360);
+  const f=x.getImageData(0,0,640,360).data;
+  const r=new BallDetector(cfg,640,360).detect(f,v.currentTime);
+  const ok=Array.isArray(r)&&r.length===3&&r.every(p=>p&&p.q>=.6)&&layoutMatch(r.map(p=>({x:p.x,y:p.y})),40);
+  if(ok){C.rdy++;if(C.rdy>=3&&!C.rdyLock){C.rdyLock=true;if(C.gameNo===0)startGame('초구 배치 인식');else newGame('초구 배치 인식');}}
+  else{C.rdy=0;C.rdyLock=false;}
+ }catch(_){}
+}
+/* 조기 무득점: 거의 확실한 무득점은 공이 완전히 멈추기 전(약 0.4초 저속)에 먼저 알림.
+   조건: 득점 불가 확정(두 번째 목적구 미접촉, 또는 접촉했으나 당시 쿠션 3회 미만) + 3공 모두 선명 검출 + 모두 저속 + 공끼리 접촉 거리 밖.
+   애매하면(접촉 순서 확인 중·득점 증명·공이 서로 가까움·검출 불안정) 하지 않고 기존 정지 확인 판정에 맡김. 틀리면 기존 정정 흐름("정정되었습니다")이 처리. */
+const EM={safe:{hold:.4,q:.6,el:1.2,A:0,mg:1,imm:false},mid:{hold:.4,q:.55,el:1.0,A:30,mg:1.5,imm:false},fast:{hold:.12,q:.45,el:.7,A:35,mg:1.0,imm:true}};
+function fireEarly(cs,why){checkFoul(cs.id);C.early[cs.id]=true;C.announced[cs.id]='miss';C.ek=null;C.lastActivity=Date.now();
+ if(C.mode==='bell'){try{origPlayBell&&origPlayBell('miss');}catch(_){}}else if(C.mB)speak('무득점');
+ setTimeout(()=>{const s=score();if(C.mode==='voice'&&C.mV)speak(say(s[0],s[1]));paint();emit({type:'shot',shot:cs.id,kind:'miss',early:true,why,points:0,score:s,uncertain:false,say:'무득점. '+say(s[0],s[1])});checkTarget();},250);
+ logLine('조기 무득점 SHOT #'+cs.id+' ('+why+')');}
+function earlyMiss(){
+ try{
+  if(inBatch())return;
+  if(!C.eM||!running||!loaded||paused||C.ended)return;
+  const cs=(typeof currentShot!=='undefined')?currentShot:null;
+  if(!cs||(!cs.active&&cs.finished)){C.ek=null;return;}
+  if(C.early[cs.id]||C.announced[cs.id]||cs.certified||cs.orderMismatch||cs.queuedManualResult){C.ek=null;return;}
+  if(typeof cs.start!=='number')return;
+  const L=EM[C.em]||EM.fast,t=v.currentTime;
+  if(t-cs.start<L.el)return;
+  if(cs.start<8&&!(Number(cs.cushions)>0)&&!(Array.isArray(cs.objects)?cs.objects.length:Number(cs.objects)||0)){C.ek=null;return;}   // 영상 시작 직후 세팅 움직임(가짜 샷)은 조기 판정 제외
+  const objs=Array.isArray(cs.objects)?cs.objects.length:Number(cs.objects)||0;
+  const second=objs>=2&&cs.cushionsAtSecond!=null&&Number(cs.cushionsAtSecond)<3;   // 두 번째 목적구 접촉 당시 쿠션 3회 미만 = 어떤 경우에도 득점 불가
+  const k=C.ek&&C.ek.id===cs.id?C.ek:(C.ek={id:cs.id,P:null,t:0,since:null,why:''});
+  if(second&&L.imm){if(k.since==null)k.since=t;if(t-k.since>=L.hold){fireEarly(cs,'2공 접촉 시 쿠션 '+cs.cushionsAtSecond+'회');}return;}
+  if(!(objs<2||second)){k.since=null;return;}                 // 득점 가능성 열려 있음 → 기존 판정에 맡김
+  if(!cfg||!cfg.corners||typeof BallDetector==='undefined')return;
+  const c=C.cv||(C.cv=document.createElement('canvas'));c.width=640;c.height=360;
+  const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(v,0,0,640,360);
+  const r=new BallDetector(cfg,640,360).detect(x.getImageData(0,0,640,360).data,t);
+  if(!(Array.isArray(r)&&r.length===3&&r.every(p=>p&&p.q>=L.q))){k.P=null;k.since=null;return;}   // 검출 불안정 → 대기
+  const P=r.map(p=>[p.x,p.y]);
+  if(!k.P){k.P=P;k.t=t;return;}
+  const dt=t-k.t;if(dt<=.02)return;
+  const sp=P.map((p,i)=>Math.hypot(p[0]-k.P[i][0],p[1]-k.P[i][1])/dt);k.P=P;k.t=t;
+  let ok;
+  if(!L.A){ok=Math.max(...sp)<=9&&![[0,1],[0,2],[1,2]].some(([i,j])=>Math.hypot(P[i][0]-P[j][0],P[i][1]-P[j][1])<34);}
+  else{ // 아직 움직이는 공이 남은 거리를 굴러도 다른 공에 닿을 수 없으면 득점 불가
+   ok=true;
+   for(let i=0;i<3;i++){const reach=sp[i]*sp[i]/(2*L.A)*L.mg;if(reach<3)continue;
+    for(let j=0;j<3;j++)if(j!==i){const gap=Math.hypot(P[i][0]-P[j][0],P[i][1]-P[j][1])-28;if(gap<reach){ok=false;}}}
+   if(Math.max(...sp)>420)ok=false;                              // 아직 강하게 구르는 중
+  }
+  if(!ok){k.since=null;return;}
+  if(k.since==null)k.since=t;
+  if(t-k.since>=L.hold)fireEarly(cs,'공 궤적상 추가 접촉 불가');
+ }catch(_){}
+}
+/* 늦어도 초구를 치는 순간 */
+function checkStart(cs){
+ if(C.startDone===cs.id)return;
+ if(C.gameNo===0){C.startDone=cs.id;startGame('초구 샷');return;}
+ const rest=(Date.now()-C.lastActivity)/1000;
+ if(C.autoGame&&(shots.length>0||C.ended)&&rest>=Number(C.restSec)&&layoutMatch(cs.preShotPose)){C.startDone=cs.id;newGame('휴식 '+Math.round(rest)+'초 · 시작 배치 일치');}
+}
+function tick(){
+ try{
+  if(inBatch())return;
+  const cs=(typeof currentShot!=='undefined')?currentShot:null;
+  if(running&&cs&&cs.active)checkStart(cs);
+  if(shots.length>C.prevLen){C.prevLen=shots.length;C.lastActivity=Date.now();}
+  else if(shots.length<C.prevLen)C.prevLen=shots.length;
+  if(running&&C.gameNo===0&&shots.length>0){C.gameNo=1;logLine('게임 1 시작 (시작 배치 미확인)');paint();}
+  if(!C.ended)for(const id of Object.keys(C.announced)){
+   const r=resultOf(Number(id));
+   if((r==='score'||r==='miss')&&r!==C.announced[id]){
+    C.announced[id]=r;
+    setTimeout(()=>{const s=score();if(C.eV)speak('정정되었습니다. '+say(s[0],s[1]));else logLine('정정 '+s[0]+':'+s[1]);paint();emit({type:'correct',shot:Number(id),kind:r,score:s,say:'정정되었습니다. '+say(s[0],s[1])});},200);
+   }
+  }
+ }catch(_){}
+}
+
+/* ---------- 기존 함수에 얹기 (코어 로직은 그대로 호출) ---------- */
+if(typeof v5266BellOnce==='function'){const p=v5266BellOnce;
+ v5266BellOnce=function(id,kind){C.curBell=id;let ok;try{ok=p.apply(this,arguments);}finally{C.curBell=null;}if(ok)onShotBell(id,kind);return ok;};}
+let origPlayBell=null;
+if(typeof playBell==='function'){const p=playBell;origPlayBell=p;   // 득점/무득점 벨소리 개별 선택 (재생·비재생 공통)
+ playBell=function(kind){if(!running||inBatch())return p.apply(this,arguments);
+  const allow=C.mode==='bell'&&!(kind==='miss'&&C.early[C.curBell]);C.bellLog.push([kind,!!allow]);if(C.bellLog.length>100)C.bellLog.shift();
+  if(!allow)return;return p.apply(this,arguments);};}
+if(typeof render==='function'){const p=render;
+ render=function(){const r=p.apply(this,arguments);try{if(!inBatch()){tick();const n=performance.now();if(n-(C.pt||0)>200){C.pt=n;paint();}}}catch(_){}return r;};}
+if(typeof msg==='function'){const p=msg;
+ msg=function(t,warn){const r=p.apply(this,arguments);try{if(warn)status(String(t));}catch(_){}return r;};}
+
+/* ---------- 화면 ---------- */
+const css=document.createElement('style');css.textContent=`
+#cntBar{position:sticky;top:0;z-index:50;background:#0c2a22;border-bottom:1px solid #2f6a58;padding:8px 10px;display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;font-size:13px;color:#e6fff6}
+#cntBar select,#cntBar input[type=text],#cntBar input[type=number]{background:#10372d;color:#e6fff6;border:1px solid #3c7f6b;border-radius:6px;padding:5px 6px;font-size:13px}
+#cntBar input[type=text]{width:190px}#cntBar input[type=number]{width:64px}
+#cntBar button{background:#14513f;color:#fff;border:1px solid #4aa388;border-radius:7px;padding:7px 12px;font-size:13px;min-height:34px;cursor:pointer}
+#cntBar button.cnt-go{background:#1c7a5d;font-weight:700}
+#cntBar,#cntBar *{box-sizing:border-box}#cntBar label,#cntBar b,#cntBar button,#cntBar span{white-space:nowrap}#cntBar label{display:inline-flex;gap:4px;align-items:center}#cntBar input[type=checkbox],#cntBar input[type=radio]{width:auto;margin:0}
+#cntBar .cnt-t{font-weight:800;color:#7dffd3}
+#cntBar .cnt-vol input{width:110px;vertical-align:middle}#cntBar .grp{display:inline-flex;flex-wrap:nowrap;gap:8px;align-items:center;border:1px solid #2f6a58;border-radius:8px;padding:3px 8px}
+#cntMore{display:contents}#cntMoreBtn{display:none}
+@media (max-width:1000px),(pointer:coarse){
+ #cntBar{padding:6px 8px;gap:6px;font-size:14px}
+ #cntBar button{min-height:44px;padding:8px 12px;font-size:14px}
+ #cntBar select,#cntBar input[type=text],#cntBar input[type=number]{min-height:40px;font-size:14px}
+ #cntBar input[type=checkbox],#cntBar input[type=radio]{width:22px;height:22px}
+ #cntMoreBtn{display:inline-block}
+ #cntMore{display:none;flex-basis:100%;flex-wrap:wrap;gap:6px}
+ #cntMore.open{display:flex}
+ #cntBar .grp{flex-wrap:wrap}
+ #cntBar input[type=text]{width:150px}
+ #cntPanel .btns button{min-height:52px;min-width:90px;font-size:15px}
+}
+#cntPanel{display:none;position:fixed;inset:0;z-index:100;background:#08140f;color:#eafff6;flex-direction:column;padding:12px 14px;gap:10px;font-family:system-ui,'Malgun Gothic',sans-serif}
+body.cnt-lean #cntPanel{display:flex}
+body.cnt-lean>*:not(#cntPanel):not(main):not(script):not(style){display:none!important}
+body.cnt-lean main>*:not(.layout){display:none!important}
+body.cnt-lean main{display:block!important;position:fixed!important;left:0;bottom:0;width:4px;height:4px;overflow:hidden;opacity:.02;z-index:-1;pointer-events:none;padding:0;margin:0}
+body.cnt-lean .layout>*:not(:first-child){display:none!important}
+body.cnt-lean .layout>section:first-child>*:not(.stage){display:none!important}
+body.cnt-lean .stage{width:320px;height:180px}
+#cntPanel .top{display:flex;justify-content:space-between;align-items:center;font-size:15px;color:#9bd9c4}
+#cntPanel .board{display:flex;flex:1;gap:12px;min-height:0}
+#cntPanel .pl{flex:1;border:3px solid #2b5a4b;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0d241b}
+#cntPanel .pl.act{border-color:#ffd54a;background:#1b2a10}
+#cntPanel .pl .nm{font-size:min(5vw,28px);color:#9bd9c4}
+#cntPanel .pl .sc{font-size:min(30vw,52vh);font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+#cntPanel .pl .sub{font-size:min(4vw,22px);color:#9bd9c4}
+#cntPanel .mid{text-align:center;font-size:min(6vw,30px);min-height:1.5em;color:#ffe9a6}
+#cntPanel .btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+#cntPanel .btns button{min-height:56px;min-width:110px;font-size:17px;border-radius:12px;border:1px solid #4aa388;background:#14513f;color:#fff;cursor:pointer}
+#cntPanel .btns button.warn{background:#6b2f2f;border-color:#c77}
+#cntPanel .btns button.ok{background:#1e6a3a}
+#cntPanel .btns select{min-height:56px;font-size:15px;background:#10372d;color:#fff;border:1px solid #3c7f6b;border-radius:12px;padding:0 8px}
+#cntPanel .logbox{font-size:13px;color:#9bd9c4;max-height:16vh;overflow:auto;white-space:pre-line;border-top:1px solid #214c3e;padding-top:6px}
+#cntPanel .st{font-size:13px;color:#ffb3b3;min-height:1.2em}
+`;document.head.appendChild(css);
+
+const bar=document.createElement('div');bar.id='cntBar';
+bar.innerHTML=`<span class="cnt-t">3Q ALL</span>
+<label>입력 <select id="cntSrc"><option value="camera">카메라(USB·장치)</option><option value="stream">스트림 주소(go2rtc)</option><option value="file">MP4 파일</option></select></label>
+<span id="cntStreamBox"><input id="cntUrl" type="text" placeholder="http://127.0.0.1:1984"> <input id="cntCam" type="text" placeholder="카메라 이름" style="width:90px"></span>
+<button id="cntConnect" type="button">입력 연결</button>
+<button id="cntGoPlay" class="cnt-go" type="button">▶ 영상 재생으로 시작</button>
+<button id="cntGo" class="cnt-go" type="button">▶ 영상 비재생으로 시작</button>
+<label id="cntVolBox" class="cnt-vol">🔊 음량 <input id="cntVolR" type="range" min="0" max="1" step="0.05"></label>
+<button id="cntLeanToggle" type="button">영상 재생 ↔ 비재생 전환</button>
+<span class="grp"><b>알림 방식</b><label><input name="cntMode" id="cntModeBell" type="radio" value="bell"> 벨소리(득점·무득점 2종)</label><label><input name="cntMode" id="cntModeVoice" type="radio" value="voice"> 음성 멘트</label></span>
+<span class="grp"><b>멘트</b><label><input id="cntSV" type="checkbox"> 득점</label><label><input id="cntMB" type="checkbox"> 무득점</label><label><input id="cntMV" type="checkbox"> 턴 넘김 점수</label><label><input id="cntFL" type="checkbox"> 파울</label><label><input id="cntEV" type="checkbox"> 시작·종료·정정</label></span>
+<span class="grp"><label><input id="cntAS" type="checkbox"> 입력되면 자동 분석 시작</label></span>
+<span class="grp"><label><input id="cntHR" type="checkbox"> 하이런 멘트</label><label>기준 <input id="cntHRN" type="number" min="2" max="99" step="1">점 이상 연속</label></span>
+<span class="grp"><b>무득점 조기 판정</b><label><input id="cntEM" type="checkbox"> 사용</label><label>민감도 <select id="cntEMS"><option value="safe">안전(완전 정지 직전)</option><option value="mid">보통</option><option value="fast">빠름(궤적상 불가 시 즉시)</option></select></label></span>
+<span class="grp"><label>목소리 <select id="cntVoiceSel"></select></label><button id="cntFem" type="button">여성</button><button id="cntMal" type="button">남성</button>
+<label>속도 <input id="cntRate" type="number" min="0.6" max="1.6" step="0.1"></label><button id="cntTest" type="button">시험</button><span id="cntVS">음성: 확인 전</span></span>
+<span class="grp"><label>점수판 연동 주소 <input id="cntHook" type="text" placeholder="ws://탭IP:포트/경로 또는 http://탭IP:포트/경로" style="width:260px"></label><span id="cntLink">연동: 없음</span></span>
+<span class="grp"><label>휴식(초) <input id="cntRest" type="number" min="10" max="3600" step="10"></label><label><input id="cntAuto" type="checkbox"> 경기 자동 구분</label>
+<label>인원 <select id="cntPL"><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></label><label>목표 1P <input id="cntT0" type="number" min="0" max="999"></label><label>2P <input id="cntT1" type="number" min="0" max="999"></label></span>
+<button id="cntDiag" type="button">진단 저장</button><button id="cntHelpBtn" type="button">연결 안내</button>
+<span id="cntBarMsg" style="color:#ffd9a0"></span>
+<div id="cntHelp" style="display:none;flex-basis:100%;background:#0a211b;border:1px solid #2f6a58;border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.55;white-space:pre-line">【탭(영상 재생·점수판) + PC(자동 판정·소리) 연동】
+· 소리(벨·멘트)는 PC에서 냅니다. PC는 판정 결과를 점수판으로 보내고, 점수판의 수동 정정·경기 시작/종료를 받습니다.
+· 점수판 연동 주소: WebSocket(ws://탭IP:포트/경로) 권장 — PC 앱이 탭에 접속해 양방향으로 주고받습니다.
+  HTTP(http://탭IP:포트/경로)도 가능: PC가 결과를 POST 하고, 점수판 명령은 같은 주소를 GET …?poll=1 로 주기 조회(응답: {"cmds":[…]}).
+· 점수판→PC 명령(JSON): {"cmd":"set_score","score":[A,B]} {"cmd":"adjust","player":0,"delta":1} {"cmd":"correct","kind":"score|miss|ai","shot":번호(선택)} {"cmd":"game_start"} {"cmd":"game_end"}
+· PC→점수판 이벤트: {"type":"shot|correct|adjust|game_start|game_end|state|ack","score":[A,B],"say":"읽을 문구","uncertain":true/false}
+· 영상: go2rtc 로 카메라 RTSP 를 받아 PC 와 탭에 나눠 줌.  go2rtc.yaml 예)  streams: {cam: rtsp://사용자:비밀번호@카메라IP/경로}  api: {listen: ":1984", origin: "*"}
+· 태블릿 영상 보기: http://PC의IP:1984/stream.html?src=cam&mode=webrtc    ※ 카메라 코덱 H.264 권장
+· 점수판(탭) 서버는 CORS 허용(Access-Control-Allow-Origin: *)이 필요합니다.</div>`;
+{const more=document.createElement('div');more.id='cntMore';
+ [...bar.querySelectorAll(':scope>.grp')].forEach(e=>more.appendChild(e));
+ const hb=bar.querySelector('#cntHelpBtn');const bm=bar.querySelector('#cntBarMsg');const hp=bar.querySelector('#cntHelp');
+ more.appendChild(hb);
+ const mb=document.createElement('button');mb.id='cntMoreBtn';mb.type='button';mb.textContent='설정 ▾';mb.onclick=()=>{more.classList.toggle('open');mb.textContent=more.classList.contains('open')?'설정 ▴':'설정 ▾';};
+ bar.insertBefore(more,bm);bar.insertBefore(mb,more);}
+document.body.insertBefore(bar,document.body.firstChild);
+
+const panel=document.createElement('div');panel.id='cntPanel';
+panel.innerHTML=`<div class="top"><span id="cntGame">게임 —</span><span id="cntLive">대기</span><span id="cntInn">0이닝</span></div>
+<div class="board"><div class="pl" id="cntP0"><div class="nm">1P (흰 수구)</div><div class="sc" id="cntS0">0</div><div class="sub" id="cntA0"></div></div>
+<div class="pl" id="cntP1"><div class="nm">2P (노란 수구)</div><div class="sc" id="cntS1">0</div><div class="sub" id="cntA1"></div></div></div>
+<div class="mid" id="cntMid">—</div>
+<div class="btns">
+<button id="cntFix1" class="ok" type="button">득점으로 정정</button><button id="cntFix0" class="warn" type="button">무득점으로 정정</button><button id="cntFixAI" type="button">AI 판정 복원</button>
+<button id="cntA0p" type="button">1P +1</button><button id="cntA0m" type="button">1P −1</button><button id="cntA1p" type="button">2P +1</button><button id="cntA1m" type="button">2P −1</button>
+<select id="cntFirst"><option value="auto">선공: AI 자동</option><option value="0">선공: 흰 수구(1P)</option><option value="1">선공: 노란 수구(2P)</option></select>
+<button id="cntNew" type="button">새 경기</button><button id="cntEnd" class="warn" type="button">경기 종료</button><button id="cntCsv" type="button">기록 저장(CSV)</button><button id="cntBack" type="button">영상 재생 화면으로</button></div>
+<div class="st" id="cntSt"></div><div class="logbox" id="cntLog"></div>`;
+document.body.appendChild(panel);
+
+const $c=id=>document.getElementById(id);
+function status(t){const e=$c('cntSt');if(e)e.textContent=t||'';const b=$c('cntBarMsg');if(b)b.textContent=t||'';}
+function paintLog(){const e=$c('cntLog');if(e)e.textContent=C.log.join('\n');}
+function paint(){
+ try{
+  const s=score();
+  $c('cntS0').textContent=s[0];$c('cntS1').textContent=s[1];
+  $c('cntA0').textContent=C.adj[0]?('수동 보정 '+(C.adj[0]>0?'+':'')+C.adj[0]):'';
+  $c('cntA1').textContent=C.adj[1]?('수동 보정 '+(C.adj[1]>0?'+':'')+C.adj[1]):'';
+  $c('cntGame').textContent=C.gameNo?('게임 '+C.gameNo+(C.ended?' · 종료':'')):(running?'경기 시작 대기':'게임 —');
+  $c('cntInn').textContent=$('inningCount').textContent||'';
+  const np=$('nextPlayer').textContent||'',cp=$('currentPlayer').textContent||'';
+  const act=(currentShot&&currentShot.active)?cp:np;
+  $c('cntP0').classList.toggle('act',/^1P/.test(act));$c('cntP1').classList.toggle('act',/^2P/.test(act));
+  $c('cntLive').textContent=running?(cameraActive?'LIVE 분석 중':'분석 중'):(loaded?'준비됨':'대기');
+  $c('cntMid').textContent=($('verdict').textContent||'')+' · '+($('workerState').textContent||'').slice(0,60);
+ }catch(_){}
+}
+function setLean(on){C.lean=!!on;document.body.classList.toggle('cnt-lean',C.lean);if(!C.lean)try{syncCanvas();}catch(_){} paint();}
+
+/* ---------- 바 동작 ---------- */
+function loadBar(){
+ $c('cntSrc').value=C.src;$c('cntUrl').value=C.url;$c('cntCam').value=C.cam;
+ $c('cntSV').checked=!!C.sV;$c('cntModeBell').checked=C.mode==='bell';$c('cntModeVoice').checked=C.mode!=='bell';$c('cntMV').checked=!!C.mV;$c('cntMB').checked=!!C.mB;$c('cntEV').checked=!!C.eV;$c('cntEM').checked=!!C.eM;$c('cntAS').checked=!!C.as;$c('cntHR').checked=!!C.hr;$c('cntHRN').value=C.hrN;$c('cntEMS').value=C.em||'fast';$c('cntFL').checked=!!C.fl;$c('cntPL').value=String(C.players||2);
+ $c('cntRate').value=C.rate;$c('cntVolR').value=C.vol;$c('cntRest').value=C.restSec;$c('cntAuto').checked=!!C.autoGame;
+ $c('cntHook').value=C.hook||'';$c('cntT0').value=C.tgt[0]||'';$c('cntT1').value=C.tgt[1]||'';
+ $c('cntStreamBox').style.display=C.src==='stream'?'':'none';
+}
+function fillVoices(){const sel=$c('cntVoiceSel');const vs=voices();sel.innerHTML=vs.length?vs.map(v=>`<option value="${v.name}">${v.name}</option>`).join(''):'<option value="">(한국어 음성 없음)</option>';
+ const pv=pickVoice();if(pv)sel.value=pv.name;}
+function readBar(){const prevHook=C.hook;
+ C.src=$c('cntSrc').value;C.url=$c('cntUrl').value.trim();C.cam=$c('cntCam').value.trim()||'cam';
+ C.sV=$c('cntSV').checked;C.mode=$c('cntModeBell').checked?'bell':'voice';C.mV=$c('cntMV').checked;C.mB=$c('cntMB').checked;C.eV=$c('cntEV').checked;C.eM=$c('cntEM').checked;C.as=$c('cntAS').checked;C.hr=$c('cntHR').checked;C.hrN=Math.max(2,Number($c('cntHRN').value)||5);C.em=$c('cntEMS').value;C.fl=$c('cntFL').checked;C.players=Number($c('cntPL').value)||2;
+ C.rate=Number($c('cntRate').value)||1;C.vol=Math.max(0,Math.min(1,Number($c('cntVolR').value)));$c('cntVolBox').style.display=C.mode==='bell'?'none':'';C.restSec=Number($c('cntRest').value)||90;C.autoGame=$c('cntAuto').checked;
+ C.hook=$c('cntHook').value.trim();C.tgt=[Number($c('cntT0').value)||0,Number($c('cntT1').value)||0];const vn=$c('cntVoiceSel').value;if(vn)C.voiceName=vn;
+ $c('cntStreamBox').style.display=C.src==='stream'?'':'none';save();if(C.hook!==prevHook)linkStart();}
+for(const id of ['cntSrc','cntUrl','cntCam','cntSV','cntModeBell','cntModeVoice','cntMV','cntMB','cntEV','cntEM','cntEMS','cntAS','cntHR','cntHRN','cntFL','cntPL','cntVolR','cntVoiceSel','cntRate','cntRest','cntAuto','cntT0','cntT1','cntHook'])$c(id).addEventListener('change',readBar);
+try{speechSynthesis.addEventListener('voiceschanged',fillVoices);}catch(_){}
+$c('cntVolR').addEventListener('input',()=>{C.vol=Number($c('cntVolR').value);save();});
+loadBar();fillVoices();
+function pickGender(female){const vs=voices();if(!vs.length){status('PC에 한국어 음성이 없습니다 (Windows 설정 > 시간 및 언어 > 음성에서 추가)');return;}
+ const v=female?(vs.find(x=>FEM.test(x.name)&&!MAL.test(x.name))||vs.find(x=>!MAL.test(x.name))):(vs.find(x=>MAL.test(x.name))||vs.find(x=>!FEM.test(x.name)));
+ if(!v){status(female?'여성 음성을 찾지 못했습니다':'남성 음성을 찾지 못했습니다 — 목록에서 직접 선택하세요');return;}
+ C.voiceName=v.name;$c('cntVoiceSel').value=v.name;save();status('목소리: '+v.name);}
+$c('cntFem').onclick=()=>{C.male=false;pickGender(true);save();speak(scoreSay());};
+$c('cntMal').onclick=()=>{const vs=voices(),m=vs.find(x=>MAL.test(x.name));
+ if(m){C.male=false;C.voiceName=m.name;$c('cntVoiceSel').value=m.name;status('남성 목소리: '+m.name);}
+ else{C.male=true;status('이 PC에는 한국어 남성 음성이 없어 음높이를 낮춘 남성톤으로 설정했습니다 (음성 종류에 따라 효과가 약할 수 있음)');}
+ save();speak(scoreSay());};
+$c('cntTest').onclick=()=>{readBar();C.badVoice={};C.fbWarned=false;speak(scoreSay());speak('무득점');speak(say(3,5));};
+$c('cntConnect').onclick=async()=>{readBar();try{await connectInput();status(loaded?'입력 연결됨 · 테이블이 보이는지 확인 후 시작':'');}catch(e){status('연결 실패: '+e.message);}};
+async function begin(lean){
+ readBar();
+ try{
+  if(!loaded)await connectInput();
+  if(!loaded){status('입력이 아직 준비되지 않았습니다');return;}
+  try{const sE=$('soundEnabled');if(sE)sE.checked=true;}catch(_){}   // 벨 경로는 켜 두고 개별 설정으로 거름
+  if(!running){await start();}
+  if(!running){status('분석이 시작되지 않았습니다. 재생 화면에서 4점 보정 후 다시 시작하세요.');return;}
+  status(C.gameNo===0?'경기 시작 대기 · 초구 배치가 잡히거나 초구를 치면 시작합니다':'');
+  setLean(lean);
+ }catch(e){status('시작 실패: '+e.message);}
+}
+$c('cntGo').onclick=()=>begin(true);
+$c('cntGoPlay').onclick=()=>begin(false);
+$c('cntLeanToggle').onclick=()=>setLean(!C.lean);
+$c('cntDiag').onclick=()=>saveDiag();
+$c('cntHelpBtn').onclick=()=>{const h=$c('cntHelp');h.style.display=h.style.display==='none'?'block':'none';};
+$c('cntBack').onclick=()=>setLean(false);
+const clickIf=id=>{const b=$(id);if(b&&!b.disabled)b.click();else status('정정할 샷이 아직 없습니다');};
+$c('cntFix1').onclick=()=>clickIf('quickScore');
+$c('cntFix0').onclick=()=>clickIf('quickMiss');
+$c('cntFixAI').onclick=()=>clickIf('quickAuto');
+function adj(i,d){C.adj[i]+=d;const s=score();if(C.eV)speak('정정되었습니다. '+say(s[0],s[1]));emit({type:'adjust',score:s,say:'정정되었습니다. '+say(s[0],s[1])});paint();}
+$c('cntA0p').onclick=()=>adj(0,1);$c('cntA0m').onclick=()=>adj(0,-1);$c('cntA1p').onclick=()=>adj(1,1);$c('cntA1m').onclick=()=>adj(1,-1);
+$c('cntFirst').onchange=()=>{const e=$('firstCueRole');if(e){e.value=$c('cntFirst').value;e.dispatchEvent(new Event('change',{bubbles:true}));}try{render();}catch(_){}};
+$c('cntNew').onclick=()=>{if(C.gameNo===0)startGame('수동');else newGame('수동');};
+$c('cntEnd').onclick=()=>endGame('수동');
+$c('cntCsv').onclick=()=>{
+ const rows=[['게임','샷','시작초','종료초','선수','AI판정','최종판정','수동']];
+ const addGame=(g,list)=>{for(const x of list)rows.push([g,x.id,x.start!=null?Number(x.start).toFixed(2):'',x.end!=null?Number(x.end).toFixed(2):'',x.player==null?'':(x.player+1)+'P',x.ai||'',x.final||'',x.manual||'']);};
+ for(const a of C.archive){addGame(a.game,a.shots);rows.push([a.game,'최종','','','',a.score[0]+':'+a.score[1],'','보정 '+a.adj.join('/')]);}
+ const cur=shots.map(x=>({id:x.id,start:x.start,end:x.end,player:(()=>{try{return playerForShot(x);}catch(_){return null;}})(),ai:x.aiInitialResultV43||x.autoResult,final:effectiveResult(x),manual:x.manualResult||null}));
+ addGame(C.gameNo||1,cur);const s=score();rows.push([C.gameNo||1,'현재','','','',s[0]+':'+s[1],'','보정 '+C.adj.join('/')]);
+ const csv='﻿'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='3qAutoscoreALL_games_'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'')+'.csv';
+ document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);};
+document.addEventListener('click',()=>{try{if(!C.unlocked&&'speechSynthesis' in window){C.unlocked=true;const u=new SpeechSynthesisUtterance('');u.volume=0;speechSynthesis.speak(u);}}catch(_){}},{once:true,capture:true});
+// 분석이 시작되면(어떤 시작 버튼이든) 벨 경로를 켜 둔다
+let wasRunning=false;
+setInterval(()=>{
+ if(running&&!wasRunning){wasRunning=true;try{const sE=$('soundEnabled');if(sE)sE.checked=true;}catch(_){}try{armBell();}catch(_){}}
+ if(!running&&wasRunning){wasRunning=false;C.rdy=0;C.rdyLock=false;}
+ if(!inBatch()&&(C.lean||running)){tick();paint();}
+},400);
+let asDone=false,asBusy=false,asTry=0,asNext=0,asKey='';
+function inputKey(){try{return String(typeof fileLoadSerial!=='undefined'?fileLoadSerial:'')+'|'+(v.srcObject?'live':'')+'|'+(v.currentSrc||'');}catch(_){return '';}}
+setInterval(async()=>{   // 입력(파일/카메라)당 딱 한 번만 자동 시작. 끝나거나 중단되면 다시 시작하지 않음
+ try{
+  if(inBatch())return;
+  if(!loaded){asKey='';return;}
+  const k=inputKey();if(k!==asKey){asKey=k;asTry=0;asNext=0;asDone=false;C.safe=false;C.stallRun=0;}
+  if(asDone||!C.as||asBusy||running||dragging||calibrationWorking)return;
+  if(Date.now()<asNext)return;
+  if(!cameraActive&&asTry>=3)return;
+  asBusy=true;asTry++;
+  try{const sE=$('soundEnabled');if(sE)sE.checked=true;}catch(_){}
+  await start();
+  if(running){asDone=true;logLine('자동 분석 시작 — 초구 배치 대기');status('자동 분석 시작됨 · 초구 배치/초구 샷에서 경기 시작');}
+  else asNext=Date.now()+4000;
+ }catch(_){asNext=Date.now()+4000;}
+ asBusy=false;
+},1200);
+const MOB=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent||'')||(navigator.maxTouchPoints>1&&innerWidth<1100);
+C.mobile=MOB;
+if(MOB&&!(function(){try{return 'eM' in JSON.parse(localStorage.getItem(LS)||'{}');}catch(_){return false;}})())C.eM=false;   // 모바일은 처음엔 조기 판정 끔(부하↓)
+setInterval(()=>{if(inBatch()&&C.lean)setLean(false);},1000);
+/* ---------- 부하 보호 ---------- */
+// 보조 감시(배치 확인·조기 무득점)가 메인 스레드를 오래 점유하지 않도록 실행 비용의 8배 이상 간격을 두고(≈11% 이하),
+// 화면 멈춤(메인 스레드 지연)이 반복되면 보조 기능을 자동으로 끈다. 득점 판정(코어)에는 영향 없음.
+const GOV={};
+function gov(key,minGap,fn){
+ const now=performance.now();const g=GOV[key]||(GOV[key]={next:0,cost:0});
+ if(now<g.next||document.hidden||C.safe)return;
+ const t0=performance.now();try{fn();}catch(_){}
+ const c=performance.now()-t0;g.cost=g.cost*.7+c*.3;g.next=performance.now()+Math.max(minGap,g.cost*8);C.cost[key]=Math.round(g.cost*10)/10;}
+let wdLast=performance.now();
+setInterval(()=>{const n=performance.now(),gap=n-wdLast-500;wdLast=n;
+ if(document.hidden||!running||inBatch()){C.stallRun=0;return;}
+ if(gap>1200){C.stall++;C.stallMax=Math.max(C.stallMax,Math.round(gap));C.stallRun++;
+  if(C.stallRun>=3&&!C.safe){C.safe=true;status('PC 부하로 화면이 지연되어 조기 판정·배치 확인을 껐습니다 (득점 판정은 그대로). 다시 켜려면 새로 불러오세요.');logLine('부하 보호: 보조 기능 정지 (지연 '+Math.round(gap)+'ms)');}}
+ else if(gap<300&&C.stallRun>0)C.stallRun--;},500);
+/* 멈춤 진단: 오류 기록 + 영상 진행 정지 감지 + [진단 저장] */
+C.errs=[];C.snap=[];
+window.addEventListener('error',e=>{C.errs.push(new Date().toTimeString().slice(0,8)+' '+String(e.message).slice(0,160));if(C.errs.length>20)C.errs.shift();});
+window.addEventListener('unhandledrejection',e=>{C.errs.push(new Date().toTimeString().slice(0,8)+' promise: '+String(e.reason&&e.reason.message||e.reason).slice(0,160));if(C.errs.length>20)C.errs.shift();});
+let lastT=-1,lastMove=Date.now(),warned=false;
+setInterval(()=>{try{
+ if(!running||document.hidden||inBatch()){lastMove=Date.now();warned=false;return;}
+ const t=v.currentTime;const mem=performance.memory?Math.round(performance.memory.usedJSHeapSize/1048576):null;
+ C.snap.push({at:new Date().toTimeString().slice(0,8),t:+t.toFixed(1),paused:v.paused,shots:shots.length,mem,stall:C.stall,worker:($('workerState').textContent||'').slice(0,40)});if(C.snap.length>40)C.snap.shift();
+ if(Math.abs(t-lastT)>0.05||v.paused&&!cameraActive||v.ended){lastT=t;lastMove=Date.now();warned=false;}
+ else if(Date.now()-lastMove>12000&&!warned){warned=true;logLine('영상 진행 정지 감지 (t='+t.toFixed(1)+'s) — [진단 저장]으로 기록을 보내 주세요');status('영상 진행이 12초 이상 멈췄습니다. 화면 아래 [진단 저장]으로 기록을 저장해 주세요.');}
+}catch(_){}},2000);
+function saveDiag(){const d={app:'3qAutoscoreALL Ver2.00',at:new Date().toISOString(),ua:navigator.userAgent,cores:navigator.hardwareConcurrency,devMem:navigator.deviceMemory,
+ running:!!running,t:v.currentTime,paused:v.paused,ended:v.ended,shots:shots.length,safe:C.safe,stall:C.stall,stallMax:C.stallMax,cost:C.cost,errs:C.errs,log:C.log,snap:C.snap,settings:{mode:C.mode,em:C.em,eM:C.eM,as:C.as,fl:C.fl,players:C.players}};
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,1)],{type:'application/json'}));a.download='3qAutoscoreALL_diag_'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'')+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);}
+setInterval(()=>gov('ws',MOB?900:500,watchSetup),100);
+setInterval(()=>gov('em',MOB?170:100,earlyMiss),50);
+let wl=null;async function wake(){try{if('wakeLock' in navigator&&running&&document.visibilityState==='visible'&&!wl){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null;});}}catch(_){}}
+document.addEventListener('visibilitychange',wake);setInterval(wake,5000);
+linkStart();
+window.cntApi={gov,foulOf,speak,newGame,startGame,endGame,score,setLean,layoutMatch,onShotBell,tick,handleCmd,emit,watchSetup};
+})();
+
+</script>
 <script id="mgAll">
 /* 3Q Score v1.03 ALL · 멀티 게임 순차 검증
    - Calls the existing UI paths only (loadFile, #v58ImgFile, start(0), #stopBtn, #exportBtn).
@@ -17676,10 +18499,10 @@ function v118IsPlacement(s){
   M.dir=null;M.resultDir=null;pair(fs.map(f=>({name:f.name,get:async()=>f})));void runPrecheck();};
 
  /* ---------- saving ---------- */
- const SUM_HEAD=['경기','상태','정답 이닝수','AI 이닝수','일치 이닝','불일치 이닝','정답 최종(1P:2P)','AI 최종(1P:2P)','영상 길이(초)','소요(분)','이닝표 읽기 메모','비고'];
+ const SUM_HEAD=['경기','상태','정답 이닝수','AI 이닝수','일치 이닝','불일치 이닝','정답 최종(1P:2P)','AI 최종(1P:2P)','영상 길이(초)','소요(분)','누락 프레임 합계','누락 샷 수','최대 프레임 간격(ms)','입력 안정도','이닝표 읽기 메모','비고'];
  const DIFF_HEAD=['경기','이닝','정답 1P','AI 1P','정답 2P','AI 2P','샷 번호','시작초','종료초'];
  function summaryRows(){return [SUM_HEAD,...M.games.filter(g=>g.row).map(g=>{const r=g.row;
-  return [g.name,r.status,r.refInnings,r.aiInnings,r.matched,r.mismatch,r.refFinal,r.aiFinal,r.duration,r.minutes,r.memo,r.note];})];}
+  return [g.name,r.status,r.refInnings,r.aiInnings,r.matched,r.mismatch,r.refFinal,r.aiFinal,r.duration,r.minutes,r.gapFrames??'',r.gapShots??'',r.maxGapMs??'',r.inputStability??'',r.memo,r.note];})];}
  function diffRows(){const out=[DIFF_HEAD];for(const g of M.games)if(g.row)for(const d of g.row.diff||[])
   out.push([g.name,d.inning,d.reference1??'',d.ai1??'',d.reference2??'',d.ai2??'',(d.ids||[]).join('|'),d.start??'',d.end??'']);return out;}
  async function writeResult(name,text){
@@ -17882,7 +18705,13 @@ function v118IsPlacement(s){
   g.elapsed=Date.now()-g.t0;
   const notes=[...(g.notes||[])];if(note)notes.push(note);if(g.pointMode==='2점제')notes.unshift('2점제로 판정');
   if(g.check&&g.check.level!=='ok')notes.push('사전 점검: '+g.check.notes.filter(t=>!t.startsWith('✅')).join(' / '));
-  g.row={name:g.name,status:st,refInnings:refN,aiInnings:inn.length,matched,mismatch,refFinal,aiFinal,
+  /* v1.24: input-frame loss of this run (PC/browser timing, NOT the video): sum over the finished shots. Read-only statistics. */
+  let gapFrames=0,gapShots=0,maxGapMs=0,nShots=0;
+  try{for(const s of shots){if(!s||s.active)continue;nShots++;const n=Number(s.v5279GapFrames)||0;if(n>0){gapFrames+=n;gapShots++;}maxGapMs=Math.max(maxGapMs,Number(s.v5279MaxGapMs)||0);}}catch(_){}
+  const perShot=nShots?gapFrames/nShots:0;
+  const inputStability=!nShots?'':perShot<=3?'양호':perShot<=6?'보통':'불안정';
+  if(inputStability==='불안정')notes.push('입력 프레임 누락 많음('+gapFrames+'개) · PC 부하 가능성, 불일치가 있으면 단독 재실행 권장');
+  g.row={name:g.name,status:st,refInnings:refN,aiInnings:inn.length,matched,mismatch,refFinal,aiFinal,gapFrames,gapShots,maxGapMs,inputStability,
    duration:Number.isFinite(g.duration)?+g.duration.toFixed(1):'',minutes:+(g.elapsed/60000).toFixed(1),elapsedMs:g.elapsed,
    memo:g.memo||'',note:notes.join(' / '),diff,savedAt:new Date().toISOString(),app:'3Q Score v1.03 ALL'};
   g.status=st;
@@ -18221,8 +19050,4 @@ function v118IsPlacement(s){
 })();
 </script>
 
-<script>
-/* PWA: 홈 화면 설치 + 오프라인 실행용 서비스워커 등록 */
-if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW 등록 실패',e));});}
-</script>
 </body></html>
