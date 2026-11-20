@@ -291,10 +291,10 @@ main{grid-template-columns:minmax(0,1fr) minmax(360px,1.25fr)}
 .e3 span{font-size:clamp(20px,3.4vh,28px);font-weight:900;line-height:1.25;word-break:keep-all;text-align:center}
 .e3:active:not(:disabled){transform:translateY(2px) scale(.98);box-shadow:0 2px 0 rgba(0,0,0,.12)}
 .e3Pin{background:#e7f1fb;border-color:#5b95c8;color:#164a78}.e3Face{background:#e9f7f1;border-color:#3e9d7a;color:#0b5b45}.e3New{background:#fff4dc;border-color:#e0a040;color:#7a4b00}
-.side.phone .entry3,.side.picking .entry3{display:none}
+.side.phone .entry3,.side.picking .entry3{display:none!important}
 /* v2.11 톡 버튼 없앰 → [안면인식 입장]이 같은 동작 · 세 버튼 세로로 크게 */
 .bellWrap{display:none!important}
-.entry3{display:flex!important;flex-direction:column;gap:clamp(12px,2.2vh,22px);flex:1 1 auto;min-height:0}
+.entry3{display:flex;flex-direction:column;gap:clamp(12px,2.2vh,22px);flex:1 1 auto;min-height:0}
 .e3{flex:1 1 0;min-height:clamp(96px,16vh,200px);flex-direction:row!important;justify-content:flex-start!important;gap:clamp(14px,2.4vw,28px)!important;padding:10px clamp(18px,3vw,36px)!important;border-width:4px!important;border-radius:26px!important}
 .e3 .ic{font-style:normal;font-size:clamp(52px,10vh,96px);line-height:1;flex-shrink:0;width:1.15em;text-align:center}
 .e3 span{flex:1;font-size:clamp(28px,5.2vh,50px)!important;font-weight:900;line-height:1.2;text-align:left!important;word-break:keep-all}
@@ -302,6 +302,8 @@ main{grid-template-columns:minmax(0,1fr) minmax(360px,1.25fr)}
 .e3Face.busy{background:#d3f0e3;border-color:#0b7a55;animation:e3pulse 1.4s ease-in-out infinite}
 @keyframes e3pulse{50%{box-shadow:0 0 0 8px rgba(62,157,122,.25)}}
 .e3:disabled{opacity:.6}
+.e3 span b{font:inherit}
+.side.sess .e3Pin,.side.sess .e3New{display:none}.side.sess .e3Face{flex:0 0 auto;min-height:clamp(96px,15vh,170px);background:#fff;border-color:#c9d2dc;color:#334155;animation:none}
 @media (orientation:portrait){main{grid-template-columns:1fr!important}.entry3{flex:1 1 100%;align-self:flex-start}.e3{min-height:clamp(90px,11vh,170px)}.entry3{flex:1 1 100%!important}.side .result{flex:1 1 100%!important}.bellWrap{flex:1 1 100%;padding:0}.bellWrap .bell{top:0!important;margin:10px auto!important}}
 /* ===== 신규 등록: 닉네임 칸 + 취소·다음 ===== */
 .nameRow{display:flex;gap:10px;align-items:stretch}.nameRow .bigInput{flex:0 1 auto;width:min(11.5em,100%);margin:0}
@@ -337,7 +339,7 @@ main{grid-template-columns:minmax(0,1fr) minmax(360px,1.25fr)}
 </div>
 <div class="side">
  <div class="result" aria-live="polite"><strong id="resultName">입장하시려면 선택해 주세요</strong><p id="resultId"></p><div class="phase" id="phaseBar" hidden></div></div>
- <div class="entry3" id="entry3"><button type="button" class="e3 e3Pin" id="btnPin2"><i class="ic" aria-hidden="true">🔢</i><span>전화번호 뒷자리로 입장</span></button><button type="button" class="e3 e3Face" id="btnFace"><i class="ic" aria-hidden="true">🙂</i><span>안면인식 입장<small id="faceSub"></small></span></button><button type="button" class="e3 e3New" id="btnNew2"><i class="ic" aria-hidden="true">🙋</i><span>신규 등록할게요</span></button></div>
+ <div class="entry3" id="entry3"><button type="button" class="e3 e3Pin" id="btnPin2"><i class="ic" aria-hidden="true">🔢</i><span>전화번호 뒷자리로 입장</span></button><button type="button" class="e3 e3Face" id="btnFace"><i class="ic" aria-hidden="true" id="faceIc">🙂</i><span><b id="faceLab">안면인식 입장</b><small id="faceSub"></small></span></button><button type="button" class="e3 e3New" id="btnNew2"><i class="ic" aria-hidden="true">🙋</i><span>신규 등록할게요</span></button></div>
  <section class="card pickCard" id="pickCard" hidden>
   <div class="row" style="justify-content:space-between"><h2 style="margin:0" id="pickTitle">혹시 이분이신가요?</h2><button id="pickCancel" type="button">취소</button></div>
   <p class="hint" id="pickHint" style="margin:6px 0 10px">얼굴이 비슷한 분이 있습니다. 본인 이름을 눌러 주세요.</p>
@@ -358,7 +360,7 @@ main{grid-template-columns:minmax(0,1fr) minmax(360px,1.25fr)}
 
 <!-- ---------- 설정 페이지 (⚙) ---------- -->
 <section id="settingsPage" hidden aria-label="설정">
- <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v2.11</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
+ <header><div class="brand"><h1>⚙ 설정 <span class="verBadge" id="verBadge">v2.12</span></h1></div><div class="hdrRight"><button id="closeSettings" class="primary" type="button">닫고 입장 화면으로</button></div></header>
  <div class="spBody">
   <section class="card"><h2>카메라</h2>
    <div class="row"><button id="restart" type="button">카메라 재시작</button><select id="facing" aria-label="카메라 방향"><option value="user">전면 카메라</option><option value="environment">후면 카메라</option></select></div>
@@ -762,7 +764,7 @@ const Ntfy=(()=>{
 <script>
 'use strict';
 const $=id=>document.getElementById(id),video=$('video'),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const VERSION='2.11',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
+const VERSION='2.12',PIPE='v3-align150',VISIT_KEY='q24Visits',PIN_KEY='q24SettingsPin',REMOTE_KEY='q24Remote';
 const LIB='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODEL_URL='https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 /* 표준 영역 · 품질 (얼굴 폭 ÷ 영상 짧은 변) */
@@ -1331,7 +1333,7 @@ function updateBell(){
  const left=session?Math.max(0,Math.ceil((session.until-Date.now())/1000)):0;
  if(session){$('bellText').textContent={scan:'확인 중',choose:'선택 중',phone:'번호 입력',verify:'확인 중',enroll:'등록 촬영',register:'정보 입력',newscan:'신규 촬영','enroll-confirm':'확인 필요'}[session.mode]||'진행 중';$('bellSub').textContent=left+'초 · 누르면 취소'}
  else{$('bellText').textContent='톡';$('bellSub').textContent=canStart?'눌러서 입장':(!stream?'카메라 준비 중':!ready?'모델 준비 중':'잠시만요')}
- const f=$('btnFace');if(f){const fs=$('faceSub');f.disabled=b.disabled;f.classList.toggle('busy',!!session&&session.mode!=='phone');fs.textContent=session?($('bellText').textContent+' · '+left+'초 · 누르면 취소'):canStart?'':$('bellSub').textContent}
+ const f=$('btnFace');if(f){const sd=document.querySelector('.side'),on=!!session&&session.mode!=='phone';sd.classList.toggle('sess',on);f.disabled=b.disabled;f.classList.toggle('busy',on);$('faceIc').textContent=on?'✋':'🙂';$('faceLab').textContent=on?'취소하기':'안면인식 입장';$('faceSub').textContent=on?$('bellText').textContent+' · '+left+'초 남음':canStart?'':$('bellSub').textContent}
 }
 function idleSoon(ms=7000){clearTimeout(idleTimer);idleTimer=setTimeout(()=>{if(!session){showIdle();clearMetrics()}},ms)}
 /* 가족은 성이 같으므로 아바타에는 이름(성 제외)을 표시 */
