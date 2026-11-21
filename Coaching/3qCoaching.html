@@ -191,6 +191,8 @@ body.mobile .btns.lb{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 body.mobile .btns.lb .file label{width:100%}
 body.mobile .loader-body{padding:10px}
 body.mobile .queue{font-size:12px}
+.queue button.attach{min-height:26px;padding:1px 7px;margin-left:4px;font-size:12px}
+.scanprev{position:fixed;right:8px;bottom:8px;width:128px;height:72px;z-index:30;border:1px solid #3a5568;border-radius:8px;background:#000;pointer-events:none}
 </style></head><body>
 <div class="wrap">
 <header id="top">
@@ -264,6 +266,7 @@ body.mobile .queue{font-size:12px}
     <div class="file"><label>🗂 여러 파일 선택<input id="filesPick" type="file" multiple accept="video/*,image/png,image/jpeg"></label></div>
     <button id="startBtn" class="primary" disabled>▶ 순서대로 분석·학습</button>
     <button id="stopBtn" disabled>■ 중지</button>
+    <input id="attachPick" type="file" accept="image/*" hidden>
    </div>
    <div class="row"><span class="hint">새 영상 스캔 속도</span><select id="scanRate"><option value="1">1× 정밀</option><option value="2" selected>2×</option><option value="4">4× 빠름(정확도↓)</option></select>
     <span class="hint">1P 수구</span><select id="cue1p"><option value="0">흰 공</option><option value="1">노란공</option></select></div>
@@ -1236,8 +1239,8 @@ function createPipeline(P,L){
   if(!a.score&&a.fit){
    if(a.fix){
     const tips=[];
-    const dc=(a.fix.cut??0)-(a.fit.cut??0);
-    if(Math.abs(dc)>=.04&&a.fix.cut!=null&&a.fit.cut!=null)tips.push(`두께를 ${frac8(a.fit.cut)}에서 ${frac8(a.fix.cut)}로 ${dc>0?'더 두껍게':'더 얇게'}`);
+    const from=a.obs.cut??a.fit.cut,dc=(a.fix.cut??0)-(from??0);
+    if(a.fix.cut!=null&&from!=null&&frac8(a.fix.cut)!==frac8(from))tips.push(`두께를 ${frac8(from)}에서 ${frac8(a.fix.cut)}로 ${dc>0?'더 두껍게':'더 얇게'}`);
     const dt=a.fix.shot.tipX-a.fit.shot.tipX;if(Math.abs(dt)>=.06)tips.push(`회전을 ${ro(tipKo(a.fix.shot))} ${dt*(a.fit.shot.tipX>=0?1:-1)>0?'더 많이':'조금 덜'}`);
     const ds=a.fix.shot.speed/a.fit.shot.speed-1;if(Math.abs(ds)>=.05)tips.push(`세기를 ${ds>0?'조금 더 강하게':'조금 더 부드럽게'}`);
     if(a.fix.first&&a.fit.first&&a.fix.first.num===a.fit.first.num){const dp=a.fix.first.pt-a.fit.first.pt;if(Math.abs(dp)>=.15)tips.push(`${a.fix.first.num}번 쿠션 도착점을 ${a.fit.first.pt.toFixed(1)}에서 ${a.fix.first.pt.toFixed(1)}포인트로`);}
@@ -1524,39 +1527,70 @@ function setProg(p){$('prog').style.width=clamp(p,0,100).toFixed(1)+'%';}
 /* ================= batch loader: folder / many files, paired by file name ================= */
 const GAMES=[];
 const VID=/\.(mp4|m4v|mov|webm|mkv)$/i,IMG=/\.(png|jpe?g)$/i;
-const keyOf=f=>f.name.replace(/\.[^.]+$/,'').trim().toLowerCase();
+// "4417 (1).png", "4417(2).mp4" (Android download duplicates) pair with "4417"
+const keyOf=f=>f.name.replace(/\.[^.]+$/,'').replace(/\s*\(\d+\)$/,'').trim().toLowerCase();
 const natural=(a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'});
-async function addFiles(list){
+// Android pickers may drop the extension or the MIME type: fall back to the file's first bytes
+async function kindOf(f){
+ if(VID.test(f.name)||/^video\//.test(f.type))return 'v';
+ if(IMG.test(f.name)||/^image\/(png|jpe?g)/.test(f.type))return 'i';
+ try{const b=new Uint8Array(await f.slice(0,12).arrayBuffer());
+  if(b[0]===0x89&&b[1]===0x50&&b[2]===0x4E&&b[3]===0x47)return 'i';
+  if(b[0]===0xFF&&b[1]===0xD8)return 'i';
+  if(b[4]===0x66&&b[5]===0x74&&b[6]===0x79&&b[7]===0x70)return 'v'; // ....ftyp (mp4/mov)
+  if(b[0]===0x1A&&b[1]===0x45&&b[2]===0xDF&&b[3]===0xA3)return 'v'; // webm/mkv
+ }catch(e){}
+ return null;
+}
+let LOADING=null;
+function addFiles(list){const arr=[...list];LOADING=(LOADING||Promise.resolve()).then(()=>addFilesNow(arr)).catch(e=>{console.error(e);toast('파일을 읽는 중 오류: '+(e.message||e));});return LOADING;}
+async function addFilesNow(list){
  const files=[...list].filter(f=>!/(^|\/)(\.|RESULT\/)/i.test(f.webkitRelativePath||''));
- let nv=0,ni=0;
+ if(!files.length){toast(DEV.mobile?'선택된 파일이 없어요. 이 기기에서 폴더 선택이 안 되면 🗂 여러 파일 선택을 쓰세요.':'선택된 파일이 없어요.');return;}
+ let nv=0,ni=0;const newV=[],newI=[];
  for(const f of files){
-  const isV=VID.test(f.name)||/^video\//.test(f.type),isI=IMG.test(f.name);if(!isV&&!isI)continue;
-  const k=keyOf(f);let g=GAMES.find(x=>x.key===k);
-  if(!g){g={key:k,name:k,video:null,png:null,innings:null,ocr:null,status:'대기',G:null,cue1p:0};GAMES.push(g);}
-  if(isV){g.video=f;g.name=f.name;nv++;}else{g.png=f;g.innings=null;g.ocr=null;ni++;}
+  const k=await kindOf(f);if(!k)continue;
+  const key=keyOf(f);let g=GAMES.find(x=>x.key===key);
+  if(!g){g={key,name:key,video:null,png:null,innings:null,ocr:null,status:'대기',G:null,cue1p:0};GAMES.push(g);}
+  if(k==='v'){g.video=f;g.name=f.name;nv++;newV.push(g);}else{g.png=f;g.innings=null;g.ocr=null;ni++;newI.push(g);}
  }
- // drop image-only entries (no video to analyse)
+ // names did not match (typical when a phone gallery renames files): pair the leftovers in selection order
+ const loneV=newV.filter(g=>!g.png),loneI=newI.filter(g=>!g.video);
+ if(loneV.length&&loneV.length===loneI.length){
+  loneV.forEach((g,i)=>{const im=loneI[i];g.png=im.png;g.pairNote=true;GAMES.splice(GAMES.indexOf(im),1);});
+  toast('파일 이름이 달라 선택한 순서대로 영상과 이닝표를 짝지었어요. 틀리면 각 줄의 📎로 이닝표를 바꾸세요.');
+ }
  for(let i=GAMES.length-1;i>=0;i--)if(!GAMES[i].video&&!GAMES[i].png)GAMES.splice(i,1);
  GAMES.sort((a,b)=>natural(a.key,b.key));
- $('anaStatus').textContent=`영상 ${nv}개 · 이닝표 ${ni}개를 찾았어요. 이닝표를 읽는 중…`;renderQueue();
- // read every innings image right away
- for(const g of GAMES){if(g.png&&!g.innings&&!g.ocr){g.ocr={busy:true};renderQueue();await readPng(g);renderQueue();if(S.game===g){S.innings=g.innings||[];renderInnings();if(S.G)relabel();}}}
+ // videos can be analysed right away; images and lengths are read in the background
+ $('startBtn').disabled=!GAMES.some(g=>g.video&&!g.G);
+ $('anaStatus').textContent=`영상 ${nv}개 · 이닝표 ${ni}개를 찾았어요. 이닝표를 읽는 중…`;renderQueue();refreshGameSel();
+ if(!S.game){const v=GAMES.find(g=>g.video);if(v)selectGame(v.key,false);}
+ for(const g of GAMES){if(g.png&&!g.innings&&!g.ocr){g.ocr={busy:true};renderQueue();await readPng(g);renderQueue();if(S.game===g){S.innings=g.innings||[];selectGame(g.key,false);}}}
  for(const g of GAMES)if(g.video&&g.duration==null){await probe(g);renderQueue();}
  const vids=GAMES.filter(g=>g.video);
  $('startBtn').disabled=!vids.some(g=>!g.G);
- $('anaStatus').textContent=`경기 ${vids.length}개 준비 · 이닝표 ${GAMES.filter(g=>g.innings).length}개 읽음${GAMES.some(g=>g.video&&!g.png)?' · 이닝표 없는 경기는 영상 판정만 사용':''}. ▶ 순서대로 분석·학습을 누르세요.`;
- if(!S.game&&vids[0])selectGame(vids[0].key,false);
+ $('anaStatus').textContent=vids.length?`경기 ${vids.length}개 준비 · 이닝표 ${GAMES.filter(g=>g.innings).length}개 읽음${GAMES.some(g=>g.video&&!g.png&&!(g.ocr&&g.ocr.embedded))?' · 이닝표 없는 경기는 영상 판정만 사용':''}. ▶ 순서대로 분석·학습을 누르세요.`:'영상이 없어요. 영상(mp4)과 이닝표(png)를 함께 고르세요.';
  refreshGameSel();
 }
 async function readPng(g){
  try{const r=await InningOCR.read(g.png);g.innings=r.rows.map(([,a,b])=>({a,b}));const last=g.innings[g.innings.length-1];if(last&&last.b===0&&last.a>0)last.b=null;g.ocr={totals:r.totals,warn:r.warn,finalOk:r.finalOk};}
  catch(err){g.innings=null;g.ocr={err:String(err.message||err)};}
 }
+// video length/size; on phones a detached element may never report metadata, so attach it and time out
 function probe(g){
- return new Promise(res=>{g.url=g.url||URL.createObjectURL(g.video);const v=document.createElement('video');v.preload='metadata';v.muted=true;v.src=g.url;
-  v.onloadedmetadata=()=>{g.duration=v.duration;g.w=v.videoWidth;g.h=v.videoHeight;g.embedId=null;for(const [id,e] of Object.entries(EMBED))if(Math.abs(e.duration-g.duration)<1.5)g.embedId=id;
-   if(g.embedId&&!g.png){g.innings=EMBED[g.embedId].innings.map(r=>({...r}));g.ocr={embedded:true};}v.removeAttribute('src');v.load();res();};
-  v.onerror=()=>{g.duration=0;g.status='❌ 영상 열기 실패';res();};});
+ return new Promise(res=>{
+  g.url=g.url||URL.createObjectURL(g.video);const v=document.createElement('video');v.preload='metadata';v.muted=true;v.playsInline=true;
+  v.style.cssText='position:fixed;width:2px;height:2px;opacity:0;pointer-events:none;left:0;top:0';document.body.append(v);
+  let done=false;const end=ok=>{if(done)return;done=true;clearTimeout(tm);
+   if(ok&&isFinite(v.duration)){g.duration=v.duration;g.w=v.videoWidth;g.h=v.videoHeight;g.embedId=null;for(const [id,e] of Object.entries(EMBED))if(Math.abs(e.duration-g.duration)<1.5)g.embedId=id;
+    if(g.embedId&&!g.png){g.innings=EMBED[g.embedId].innings.map(r=>({...r}));g.ocr={embedded:true};}}
+   else if(g.duration==null)g.duration=0;
+   v.removeAttribute('src');v.load();v.remove();res();};
+  const tm=setTimeout(()=>end(false),12000);
+  v.onloadedmetadata=()=>end(true);v.onerror=()=>{g.status='❌ 영상 열기 실패';end(false);};
+  v.src=g.url;v.load();
+ });
 }
 function innCell(g){
  if(!g.png&&g.ocr&&g.ocr.embedded)return `<span class="ok">내장 이닝표 ${g.innings.length}이닝</span>`;
@@ -1569,13 +1603,17 @@ function innCell(g){
 function renderQueue(){
  const t=$('queue');const vids=GAMES.filter(g=>g.video);
  if(!GAMES.length){t.innerHTML='';return;}
- t.innerHTML='<tr><th>#</th><th>경기</th><th>이닝표</th><th>길이</th><th>분석</th><th></th></tr>'+GAMES.map((g,i)=>`<tr class="${S.game===g?'cur':''}"><td>${i+1}</td><td>${g.name}${g.video?'':' <span class="warn">(영상 없음)</span>'}</td><td>${innCell(g)}</td><td>${g.duration?fmt(g.duration):'—'}</td><td class="${g.G?'ok':/❌/.test(g.status)?'bad':''}">${g.status}</td><td>${g.video?`<button data-k="${g.key}" ${g.G?'':'disabled'}>코칭</button>`:''}</td></tr>`).join('');
+ t.innerHTML='<tr><th>#</th><th>경기</th><th>이닝표</th><th>길이</th><th>분석</th><th></th></tr>'+GAMES.map((g,i)=>`<tr class="${S.game===g?'cur':''}"><td>${i+1}</td><td>${g.name}${g.video?'':' <span class="warn">(영상 없음)</span>'}</td><td>${innCell(g)}${g.pairNote?' <span class="hint">(순서로 짝지음)</span>':''} ${g.video?`<button class="attach" data-a="${g.key}" title="이닝표 이미지 붙이기">📎</button>`:''}</td><td>${g.duration?fmt(g.duration):'—'}</td><td class="${g.G?'ok':/❌/.test(g.status)?'bad':''}">${g.status}</td><td>${g.video?`<button data-k="${g.key}" ${g.G?'':'disabled'}>코칭</button>`:''}</td></tr>`).join('');
  t.querySelectorAll('button[data-k]').forEach(b=>b.onclick=()=>selectGame(b.dataset.k,true));
+ t.querySelectorAll('button[data-a]').forEach(b=>b.onclick=()=>{ATTACH=b.dataset.a;$('attachPick').click();});
 }
 function refreshGameSel(){
  const sel=$('gameSel'),vids=GAMES.filter(g=>g.video);sel.disabled=!vids.length;
  sel.innerHTML=vids.map(g=>`<option value="${g.key}" ${S.game===g?'selected':''}>${g.name}${g.G?' · '+g.G.shots.length+'샷':' · 분석 전'}</option>`).join('')||'<option>경기를 불러오세요</option>';
 }
+let ATTACH=null;
+$('attachPick').onchange=async e=>{const f=e.target.files[0];e.target.value='';const g=GAMES.find(x=>x.key===ATTACH);if(!f||!g)return;
+ g.png=f;g.pairNote=false;g.innings=null;g.ocr={busy:true};renderQueue();await readPng(g);renderQueue();if(S.game===g)selectGame(g.key,false);toast(g.ocr.err?'이닝표를 읽지 못했어요.':`이닝표 ${g.innings.length}이닝을 붙였어요.`);};
 $('gameSel').onchange=()=>selectGame($('gameSel').value,true);
 $('dirPick').onchange=e=>{addFiles(e.target.files);e.target.value='';};
 $('filesPick').onchange=e=>{addFiles(e.target.files);e.target.value='';};
@@ -1598,9 +1636,13 @@ let STOP=false;
 $('stopBtn').onclick=()=>{STOP=true;$('anaStatus').textContent='현재 경기를 마치면 멈춥니다(스캔 중이면 바로 중지)…';};
 $('startBtn').onclick=async()=>{
  STOP=false;$('startBtn').disabled=true;$('stopBtn').disabled=false;$('dirPick').disabled=$('filesPick').disabled=true;
+ if(LOADING){$('anaStatus').textContent='이닝표·영상 정보를 마저 읽는 중…';await LOADING;}
+ let wake=null;try{wake=await navigator.wakeLock?.request('screen');}catch(e){}
+ if(DEV.mobile)toast('분석 중에는 화면을 켜 두고 이 탭을 열어 두세요 (오른쪽 아래 작은 화면이 스캔 중인 영상입니다).');
  const todo=GAMES.filter(g=>g.video&&!g.G);let k=0;
  for(const g of todo){
   if(STOP)break;k++;g.status='분석 중';renderQueue();
+  if(!g.duration){await probe(g);if(!g.duration){g.status='❌ 영상 정보를 읽지 못함';renderQueue();continue;}}
   try{await analyzeGame(g,(p,msg)=>{setProg(p);$('anaStatus').textContent=`[${k}/${todo.length}] ${g.name} · ${msg}`;g.status=msg;renderQueue();});
    g.status=`✅ ${g.G.shots.length}샷`;if(!S.G||S.game===g)selectGame(g.key,false);}
   catch(e){console.error(e);g.status='❌ '+(e.message||e);}
@@ -1608,6 +1650,7 @@ $('startBtn').onclick=async()=>{
  }
  $('anaStatus').textContent=STOP?'중지했습니다. 다시 누르면 남은 경기부터 이어서 분석합니다.':`분석·학습 완료 · ${GAMES.filter(g=>g.G).length}경기. 위쪽 ‘코칭 경기’에서 경기를 고르세요.`;
  if(!STOP&&!DEV.mobile&&!$('loaderBody').classList.contains('folded'))$('loaderFold').click();
+ try{wake&&wake.release();}catch(e){}
  $('stopBtn').disabled=true;$('dirPick').disabled=$('filesPick').disabled=false;$('startBtn').disabled=!GAMES.some(g=>g.video&&!g.G);setProg(100);
 };
 function relabel(first){
@@ -1648,12 +1691,14 @@ function detectBalls(img,W,H,ox,oy,sc,prev){ // img: ImageData of the crop at sc
 }
 function scanVideo(g,onProg){
  return new Promise((resolve,reject)=>{
-  const v=document.createElement('video');v.muted=true;v.playsInline=true;v.src=g.url;v.preload='auto';
+  const det=[];let prev=[null,null,null],stopped=false;
+  // must stay visible: phone Chrome pauses muted videos that are off-screen or hidden
+  const v=document.createElement('video');v.muted=true;v.playsInline=true;v.preload='auto';v.className='scanprev';document.body.append(v);v.src=g.url;
+  const onVis=()=>{if(!document.hidden&&!v.ended&&!stopped)v.play().catch(()=>{});};document.addEventListener('visibilitychange',onVis);
   const VW=g.w||1280,VH=g.h||720,cal=defaultCalib(VW,VH);
   const sc=Math.min(1,(DEV.scanScale*1280)/VW);const pad=12;
   const ox=Math.max(0,cal.L-pad),oy=Math.max(0,cal.T-pad),cw=Math.min(VW,cal.R+pad)-ox,ch=Math.min(VH,cal.B+pad)-oy;
   const W=Math.round(cw*sc),H=Math.round(ch*sc),c=document.createElement('canvas');c.width=W;c.height=H;const cx=c.getContext('2d',{willReadFrequently:true});
-  const det=[];let prev=[null,null,null],stopped=false;
   const step=(now,meta)=>{
    if(stopped)return;const t=meta?meta.mediaTime:v.currentTime;
    cx.drawImage(v,ox,oy,cw,ch,0,0,W,H);const d=detectBalls(cx.getImageData(0,0,W,H),W,H,ox,oy,sc,prev);prev=d.map((q,i)=>q||prev[i]);det.push({t,d});
@@ -1661,7 +1706,7 @@ function scanVideo(g,onProg){
    if(v.ended||STOP){v.pause();finish();return;}
    if(v.requestVideoFrameCallback)v.requestVideoFrameCallback(step);
   };
-  const finish=()=>{if(stopped)return;stopped=true;resolve({det,cal});};
+  const finish=()=>{if(stopped)return;stopped=true;document.removeEventListener('visibilitychange',onVis);v.pause();v.removeAttribute('src');v.load();v.remove();resolve({det,cal});};
   v.onended=finish;v.onerror=()=>reject(new Error('영상을 읽을 수 없습니다'));
   v.onloadeddata=()=>{v.playbackRate=+$('scanRate').value;v.play().then(()=>{if(v.requestVideoFrameCallback)v.requestVideoFrameCallback(step);else{const iv=setInterval(()=>{if(v.ended||stopped){clearInterval(iv);finish();return;}step(0,null);},33);}}).catch(reject);};
  });
