@@ -562,7 +562,7 @@ header h1{margin:0}
 }
 </style>
 </head><body><main>
-<header><div><h1>3Q Score <span class="v3qVer">Ver2.00 <small style="font-size:11px;opacity:.75">b1323</small></span><span class="sub">Ver2.00 ALL</span></h1><div class="sub">AI가 수구·쿠션·목적구·득점·이닝을 독립 판정합니다. 득점/무득점 수동 입력은 분석 중에도 가능하며 수동 입력이 항상 우선합니다.</div></div><div class="status-chip" id="mode">영상 선택 대기</div></header>
+<header><div><h1>3Q Score <span class="v3qVer">Ver2.00 <small style="font-size:11px;opacity:.75">b1324</small></span><span class="sub">Ver2.00 ALL</span></h1><div class="sub">AI가 수구·쿠션·목적구·득점·이닝을 독립 판정합니다. 득점/무득점 수동 입력은 분석 중에도 가능하며 수동 입력이 항상 우선합니다.</div></div><div class="status-chip" id="mode">영상 선택 대기</div></header>
 <div class="layout"><section class="panel"><div class="head video-head"><div class="video-head-left"><h2>경기 영상</h2><span aria-live="polite" class="video-status" id="videoInfo" role="status">MP4 / CAMERA</span></div><span class="sub" id="fileName">MP4 또는 카메라를 선택하세요</span></div>
 <div class="stage" id="stage"><video id="video" muted="" playsinline="" preload="metadata"></video><canvas id="accuracyPreview"></canvas><canvas id="overlay"></canvas></div>
 <div class="corner-instructions" hidden="" id="dragNote">안쪽 쿠션 접촉선의 네 모서리 ①→④를 손가락/마우스로 끌어 맞춘 뒤 [보정 완료]를 누르세요.</div>
@@ -18440,6 +18440,23 @@ linkStart();
 window.cntApi={gov,foulOf,speak,newGame,startGame,endGame,score,setLean,layoutMatch,onShotBell,tick,handleCmd,emit,watchSetup};
 })();
 
+/* b1324: 샷 판정이 끝난 뒤(움직이는 샷이 없음) 감속된 재생속도를 즉시 1배속으로 복귀 — 속도 조절기(govFactor)만 건드리며 판정·영상 처리 데이터는 건드리지 않음 */
+(function(){
+ let idleN=0;
+ function idleNow(){try{if(typeof shots!=='undefined'&&shots.some(s=>s&&s.active))return false;if(typeof currentShot!=='undefined'&&currentShot&&currentShot.active)return false;return true;}catch(_){return false;}}
+ setInterval(()=>{try{
+  if(document.hidden||!running||paused||cameraActive||v.ended){idleN=0;return;}
+  if(typeof govMode!=='undefined'&&govMode==='screen'){idleN=0;return;}
+  if(!idleNow()){idleN=0;return;}
+  if(++idleN<2)return;                         // 0.8초 연속으로 움직임 없음
+  if(typeof tabletQueue!=='undefined'&&tabletQueue.length>3)return;   // 대기열이 쌓여 있으면 복귀 보류
+  let ch=false;
+  if(typeof govFactor!=='undefined'&&govFactor<1){govFactor=1;ch=true;}
+  if(ch){try{govLossWin=[];govClean=0;}catch(_){}try{v117LossWin=[];v117DeepFactor=1;v117Cap=1;}catch(_){}
+   try{const r=govBaseRate();if(Math.abs(v.playbackRate-r)>.01)v.playbackRate=r;}catch(_){}}
+ }catch(_){}},400);
+})();
+
 </script>
 <script id="cntClass">
 /* Ver2.00 샷 종류 분류 + 선수별 집계 (읽기 전용 · 판정부 무변경)
@@ -18725,7 +18742,7 @@ setInterval(()=>{if(!inBatch()&&$('clsBody').style.display!=='none')paintUI();},
 const css2=document.createElement('style');css2.textContent=`#clsLive{margin:8px 0;padding:8px 12px;border:1px solid #2a3a4a;border-radius:10px;background:#0f1b27;color:#dfeaf3}#clsLive .h{display:flex;gap:10px;align-items:center;font-size:12px;color:#9fb6c8}#clsLive .h b{color:#dfeaf3;font-size:13px}#clsLive .h button{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid #2a3a4a;background:#16283a;color:#cfe3f3;cursor:pointer}#clsLiveBig{font-size:18px;font-weight:700;margin:4px 0;line-height:1.35;overflow-wrap:anywhere;word-break:keep-all}@media(max-width:700px){#clsLive{padding:6px 8px;margin:6px 0}#clsLiveBig{font-size:14px;margin:3px 0}#clsLiveBig span{display:inline}#clsLive .h{font-size:11px;gap:6px}#clsLive .h button{padding:5px 10px;min-height:32px}}#clsLiveBig .ok{color:#6fe3a0}#clsLiveBig .ng{color:#ff8c8c}#clsLiveList{font-size:12px;line-height:1.6;color:#b9cddc}#clsLiveList .ok{color:#6fe3a0}#clsLiveList .ng{color:#ff9a9a}#clsEndSum{margin-top:6px;border-top:1px solid #2a3a4a;padding-top:6px}`;
 document.head.appendChild(css2);
 const live=document.createElement('div');live.id='clsLive';
-live.innerHTML='<div class="h"><b>샷 기술</b><span style="font-size:10px;color:#6f8799">b1323</span><button type="button" id="clsLiveEnd">경기 집계 ▾</button></div><div id="clsLiveBig">—</div><div id="clsEndSum" style="display:none"></div>';
+live.innerHTML='<div class="h"><b>샷 기술</b><span style="font-size:10px;color:#6f8799">b1324</span><button type="button" id="clsLiveEnd">경기 집계 ▾</button></div><div id="clsLiveBig">—</div><div id="clsEndSum" style="display:none"></div>';
 (function place(){const a=document.getElementById('v57Panel')||document.getElementById('v57Log');
  if(a&&a.parentNode){a.parentNode.insertBefore(live,a);}
  else{const c=document.querySelector('.stage,.video-wrap,#stage,video');if(c&&c.parentNode)c.parentNode.insertBefore(live,c.nextSibling);else document.body.appendChild(live);}
