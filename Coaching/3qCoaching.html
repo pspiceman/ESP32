@@ -1,6 +1,12 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark"><meta name="theme-color" content="#0a1018"><title>3쿠션 영상 코칭 · 누적 학습형</title>
+<link rel="manifest" href="./3qCoaching.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./coach-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./coach-512.png">
+<link rel="apple-touch-icon" href="./coach-192.png">
+<meta name="application-name" content="3Q 코칭"><meta name="apple-mobile-web-app-title" content="3Q 코칭">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
 <style>
 :root{--bg:#0a1018;--panel:#121c28;--panel2:#1a2838;--line:#283a4f;--text:#edf2fa;--muted:#9dadc3;--dim:#71839a;--mint:#5fe3b4;--mint-d:#163d31;--amber:#f5c16a;--amber-d:#3d3020;--red:#f37b84;--red-d:#3b2027;--blue:#8db9fa;--blue-d:#1b2d48}
 *{box-sizing:border-box}
@@ -259,7 +265,7 @@ body.mobile .queue{font-size:12px}
     <button id="startBtn" class="primary" disabled>▶ 순서대로 분석·학습</button>
     <button id="stopBtn" disabled>■ 중지</button>
    </div>
-   <div class="row"><span class="hint">새 영상 스캔 속도</span><select id="scanRate"><option value="1">1× 정밀</option><option value="2" selected>2×</option><option value="4">4× 빠름</option></select>
+   <div class="row"><span class="hint">새 영상 스캔 속도</span><select id="scanRate"><option value="1">1× 정밀</option><option value="2" selected>2×</option><option value="4">4× 빠름(정확도↓)</option></select>
     <span class="hint">1P 수구</span><select id="cue1p"><option value="0">흰 공</option><option value="1">노란공</option></select></div>
    <div class="progress"><div id="prog"></div></div>
    <p class="hint" id="anaStatus">폴더를 고르면 하위 폴더까지 영상과 이닝표를 찾아 같은 이름끼리 짝짓고, 이닝표 이미지는 바로 숫자로 읽습니다.</p>
@@ -1009,7 +1015,9 @@ function createAnalyzer(opts={}){
   const n=P.length,S=speeds(P,fps),M=movingMask(S,fps);
   // cut = 2+ balls jump in one frame
   const cut=new Array(n).fill(false);
-  for(let i=1;i<n;i++){let j=0;for(let b=0;b<3;b++)if(dist(P[i][b],P[i-1][b])>cfg.cutJump)j++;if(j>=2)cut[i]=true;}
+  // edit cut = 2+ balls that were standing still jump at once (real motion builds up from rest; at low
+  // frame rates a rolling ball can move 40 cm between samples, so the jump alone is not enough)
+  for(let i=2;i<n;i++){let j=0;for(let b=0;b<3;b++){const still=dist(P[i-1][b],P[i-2][b])<.01;if(still&&dist(P[i][b],P[i-1][b])>Math.max(cfg.cutJump,1.2/fps))j++;}if(j>=2)cut[i]=true;}
   const anyMove=i=>M[0][i]||M[1][i]||M[2][i];
   const shots=[];let i=0;const restN=Math.round(cfg.restSec*fps),endN=Math.round(cfg.endRestSec*fps);
   let restRun=0;
@@ -1025,7 +1033,7 @@ function createAnalyzer(opts={}){
    let first=Infinity;for(let b=0;b<3;b++){for(let k=s;k<Math.min(n,s+8);k++)if(M[b][k]){if(k<first){first=k;cue=b;}break;}}
    let e=s,still=0,endedByCut=false;
    while(e<n){if(cut[e]){endedByCut=true;break;}if(anyMove(e)){still=0;}else{still++;if(still>=endN)break;}e++;}
-   const end=Math.max(s+1,e-(endedByCut?0:still));
+   const end=Math.min(n-1,Math.max(s+1,e-(endedByCut?0:still)));
    restRun=0;i=e;
    if((end-s)/fps<cfg.minShotSec||cue===2)continue;
    const pre=[0,1,2].map(b=>{const xs=[],ys=[];for(let k=Math.max(0,s-10);k<s-1;k++)if(P[k][b]){xs.push(P[k][b][0]);ys.push(P[k][b][1]);}xs.sort((a,c)=>a-c);ys.sort((a,c)=>a-c);return xs.length?[xs[xs.length>>1],ys[ys.length>>1]]:P[s][b];});
@@ -1678,8 +1686,7 @@ async function analyzeGame(g,onP){
  if(STOP&&det.length<50)throw new Error('중지됨');
  const cal=refineCalib(det,c0);
  const toM=q=>q?[+(((q[0]-cal.L)/(cal.R-cal.L))*2.84).toFixed(4),+(((q[1]-cal.T)/(cal.B-cal.T))*1.42).toFixed(4)]:null;
- const fps=Math.max(8,Math.round(det.length/(det.length>1?det[det.length-1].t-det[0].t:1)));
- const frames=det.map(f=>({t:f.t,p:f.d.map(toM)}));
+ const {frames,fps}=resampleDet(det,toM);
  onP(61,'② 샷 분리 · 이닝표 맞추기');await new Promise(r=>setTimeout(r,20));
  const shots=createAnalyzer().segment(frames,fps);shots.forEach((s,i)=>s.i=i);
  if(!shots.length)throw new Error('샷을 찾지 못함(천장 카메라 영상인지 확인)');
@@ -1690,6 +1697,23 @@ async function analyzeGame(g,onP){
  onP(96,'④ 테이블 모델 학습');
  try{const tm=await fitTableInWorker(keep);if(tm){const prevN=Object.values(LEARN.games).reduce((s,x)=>s+(x.fitted||0),0),w=tm.n/(tm.n+prevN||1),cur={...P.BASE,...model()};const m={};for(const k of Object.keys(L.PARAMS))m[k]=+(cur[k]*(1-w)+tm.model[k]*w).toFixed(5);LEARN.model=m;}}catch(e){console.warn(e);}
  finishGame(g);onP(100,'완료');
+}
+/* Browser frame callbacks at 2-4x arrive unevenly and sometimes repeat a frame; the analyser assumes a
+   steady frame rate. Drop repeats, then interpolate onto an even timeline. */
+function resampleDet(det,toM){
+ const u=[];let prevKey='';
+ for(const f of det){
+  const key=f.d.map(q=>q?q[0].toFixed(1)+','+q[1].toFixed(1):'-').join('|');
+  if(u.length&&(f.t<=u[u.length-1].t||(key===prevKey&&f.t-u[u.length-1].t<.25)))continue;
+  prevKey=key;u.push({t:f.t,p:f.d.map(toM)});
+ }
+ if(u.length<3)return {frames:u,fps:10};
+ const span=u[u.length-1].t-u[0].t,fps=clamp(Math.round(u.length/Math.max(1,span)),8,30),out=[];let j=0;
+ for(let t=u[0].t;t<=u[u.length-1].t+1e-6;t+=1/fps){
+  while(j<u.length-2&&u[j+1].t<t)j++;const a=u[j],b=u[j+1],k=clamp((t-a.t)/((b.t-a.t)||1),0,1);
+  out.push({t,p:[0,1,2].map(i=>a.p[i]&&b.p[i]?[a.p[i][0]+(b.p[i][0]-a.p[i][0])*k,a.p[i][1]+(b.p[i][1]-a.p[i][1])*k]:(k<.5?a.p[i]:b.p[i]))});
+ }
+ return {frames:out,fps};
 }
 function finishGame(g){
  // label with this game's innings, then store in the learning library
@@ -1901,5 +1925,11 @@ function renderStats(){
 })();
 window.C3C={S,P,L,PL,get LEARN(){return LEARN;},GAMES,addFiles,selectGame};
 
+</script>
+<script>
+// home-screen install: service worker only on http(s) (not when opened as a local file)
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
+ addEventListener('load',()=>navigator.serviceWorker.register('./3qCoaching-sw.js',{scope:'./3qCoaching.html'}).catch(()=>{}));
+}
 </script>
 </body></html>
