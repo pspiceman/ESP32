@@ -18386,7 +18386,6 @@ setInterval(async()=>{   // 입력(파일/카메라)당 딱 한 번만 자동 �
 const MOB=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent||'')||(navigator.maxTouchPoints>1&&innerWidth<1100);
 C.mobile=MOB;
 if(MOB&&!(function(){try{return 'eM' in JSON.parse(localStorage.getItem(LS)||'{}');}catch(_){return false;}})())C.eM=false;   // 모바일은 처음엔 조기 판정 끔(부하↓)
-setInterval(()=>{if(inBatch()&&C.lean)setLean(false);},1000);
 /* ---------- 부하 보호 ---------- */
 // 보조 감시(배치 확인·조기 무득점)가 메인 스레드를 오래 점유하지 않도록 실행 비용의 8배 이상 간격을 두고(≈11% 이하),
 // 화면 멈춤(메인 스레드 지연)이 반복되면 보조 기능을 자동으로 끈다. 득점 판정(코어)에는 영향 없음.
@@ -18417,7 +18416,6 @@ setInterval(()=>{try{
 function saveDiag(){const d={app:'3qAutoscoreALL Ver2.00',at:new Date().toISOString(),ua:navigator.userAgent,cores:navigator.hardwareConcurrency,devMem:navigator.deviceMemory,
  running:!!running,t:v.currentTime,paused:v.paused,ended:v.ended,shots:shots.length,safe:C.safe,stall:C.stall,stallMax:C.stallMax,cost:C.cost,errs:C.errs,log:C.log,snap:C.snap,termWhy:(window.clsApi&&window.clsApi.why||[]).slice(-30),settings:{mode:C.mode,em:C.em,eM:C.eM,as:C.as,fl:C.fl,players:C.players}};
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,1)],{type:'application/json'}));a.download='3qAutoscoreALL_diag_'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'')+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);}
-setInterval(()=>gov('ws',MOB?900:500,watchSetup),100);
 setInterval(()=>gov('em',MOB?170:100,earlyMiss),50);
 let wl=null;async function wake(){try{if('wakeLock' in navigator&&running&&document.visibilityState==='visible'&&!wl){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null;});}}catch(_){}}
 document.addEventListener('visibilitychange',wake);setInterval(wake,5000);
@@ -18611,7 +18609,7 @@ function persist(force){
   const now=Date.now();if(!force&&now-lastPersist<8000)return;
   const rec={gid:curGid,at:new Date(curGid).toISOString(),names:S.names.slice(),ori:curOri(),rows:compact(lastSnap)};
   const i=GAMES.findIndex(g=>g.gid===curGid);if(i>=0)GAMES[i]=rec;else{GAMES.push(rec);IDX.push(curGid);}
-  while(IDX.length>150){const g=IDX.shift();GAMES=GAMES.filter(x=>x.gid!==g);try{localStorage.removeItem('cls-g2:'+g);}catch(_){}}
+  while(IDX.length>(/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)?60:150)){const g=IDX.shift();GAMES=GAMES.filter(x=>x.gid!==g);try{localStorage.removeItem('cls-g2:'+g);}catch(_){}}
   localStorage.setItem('cls-g2:'+curGid,JSON.stringify(rec));localStorage.setItem(LSI,JSON.stringify(IDX));
   dirty=false;lastPersist=now;}catch(_){}}
 let sig0='',tickN=0,srcKey=null,holdOld=false;
@@ -18725,7 +18723,7 @@ setInterval(()=>{if(!inBatch()&&$('clsBody').style.display!=='none')paintUI();},
 const css2=document.createElement('style');css2.textContent=`#clsLive{margin:8px 0;padding:8px 12px;border:1px solid #2a3a4a;border-radius:10px;background:#0f1b27;color:#dfeaf3}#clsLive .h{display:flex;gap:10px;align-items:center;font-size:12px;color:#9fb6c8}#clsLive .h b{color:#dfeaf3;font-size:13px}#clsLive .h button{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid #2a3a4a;background:#16283a;color:#cfe3f3;cursor:pointer}#clsLiveBig{font-size:18px;font-weight:700;margin:4px 0}#clsLiveBig .ok{color:#6fe3a0}#clsLiveBig .ng{color:#ff8c8c}#clsLiveList{font-size:12px;line-height:1.6;color:#b9cddc}#clsLiveList .ok{color:#6fe3a0}#clsLiveList .ng{color:#ff9a9a}#clsEndSum{margin-top:6px;border-top:1px solid #2a3a4a;padding-top:6px}`;
 document.head.appendChild(css2);
 const live=document.createElement('div');live.id='clsLive';
-live.innerHTML='<div class="h"><b>샷 기술</b><span id="clsLiveBig">—</span><span style="font-size:10px;color:#6f8799;margin-left:auto">b1315</span><button type="button" id="clsLiveEnd" style="margin-left:6px">경기 집계 ▾</button></div><div id="clsEndSum" style="display:none"></div>';
+live.innerHTML='<div class="h"><b>샷 기술</b><span id="clsLiveBig">—</span><span style="font-size:10px;color:#6f8799;margin-left:auto">b1320</span><button type="button" id="clsLiveEnd" style="margin-left:6px">경기 집계 ▾</button></div><div id="clsEndSum" style="display:none"></div>';
 (function place(){const a=document.getElementById('v57Panel')||document.getElementById('v57Log');
  if(a&&a.parentNode){a.parentNode.insertBefore(live,a);}
  else{const c=document.querySelector('.stage,.video-wrap,#stage,video');if(c&&c.parentNode)c.parentNode.insertBefore(live,c.nextSibling);else document.body.appendChild(live);}
@@ -18830,14 +18828,14 @@ const cs=$('clsSection'),cn=$('cntSection');
 if(cs&&cs.parentNode)cs.parentNode.insertBefore(sec,cs);else if(cn&&cn.parentNode)cn.parentNode.insertBefore(sec,cn.nextSibling);else document.body.appendChild(sec);
 
 const st=document.createElement('style');document.head.appendChild(st);
-const wk=new WeakSet();let lastCfg=null;
+const wk=new WeakSet();let lastCfg=null,lastCss=null;
 function apply(){
- st.textContent=(F.cls&&F.line?'':'#clsLive{display:none!important}')+(F.all?'':'#mgAllPanel{display:none!important}');
+ const css=(F.cls&&F.line?'':'#clsLive{display:none!important}')+(F.all?'':'#mgAllPanel{display:none!important}');if(css!==lastCss){lastCss=css;st.textContent=css;}
  try{if(typeof worker!=='undefined'&&worker){if(!wk.has(worker)||lastCfg!==F.cls){wk.add(worker);lastCfg=F.cls;worker.postMessage({type:'clsCfg',on:!!F.cls});}}}catch(_){}
  for(const it of ITEMS)if(it.id)paint(it);}
 apply();
 if(MOB&&firstMobile){save();for(const it of ITEMS)if(it.k==='mirror'&&(it.id==='pc'||it.id==='hr'))set(it,false);}   // 후처리 재검증·하이런 멘트도 끔
-setInterval(apply,1000);   // 새 워커 생성 시 설정 재전달 + 다른 곳에서 바뀐 체크박스 반영
+setInterval(()=>{if(!document.hidden)apply();},MOB?2000:1000);   // 새 워커 생성 시 설정 재전달 + 다른 곳에서 바뀐 체크박스 반영
 for(const it of ITEMS)if(it.k==='mirror'){const e=$(it.el);if(e)e.addEventListener('change',()=>paint(it));}
 })();
 
