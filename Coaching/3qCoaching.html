@@ -193,10 +193,13 @@ body.mobile .loader-body{padding:10px}
 body.mobile .queue{font-size:12px}
 .queue button.attach{min-height:26px;padding:1px 7px;margin-left:4px;font-size:12px}
 .scanprev{position:fixed;right:8px;bottom:8px;width:128px;height:72px;z-index:30;border:1px solid #3a5568;border-radius:8px;background:#000;pointer-events:none}
+.ver{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0;margin-left:4px;vertical-align:middle;border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+.check{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);cursor:pointer}
+.check input{accent-color:var(--mint);width:16px;height:16px}
 </style></head><body>
 <div class="wrap">
 <header id="top">
- <div class="brand"><div class="mark">3C</div><div><div class="eyebrow">VIDEO COACHING · SELF-LEARNING</div><h1>3쿠션 영상 코칭</h1></div></div>
+ <div class="brand"><div class="mark">3C</div><div><div class="eyebrow">VIDEO COACHING · SELF-LEARNING</div><h1>3쿠션 영상 코칭 <span class="ver" id="ver">v1.01</span></h1></div></div>
  <div class="row"><span class="pill" id="devPill">PC</span><span class="pill" id="learnPill">학습 0경기 · 0샷</span><button id="helpBtn" class="ghost sm">사용 안내</button></div>
 </header>
 
@@ -262,6 +265,7 @@ body.mobile .queue{font-size:12px}
    <button id="loaderFold" class="sm ghost">접기</button></div>
   <div class="loader-body" id="loaderBody">
    <div class="btns lb">
+    <button id="dirRW" hidden title="분석 결과를 영상 옆에 .coach.json 파일로 자동 저장">📂 폴더 열기(결과 자동 저장)</button>
     <div class="file"><label>📁 폴더 선택<input id="dirPick" type="file" webkitdirectory directory multiple></label></div>
     <div class="file"><label>🗂 여러 파일 선택<input id="filesPick" type="file" multiple accept="video/*,image/png,image/jpeg"></label></div>
     <button id="startBtn" class="primary" disabled>▶ 순서대로 분석·학습</button>
@@ -269,9 +273,10 @@ body.mobile .queue{font-size:12px}
     <input id="attachPick" type="file" accept="image/*" hidden>
    </div>
    <div class="row"><span class="hint">새 영상 스캔 속도</span><select id="scanRate"><option value="1">1× 정밀</option><option value="2" selected>2×</option><option value="4">4× 빠름(정확도↓)</option></select>
-    <span class="hint">1P 수구</span><select id="cue1p"><option value="0">흰 공</option><option value="1">노란공</option></select></div>
+    <span class="hint">1P 수구</span><select id="cue1p"><option value="0">흰 공</option><option value="1">노란공</option></select>
+    <label class="check"><input id="showLearned" type="checkbox">이미 학습된 경기도 표시</label></div>
    <div class="progress"><div id="prog"></div></div>
-   <p class="hint" id="anaStatus">폴더를 고르면 하위 폴더까지 영상과 이닝표를 찾아 같은 이름끼리 짝짓고, 이닝표 이미지는 바로 숫자로 읽습니다.</p>
+   <p class="hint" id="anaStatus">폴더나 파일을 새로 고르면 목록이 새로 만들어집니다. 영상과 같은 이름의 이닝표를 짝짓고 바로 숫자로 읽습니다. 분석이 끝난 경기는 저장되어, 다음에 같은 영상을 고르면 다시 분석하지 않습니다.</p>
    <div class="queue-wrap"><table class="queue" id="queue"></table></div>
    <div class="inn-box" id="innBox" hidden>
     <div class="row" style="justify-content:space-between"><h3 id="innTitle">이닝표</h3><div class="row"><button id="innAdd" class="sm">+ 이닝</button><button id="innDel" class="sm">− 이닝</button><button id="innImgBtn" class="sm">원본 보기</button></div></div>
@@ -1455,6 +1460,7 @@ const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const BALL_COL=['#f4f7ef','#f8cc35','#ef4f57'],BALL_KO=['흰 공','노란공','빨간공'],BALL_CLS=['w','y','r'];
 const COL={rec:'#6ff0c2',act:'#ffd166',fix:'#ff9ad5'};
+const VERSION='v1.01';
 const LKEY='c3c-learn-v1';
 /* device profile: picked automatically, re-evaluated on resize/rotation */
 const DEV={mobile:false,dpr:2,simDt:.005,scanScale:1,steps:70};
@@ -1500,7 +1506,7 @@ function renderLearn(){
  <span>테이블 모델</span><span>미끄럼 ${m.slide.toFixed(2)} · 구름 ${m.roll.toFixed(4)} · 쿠션 반발 ${m.railE.toFixed(2)} · 쿠션 마찰 ${m.railMu.toFixed(2)} · 회전 감쇠 ${m.spinDecay.toFixed(2)}</span></div>
  <p class="hint">경기를 분석할 때마다 샷 라이브러리가 쌓이고, 새 영상은 분석 후 테이블 모델을 실제 궤적에 맞춰 다시 보정합니다.</p>`;
 }
-$('expBtn').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(LEARN)],{type:'application/json'}));a.download='3쿠션_코칭_학습데이터.json';document.body.append(a);a.click();a.remove();};
+$('expBtn').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({...LEARN,app:VERSION})],{type:'application/json'}));a.download='3쿠션_코칭_학습데이터.json';document.body.append(a);a.click();a.remove();};
 $('impFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(d.v!==1||!Array.isArray(d.library))throw 0;
  // merge
  for(const [k,v] of Object.entries(d.games||{}))LEARN.games[k]=v;const ids=new Set(Object.keys(d.games||{}));LEARN.library=LEARN.library.filter(x=>!ids.has(x.g)).concat(d.library);if(d.model&&Object.keys(d.model).length)LEARN.model=d.model;saveLearn();toast('학습 데이터를 합쳤어요.');}catch(err){toast('올바른 학습 데이터 파일이 아니에요.');}};
@@ -1528,12 +1534,13 @@ function setProg(p){$('prog').style.width=clamp(p,0,100).toFixed(1)+'%';}
 const GAMES=[];
 const VID=/\.(mp4|m4v|mov|webm|mkv)$/i,IMG=/\.(png|jpe?g)$/i;
 // "4417 (1).png", "4417(2).mp4" (Android download duplicates) pair with "4417"
-const keyOf=f=>f.name.replace(/\.[^.]+$/,'').replace(/\s*\(\d+\)$/,'').trim().toLowerCase();
+const keyOf=f=>f.name.replace(/\.coach\.json$/i,'').replace(/\.[^.]+$/,'').replace(/\s*\(\d+\)$/,'').trim().toLowerCase();
 const natural=(a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'});
 // Android pickers may drop the extension or the MIME type: fall back to the file's first bytes
 async function kindOf(f){
  if(VID.test(f.name)||/^video\//.test(f.type))return 'v';
  if(IMG.test(f.name)||/^image\/(png|jpe?g)/.test(f.type))return 'i';
+ if(/\.coach\.json$/i.test(f.name))return 'j';
  try{const b=new Uint8Array(await f.slice(0,12).arrayBuffer());
   if(b[0]===0x89&&b[1]===0x50&&b[2]===0x4E&&b[3]===0x47)return 'i';
   if(b[0]===0xFF&&b[1]===0xD8)return 'i';
@@ -1547,13 +1554,23 @@ function addFiles(list){const arr=[...list];LOADING=(LOADING||Promise.resolve())
 async function addFilesNow(list){
  const files=[...list].filter(f=>!/(^|\/)(\.|RESULT\/)/i.test(f.webkitRelativePath||''));
  if(!files.length){toast(DEV.mobile?'선택된 파일이 없어요. 이 기기에서 폴더 선택이 안 되면 🗂 여러 파일 선택을 쓰세요.':'선택된 파일이 없어요.');return;}
- let nv=0,ni=0;const newV=[],newI=[];
+ // a new selection starts a new list (finished results stay in storage / .coach.json files)
+ for(const g of GAMES){if(g.url&&g.url!==video.src)URL.revokeObjectURL(g.url);}
+ GAMES.length=0;S.game=null;S.G=null;S.cur=-1;video.removeAttribute('src');video.load();octx.clearRect(0,0,ov.width,ov.height);$('stageEmpty').hidden=false;
+ let nv=0,ni=0;const newV=[],newI=[],jsons=[];
  for(const f of files){
   const k=await kindOf(f);if(!k)continue;
+  if(k==='j'){jsons.push(f);continue;}
   const key=keyOf(f);let g=GAMES.find(x=>x.key===key);
   if(!g){g={key,name:key,video:null,png:null,innings:null,ocr:null,status:'대기',G:null,cue1p:0};GAMES.push(g);}
-  if(k==='v'){g.video=f;g.name=f.name;nv++;newV.push(g);}else{g.png=f;g.innings=null;g.ocr=null;ni++;newI.push(g);}
+  if(f._dir)g.dir=f._dir;
+  if(k==='v'){g.video=f;g.name=f.name;g.fid=fidOf(f);nv++;newV.push(g);}else{g.png=f;g.innings=null;g.ocr=null;ni++;newI.push(g);}
  }
+ // previous results: .coach.json next to the video, or this browser's storage
+ let restored=0;
+ for(const f of jsons){try{const r=JSON.parse(await f.text());const g=GAMES.find(x=>x.key===keyOf(f)&&x.video);if(g&&r&&r.G&&!g.G){g.G=r.G;g.saved=r;restored++;}}catch(e){}}
+ for(const g of GAMES){if(g.video&&!g.G){const r=await DB.get('analyses',g.fid);if(r&&r.G){g.G=r.G;g.saved=r;restored++;}else{const c=await DB.get('ckpt',g.fid);if(c&&c.det&&c.det.length)g.ckpt=Math.round(c.lastT);}}}
+ for(const g of GAMES)if(g.G){g.status=`✅ ${g.G.shots.length}샷 (저장됨)`;if(g.saved&&!g.png&&g.saved.innings)g.innings=g.saved.innings;if(g.saved)g.cue1p=g.saved.cue1p||0;addGameToLearn(g.G);}else if(g.ckpt)g.status=`⏸ ${fmt(g.ckpt)}까지 스캔됨 · 이어서 가능`;
  // names did not match (typical when a phone gallery renames files): pair the leftovers in selection order
  const loneV=newV.filter(g=>!g.png),loneI=newI.filter(g=>!g.video);
  if(loneV.length&&loneV.length===loneI.length){
@@ -1563,16 +1580,23 @@ async function addFilesNow(list){
  for(let i=GAMES.length-1;i>=0;i--)if(!GAMES[i].video&&!GAMES[i].png)GAMES.splice(i,1);
  GAMES.sort((a,b)=>natural(a.key,b.key));
  // videos can be analysed right away; images and lengths are read in the background
- $('startBtn').disabled=!GAMES.some(g=>g.video&&!g.G);
- $('anaStatus').textContent=`영상 ${nv}개 · 이닝표 ${ni}개를 찾았어요. 이닝표를 읽는 중…`;renderQueue();refreshGameSel();
- if(!S.game){const v=GAMES.find(g=>g.video);if(v)selectGame(v.key,false);}
+ $('startBtn').disabled=!todoList().length;
+ $('anaStatus').textContent=`영상 ${nv}개 · 이닝표 ${ni}개를 찾았어요${restored?` · 저장된 분석 ${restored}개 불러옴`:''}. 이닝표를 읽는 중…`;renderQueue();refreshGameSel();
+ if(!S.game){const v=shown().find(g=>g.video);if(v)selectGame(v.key,false);}
  for(const g of GAMES){if(g.png&&!g.innings&&!g.ocr){g.ocr={busy:true};renderQueue();await readPng(g);renderQueue();if(S.game===g){S.innings=g.innings||[];selectGame(g.key,false);}}}
  for(const g of GAMES)if(g.video&&g.duration==null){await probe(g);renderQueue();}
- const vids=GAMES.filter(g=>g.video);
- $('startBtn').disabled=!vids.some(g=>!g.G);
- $('anaStatus').textContent=vids.length?`경기 ${vids.length}개 준비 · 이닝표 ${GAMES.filter(g=>g.innings).length}개 읽음${GAMES.some(g=>g.video&&!g.png&&!(g.ocr&&g.ocr.embedded))?' · 이닝표 없는 경기는 영상 판정만 사용':''}. ▶ 순서대로 분석·학습을 누르세요.`:'영상이 없어요. 영상(mp4)과 이닝표(png)를 함께 고르세요.';
+ // built-in / already learned games are kept out of the list unless asked for
+ const hid=GAMES.filter(g=>g.video&&isLearnedBuiltin(g));
+ if(S.game&&isLearnedBuiltin(S.game)&&!$('showLearned').checked){S.game=null;const v=shown().find(g=>g.video);if(v)selectGame(v.key,false);}
+ renderQueue();refreshGameSel();
+ const vids=shown().filter(g=>g.video);
+ $('startBtn').disabled=!todoList().length;
+ $('anaStatus').textContent=vids.length?`경기 ${vids.length}개 · 분석할 경기 ${todoList().length}개 · 이닝표 ${GAMES.filter(g=>g.innings).length}개 읽음${hid.length&&!$('showLearned').checked?` · 이미 학습된 경기 ${hid.length}개(${hid.map(g=>g.key).join(', ')})는 목록에서 뺌`:''}${GAMES.some(g=>g.video&&!g.png&&!(g.ocr&&g.ocr.embedded))?' · 이닝표 없는 경기는 영상 판정만 사용':''}. ▶ 순서대로 분석·학습을 누르세요.`:'영상이 없어요. 영상(mp4)과 이닝표(png)를 함께 고르세요.';
  refreshGameSel();
 }
+function isLearnedBuiltin(g){return !!g.embedId;}
+function shown(){return GAMES.filter(g=>$('showLearned').checked||!isLearnedBuiltin(g));}
+function todoList(){return shown().filter(g=>g.video&&!g.G);}
 async function readPng(g){
  try{const r=await InningOCR.read(g.png);g.innings=r.rows.map(([,a,b])=>({a,b}));const last=g.innings[g.innings.length-1];if(last&&last.b===0&&last.a>0)last.b=null;g.ocr={totals:r.totals,warn:r.warn,finalOk:r.finalOk};}
  catch(err){g.innings=null;g.ocr={err:String(err.message||err)};}
@@ -1601,20 +1625,28 @@ function innCell(g){
  return `<span class="${g.ocr.warn.length?'warn':'ok'}">${g.ocr.warn.length?'⚠':'✅'} ${g.innings.length}이닝 ${t[0]}:${t[1]}${g.ocr.warn.length?' · 확인 '+g.ocr.warn.length:''}</span>`;
 }
 function renderQueue(){
- const t=$('queue');const vids=GAMES.filter(g=>g.video);
- if(!GAMES.length){t.innerHTML='';return;}
- t.innerHTML='<tr><th>#</th><th>경기</th><th>이닝표</th><th>길이</th><th>분석</th><th></th></tr>'+GAMES.map((g,i)=>`<tr class="${S.game===g?'cur':''}"><td>${i+1}</td><td>${g.name}${g.video?'':' <span class="warn">(영상 없음)</span>'}</td><td>${innCell(g)}${g.pairNote?' <span class="hint">(순서로 짝지음)</span>':''} ${g.video?`<button class="attach" data-a="${g.key}" title="이닝표 이미지 붙이기">📎</button>`:''}</td><td>${g.duration?fmt(g.duration):'—'}</td><td class="${g.G?'ok':/❌/.test(g.status)?'bad':''}">${g.status}</td><td>${g.video?`<button data-k="${g.key}" ${g.G?'':'disabled'}>코칭</button>`:''}</td></tr>`).join('');
+ const t=$('queue');const list=shown();
+ if(!list.length){t.innerHTML='';return;}
+ t.innerHTML='<tr><th>#</th><th>경기</th><th>이닝표</th><th>길이</th><th>분석</th><th></th></tr>'+list.map((g,i)=>`<tr class="${S.game===g?'cur':''}"><td>${i+1}</td><td>${g.name}${g.video?'':' <span class="warn">(영상 없음)</span>'}</td><td>${innCell(g)}${g.pairNote?' <span class="hint">(순서로 짝지음)</span>':''} ${g.video?`<button class="attach" data-a="${g.key}" title="이닝표 이미지 붙이기">📎</button>`:''}</td><td>${g.duration?fmt(g.duration):'—'}</td><td class="${g.G?'ok':/❌/.test(g.status)?'bad':''}">${g.status}</td><td>${g.video?`<button data-k="${g.key}" ${g.G?'':'disabled'}>코칭</button> <button data-s="${g.key}" title="분석 결과 파일로 저장 (.coach.json)" ${g.G?'':'disabled'}>💾</button>`:''}</td></tr>`).join('');
  t.querySelectorAll('button[data-k]').forEach(b=>b.onclick=()=>selectGame(b.dataset.k,true));
  t.querySelectorAll('button[data-a]').forEach(b=>b.onclick=()=>{ATTACH=b.dataset.a;$('attachPick').click();});
+ t.querySelectorAll('button[data-s]').forEach(b=>b.onclick=()=>downloadGame(GAMES.find(x=>x.key===b.dataset.s)));
 }
 function refreshGameSel(){
- const sel=$('gameSel'),vids=GAMES.filter(g=>g.video);sel.disabled=!vids.length;
+ const sel=$('gameSel'),vids=shown().filter(g=>g.video);sel.disabled=!vids.length;
  sel.innerHTML=vids.map(g=>`<option value="${g.key}" ${S.game===g?'selected':''}>${g.name}${g.G?' · '+g.G.shots.length+'샷':' · 분석 전'}</option>`).join('')||'<option>경기를 불러오세요</option>';
 }
 let ATTACH=null;
 $('attachPick').onchange=async e=>{const f=e.target.files[0];e.target.value='';const g=GAMES.find(x=>x.key===ATTACH);if(!f||!g)return;
  g.png=f;g.pairNote=false;g.innings=null;g.ocr={busy:true};renderQueue();await readPng(g);renderQueue();if(S.game===g)selectGame(g.key,false);toast(g.ocr.err?'이닝표를 읽지 못했어요.':`이닝표 ${g.innings.length}이닝을 붙였어요.`);};
 $('gameSel').onchange=()=>selectGame($('gameSel').value,true);
+// PC Chrome/Edge: open a folder with write access so results are saved as <name>.coach.json beside each video
+if(window.showDirectoryPicker){$('dirRW').hidden=false;$('dirRW').onclick=async()=>{
+ let root;try{root=await showDirectoryPicker({mode:'readwrite'});}catch(e){return;}
+ const files=[];const walk=async(dir,depth)=>{for await(const [name,h] of dir.entries()){if(name.startsWith('.')||/^RESULT$/i.test(name))continue;
+  if(h.kind==='file'){if(VID.test(name)||IMG.test(name)||/\.coach\.json$/i.test(name)){const f=await h.getFile();f._dir=dir;files.push(f);}}else if(depth<4)await walk(h,depth+1);}};
+ $('anaStatus').textContent='폴더를 읽는 중…';await walk(root,0);addFiles(files);};}
+$('showLearned').onchange=()=>{renderQueue();refreshGameSel();$('startBtn').disabled=!todoList().length||!$('stopBtn').disabled;};
 $('dirPick').onchange=e=>{addFiles(e.target.files);e.target.value='';};
 $('filesPick').onchange=e=>{addFiles(e.target.files);e.target.value='';};
 $('loaderFold').onclick=()=>{const b=$('loaderBody');b.classList.toggle('folded');$('loaderFold').textContent=b.classList.contains('folded')?'펼치기':'접기';};
@@ -1635,23 +1667,24 @@ function selectGame(key,coach){
 let STOP=false;
 $('stopBtn').onclick=()=>{STOP=true;$('anaStatus').textContent='현재 경기를 마치면 멈춥니다(스캔 중이면 바로 중지)…';};
 $('startBtn').onclick=async()=>{
- STOP=false;$('startBtn').disabled=true;$('stopBtn').disabled=false;$('dirPick').disabled=$('filesPick').disabled=true;
+ STOP=false;$('startBtn').disabled=true;$('stopBtn').disabled=false;$('dirPick').disabled=$('filesPick').disabled=true;if($('dirRW'))$('dirRW').disabled=true;
  if(LOADING){$('anaStatus').textContent='이닝표·영상 정보를 마저 읽는 중…';await LOADING;}
  let wake=null;try{wake=await navigator.wakeLock?.request('screen');}catch(e){}
  if(DEV.mobile)toast('분석 중에는 화면을 켜 두고 이 탭을 열어 두세요 (오른쪽 아래 작은 화면이 스캔 중인 영상입니다).');
- const todo=GAMES.filter(g=>g.video&&!g.G);let k=0;
+ const todo=todoList();let k=0;
+ const reWake=async()=>{if(!document.hidden&&!$('stopBtn').disabled){try{wake=await navigator.wakeLock?.request('screen');}catch(e){}}};document.addEventListener('visibilitychange',reWake);
  for(const g of todo){
   if(STOP)break;k++;g.status='분석 중';renderQueue();
   if(!g.duration){await probe(g);if(!g.duration){g.status='❌ 영상 정보를 읽지 못함';renderQueue();continue;}}
   try{await analyzeGame(g,(p,msg)=>{setProg(p);$('anaStatus').textContent=`[${k}/${todo.length}] ${g.name} · ${msg}`;g.status=msg;renderQueue();});
-   g.status=`✅ ${g.G.shots.length}샷`;if(!S.G||S.game===g)selectGame(g.key,false);}
+   await persistGame(g);g.status=`✅ ${g.G.shots.length}샷${g.savedFile?' · 파일 저장':''}`;if(!S.G||S.game===g)selectGame(g.key,false);}
   catch(e){console.error(e);g.status='❌ '+(e.message||e);}
   renderQueue();refreshGameSel();
  }
  $('anaStatus').textContent=STOP?'중지했습니다. 다시 누르면 남은 경기부터 이어서 분석합니다.':`분석·학습 완료 · ${GAMES.filter(g=>g.G).length}경기. 위쪽 ‘코칭 경기’에서 경기를 고르세요.`;
  if(!STOP&&!DEV.mobile&&!$('loaderBody').classList.contains('folded'))$('loaderFold').click();
- try{wake&&wake.release();}catch(e){}
- $('stopBtn').disabled=true;$('dirPick').disabled=$('filesPick').disabled=false;$('startBtn').disabled=!GAMES.some(g=>g.video&&!g.G);setProg(100);
+ document.removeEventListener('visibilitychange',reWake);try{wake&&wake.release();}catch(e){}
+ $('stopBtn').disabled=true;$('dirPick').disabled=$('filesPick').disabled=false;if($('dirRW'))$('dirRW').disabled=false;$('startBtn').disabled=!todoList().length;setProg(100);
 };
 function relabel(first){
  const G=S.G;if(!G)return;G.cue1p=S.cue1p;
@@ -1689,28 +1722,63 @@ function detectBalls(img,W,H,ox,oy,sc,prev){ // img: ImageData of the crop at sc
  }
  return out;
 }
-function scanVideo(g,onProg){
+/* Robust scan: plays the video (muted) and reads every presented frame.
+   - frames skipped while the tab was hidden / the decoder hiccuped are re-read (rewind to the last frame read)
+   - watchdog: resumes a paused or stalled video (e.g. after screen lock / PC sleep)
+   - checkpoint every ~30 s (and when the page is closed), so a reload or crash resumes where it stopped */
+function scanVideo(g,onProg,onNote,resume){
  return new Promise((resolve,reject)=>{
-  const det=[];let prev=[null,null,null],stopped=false;
-  // must stay visible: phone Chrome pauses muted videos that are off-screen or hidden
+  const det=resume?resume.det:[];let prev=[null,null,null],stopped=false,seeking=false,rewinds=0;
+  let lastT=resume?resume.lastT:-1,lastWall=performance.now(),lastCk=performance.now(),hiddenNoted=false,noteOn=false;
   const v=document.createElement('video');v.muted=true;v.playsInline=true;v.preload='auto';v.className='scanprev';document.body.append(v);v.src=g.url;
-  const onVis=()=>{if(!document.hidden&&!v.ended&&!stopped)v.play().catch(()=>{});};document.addEventListener('visibilitychange',onVis);
-  const VW=g.w||1280,VH=g.h||720,cal=defaultCalib(VW,VH);
-  const sc=Math.min(1,(DEV.scanScale*1280)/VW);const pad=12;
+  const VW=g.w||1280,VH=g.h||720,cal=resume&&resume.cal0||defaultCalib(VW,VH);
+  const sc=Math.min(1,(DEV.scanScale*1280)/VW),pad=12,rate=()=>+$('scanRate').value,GAP=.6;
   const ox=Math.max(0,cal.L-pad),oy=Math.max(0,cal.T-pad),cw=Math.min(VW,cal.R+pad)-ox,ch=Math.min(VH,cal.B+pad)-oy;
   const W=Math.round(cw*sc),H=Math.round(ch*sc),c=document.createElement('canvas');c.width=W;c.height=H;const cx=c.getContext('2d',{willReadFrequently:true});
+  const hasRVFC=!!v.requestVideoFrameCallback;
+  const kick=()=>{if(stopped||STOP||seeking)return;v.playbackRate=rate();const p=v.play();if(p)p.catch(()=>{});};
+  const seekTo=t=>{seeking=true;v.pause();v.onseeked=()=>{v.onseeked=null;seeking=false;lastWall=performance.now();if(hasRVFC)v.requestVideoFrameCallback(step);kick();};v.currentTime=Math.max(0,t);};
   const step=(now,meta)=>{
-   if(stopped)return;const t=meta?meta.mediaTime:v.currentTime;
-   cx.drawImage(v,ox,oy,cw,ch,0,0,W,H);const d=detectBalls(cx.getImageData(0,0,W,H),W,H,ox,oy,sc,prev);prev=d.map((q,i)=>q||prev[i]);det.push({t,d});
-   onProg(t/v.duration);
-   if(v.ended||STOP){v.pause();finish();return;}
-   if(v.requestVideoFrameCallback)v.requestVideoFrameCallback(step);
+   if(stopped||seeking)return;const t=meta?meta.mediaTime:v.currentTime;
+   if(det.length&&t-lastT>GAP&&rewinds<4&&!v.ended){rewinds++;noteOn=true;onNote&&onNote(`프레임 ${(t-lastT).toFixed(1)}초 누락 → 되돌려 다시 읽는 중`);seekTo(lastT);return;}
+   if(t>lastT+1e-4){
+    cx.drawImage(v,ox,oy,cw,ch,0,0,W,H);const d=detectBalls(cx.getImageData(0,0,W,H),W,H,ox,oy,sc,prev);prev=d.map((q,i)=>q||prev[i]);det.push({t,d});
+    if(t-lastT<GAP){if(rewinds||noteOn){rewinds=0;noteOn=false;onNote&&onNote('');}}lastT=t;
+   }
+   lastWall=performance.now();onProg(Math.min(1,t/(v.duration||1)));
+   if(performance.now()-lastCk>30000){lastCk=performance.now();saveCheckpoint(g,{det,lastT,cal0:cal});}
+   if(v.ended||STOP||t>=v.duration-.05){finish();return;}
+   if(hasRVFC)v.requestVideoFrameCallback(step);
   };
-  const finish=()=>{if(stopped)return;stopped=true;document.removeEventListener('visibilitychange',onVis);v.pause();v.removeAttribute('src');v.load();v.remove();resolve({det,cal});};
-  v.onended=finish;v.onerror=()=>reject(new Error('영상을 읽을 수 없습니다'));
-  v.onloadeddata=()=>{v.playbackRate=+$('scanRate').value;v.play().then(()=>{if(v.requestVideoFrameCallback)v.requestVideoFrameCallback(step);else{const iv=setInterval(()=>{if(v.ended||stopped){clearInterval(iv);finish();return;}step(0,null);},33);}}).catch(reject);};
+  const onVis=()=>{if(stopped)return;if(document.hidden)return;hiddenNoted=false;onNote&&onNote('');
+   if(!seeking&&det.length&&v.currentTime-lastT>GAP)seekTo(lastT);else kick();};
+  document.addEventListener('visibilitychange',onVis);
+  const onHide=()=>{if(!stopped&&det.length)saveCheckpoint(g,{det,lastT,cal0:cal});};addEventListener('pagehide',onHide);document.addEventListener('visibilitychange',()=>{if(document.hidden)onHide();});
+  const wd=setInterval(()=>{
+   if(stopped){clearInterval(wd);return;}
+   if(STOP){finish();return;}
+   if(document.hidden){if(!hiddenNoted){hiddenNoted=true;onNote&&onNote('탭이 가려지거나 화면이 꺼져 일시정지 — 이 탭으로 돌아오면 이어서 진행합니다');}return;}
+   if(v.ended||(v.duration&&lastT>=v.duration-.1)){finish();return;}
+   if(!seeking&&performance.now()-lastWall>8000){onNote&&onNote('영상이 멈춰 다시 시작하는 중…');seekTo(Math.max(0,lastT));return;}
+   if(v.paused&&!seeking)kick();
+  },2000);
+  const finish=()=>{if(stopped)return;stopped=true;clearInterval(wd);document.removeEventListener('visibilitychange',onVis);removeEventListener('pagehide',onHide);v.pause();v.removeAttribute('src');v.load();v.remove();resolve({det,cal});};
+  v.onended=()=>{if(!seeking)finish();};
+  v.onerror=()=>{if(det.length&&lastT>0){onNote&&onNote('영상 읽기 오류 → 다시 여는 중…');const t=lastT;v.src=g.url;v.onloadeddata=()=>{v.onloadeddata=null;seekTo(t);};}else{stopped=true;clearInterval(wd);v.remove();reject(new Error('영상을 읽을 수 없습니다'));}};
+  v.onloadeddata=()=>{v.onloadeddata=null;
+   if(!hasRVFC){const iv=setInterval(()=>{if(stopped){clearInterval(iv);return;}step(0,null);},33);}
+   if(resume&&lastT>0){onNote&&onNote(`이전 진행(${Math.round(lastT/(v.duration||1)*100)}%)부터 이어서 분석`);seekTo(lastT);}
+   else{if(hasRVFC)v.requestVideoFrameCallback(step);kick();}
+  };
  });
 }
+/* ---- local storage of analyses (IndexedDB) + checkpoints ---- */
+const DB=(()=>{let p=null;const open=()=>p||(p=new Promise((res,rej)=>{const r=indexedDB.open('c3c-coaching',1);r.onupgradeneeded=()=>{const d=r.result;d.createObjectStore('analyses');d.createObjectStore('ckpt');};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}));
+ const run=async(st,mode,fn)=>{const d=await open();return new Promise((res,rej)=>{const t=d.transaction(st,mode),q=fn(t.objectStore(st));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error);});};
+ const safe=f=>async(...a)=>{try{return await f(...a);}catch(e){console.warn('DB',e);return null;}};
+ return {get:safe((st,k)=>run(st,'readonly',x=>x.get(k))),put:safe((st,k,v)=>run(st,'readwrite',x=>x.put(v,k))),del:safe((st,k)=>run(st,'readwrite',x=>x.delete(k)))};})();
+const fidOf=f=>`${f.name}|${f.size}|${f.lastModified}`;
+function saveCheckpoint(g,ck){DB.put('ckpt',g.fid,{v:VERSION,...ck});}
 function refineCalib(det,cal){ // ball centres touching cushions -> nose lines
  const xs=[],ys=[],ar=[];for(const f of det)for(const q of f.d)if(q){xs.push(q[0]);ys.push(q[1]);ar.push(q[2]);}
  if(xs.length<500)return cal;xs.sort((a,b)=>a-b);ys.sort((a,b)=>a-b);ar.sort((a,b)=>a-b);
@@ -1726,9 +1794,10 @@ async function analyzeGame(g,onP){
   if(!g.innings)g.innings=e.innings.map(r=>({...r}));
   onP(100,'사전 분석 결과 사용');finishGame(g);return;
  }
- onP(0,'① 영상 스캔 0%');
- const {det,cal:c0}=await scanVideo(g,p=>onP(p*60,`① 영상 스캔 ${Math.round(p*100)}%`));
- if(STOP&&det.length<50)throw new Error('중지됨');
+ const ck=await DB.get('ckpt',g.fid);let note='';
+ onP(0,ck?'① 이어서 스캔':'① 영상 스캔 0%');
+ const {det,cal:c0}=await scanVideo(g,p=>onP(p*60,`① 영상 스캔 ${Math.round(p*100)}%${note?' · '+note:''}`),n=>{note=n;},ck&&ck.det&&ck.det.length?ck:null);
+ if(STOP){saveCheckpoint(g,{det,lastT:det.length?det[det.length-1].t:0,cal0:c0});throw new Error('중지됨 (다시 시작하면 이어서 분석)');}
  const cal=refineCalib(det,c0);
  const toM=q=>q?[+(((q[0]-cal.L)/(cal.R-cal.L))*2.84).toFixed(4),+(((q[1]-cal.T)/(cal.B-cal.T))*1.42).toFixed(4)]:null;
  const {frames,fps}=resampleDet(det,toM);
@@ -1760,6 +1829,13 @@ function resampleDet(det,toM){
  }
  return {frames:out,fps};
 }
+async function persistGame(g){
+ const rec={v:VERSION,key:g.key,name:g.name,duration:g.duration,innings:g.innings,cue1p:g.cue1p||0,G:g.G,date:new Date().toISOString()};
+ if(g.fid){await DB.put('analyses',g.fid,rec);DB.del('ckpt',g.fid);}
+ if(g.dir){try{const fh=await g.dir.getFileHandle(g.key+'.coach.json',{create:true});const w=await fh.createWritable();await w.write(new Blob([JSON.stringify(rec)],{type:'application/json'}));await w.close();g.savedFile=true;}catch(e){console.warn('save',e);g.savedFile=false;}}
+}
+function downloadGame(g){if(!g.G)return;const rec={v:VERSION,key:g.key,name:g.name,duration:g.duration,innings:g.innings,cue1p:g.cue1p||0,G:g.G,date:new Date().toISOString()};
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(rec)],{type:'application/json'}));a.download=g.key+'.coach.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
 function finishGame(g){
  // label with this game's innings, then store in the learning library
  const keepS=S.G,keepI=S.innings,keepC=S.cue1p;S.G=g.G;S.innings=g.innings||[];S.cue1p=g.cue1p||0;relabel(true);addGameToLearn(g.G);S.G=keepS;S.innings=keepI;S.cue1p=keepC;
