@@ -17914,7 +17914,10 @@ function pointsOf(id){const s=shots.find(x=>x&&x.id===id);let p=1;try{if(s)p=Num
 function withTerm(id,fn,kind){
  if(!C.tm||C.mode!=='voice'||!window.clsApi||!window.clsApi.sayTerm){fn('');return;}
  const t0=Date.now();(function w(){let r;try{r=window.clsApi.sayTerm(id,kind);}catch(_){r='';}
-  if(r===undefined&&Date.now()-t0<700){setTimeout(w,40);return;}fn(r||'');})();}
+  const lim=kind==='score'?1600:800;   // 접촉 정보(메시지)가 늦게 와도 놓치지 않도록 득점은 최대 1.6초
+  if(r===undefined&&Date.now()-t0<lim){setTimeout(w,40);return;}
+  if(r===undefined){try{window.clsApi.why.push({id,kind,say:'',note:'대기 초과(접촉 정보 지연) '+(Date.now()-t0)+'ms'});}catch(_){}}
+  fn(r||'');})();}
 /* 득점/무득점 확정 시점(기존 벨 타이밍과 동일) */
 function onShotBell(id,kind){
  if(inBatch()){ // 일괄 검증 중에는 상태·연동 없이 선택한 알림(음성)만
@@ -18072,10 +18075,19 @@ function tick(){
   if(running&&C.gameNo===0&&shots.length>0){C.gameNo=1;logLine('게임 1 시작 (시작 배치 미확인)');paint();}
   if(!C.ended)for(const id of Object.keys(C.announced)){
    const r=resultOf(Number(id));
+   const pd=C.corrPend||(C.corrPend={});
    if((r==='score'||r==='miss')&&r!==C.announced[id]){
-    C.announced[id]=r;
-    setTimeout(()=>{const s=score();if(C.eV)speak('정정되었습니다. '+say(s[0],s[1]));else logLine('정정 '+s[0]+':'+s[1]);paint();emit({type:'correct',shot:Number(id),kind:r,score:s,say:'정정되었습니다. '+say(s[0],s[1])});},200);
-   }
+    // 순간적으로 흔들렸다 돌아오는 값(AI 재계산 중)은 말하지 않고, 0.2초(수동)·1.5초(AI) 동안 같은 값이 유지될 때만 알림
+    const sh=shots.find(x=>x&&x.id===Number(id));const manual=!!(sh&&(sh.manualResult==='score'||sh.manualResult==='miss'));
+    if(!pd[id]||pd[id].r!==r)pd[id]={r,since:Date.now()};
+    if(Date.now()-pd[id].since<(manual?200:1500))continue;
+    delete pd[id];C.announced[id]=r;
+    const word=manual?'정정되었습니다. ':'판정 변경. ';
+    const s=score(),txt=word+say(s[0],s[1]);
+    if(C.lastCorr&&C.lastCorr.t===txt&&Date.now()-C.lastCorr.at<4000)continue;   // 같은 문구 연속 방지
+    C.lastCorr={t:txt,at:Date.now()};
+    if(C.eV)speak(txt);else logLine((manual?'정정 ':'판정 변경 ')+s[0]+':'+s[1]);paint();emit({type:'correct',shot:Number(id),kind:r,manual,score:s,say:txt});
+   }else if(pd[id])delete pd[id];
   }
  }catch(_){}
 }
@@ -18356,7 +18368,7 @@ setInterval(()=>{try{
  else if(Date.now()-lastMove>12000&&!warned){warned=true;logLine('영상 진행 정지 감지 (t='+t.toFixed(1)+'s) — [진단 저장]으로 기록을 보내 주세요');status('영상 진행이 12초 이상 멈췄습니다. 화면 아래 [진단 저장]으로 기록을 저장해 주세요.');}
 }catch(_){}},2000);
 function saveDiag(){const d={app:'3qAutoscoreALL Ver2.00',at:new Date().toISOString(),ua:navigator.userAgent,cores:navigator.hardwareConcurrency,devMem:navigator.deviceMemory,
- running:!!running,t:v.currentTime,paused:v.paused,ended:v.ended,shots:shots.length,safe:C.safe,stall:C.stall,stallMax:C.stallMax,cost:C.cost,errs:C.errs,log:C.log,snap:C.snap,settings:{mode:C.mode,em:C.em,eM:C.eM,as:C.as,fl:C.fl,players:C.players}};
+ running:!!running,t:v.currentTime,paused:v.paused,ended:v.ended,shots:shots.length,safe:C.safe,stall:C.stall,stallMax:C.stallMax,cost:C.cost,errs:C.errs,log:C.log,snap:C.snap,termWhy:(window.clsApi&&window.clsApi.why||[]).slice(-30),settings:{mode:C.mode,em:C.em,eM:C.eM,as:C.as,fl:C.fl,players:C.players}};
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,1)],{type:'application/json'}));a.download='3qAutoscoreALL_diag_'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'')+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);}
 setInterval(()=>gov('ws',MOB?900:500,watchSetup),100);
 setInterval(()=>gov('em',MOB?170:100,earlyMiss),50);
@@ -18391,7 +18403,7 @@ const $=id=>document.getElementById(id);
 const on=k=>{const f=window.clsFeat;return !f||f[k]!==false;};   // 기능 가동 스위치(feat 섹션)
 const LSR='cls-rules-v2',LSG='cls-games-v2',LSS='cls-set-v1',LST='cls-terms-v2';
 const inBatch=()=>{try{return !!(window.mgAll&&window.mgAll.state&&window.mgAll.state.running);}catch(_){return false;}};
-const DEF_RULES=`# 기준: 「3쿠션 당구 샷 기술(타입) 마스터 정의」 — 분류 순서: 뱅크샷(선쿠션) → 대회전(4쿠션 이상) → 기본 3쿠션 궤적 → 특수/기타 → 미분류
+const DEF_RULES=`# 기준: 「3쿠션 당구 샷 기술(타입) 마스터 정의」 — 분류 순서: 뱅크샷(선쿠션) → 기본 3쿠션 궤적 → 대회전(4쿠션 이상) → 특수/기타 → 미분류
 # 형식: 세부구질명 | 방향 | 쿠션순서(쉼표로 여러 개)
 # 방향: L=공의 왼쪽 히트, R=공의 오른쪽 히트, *=무관.  순서가 '4+' 이면 첫 목적구 접촉 후 쿠션이 4개 이상(대회전)
 # 쿠션 번호(초구 셋팅 기준, 수구 자리에서 빨간공을 바라봄): 1=왼쪽 장쿠션 2=빨간공쪽 단쿠션 3=오른쪽 장쿠션 4=반대쪽 단쿠션
@@ -18458,7 +18470,8 @@ function oriFromPose(pose){ // 초구 배치: 혼자 떨어진 공(빨간공)이
   const x=pose.map(p=>p.x);let best=null;for(let i=0;i<3;i++){const o=[0,1,2].filter(j=>j!==i);const pair=Math.abs(x[o[0]]-x[o[1]]);const gap=Math.abs(x[i]-(x[o[0]]+x[o[1]])/2);if(pair<120&&gap>300&&(!best||gap>best.gap))best={i,gap};}
   if(!best)return null;return x[best.i]>500?'우':'좌';}catch(_){return null;}}
 function curOri(){if(S.orient==='우'||S.orient==='좌')return S.orient;
- try{const f=shots.filter(s=>s&&Array.isArray(s.preShotPose)).sort((a,b)=>a.start-b.start)[0];const o=f?oriFromPose(f.preShotPose):null;if(o)S.lastOri=o;}catch(_){}
+ try{const pool=shots.slice();try{if(typeof currentShot!=='undefined'&&currentShot&&!pool.includes(currentShot))pool.push(currentShot);}catch(_){}
+  const f=pool.filter(s=>s&&Array.isArray(s.preShotPose)).sort((a,b)=>a.start-b.start)[0];const o=f?oriFromPose(f.preShotPose):null;if(o)S.lastOri=o;}catch(_){}
  return S.lastOri||'우';}
 const MAP={'우':{'상':1,'우':2,'하':3,'좌':4},'좌':{'하':1,'좌':2,'상':3,'우':4}};
 
@@ -18480,13 +18493,13 @@ function classify(s,ori,evIn){
  const seq=pre.length?preS+'|'+postS:postS;
  const R=(type,status,note)=>({...base,type,seq,status,side,th,note:note||''});
  if(pre.length)return R(pre.length>=3?'쓰리뱅크':pre.length===2?'투뱅크':'원뱅크','확정');          // 1) 뱅크샷: 선쿠션 진입
- const big=sec?RULES.find(r=>r.minLen&&postS.length>=r.minLen):null;                                  // 2) 대회전: 제2적구까지 4쿠션 이상 (무득점 샷이 멀리 굴러간 것은 제외)
- if(big)return R(big.name,'확정');
- let cand=[];                                                                                          // 3) 기본 3쿠션 궤적
+ let cand=[];                                                                                          // 2) 기본 3쿠션 궤적
  for(const r of RULES){if(!r.keys.length)continue;let kl=0;for(const k of r.keys)if(postS.startsWith(k)&&k.length>kl)kl=k.length;if(kl)cand.push({r,kl});}
  if(cand.length){const ml=Math.max(...cand.map(c=>c.kl));cand=cand.filter(c=>c.kl===ml);}
  const known=cand.filter(c=>c.r.side==='*'||(side&&c.r.side===side));
  if(known.length)return R(known[0].r.name,'확정');
+ const big=sec?RULES.find(r=>r.minLen&&postS.length>=r.minLen):null;                                  // 3) 대회전: 제2적구까지 4쿠션 이상 (무득점 샷이 멀리 굴러간 것은 제외)
+ if(big)return R(big.name,'확정');
  if(cand.length)return R([...new Set(cand.map(c=>c.r.name))].join(' / '),'방향미확인');
  if(postS.length>=1&&postS.length<3&&side){const part=RULES.filter(r=>r.keys.length&&(r.side==='*'||r.side===side)&&r.keys.some(k=>k.startsWith(postS)));
   const nm=[...new Set(part.map(r=>r.name))];if(nm.length===1)return R(nm[0],'추정','쿠션 '+postS.length+'회 · 추정');}
@@ -18503,7 +18516,9 @@ function snapshot(){
   const c=classify(s,ori);c.p=(p===0||p===1)?p:null;c.r=res==='score'?1:0;out.push(c);}
  return out;
 }
-function sayTerm(id,kind){ // undefined = 정보 도착 대기, '' = 용어 없음
+const WHY=[];function why(id,kind,r,note){if(r===undefined)return r;const l=WHY[WHY.length-1];if(l&&l.id===id&&l.kind===kind)WHY.pop();WHY.push({id,kind,say:r,note});if(WHY.length>40)WHY.shift();return r;}
+let LASTC=null;function sayTerm(id,kind){LASTC=null;const r=sayTerm0(id,kind);return why(id,kind,r,LASTC?LASTC.type+'/'+LASTC.status+'/'+LASTC.seq+'/'+LASTC.side+'/'+curOri():'');}
+function sayTerm0(id,kind){ // undefined = 정보 도착 대기, '' = 용어 없음
  if(!on('cls')||!on('rt'))return '';
  let s=(typeof shots!=='undefined'?shots:[]).find(x=>x&&x.id===id);
  if(!s){try{if(typeof currentShot!=='undefined'&&currentShot&&currentShot.id===id)s=currentShot;}catch(_){}}
@@ -18514,11 +18529,11 @@ function sayTerm(id,kind){ // undefined = 정보 도착 대기, '' = 용어 없�
   if(!G||!G.ev||!G.ev.length)return undefined;
   if(kind==='score'){const cue=s.cue;const t=G.ev.filter(e=>e.type==='ball'&&e.target!==cue).map(e=>e.target);if(new Set(t).size<2)return undefined;}
  }
- const c=classify(s,curOri());
+ const c=classify(s,curOri());LASTC=c;
  if(c.status==='확정'||c.status==='추정')return termOf(c.type).say||'';
  if(c.status==='방향미확인'&&!(G&&G.geo)&&!own)return undefined;
  return '';}
-window.clsApi={_geo:GEO,snapshot,classify,sayTerm,termOf,get rules(){return RULES;},curOri};
+window.clsApi={_geo:GEO,why:WHY,snapshot,classify,sayTerm,termOf,get rules(){return RULES;},curOri};
 
 /* ---------- 경기별 저장 (경기마다 키 1개, 바뀐 현재 경기만 8초 이상 간격으로 기록) ---------- */
 const LSI='cls-g2-idx';let IDX=[],GAMES=[];
@@ -18551,7 +18566,7 @@ function refresh(force){
 function gameTick(){
  if(inBatch())return;tickN++;
  let no=null;try{no=window.cntState?cntState.gameNo:null;}catch(_){}
- if(no!==curNo){persist(true);curNo=no;curGid=Date.now();lastSnap=[];sig0='';try{$('clsEndSum').style.display='none';}catch(_){}endShown=false;}
+ if(no!==curNo){persist(true);curNo=no;curGid=Date.now();lastSnap=[];sig0='';GEO.clear();WHY.length=0;try{$('clsEndSum').style.display='none';}catch(_){}endShown=false;}
  try{if(typeof v55ReviewReady!=='undefined'&&v55ReviewReady&&!endShown&&shots.some(x=>x&&!x.active)){endShown=true;refresh(true);window.clsGameEnd('분석 종료');}if(typeof v55ReviewReady!=='undefined'&&!v55ReviewReady)endShown=false;}catch(_){}
  refresh();persist();
 }
