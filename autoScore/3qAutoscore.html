@@ -562,7 +562,7 @@ header h1{margin:0}
 }
 </style>
 </head><body><main>
-<header><div><h1>3Q Score <span class="v3qVer">Ver2.00 <small style="font-size:11px;opacity:.75">b1321</small></span><span class="sub">Ver2.00 ALL</span></h1><div class="sub">AI가 수구·쿠션·목적구·득점·이닝을 독립 판정합니다. 득점/무득점 수동 입력은 분석 중에도 가능하며 수동 입력이 항상 우선합니다.</div></div><div class="status-chip" id="mode">영상 선택 대기</div></header>
+<header><div><h1>3Q Score <span class="v3qVer">Ver2.00 <small style="font-size:11px;opacity:.75">b1323</small></span><span class="sub">Ver2.00 ALL</span></h1><div class="sub">AI가 수구·쿠션·목적구·득점·이닝을 독립 판정합니다. 득점/무득점 수동 입력은 분석 중에도 가능하며 수동 입력이 항상 우선합니다.</div></div><div class="status-chip" id="mode">영상 선택 대기</div></header>
 <div class="layout"><section class="panel"><div class="head video-head"><div class="video-head-left"><h2>경기 영상</h2><span aria-live="polite" class="video-status" id="videoInfo" role="status">MP4 / CAMERA</span></div><span class="sub" id="fileName">MP4 또는 카메라를 선택하세요</span></div>
 <div class="stage" id="stage"><video id="video" muted="" playsinline="" preload="metadata"></video><canvas id="accuracyPreview"></canvas><canvas id="overlay"></canvas></div>
 <div class="corner-instructions" hidden="" id="dragNote">안쪽 쿠션 접촉선의 네 모서리 ①→④를 손가락/마우스로 끌어 맞춘 뒤 [보정 완료]를 누르세요.</div>
@@ -18561,6 +18561,7 @@ function snapshot(){
  const ori=curOri(),out=[];
  let list=[];try{list=v43EligibleShots();}catch(_){list=(typeof shots!=='undefined'?shots:[]).filter(s=>s&&!s.active);}
  const multi=(()=>{try{return Number(window.cntState&&cntState.players)>2;}catch(_){return false;}})();
+ if(!on('sum')&&list.length>4)list=list.slice(-4);   // 집계표를 안 쓰면(모바일 기본) 최근 샷만 분류 — 샷이 쌓여도 부하 일정
  for(const s of list){if(!s||s.active)continue;
   let res=null,p=null;try{res=effectiveResult(s);}catch(_){}try{p=multi?null:playerForShot(s);}catch(_){}
   if(res!=='score'&&res!=='miss')continue;
@@ -18625,8 +18626,9 @@ function refresh(force){
   if(sig===sig0&&!force&&(tickN%6)!==0)return;      // 같으면 건너뜀(6번에 1번은 앞선 샷의 정정 반영을 위해 재계산)
   sig0=sig;lastSnap=snapshot();dirty=true;paintLive();
  }catch(_){}}
+function pruneOld(){if(on('sum'))return;try{const L=(typeof shots!=='undefined'?shots:[]);if(L.length<8)return;const keep=new Set(L.slice(-6).map(x=>x&&x.id));for(const k of [...GEO.keys()])if(!keep.has(k))GEO.delete(k);for(const k of [...STR.keys()])if(!keep.has(k))STR.delete(k);}catch(_){}}
 function gameTick(){
- if(inBatch())return;tickN++;
+ if(inBatch())return;tickN++;if(tickN%10===0)pruneOld();
  try{const k=(typeof fileLoadSerial!=='undefined'?fileLoadSerial:'')+'|'+((typeof v!=='undefined'&&v&&v.currentSrc)||'');
   if(srcKey!==null&&k!==srcKey){clearAll();holdOld=(typeof shots!=='undefined'&&shots.length>0);}   // 새 MP4/카메라: 앞 영상 통계 지움(모바일 포함)
   srcKey=k;}catch(_){}
@@ -18720,10 +18722,10 @@ setInterval(()=>{if(!inBatch()&&$('clsBody').style.display!=='none')paintUI();},
 
 
 /* ---------- 영상 아래 실시간 샷 기술 표시줄 + 경기 종료 집계 ---------- */
-const css2=document.createElement('style');css2.textContent=`#clsLive{margin:8px 0;padding:8px 12px;border:1px solid #2a3a4a;border-radius:10px;background:#0f1b27;color:#dfeaf3}#clsLive .h{display:flex;gap:10px;align-items:center;font-size:12px;color:#9fb6c8}#clsLive .h b{color:#dfeaf3;font-size:13px}#clsLive .h button{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid #2a3a4a;background:#16283a;color:#cfe3f3;cursor:pointer}#clsLiveBig{font-size:18px;font-weight:700;margin:4px 0}#clsLiveBig .ok{color:#6fe3a0}#clsLiveBig .ng{color:#ff8c8c}#clsLiveList{font-size:12px;line-height:1.6;color:#b9cddc}#clsLiveList .ok{color:#6fe3a0}#clsLiveList .ng{color:#ff9a9a}#clsEndSum{margin-top:6px;border-top:1px solid #2a3a4a;padding-top:6px}`;
+const css2=document.createElement('style');css2.textContent=`#clsLive{margin:8px 0;padding:8px 12px;border:1px solid #2a3a4a;border-radius:10px;background:#0f1b27;color:#dfeaf3}#clsLive .h{display:flex;gap:10px;align-items:center;font-size:12px;color:#9fb6c8}#clsLive .h b{color:#dfeaf3;font-size:13px}#clsLive .h button{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid #2a3a4a;background:#16283a;color:#cfe3f3;cursor:pointer}#clsLiveBig{font-size:18px;font-weight:700;margin:4px 0;line-height:1.35;overflow-wrap:anywhere;word-break:keep-all}@media(max-width:700px){#clsLive{padding:6px 8px;margin:6px 0}#clsLiveBig{font-size:14px;margin:3px 0}#clsLiveBig span{display:inline}#clsLive .h{font-size:11px;gap:6px}#clsLive .h button{padding:5px 10px;min-height:32px}}#clsLiveBig .ok{color:#6fe3a0}#clsLiveBig .ng{color:#ff8c8c}#clsLiveList{font-size:12px;line-height:1.6;color:#b9cddc}#clsLiveList .ok{color:#6fe3a0}#clsLiveList .ng{color:#ff9a9a}#clsEndSum{margin-top:6px;border-top:1px solid #2a3a4a;padding-top:6px}`;
 document.head.appendChild(css2);
 const live=document.createElement('div');live.id='clsLive';
-live.innerHTML='<div class="h"><b>샷 기술</b><span id="clsLiveBig">—</span><span style="font-size:10px;color:#6f8799;margin-left:auto">b1321</span><button type="button" id="clsLiveEnd" style="margin-left:6px">경기 집계 ▾</button></div><div id="clsEndSum" style="display:none"></div>';
+live.innerHTML='<div class="h"><b>샷 기술</b><span style="font-size:10px;color:#6f8799">b1323</span><button type="button" id="clsLiveEnd">경기 집계 ▾</button></div><div id="clsLiveBig">—</div><div id="clsEndSum" style="display:none"></div>';
 (function place(){const a=document.getElementById('v57Panel')||document.getElementById('v57Log');
  if(a&&a.parentNode){a.parentNode.insertBefore(live,a);}
  else{const c=document.querySelector('.stage,.video-wrap,#stage,video');if(c&&c.parentNode)c.parentNode.insertBefore(live,c.nextSibling);else document.body.appendChild(live);}
@@ -18770,7 +18772,7 @@ window.clsSetNames=n=>{if(Array.isArray(n)){S.names=[String(n[0]||'').trim()||'1
 'use strict';
 const $=id=>document.getElementById(id);
 const MOB=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'')||(/Macintosh/.test(navigator.userAgent||'')&&navigator.maxTouchPoints>1);
-const LS=MOB?'feat-m2':'feat-v1';
+const LS=MOB?'feat-m3':'feat-v1';
 let F={rt:true,cls:true,line:true,sum:true,all:true};
 let firstMobile=false;
 try{const raw=localStorage.getItem(LS);if(raw===null&&MOB){firstMobile=true;F={rt:true,cls:true,line:true,sum:false,all:false};}   // 모바일: 샷·득점 판정과 무관한 기능은 처음부터 비가동
@@ -18834,7 +18836,7 @@ function apply(){
  try{if(typeof worker!=='undefined'&&worker){if(!wk.has(worker)||lastCfg!==F.cls){wk.add(worker);lastCfg=F.cls;worker.postMessage({type:'clsCfg',on:!!F.cls});}}}catch(_){}
  for(const it of ITEMS)if(it.id)paint(it);}
 apply();
-if(MOB&&firstMobile){save();for(const it of ITEMS)if(it.k==='mirror'&&(it.id==='pc'||it.id==='hr'))set(it,false);}   // 후처리 재검증·하이런 멘트도 끔
+if(MOB&&firstMobile){save();for(const it of ITEMS)if(it.k==='mirror'&&(it.id==='pc'||it.id==='hr'||it.id==='ta'))set(it,false);}   // 후처리 재검증·하이런 멘트도 끔
 setInterval(()=>{if(!document.hidden)apply();},MOB?2000:1000);   // 새 워커 생성 시 설정 재전달 + 다른 곳에서 바뀐 체크박스 반영
 for(const it of ITEMS)if(it.k==='mirror'){const e=$(it.el);if(e)e.addEventListener('change',()=>paint(it));}
 })();
