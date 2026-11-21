@@ -11660,6 +11660,41 @@ function v118JumpCut(s){
  };
 })();
 /* END v1.18 engine */
+
+/* cls hook (read-only): 첫 목적구 접촉 직전 수구 방향·목적구 위치를 보고(접촉 0.1초 뒤 1회 + 샷 종료 시 1회). 판정 무관. */
+(function(){try{
+ const geoOf=shot=>{
+  const cue=shot.cue,D=shot.diameter||21.6;
+  const ball=(shot.events||[]).filter(e=>e&&e.type==='ball'&&e.target!==cue&&Number.isFinite(e.t)&&e.confirmed!==false).sort((a,b)=>a.t-b.t)[0];
+  if(!ball)return null;
+  const tc=ball.t,tg=ball.target,pts=[];
+  for(const f of shot.path){if(f.t>tc-0.02||f.t<tc-0.6)continue;const q=f.p&&f.p[cue];if(q&&Number.isFinite(q.x)&&Number.isFinite(q.y))pts.push([f.t,q.x,q.y]);}
+  if(pts.length<2)return null;
+  const b=pts[pts.length-1];let a=pts[Math.max(0,pts.length-5)],dx=b[1]-a[1],dy=b[2]-a[2],L=Math.hypot(dx,dy);
+  if(L<8){a=pts[0];dx=b[1]-a[1];dy=b[2]-a[2];L=Math.hypot(dx,dy);}            // 느린 샷: 창 전체로 방향 계산
+  if(L<8&&shot.preShotPose&&shot.preShotPose[cue]){const q=shot.preShotPose[cue];dx=b[1]-q.x;dy=b[2]-q.y;L=Math.hypot(dx,dy);}
+  if(L<8)return null;
+  const ux=dx/L,uy=dy/L;let o=null;
+  for(let i=shot.path.length-1;i>=0;i--){const f=shot.path[i];if(f.t>tc-0.02)continue;const q=f.p&&f.p[tg];if(q&&Number.isFinite(q.x)&&Number.isFinite(q.y)){o=q;break;}}
+  if(!o&&shot.preShotPose&&shot.preShotPose[tg])o=shot.preShotPose[tg];
+  if(!o)return null;
+  const wx=o.x-b[1],wy=o.y-b[2];
+  return {tc,target:tg,lat:wx*uy+wy*(-ux),along:wx*ux+wy*uy,D,dir:[+ux.toFixed(3),+uy.toFixed(3)]};};
+ const post=(shot,g,early)=>off?0:self.postMessage({type:'clsGeo',early:!!early,session:-1,sess:(typeof session!=='undefined'?session:null),id:shot.id,geo:g,
+   ev:(shot.events||[]).filter(e=>e&&e.confirmed!==false).map(e=>({t:+Number(e.t).toFixed(3),type:e.type,side:e.side,target:e.target}))});
+ let off=false;self.addEventListener('message',e=>{const d=e&&e.data;if(d&&d.type==='clsCfg')off=!d.on;});
+ const lastN=new WeakMap();
+ const pf=ShotEngine.prototype.feed;
+ ShotEngine.prototype.feed=function(){const r=pf.apply(this,arguments);
+  try{const sh=this.active;if(sh&&!sh.finished&&Array.isArray(sh.path)&&sh.path.length>3){
+    const n=(sh.events||[]).length;if(n&&lastN.get(sh)!==n){lastN.set(sh,n);post(sh,geoOf(sh),true);}}}catch(_){}
+  return r;};
+ const prior=ShotEngine.prototype.finish;
+ ShotEngine.prototype.finish=function(t,complete=true,reason=''){
+  const shot=this.active;const done=prior.apply(this,arguments);
+  try{if(shot&&shot.finished&&Array.isArray(shot.path)&&shot.path.length>3)post(shot,geoOf(shot),false);}catch(_){}
+  return done;};
+}catch(_){}})();
 </script>
 <script>
 'use strict';
@@ -17745,9 +17780,11 @@ const C={lean:false,gameNo:0,ended:false,adj:[0,0],archive:[],announced:{},prevL
  log:[],sV:true,sB:false,mV:true,mB:true,eV:true,hr:true,hrN:5,as:true,fl:true,players:2,seq:0,mode:'voice',eM:true,em:'mid',male:false,restSec:90,autoGame:true,tgt:[0,0],src:'camera',url:'http://127.0.0.1:1984',cam:'cam',
  voiceName:'',rate:1,vol:1,hook:'',injected:null,pc:null,speakQ:[],speaking:false,frozen:null,
  early:{},ek:null,hrDone:{},foulDone:{},badVoice:{},vs:'확인 전',fbWarned:false,safe:false,stall:0,stallMax:0,stallRun:0,cost:{},rdy:0,rdyLock:false,startDone:null,bellLog:[],link:'없음'};
-try{const o=JSON.parse(localStorage.getItem(LS)||'{}');for(const k of ['sV','sB','mV','mB','eV','hr','hrN','as','fl','players','mode','eM','em','male','restSec','autoGame','tgt','src','url','cam','voiceName','rate','vol','hook'])if(o[k]!==undefined)C[k]=o[k];}catch(_){}
+try{const o=JSON.parse(localStorage.getItem(LS)||'{}');for(const k of ['sV','sB','mV','mB','eV','hr','hrN','as','fl','players','mode','eM','em','male','restSec','autoGame','tgt','src','url','cam','voiceName','rate','vol','hook','tm'])if(o[k]!==undefined)C[k]=o[k];}catch(_){}
+if(C.tm===undefined)C.tm=true;   // 샷 용어 멘트(음성 모드): 기본 켬
 if(!(function(){try{return JSON.parse(localStorage.getItem(LS)||'{}').emv===2;}catch(_){return false;}})())C.em='mid';
-function save(){try{localStorage.setItem(LS,JSON.stringify({sV:C.sV,sB:C.sB,mV:C.mV,mB:C.mB,eV:C.eV,hr:C.hr,hrN:C.hrN,as:C.as,fl:C.fl,players:C.players,mode:C.mode,eM:C.eM,em:C.em,emv:2,male:C.male,restSec:C.restSec,autoGame:C.autoGame,tgt:C.tgt,src:C.src,url:C.url,cam:C.cam,voiceName:C.voiceName,rate:C.rate,vol:C.vol,hook:C.hook}));}catch(_){}}
+if(!(function(){try{return JSON.parse(localStorage.getItem(LS)||'{}').mv===3;}catch(_){return false;}})())C.mode='voice';   // Ver2.00: 기본은 음성 멘트
+function save(){try{localStorage.setItem(LS,JSON.stringify({sV:C.sV,sB:C.sB,mV:C.mV,mB:C.mB,eV:C.eV,hr:C.hr,hrN:C.hrN,as:C.as,fl:C.fl,players:C.players,mode:C.mode,mv:3,eM:C.eM,em:C.em,emv:2,male:C.male,restSec:C.restSec,autoGame:C.autoGame,tgt:C.tgt,src:C.src,url:C.url,cam:C.cam,voiceName:C.voiceName,rate:C.rate,vol:C.vol,hook:C.hook,tm:C.tm}));}catch(_){}}
 window.cntState=C;
 
 /* ---------- 입력: 스트림 주소(go2rtc WebRTC) → getUserMedia 경로 재사용 ---------- */
@@ -17783,11 +17820,12 @@ async function connectInput(){
 function allKo(){try{return (speechSynthesis.getVoices()||[]).filter(v=>/^ko/i.test(v.lang));}catch(_){return[];}}
 function voices(){return allKo().filter(v=>!/microsoft/i.test(v.name));}   // 목록에는 마이크로소프트 음성 제외
 const FEM=/sunhi|heami|yuna|seoyeon|sohee|female|여성|google.*(한국|korean)/i, MAL=/injoon|hyunsu|minho|male|남성/i;
+const badV=n=>{const t=C.badVoice[n];return typeof t==='number'&&Date.now()-t<60000;};   // 연속 3번 실패한 음성만 60초간 제외(그 뒤 자동 복귀)
 function pickVoice(){
- const vs=voices().filter(x=>!C.badVoice[x.name]);
+ const vs=voices().filter(x=>!badV(x.name));
  let v=vs.length?((C.voiceName&&vs.find(x=>x.name===C.voiceName))||vs.find(x=>FEM.test(x.name)&&!MAL.test(x.name))||vs[0]):null;
  if(!v){ // 선택 가능한 음성이 모두 실패/없음 → 마지막 수단으로 PC에 있는 다른 한국어 음성(마이크로소프트 포함)
-  const rest=allKo().filter(x=>!C.badVoice[x.name]);v=rest.find(x=>x.localService)||rest[0]||null;
+  const rest=allKo().filter(x=>!badV(x.name));v=rest.find(x=>x.localService)||rest[0]||null;
   if(v&&!C.fbWarned){C.fbWarned=true;status('선택한 음성이 소리를 못 내서 PC의 다른 한국어 음성('+v.name+')으로 대신합니다');}}
  return v;}
 function vstat(t){C.vs=t;const e=$c('cntVS');if(e)e.textContent='음성: '+t;}
@@ -17800,10 +17838,11 @@ function pump(){
   const fin=()=>{if(done)return;done=true;C.speaking=false;pump();};
   const fail=why=>{ // 소리 못 냄: 이 음성을 제외하고 같은 문구를 다른 음성으로 한 번 더
    if(done)return;vstat('오류('+why+')'+(v?' · '+v.name:''));logLine('음성 오류: '+why+(v?' ('+v.name+')':''));
-   if(v&&!it.retry){C.badVoice[v.name]=true;C.speakQ.unshift({text:it.text,at:Date.now(),retry:1});}
+   if(v){C.vfail=C.vfail||{};C.vfail[v.name]=(C.vfail[v.name]||0)+1;if(C.vfail[v.name]>=3){C.badVoice[v.name]=Date.now();C.vfail[v.name]=0;}
+    if((it.retry||0)<3)C.speakQ.unshift({text:it.text,at:Date.now(),retry:(it.retry||0)+1});}
    try{speechSynthesis.cancel();}catch(_){}fin();};
   u.onstart=()=>{started=true;t0=performance.now();vstat('정상'+(v?' · '+v.name:' · 기본 음성'));};
-  u.onend=()=>{if(done)return;const d=performance.now()-t0;if(!started||(d<150&&it.text.length>=2)){fail('소리 없음(인터넷/음성 엔진 확인)');return;}fin();};   // 시작하자마자 끝나면 구글 음성의 무음 실패
+  u.onend=()=>{if(done)return;const d=performance.now()-t0;if(!started||(d<150&&it.text.length>=2)){fail('소리 없음(인터넷/음성 엔진 확인)');return;}try{if(v&&C.vfail)C.vfail[v.name]=0;}catch(_){}fin();};   // 시작하자마자 끝나면 구글 음성의 무음 실패
   u.onerror=e=>{const er=String(e&&e.error||'error');if(er==='interrupted'||er==='canceled'){fin();return;}fail(er);};
   setTimeout(()=>{if(!started&&!done)fail('시작 안 됨');},3500);          // 구글 음성은 인터넷이 없으면 조용히 실패함
   setTimeout(()=>{if(!done){try{speechSynthesis.cancel();}catch(_){}fin();}},9000);   // 음성 엔진이 멈추면 초기화하고 계속
@@ -17845,7 +17884,7 @@ function handleCmd(o){
  if(!o||typeof o!=='object')return;const cmd=o.cmd||o.type;let ok=true;
  try{
   if(cmd==='ping'){}
-  else if(cmd==='set_players'){C.players=Math.max(2,Math.min(6,Number(o.players)||2));const e=$c('cntPL');if(e)e.value=String(C.players);save();}
+  else if(cmd==='set_players'){C.players=Math.max(2,Math.min(6,Number(o.players)||2));try{if(Array.isArray(o.names)&&window.clsSetNames)window.clsSetNames(o.names);}catch(_){}const e=$c('cntPL');if(e)e.value=String(C.players);save();}
   else if(cmd==='game_start'){if(C.gameNo===0||C.ended||shots.length===0)startGame('점수판');else newGame('점수판');}
   else if(cmd==='game_end'){endGame('점수판');}
   else if(cmd==='set_score'&&Array.isArray(o.score)){const raw=rawScore();C.adj=[Number(o.score[0])-raw[0],Number(o.score[1])-raw[1]];C.frozen=C.ended?score():null;const s=score();
@@ -17871,17 +17910,25 @@ function resultOf(id){const s=shots.find(x=>x&&x.id===id);return s?effectiveResu
 function uncertainOf(id){const s=shots.find(x=>x&&x.id===id);try{return !!(s&&!s.manualResult&&(s.v57AIUncertain||s.reviewRecommended||(typeof v5845AmbKind==='function'&&v5845AmbKind(s))));}catch(_){return false;}}
 function pointsOf(id){const s=shots.find(x=>x&&x.id===id);let p=1;try{if(s)p=Number(v39ScorePoints(s))||1;}catch(_){}return Math.max(1,p);}
 
+/* 샷 용어(분류 결과) — 접촉 정보가 늦게 오면 최대 0.7초 기다렸다가 말함. 분류 불가이면 용어 없이 득점/무득점만 */
+function withTerm(id,fn,kind){
+ if(!C.tm||C.mode!=='voice'||!window.clsApi||!window.clsApi.sayTerm){fn('');return;}
+ const t0=Date.now();(function w(){let r;try{r=window.clsApi.sayTerm(id,kind);}catch(_){r='';}
+  if(r===undefined&&Date.now()-t0<700){setTimeout(w,40);return;}fn(r||'');})();}
 /* 득점/무득점 확정 시점(기존 벨 타이밍과 동일) */
 function onShotBell(id,kind){
- if(C.ended||inBatch())return;
+ if(inBatch()){ // 일괄 검증 중에는 상태·연동 없이 선택한 알림(음성)만
+  if(C.mode==='voice'){if(kind==='score'){if(C.sV)withTerm(id,t=>speak(t?t+' 득점':scoreSay()),'score');}else{withTerm(id,t=>{if(C.mB)speak(t?t+' 무득점':'무득점');setTimeout(()=>{if(C.mV){const s=score();speak(say(s[0],s[1]));}},250);},'miss');}}
+  return;}
+ if(C.ended)return;
  C.announced[id]=kind;C.lastActivity=Date.now();checkFoul(id);
  if(kind==='score'){
-  if(C.mode==='voice'&&C.sV)speak(scoreSay());
+  if(C.mode==='voice'&&C.sV)withTerm(id,t=>speak(t?t+' 득점':scoreSay()),'score');
   setTimeout(()=>{paint();checkHighRun(id);emit({type:'shot',shot:id,kind:'score',points:pointsOf(id),score:score(),uncertain:uncertainOf(id),say:scoreSay()});},150);
  }else{
   if(C.early[id]){C.lastActivity=Date.now();return;}   // 조기 무득점으로 이미 알림
-  if(C.mode==='voice'&&C.mB)speak('무득점');
-  setTimeout(()=>{const s=score();if(C.mode==='voice'&&C.mV)speak(say(s[0],s[1]));paint();emit({type:'shot',shot:id,kind:'miss',points:0,score:s,uncertain:uncertainOf(id),say:'무득점. '+say(s[0],s[1])});checkTarget();},250);
+  withTerm(id,t=>{if(C.mode==='voice'&&C.mB)speak(t?t+' 무득점':'무득점');
+  setTimeout(()=>{const s=score();if(C.mode==='voice'&&C.mV)speak(say(s[0],s[1]));paint();emit({type:'shot',shot:id,kind:'miss',points:0,score:s,uncertain:uncertainOf(id),say:'무득점. '+say(s[0],s[1])});checkTarget();},250);},'miss');
  }
 }
 function runInfo(id){ // 같은 선수가 이어서 득점한 연속 점수(이닝 내 연속 득점)
@@ -17919,7 +17966,7 @@ function checkHighRun(id){
  emit({type:'highrun',shot:id,run:r.run,player:r.player,score:score(),say:'하이런 축하드립니다'});}
 function checkTarget(){if(C.ended)return;const s=score();
  for(let i=0;i<2;i++)if(Number(C.tgt[i])>0&&s[i]>=Number(C.tgt[i])){endGame('목표 점수 도달');return;}}
-function endGame(reason){if(C.ended||C.gameNo===0)return;const s=score();C.frozen=s.slice();C.ended=true;
+function endGame(reason){if(C.ended||C.gameNo===0)return;const s=score();C.frozen=s.slice();C.ended=true;try{window.clsGameEnd&&window.clsGameEnd(reason);}catch(_){}
  if(C.eV)speak('경기 종료');else logLine('경기 종료');emit({type:'game_end',score:s,say:'경기 종료'});logLine('최종 '+s[0]+':'+s[1]+(reason?' ('+reason+')':''));paint();}
 function startGame(reason){C.gameNo=C.gameNo||0;C.gameNo+=C.gameNo===0?1:0;C.ended=false;C.frozen=null;C.lastActivity=Date.now();
  if(C.eV)speak('경기 시작');else logLine('경기 시작');emit({type:'game_start',score:[0,0],say:'경기 시작'});logLine('게임 '+C.gameNo+' 시작'+(reason?' ('+reason+')':''));paint();}
@@ -17967,7 +18014,7 @@ function watchSetup(){
    애매하면(접촉 순서 확인 중·득점 증명·공이 서로 가까움·검출 불안정) 하지 않고 기존 정지 확인 판정에 맡김. 틀리면 기존 정정 흐름("정정되었습니다")이 처리. */
 const EM={safe:{hold:.4,q:.6,el:1.2,A:0,mg:1,imm:false},mid:{hold:.4,q:.55,el:1.0,A:30,mg:1.5,imm:false},fast:{hold:.12,q:.45,el:.7,A:35,mg:1.0,imm:true}};
 function fireEarly(cs,why){checkFoul(cs.id);C.early[cs.id]=true;C.announced[cs.id]='miss';C.ek=null;C.lastActivity=Date.now();
- if(C.mode==='bell'){try{origPlayBell&&origPlayBell('miss');}catch(_){}}else if(C.mB)speak('무득점');
+ if(C.mode==='bell'){try{origPlayBell&&origPlayBell('miss');}catch(_){}}else if(C.mB){let t='';try{if(C.tm&&C.mode==='voice'&&window.clsApi&&window.clsApi.sayTerm)t=window.clsApi.sayTerm(cs.id,'miss')||'';}catch(_){}speak(t?t+' 무득점':'무득점');}
  setTimeout(()=>{const s=score();if(C.mode==='voice'&&C.mV)speak(say(s[0],s[1]));paint();emit({type:'shot',shot:cs.id,kind:'miss',early:true,why,points:0,score:s,uncertain:false,say:'무득점. '+say(s[0],s[1])});checkTarget();},250);
  logLine('조기 무득점 SHOT #'+cs.id+' ('+why+')');}
 function earlyMiss(){
@@ -18037,8 +18084,14 @@ function tick(){
 if(typeof v5266BellOnce==='function'){const p=v5266BellOnce;
  v5266BellOnce=function(id,kind){C.curBell=id;let ok;try{ok=p.apply(this,arguments);}finally{C.curBell=null;}if(ok)onShotBell(id,kind);return ok;};}
 let origPlayBell=null;
+if(typeof bellEnabled==='function'){bellEnabled=function(){
+  if(C.mode==='off')return false;
+  if(C.mode==='voice'){ // 코어 벨 경로는 켜 두되, '정답표 불일치 벨 3회' 경보(alarm)만은 벨소리가 나지 않게 하고 음성으로 대신 알림
+   try{if(/\balarm\b/.test(new Error().stack||'')){const n=Date.now();if(n-(C.alarmAt||0)>5000){C.alarmAt=n;speak('판정 정지, 확인이 필요합니다');}return false;}}catch(_){}
+  }
+  return true;};}   // 코어 벨 경로: 벨/음성 모드에서는 켜 두고(소리는 모드가 결정), 끄기에서만 차단
 if(typeof playBell==='function'){const p=playBell;origPlayBell=p;   // 득점/무득점 벨소리 개별 선택 (재생·비재생 공통)
- playBell=function(kind){if(!running||inBatch())return p.apply(this,arguments);
+ playBell=function(kind){
   const allow=C.mode==='bell'&&!(kind==='miss'&&C.early[C.curBell]);C.bellLog.push([kind,!!allow]);if(C.bellLog.length>100)C.bellLog.shift();
   if(!allow)return;return p.apply(this,arguments);};}
 if(typeof render==='function'){const p=render;
@@ -18048,7 +18101,7 @@ if(typeof msg==='function'){const p=msg;
 
 /* ---------- 화면 ---------- */
 const css=document.createElement('style');css.textContent=`
-#cntBar{position:sticky;top:0;z-index:50;background:#0c2a22;border-bottom:1px solid #2f6a58;padding:8px 10px;display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;font-size:13px;color:#e6fff6}
+#cntBar{position:relative;background:#0c2a22;border:1px solid #2f6a58;border-radius:10px;padding:8px 10px;display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;font-size:13px;color:#e6fff6}
 #cntBar select,#cntBar input[type=text],#cntBar input[type=number]{background:#10372d;color:#e6fff6;border:1px solid #3c7f6b;border-radius:6px;padding:5px 6px;font-size:13px}
 #cntBar input[type=text]{width:190px}#cntBar input[type=number]{width:64px}
 #cntBar button{background:#14513f;color:#fff;border:1px solid #4aa388;border-radius:7px;padding:7px 12px;font-size:13px;min-height:34px;cursor:pointer}
@@ -18100,11 +18153,10 @@ bar.innerHTML=`<span class="cnt-t">3Q ALL</span>
 <span id="cntStreamBox"><input id="cntUrl" type="text" placeholder="http://127.0.0.1:1984"> <input id="cntCam" type="text" placeholder="카메라 이름" style="width:90px"></span>
 <button id="cntConnect" type="button">입력 연결</button>
 <button id="cntGoPlay" class="cnt-go" type="button">▶ 영상 재생으로 시작</button>
-<button id="cntGo" class="cnt-go" type="button">▶ 영상 비재생으로 시작</button>
 <label id="cntVolBox" class="cnt-vol">🔊 음량 <input id="cntVolR" type="range" min="0" max="1" step="0.05"></label>
 <button id="cntLeanToggle" type="button">영상 재생 ↔ 비재생 전환</button>
-<span class="grp"><b>알림 방식</b><label><input name="cntMode" id="cntModeBell" type="radio" value="bell"> 벨소리(득점·무득점 2종)</label><label><input name="cntMode" id="cntModeVoice" type="radio" value="voice"> 음성 멘트</label></span>
-<span class="grp"><b>멘트</b><label><input id="cntSV" type="checkbox"> 득점</label><label><input id="cntMB" type="checkbox"> 무득점</label><label><input id="cntMV" type="checkbox"> 턴 넘김 점수</label><label><input id="cntFL" type="checkbox"> 파울</label><label><input id="cntEV" type="checkbox"> 시작·종료·정정</label></span>
+<span class="grp"><b>알림 방식</b><label><input name="cntMode" id="cntModeBell" type="radio" value="bell"> 벨소리(득점·무득점 2종)</label><label><input name="cntMode" id="cntModeVoice" type="radio" value="voice"> 음성 멘트</label><label><input name="cntMode" id="cntModeOff" type="radio" value="off"> 끄기</label></span>
+<span class="grp"><b>멘트</b><label><input id="cntSV" type="checkbox"> 득점</label><label><input id="cntMB" type="checkbox"> 무득점</label><label title="득점/무득점 앞에 샷 종류를 말합니다(예: 뒤돌리기 득점)"><input id="cntTM" type="checkbox"> 샷 용어</label><label><input id="cntMV" type="checkbox"> 턴 넘김 점수</label><label><input id="cntFL" type="checkbox"> 파울</label><label><input id="cntEV" type="checkbox"> 시작·종료·정정</label></span>
 <span class="grp"><label><input id="cntAS" type="checkbox"> 입력되면 자동 분석 시작</label></span>
 <span class="grp"><label><input id="cntHR" type="checkbox"> 하이런 멘트</label><label>기준 <input id="cntHRN" type="number" min="2" max="99" step="1">점 이상 연속</label></span>
 <span class="grp"><b>무득점 조기 판정</b><label><input id="cntEM" type="checkbox"> 사용</label><label>민감도 <select id="cntEMS"><option value="safe">안전(완전 정지 직전)</option><option value="mid">보통</option><option value="fast">빠름(궤적상 불가 시 즉시)</option></select></label></span>
@@ -18130,7 +18182,12 @@ bar.innerHTML=`<span class="cnt-t">3Q ALL</span>
  more.appendChild(hb);
  const mb=document.createElement('button');mb.id='cntMoreBtn';mb.type='button';mb.textContent='설정 ▾';mb.onclick=()=>{more.classList.toggle('open');mb.textContent=more.classList.contains('open')?'설정 ▴':'설정 ▾';};
  bar.insertBefore(more,bm);bar.insertBefore(mb,more);}
-document.body.insertBefore(bar,document.body.firstChild);
+{const rec=document.querySelector('section.panel.records');
+ const sec=document.createElement('section');sec.className='panel';sec.id='cntSection';
+ sec.innerHTML='<div class="head"><h2>실시간 모드 설정</h2><span class="sub">입력 · 알림(벨소리/음성 멘트/끄기) · 경기 설정</span><button type="button" id="cntSecToggle">접기 ▴</button></div>';
+ const body=document.createElement('div');body.style.cssText='padding:0 14px 14px';body.appendChild(bar);sec.appendChild(body);
+ if(rec&&rec.parentNode)rec.parentNode.insertBefore(sec,rec);else document.body.insertBefore(sec,document.body.firstChild);
+ sec.querySelector('#cntSecToggle').onclick=()=>{const o=body.style.display==='none';body.style.display=o?'':'none';sec.querySelector('#cntSecToggle').textContent=o?'접기 ▴':'펼치기 ▾';};}
 
 const panel=document.createElement('div');panel.id='cntPanel';
 panel.innerHTML=`<div class="top"><span id="cntGame">게임 —</span><span id="cntLive">대기</span><span id="cntInn">0이닝</span></div>
@@ -18140,6 +18197,7 @@ panel.innerHTML=`<div class="top"><span id="cntGame">게임 —</span><span id="
 <div class="btns">
 <button id="cntFix1" class="ok" type="button">득점으로 정정</button><button id="cntFix0" class="warn" type="button">무득점으로 정정</button><button id="cntFixAI" type="button">AI 판정 복원</button>
 <button id="cntA0p" type="button">1P +1</button><button id="cntA0m" type="button">1P −1</button><button id="cntA1p" type="button">2P +1</button><button id="cntA1m" type="button">2P −1</button>
+<select id="cntModeSel"><option value="voice">알림: 음성 멘트</option><option value="bell">알림: 벨소리</option><option value="off">알림: 끄기</option></select>
 <select id="cntFirst"><option value="auto">선공: AI 자동</option><option value="0">선공: 흰 수구(1P)</option><option value="1">선공: 노란 수구(2P)</option></select>
 <button id="cntNew" type="button">새 경기</button><button id="cntEnd" class="warn" type="button">경기 종료</button><button id="cntCsv" type="button">기록 저장(CSV)</button><button id="cntBack" type="button">영상 재생 화면으로</button></div>
 <div class="st" id="cntSt"></div><div class="logbox" id="cntLog"></div>`;
@@ -18168,7 +18226,7 @@ function setLean(on){C.lean=!!on;document.body.classList.toggle('cnt-lean',C.lea
 /* ---------- 바 동작 ---------- */
 function loadBar(){
  $c('cntSrc').value=C.src;$c('cntUrl').value=C.url;$c('cntCam').value=C.cam;
- $c('cntSV').checked=!!C.sV;$c('cntModeBell').checked=C.mode==='bell';$c('cntModeVoice').checked=C.mode!=='bell';$c('cntMV').checked=!!C.mV;$c('cntMB').checked=!!C.mB;$c('cntEV').checked=!!C.eV;$c('cntEM').checked=!!C.eM;$c('cntAS').checked=!!C.as;$c('cntHR').checked=!!C.hr;$c('cntHRN').value=C.hrN;$c('cntEMS').value=C.em||'fast';$c('cntFL').checked=!!C.fl;$c('cntPL').value=String(C.players||2);
+ $c('cntSV').checked=!!C.sV;$c('cntModeBell').checked=C.mode==='bell';$c('cntModeVoice').checked=C.mode==='voice';$c('cntModeOff').checked=C.mode==='off';$c('cntMV').checked=!!C.mV;$c('cntMB').checked=!!C.mB;$c('cntTM').checked=!!C.tm;$c('cntEV').checked=!!C.eV;$c('cntEM').checked=!!C.eM;$c('cntAS').checked=!!C.as;$c('cntHR').checked=!!C.hr;$c('cntHRN').value=C.hrN;$c('cntEMS').value=C.em||'fast';$c('cntFL').checked=!!C.fl;$c('cntPL').value=String(C.players||2);
  $c('cntRate').value=C.rate;$c('cntVolR').value=C.vol;$c('cntRest').value=C.restSec;$c('cntAuto').checked=!!C.autoGame;
  $c('cntHook').value=C.hook||'';$c('cntT0').value=C.tgt[0]||'';$c('cntT1').value=C.tgt[1]||'';
  $c('cntStreamBox').style.display=C.src==='stream'?'':'none';
@@ -18177,14 +18235,24 @@ function fillVoices(){const sel=$c('cntVoiceSel');const vs=voices();sel.innerHTM
  const pv=pickVoice();if(pv)sel.value=pv.name;}
 function readBar(){const prevHook=C.hook;
  C.src=$c('cntSrc').value;C.url=$c('cntUrl').value.trim();C.cam=$c('cntCam').value.trim()||'cam';
- C.sV=$c('cntSV').checked;C.mode=$c('cntModeBell').checked?'bell':'voice';C.mV=$c('cntMV').checked;C.mB=$c('cntMB').checked;C.eV=$c('cntEV').checked;C.eM=$c('cntEM').checked;C.as=$c('cntAS').checked;C.hr=$c('cntHR').checked;C.hrN=Math.max(2,Number($c('cntHRN').value)||5);C.em=$c('cntEMS').value;C.fl=$c('cntFL').checked;C.players=Number($c('cntPL').value)||2;
- C.rate=Number($c('cntRate').value)||1;C.vol=Math.max(0,Math.min(1,Number($c('cntVolR').value)));$c('cntVolBox').style.display=C.mode==='bell'?'none':'';C.restSec=Number($c('cntRest').value)||90;C.autoGame=$c('cntAuto').checked;
+ C.sV=$c('cntSV').checked;C.mode=$c('cntModeBell').checked?'bell':$c('cntModeOff').checked?'off':'voice';C.mV=$c('cntMV').checked;C.mB=$c('cntMB').checked;C.tm=$c('cntTM').checked;C.eV=$c('cntEV').checked;C.eM=$c('cntEM').checked;C.as=$c('cntAS').checked;C.hr=$c('cntHR').checked;C.hrN=Math.max(2,Number($c('cntHRN').value)||5);C.em=$c('cntEMS').value;C.fl=$c('cntFL').checked;C.players=Number($c('cntPL').value)||2;
+ C.rate=Number($c('cntRate').value)||1;C.vol=Math.max(0,Math.min(1,Number($c('cntVolR').value)));$c('cntVolBox').style.display=C.mode==='voice'?'':'none';C.restSec=Number($c('cntRest').value)||90;C.autoGame=$c('cntAuto').checked;
  C.hook=$c('cntHook').value.trim();C.tgt=[Number($c('cntT0').value)||0,Number($c('cntT1').value)||0];const vn=$c('cntVoiceSel').value;if(vn)C.voiceName=vn;
  $c('cntStreamBox').style.display=C.src==='stream'?'':'none';save();if(C.hook!==prevHook)linkStart();}
-for(const id of ['cntSrc','cntUrl','cntCam','cntSV','cntModeBell','cntModeVoice','cntMV','cntMB','cntEV','cntEM','cntEMS','cntAS','cntHR','cntHRN','cntFL','cntPL','cntVolR','cntVoiceSel','cntRate','cntRest','cntAuto','cntT0','cntT1','cntHook'])$c(id).addEventListener('change',readBar);
+for(const id of ['cntSrc','cntUrl','cntCam','cntSV','cntModeBell','cntModeVoice','cntModeOff','cntMV','cntMB','cntTM','cntEV','cntEM','cntEMS','cntAS','cntHR','cntHRN','cntFL','cntPL','cntVolR','cntVoiceSel','cntRate','cntRest','cntAuto','cntT0','cntT1','cntHook'])$c(id).addEventListener('change',readBar);
 try{speechSynthesis.addEventListener('voiceschanged',fillVoices);}catch(_){}
 $c('cntVolR').addEventListener('input',()=>{C.vol=Number($c('cntVolR').value);save();});
 loadBar();fillVoices();
+/* 알림 방식 동기화: 위쪽 라디오 · 영상 아래 '♪ 벨소리' 체크 · 라이브 화면 선택이 항상 같은 상태 */
+function syncSound(){
+ try{const cb=$('soundEnabled');if(cb)cb.checked=(C.mode==='bell');}catch(_){}
+ try{localStorage.setItem('3Q-score-bell',C.mode==='bell'?'on':'off');}catch(_){}
+ try{$c('cntModeBell').checked=C.mode==='bell';$c('cntModeVoice').checked=C.mode==='voice';$c('cntModeOff').checked=C.mode==='off';$c('cntVolBox').style.display=C.mode==='voice'?'':'none';const ps=$c('cntModeSel');if(ps)ps.value=C.mode;}catch(_){}
+}
+function setMode(m){C.mode=m;syncSound();save();if(m==='bell'){try{armBell();}catch(_){}}status(m==='bell'?'알림: 벨소리':m==='voice'?'알림: 음성 멘트':'알림: 끄기');}
+try{const cb=$('soundEnabled');if(cb)cb.addEventListener('change',()=>{setMode(cb.checked?'bell':(C.mode==='bell'?'off':C.mode));});}catch(_){}
+for(const id of ['cntModeBell','cntModeVoice','cntModeOff'])$c(id).addEventListener('change',()=>{readBar();syncSound();});
+syncSound();
 function pickGender(female){const vs=voices();if(!vs.length){status('PC에 한국어 음성이 없습니다 (Windows 설정 > 시간 및 언어 > 음성에서 추가)');return;}
  const v=female?(vs.find(x=>FEM.test(x.name)&&!MAL.test(x.name))||vs.find(x=>!MAL.test(x.name))):(vs.find(x=>MAL.test(x.name))||vs.find(x=>!FEM.test(x.name)));
  if(!v){status(female?'여성 음성을 찾지 못했습니다':'남성 음성을 찾지 못했습니다 — 목록에서 직접 선택하세요');return;}
@@ -18201,14 +18269,12 @@ async function begin(lean){
  try{
   if(!loaded)await connectInput();
   if(!loaded){status('입력이 아직 준비되지 않았습니다');return;}
-  try{const sE=$('soundEnabled');if(sE)sE.checked=true;}catch(_){}   // 벨 경로는 켜 두고 개별 설정으로 거름
   if(!running){await start();}
   if(!running){status('분석이 시작되지 않았습니다. 재생 화면에서 4점 보정 후 다시 시작하세요.');return;}
   status(C.gameNo===0?'경기 시작 대기 · 초구 배치가 잡히거나 초구를 치면 시작합니다':'');
   setLean(lean);
  }catch(e){status('시작 실패: '+e.message);}
 }
-$c('cntGo').onclick=()=>begin(true);
 $c('cntGoPlay').onclick=()=>begin(false);
 $c('cntLeanToggle').onclick=()=>setLean(!C.lean);
 $c('cntDiag').onclick=()=>saveDiag();
@@ -18221,6 +18287,7 @@ $c('cntFixAI').onclick=()=>clickIf('quickAuto');
 function adj(i,d){C.adj[i]+=d;const s=score();if(C.eV)speak('정정되었습니다. '+say(s[0],s[1]));emit({type:'adjust',score:s,say:'정정되었습니다. '+say(s[0],s[1])});paint();}
 $c('cntA0p').onclick=()=>adj(0,1);$c('cntA0m').onclick=()=>adj(0,-1);$c('cntA1p').onclick=()=>adj(1,1);$c('cntA1m').onclick=()=>adj(1,-1);
 $c('cntFirst').onchange=()=>{const e=$('firstCueRole');if(e){e.value=$c('cntFirst').value;e.dispatchEvent(new Event('change',{bubbles:true}));}try{render();}catch(_){}};
+$c('cntModeSel').onchange=()=>setMode($c('cntModeSel').value);
 $c('cntNew').onclick=()=>{if(C.gameNo===0)startGame('수동');else newGame('수동');};
 $c('cntEnd').onclick=()=>endGame('수동');
 $c('cntCsv').onclick=()=>{
@@ -18236,7 +18303,7 @@ document.addEventListener('click',()=>{try{if(!C.unlocked&&'speechSynthesis' in 
 // 분석이 시작되면(어떤 시작 버튼이든) 벨 경로를 켜 둔다
 let wasRunning=false;
 setInterval(()=>{
- if(running&&!wasRunning){wasRunning=true;try{const sE=$('soundEnabled');if(sE)sE.checked=true;}catch(_){}try{armBell();}catch(_){}}
+ if(running&&!wasRunning){wasRunning=true;try{armBell();}catch(_){}}
  if(!running&&wasRunning){wasRunning=false;C.rdy=0;C.rdyLock=false;}
  if(!inBatch()&&(C.lean||running)){tick();paint();}
 },400);
@@ -18251,7 +18318,6 @@ setInterval(async()=>{   // 입력(파일/카메라)당 딱 한 번만 자동 �
   if(Date.now()<asNext)return;
   if(!cameraActive&&asTry>=3)return;
   asBusy=true;asTry++;
-  try{const sE=$('soundEnabled');if(sE)sE.checked=true;}catch(_){}
   await start();
   if(running){asDone=true;logLine('자동 분석 시작 — 초구 배치 대기');status('자동 분석 시작됨 · 초구 배치/초구 샷에서 경기 시작');}
   else asNext=Date.now()+4000;
@@ -18297,7 +18363,396 @@ setInterval(()=>gov('em',MOB?170:100,earlyMiss),50);
 let wl=null;async function wake(){try{if('wakeLock' in navigator&&running&&document.visibilityState==='visible'&&!wl){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null;});}}catch(_){}}
 document.addEventListener('visibilitychange',wake);setInterval(wake,5000);
 linkStart();
+
+/* 후처리(의심 샷 30Hz + 원본화질 재검증) 체크박스: 단일 MP4/실시간은 기본 OFF, ALL 일괄 검증은 시작 시 자동 ON → 끝나면 원래대로.
+   사용자가 직접 바꾼 값은 저장해서 다음 실행에도 유지(ALL 중에는 ON 강제). 판정부는 건드리지 않음. */
+(function(){
+ const K='cnt-pc-user';let batchPrev=null,wasBatch=false,own=false;
+ const box=()=>document.getElementById('v5284AutoPC');
+ function setBox(v){const b=box();if(b&&b.checked!==v){own=true;b.checked=v;try{b.dispatchEvent(new Event('change',{bubbles:true}));}catch(_){}own=false;}}
+ try{const b=box();if(b){let u=null;try{u=localStorage.getItem(K);}catch(_){}
+  setBox(u==='1');
+  b.addEventListener('change',()=>{if(own||inBatch())return;try{localStorage.setItem(K,b.checked?'1':'0');}catch(_){}});}}catch(_){}
+ document.addEventListener('click',e=>{const t=e.target;if(t&&t.id==='mgStart'){const b=box();if(b){batchPrev=b.checked;setBox(true);}}},true);
+ setInterval(()=>{const nb=inBatch();if(wasBatch&&!nb&&batchPrev!==null){setBox(batchPrev);batchPrev=null;}wasBatch=nb;},1000);
+})();
 window.cntApi={gov,foulOf,speak,newGame,startGame,endGame,score,setLean,layoutMatch,onShotBell,tick,handleCmd,emit,watchSetup};
+})();
+
+</script>
+<script id="cntClass">
+/* Ver2.00 샷 종류 분류 + 선수별 집계 (읽기 전용 · 판정부 무변경)
+   - 쿠션 순서: 샷 이벤트(cushion side/시각)를 규정표 번호(1=왼쪽 장쿠션, 2=빨간공쪽 단쿠션, 3=오른쪽 장쿠션, 4=반대 단쿠션)로 변환
+   - 공의 왼쪽/오른쪽 맞음: 엔진 끝에 붙인 읽기 전용 훅(clsGeo)이 보낸 "첫 목적구 접촉 직전 수구 방향·목적구 위치"로 계산
+   - 규정표는 텍스트로 수정 가능(뱅크샷·대회전 등은 규정 확정 후 줄만 추가) */
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const on=k=>{const f=window.clsFeat;return !f||f[k]!==false;};   // 기능 가동 스위치(feat 섹션)
+const LSR='cls-rules-v2',LSG='cls-games-v2',LSS='cls-set-v1',LST='cls-terms-v2';
+const inBatch=()=>{try{return !!(window.mgAll&&window.mgAll.state&&window.mgAll.state.running);}catch(_){return false;}};
+const DEF_RULES=`# 기준: 「3쿠션 당구 샷 기술(타입) 마스터 정의」 — 분류 순서: 뱅크샷(선쿠션) → 대회전(4쿠션 이상) → 기본 3쿠션 궤적 → 특수/기타 → 미분류
+# 형식: 세부구질명 | 방향 | 쿠션순서(쉼표로 여러 개)
+# 방향: L=공의 왼쪽 히트, R=공의 오른쪽 히트, *=무관.  순서가 '4+' 이면 첫 목적구 접촉 후 쿠션이 4개 이상(대회전)
+# 쿠션 번호(초구 셋팅 기준, 수구 자리에서 빨간공을 바라봄): 1=왼쪽 장쿠션 2=빨간공쪽 단쿠션 3=오른쪽 장쿠션 4=반대쪽 단쿠션
+# 뱅크샷(원/투/쓰리뱅크)은 첫 목적구보다 쿠션을 먼저 맞힌 샷으로 자동 분류(순서표 불필요), 연속 같은 쿠션(112, 221 등)은 특수/기타
+대회전|*|4+
+뒤돌리기|L|123,341
+뒤돌리기|R|321,143
+옆돌리기|L|321,143
+옆돌리기|R|123,341
+앞돌리기|L|214,213,432,431
+앞돌리기|R|234,231,412,413
+단장 빗겨치기|L|234,231,412,413
+단장 빗겨치기|R|214,213,432,431
+단장 되돌리기|*|212,232,414,434
+장단 되돌리기|*|121,141,323,343
+단횡단|*|131,313,132,312,134,314
+장횡단|*|242,424,241,421,243,423
+`;
+function parseRules(t){const out=[];for(const raw of String(t||'').split('\n')){const l=raw.trim();if(!l||l[0]==='#')continue;
+ const p=l.split('|').map(x=>x.trim());if(p.length<3||!p[0])continue;
+ const ml=/^(\d)\+$/.exec(p[2]);
+ if(ml){out.push({name:p[0],side:'*',keys:[],minLen:+ml[1]});continue;}
+ const keys=p[2].split(/[,\s]+/).filter(k=>/^[1-4]+$/.test(k));if(!keys.length)continue;
+ out.push({name:p[0],side:/^[LR]$/i.test(p[1])?p[1].toUpperCase():'*',keys,minLen:0});}return out;}
+let RULES_TXT=DEF_RULES,RULES=parseRules(DEF_RULES);
+try{const t=localStorage.getItem(LSR);if(t&&parseRules(t).length){RULES_TXT=t;RULES=parseRules(t);}}catch(_){}
+const S={orient:'auto',names:['',''],lastOri:'우'};
+try{Object.assign(S,JSON.parse(localStorage.getItem(LSS)||'{}'));}catch(_){}
+S.names=[(S.names&&S.names[0])||'1Pman',(S.names&&S.names[1])||'2Pman'];
+const saveS=()=>{try{localStorage.setItem(LSS,JSON.stringify(S));}catch(_){}};
+
+/* ---------- 용어표: 세부구질명 | 멘트용어(대분류, 8가지) | 샷타입 번호(1~10) | 대분류 | 세부구질명(표기) ---------- */
+const DEF_TERMS=`# 형식: 분류이름 | 멘트용어(음성, 비우면 용어 없이 득점/무득점만) | 샷타입 번호(1~10) | 대분류 | 세부구질명(저장·표시용)
+원뱅크|뱅크샷|1|뱅크샷|원뱅크
+투뱅크|뱅크샷|1|뱅크샷|투뱅크
+쓰리뱅크|뱅크샷|1|뱅크샷|쓰리뱅크
+뒤돌리기|뒤돌리기|2|뒤돌리기|뒤돌리기 (우라)
+옆돌리기|옆돌리기|3|옆돌리기|옆돌리기 (제각돌리기/학구)
+앞돌리기|앞돌리기|4|앞돌리기|앞돌리기 (마와시/세워치기 포함)
+단장 빗겨치기|빗겨치기|5|빗겨치기|단장 빗겨치기 (짱꼴라)
+대회전|대회전|6|대회전|길게 돌리기 (4~5쿠션 이상)
+단장 되돌리기|되돌리기|7|되돌리기|단장 되돌리기 (리버스/제껴치기)
+장단 되돌리기|되돌리기|7|되돌리기|장단 되돌리기 (바운딩/지끼)
+단횡단|횡단|8|횡단샷|단횡단 (단더블/레일)
+장횡단|횡단|8|횡단샷|장횡단 (장더블/레일)
+특수/기타||9|특수/기타|찍어치기(맛세)/점프/끌어치기(히끼)
+미분류||10|미분류|판정 불가 / 복합 궤적
+`;
+function parseTerms(t){const m=new Map();for(const raw of String(t||'').split('\n')){const l=raw.trim();if(!l||l[0]==='#')continue;const p=l.split('|').map(x=>x.trim());if(!p[0])continue;m.set(p[0],{say:p[1]||'',no:p[2]||'',group:p[3]||p[0],detail:p[4]||p[0]});}return m;}
+let TERMS_TXT=DEF_TERMS,TERMS=parseTerms(DEF_TERMS);
+try{const t=localStorage.getItem(LST);if(t&&parseTerms(t).size){TERMS_TXT=t;TERMS=parseTerms(t);}}catch(_){}
+const termOf=type=>TERMS.get(type)||{say:'',no:'',group:type,detail:type};
+const lab=type=>{const t=termOf(type);return (t.no?t.no+'. ':'')+(t.group&&t.group!==type?t.group+' · ':'')+type;};
+
+/* ---------- 엔진 훅이 보낸 접촉 기하 ---------- */
+const GEO=new Map(),hooked=new WeakSet();let GV=0;
+function onMsg(ev){const d=ev&&ev.data;if(!d||d.type!=='clsGeo'||!on('cls'))return;GV++;const old=GEO.get(d.id);GEO.set(d.id,{geo:d.geo||(old&&old.geo)||null,ev:d.ev});if(GEO.size>600){const k=GEO.keys().next().value;GEO.delete(k);}}
+function hookW(){try{if(typeof worker!=='undefined'&&worker&&!hooked.has(worker)){worker.addEventListener('message',onMsg);hooked.add(worker);}}catch(_){}}
+setInterval(hookW,400);
+
+/* ---------- 방향(번호 부여) ---------- */
+function oriFromPose(pose){ // 초구 배치: 혼자 떨어진 공(빨간공)이 있는 쪽 단쿠션 = 2번
+ try{if(!Array.isArray(pose)||pose.length!==3)return null;if(window.cntLayoutMatch&&!window.cntLayoutMatch(pose,60))return null;
+  const x=pose.map(p=>p.x);let best=null;for(let i=0;i<3;i++){const o=[0,1,2].filter(j=>j!==i);const pair=Math.abs(x[o[0]]-x[o[1]]);const gap=Math.abs(x[i]-(x[o[0]]+x[o[1]])/2);if(pair<120&&gap>300&&(!best||gap>best.gap))best={i,gap};}
+  if(!best)return null;return x[best.i]>500?'우':'좌';}catch(_){return null;}}
+function curOri(){if(S.orient==='우'||S.orient==='좌')return S.orient;
+ try{const f=shots.filter(s=>s&&Array.isArray(s.preShotPose)).sort((a,b)=>a.start-b.start)[0];const o=f?oriFromPose(f.preShotPose):null;if(o)S.lastOri=o;}catch(_){}
+ return S.lastOri||'우';}
+const MAP={'우':{'상':1,'우':2,'하':3,'좌':4},'좌':{'하':1,'좌':2,'상':3,'우':4}};
+
+/* ---------- 분류 ---------- */
+function classify(s,ori,evIn){
+ const cue=(()=>{try{const c=observedCue(s);return c===0||c===1?c:s.cue;}catch(_){return s.cue;}})();
+ const evs=(Array.isArray(evIn)?evIn:(Array.isArray(s.events)&&s.events.length?s.events:((GEO.get(s.id)||{}).ev||[]))).filter(e=>e&&Number.isFinite(e.t)).slice().sort((a,b)=>a.t-b.t);
+ const fo=evs.find(e=>e.type==='ball'&&e.target!==cue);
+ const m=MAP[ori]||MAP['우'];
+ const base={id:s.id,start:s.start,cue,note:''};
+ if(!fo)return {...base,type:'미분류',note:'목적구 미접촉',seq:evs.filter(e=>e.type==='cushion'&&m[e.side]).map(e=>m[e.side]).join(''),status:'-',side:'',th:null};
+ const sec=evs.find(e=>e.type==='ball'&&e.target!==cue&&e.target!==fo.target&&e.t>fo.t);   // 제2적구 접촉 이후 쿠션은 세지 않음
+ const cush=evs.filter(e=>e.type==='cushion'&&m[e.side]&&(!sec||e.t<=sec.t));
+ const pre=cush.filter(e=>e.t<fo.t-0.02),post=cush.filter(e=>e.t>=fo.t-0.02);
+ const preS=pre.map(e=>m[e.side]).join(''),postS=post.map(e=>m[e.side]).join('');
+ const G=GEO.get(s.id),geo=G&&G.geo&&Math.abs(G.geo.tc-fo.t)<0.25?G.geo:null;
+ let side='',th=null;
+ if(geo){side=geo.lat<0?'L':'R';th=Math.max(0,Math.min(1,1-Math.abs(geo.lat)/(geo.D||21.6)));}
+ const seq=pre.length?preS+'|'+postS:postS;
+ const R=(type,status,note)=>({...base,type,seq,status,side,th,note:note||''});
+ if(pre.length)return R(pre.length>=3?'쓰리뱅크':pre.length===2?'투뱅크':'원뱅크','확정');          // 1) 뱅크샷: 선쿠션 진입
+ const big=sec?RULES.find(r=>r.minLen&&postS.length>=r.minLen):null;                                  // 2) 대회전: 제2적구까지 4쿠션 이상 (무득점 샷이 멀리 굴러간 것은 제외)
+ if(big)return R(big.name,'확정');
+ let cand=[];                                                                                          // 3) 기본 3쿠션 궤적
+ for(const r of RULES){if(!r.keys.length)continue;let kl=0;for(const k of r.keys)if(postS.startsWith(k)&&k.length>kl)kl=k.length;if(kl)cand.push({r,kl});}
+ if(cand.length){const ml=Math.max(...cand.map(c=>c.kl));cand=cand.filter(c=>c.kl===ml);}
+ const known=cand.filter(c=>c.r.side==='*'||(side&&c.r.side===side));
+ if(known.length)return R(known[0].r.name,'확정');
+ if(cand.length)return R([...new Set(cand.map(c=>c.r.name))].join(' / '),'방향미확인');
+ if(postS.length>=1&&postS.length<3&&side){const part=RULES.filter(r=>r.keys.length&&(r.side==='*'||r.side===side)&&r.keys.some(k=>k.startsWith(postS)));
+  const nm=[...new Set(part.map(r=>r.name))];if(nm.length===1)return R(nm[0],'추정','쿠션 '+postS.length+'회 · 추정');}
+ if(/(\d)\1/.test(postS.slice(0,3)))return R('특수/기타','확정');                                      // 4) 같은 쿠션 연속 등
+ return R('미분류','미분류',postS.length<3?'쿠션 3회 미만':'규정 밖 순서');                              // 5) 미분류
+}
+function snapshot(){
+ const ori=curOri(),out=[];
+ let list=[];try{list=v43EligibleShots();}catch(_){list=(typeof shots!=='undefined'?shots:[]).filter(s=>s&&!s.active);}
+ const multi=(()=>{try{return Number(window.cntState&&cntState.players)>2;}catch(_){return false;}})();
+ for(const s of list){if(!s||s.active)continue;
+  let res=null,p=null;try{res=effectiveResult(s);}catch(_){}try{p=multi?null:playerForShot(s);}catch(_){}
+  if(res!=='score'&&res!=='miss')continue;
+  const c=classify(s,ori);c.p=(p===0||p===1)?p:null;c.r=res==='score'?1:0;out.push(c);}
+ return out;
+}
+function sayTerm(id,kind){ // undefined = 정보 도착 대기, '' = 용어 없음
+ if(!on('cls')||!on('rt'))return '';
+ let s=(typeof shots!=='undefined'?shots:[]).find(x=>x&&x.id===id);
+ if(!s){try{if(typeof currentShot!=='undefined'&&currentShot&&currentShot.id===id)s=currentShot;}catch(_){}}
+ if(!s)return undefined;
+ const own=Array.isArray(s.events)&&s.events.length;
+ const G=GEO.get(id);
+ if(!own){ // 샷 진행 중: 엔진 훅이 보낸 이벤트로 분류. 득점 벨은 제2적구 접촉이 도착한 뒤에
+  if(!G||!G.ev||!G.ev.length)return undefined;
+  if(kind==='score'){const cue=s.cue;const t=G.ev.filter(e=>e.type==='ball'&&e.target!==cue).map(e=>e.target);if(new Set(t).size<2)return undefined;}
+ }
+ const c=classify(s,curOri());
+ if(c.status==='확정'||c.status==='추정')return termOf(c.type).say||'';
+ if(c.status==='방향미확인'&&!(G&&G.geo)&&!own)return undefined;
+ return '';}
+window.clsApi={_geo:GEO,snapshot,classify,sayTerm,termOf,get rules(){return RULES;},curOri};
+
+/* ---------- 경기별 저장 (경기마다 키 1개, 바뀐 현재 경기만 8초 이상 간격으로 기록) ---------- */
+const LSI='cls-g2-idx';let IDX=[],GAMES=[];
+try{IDX=JSON.parse(localStorage.getItem(LSI)||'[]');if(!Array.isArray(IDX))IDX=[];}catch(_){IDX=[];}
+try{const old=JSON.parse(localStorage.getItem(LSG)||'null');   // 이전 버전(한 덩어리 저장) → 경기별 키로 이전
+ if(Array.isArray(old)&&old.length){for(const g of old){if(g&&g.gid&&!IDX.includes(g.gid)){localStorage.setItem('cls-g2:'+g.gid,JSON.stringify(g));IDX.push(g.gid);}}localStorage.setItem(LSI,JSON.stringify(IDX));}
+ if(old!==null)localStorage.removeItem(LSG);}catch(_){}
+for(const gid of IDX){try{const t=localStorage.getItem('cls-g2:'+gid);if(t)GAMES.push(JSON.parse(t));}catch(_){}}
+let curGid=null,curNo=null,lastSnap=[],endShown=false,dirty=false,lastPersist=0;
+function compact(rows){return rows.map(r=>[r.id,r.p,r.type,r.seq,r.side,r.th==null?null:+r.th.toFixed(2),r.r,r.status==='확정'?1:0]);}
+function persist(force){
+ if(inBatch()||!on('cls')||!on('sum'))return;
+ try{if(!curGid||!lastSnap.length)return;if(!dirty&&!force)return;
+  const now=Date.now();if(!force&&now-lastPersist<8000)return;
+  const rec={gid:curGid,at:new Date(curGid).toISOString(),names:S.names.slice(),ori:curOri(),rows:compact(lastSnap)};
+  const i=GAMES.findIndex(g=>g.gid===curGid);if(i>=0)GAMES[i]=rec;else{GAMES.push(rec);IDX.push(curGid);}
+  while(IDX.length>150){const g=IDX.shift();GAMES=GAMES.filter(x=>x.gid!==g);try{localStorage.removeItem('cls-g2:'+g);}catch(_){}}
+  localStorage.setItem('cls-g2:'+curGid,JSON.stringify(rec));localStorage.setItem(LSI,JSON.stringify(IDX));
+  dirty=false;lastPersist=now;}catch(_){}}
+let sig0='',tickN=0;
+function refresh(force){
+ if(inBatch()||!on('cls')||(!force&&!on('rt')))return;
+ try{if(window.cntState&&cntState.safe&&!force)return;      // 부하 보호 중이면 화면·집계 갱신은 쉼(음성 멘트는 별도)
+  const L=(typeof shots!=='undefined'?shots:[]),last=L[L.length-1];
+  let lr='';try{if(last)lr=effectiveResult(last);}catch(_){}
+  const sig=L.length+':'+(last?last.id+':'+(last.active?1:0)+':'+(last.events?last.events.length:0)+':'+lr:'')+':'+GV+':'+S.names.join('|')+':'+RULES_TXT.length+':'+TERMS_TXT.length;
+  if(sig===sig0&&!force&&(tickN%6)!==0)return;      // 같으면 건너뜀(6번에 1번은 앞선 샷의 정정 반영을 위해 재계산)
+  sig0=sig;lastSnap=snapshot();dirty=true;paintLive();
+ }catch(_){}}
+function gameTick(){
+ if(inBatch())return;tickN++;
+ let no=null;try{no=window.cntState?cntState.gameNo:null;}catch(_){}
+ if(no!==curNo){persist(true);curNo=no;curGid=Date.now();lastSnap=[];sig0='';try{$('clsEndSum').style.display='none';}catch(_){}endShown=false;}
+ try{if(typeof v55ReviewReady!=='undefined'&&v55ReviewReady&&!endShown&&shots.some(x=>x&&!x.active)){endShown=true;refresh(true);window.clsGameEnd('분석 종료');}if(typeof v55ReviewReady!=='undefined'&&!v55ReviewReady)endShown=false;}catch(_){}
+ refresh();persist();
+}
+setInterval(gameTick,1000);
+window.addEventListener('beforeunload',()=>{try{persist(true);}catch(_){}});
+
+/* ---------- 집계 ---------- */
+const TH=[['얇게',0,1/3],['보통',1/3,2/3],['두껍게',2/3,1.01]];
+function agg(rows){ // rows: [{type,r,th}] → Map(type→{n,s,th:[[n,s]x3]})
+ const m=new Map();for(const r of rows){let a=m.get(r.type);if(!a){a={n:0,s:0,th:TH.map(()=>[0,0])};m.set(r.type,a);}
+  a.n++;a.s+=r.r;if(r.th!=null){const k=TH.findIndex(t=>r.th>=t[1]&&r.th<t[2]);if(k>=0){a.th[k][0]++;a.th[k][1]+=r.r;}}}
+ return m;}
+const pct=(s,n)=>n?Math.round(100*s/n)+'%':'—';
+function rowsOfMember(name){const out=[];for(const g of GAMES){for(let p=0;p<2;p++)if(g.names&&g.names[p]===name)for(const r of g.rows)if(r[1]===p)out.push({type:r[2],r:r[6],th:r[5]});}return out;}
+function allMembers(){const s=new Set();for(const g of GAMES)for(const n of g.names||[])if(n)s.add(n);return [...s];}
+function typeOrder(){return [...TERMS.keys()];}
+function tableHTML(cols){ // cols: [{head,map}]
+ const order=typeOrder();const extra=new Set();for(const c of cols)for(const k of c.map.keys())if(!order.includes(k))extra.add(k);
+ const types=[...order,...extra].filter(t=>cols.some(c=>c.map.has(t)));
+ if(!types.length)return '<div style="color:#9ab">데이터 없음</div>';
+ let h='<table class="clsT"><tr><th rowspan="2">샷 종류</th>'+cols.map(c=>`<th colspan="4">${c.head}</th>`).join('')+'</tr><tr>'+cols.map(()=>'<th>시도</th><th>득점</th><th>득점률</th><th>점유율</th>').join('')+'</tr>';
+ const tot=cols.map(c=>{let n=0;for(const a of c.map.values())n+=a.n;return n;});
+ for(const t of types){h+='<tr><td>'+lab(t)+'</td>'+cols.map((c,ci)=>{const a=c.map.get(t);return a?`<td>${a.n}</td><td>${a.s}</td><td>${pct(a.s,a.n)}</td><td>${pct(a.n,tot[ci])}</td>`:'<td>—</td><td>—</td><td>—</td><td>—</td>';}).join('')+'</tr>';}
+ h+='<tr style="font-weight:700"><td>합계</td>'+cols.map(c=>{let n=0,s=0;for(const a of c.map.values()){n+=a.n;s+=a.s;}return `<td>${n}</td><td>${s}</td><td>${pct(s,n)}</td><td>${n?'100%':'—'}</td>`;}).join('')+'</tr>';
+ return h+'</table>';}
+function adviceHTML(map,label){
+ let n=0,s=0;for(const a of map.values()){n+=a.n;s+=a.s;}if(n<10)return '<div class="clsNote">누적 샷이 적어(총 '+n+'회) 개선 포인트는 아직 계산하지 않습니다. 종류별 시도가 10회 이상 쌓이면 표시됩니다.</div>';
+ const avg=s/n,low=[],hi=[];
+ for(const [t,a] of map){if(a.n<10||t==='미분류'||t==='특수/기타')continue;const r=a.s/a.n;if(r<avg-.12)low.push([t,r,a.n]);else if(r>avg+.12)hi.push([t,r,a.n]);}
+ low.sort((a,b)=>a[1]-b[1]);hi.sort((a,b)=>b[1]-a[1]);
+ const f=x=>x.slice(0,3).map(([t,r,k])=>`${t} ${Math.round(r*100)}%(${k}회)`).join(', ');
+ let h='<div class="clsNote">전체 득점률 '+Math.round(avg*100)+'% (총 '+n+'회) 기준 · 참고용(AI 추정, 공 배치 난이도 차이는 반영 안 됨)<br>';
+ h+=low.length?'▼ 상대적으로 낮은 샷: '+f(low)+'<br>':'▼ 평균보다 뚜렷이 낮은 샷 없음<br>';
+ h+=hi.length?'▲ 상대적으로 높은 샷: '+f(hi):'▲ 평균보다 뚜렷이 높은 샷 없음';
+ return h+'</div>';}
+function thHTML(map){let h='<table class="clsT"><tr><th>샷 종류</th>'+TH.map(t=>`<th>${t[0]}</th>`).join('')+'</tr>';let any=false;
+ for(const [t,a] of map){if(a.th.every(x=>!x[0]))continue;any=true;h+='<tr><td>'+lab(t)+'</td>'+a.th.map(x=>x[0]?`<td>${x[1]}/${x[0]} (${pct(x[1],x[0])})</td>`:'<td>—</td>').join('')+'</tr>';}
+ return any?h+'</table>':'';}
+
+/* ---------- UI ---------- */
+const css=document.createElement('style');css.textContent=`#clsSection .clsT{border-collapse:collapse;font-size:12px;margin:6px 0}#clsSection .clsT th,#clsSection .clsT td{border:1px solid #2a3a4a;padding:3px 8px;text-align:center}#clsSection .clsT td:first-child{text-align:left}#clsSection .clsNote{font-size:12px;color:#cfe3f3;margin:6px 0;line-height:1.5}#clsSection textarea{width:100%;min-height:150px;font:12px/1.5 monospace;background:#0b1620;color:#dfeaf3;border:1px solid #2a3a4a;border-radius:6px;padding:6px;box-sizing:border-box}#clsSection .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0;font-size:12px}#clsSection input[type=text],#clsSection select{background:#0b1620;color:#dfeaf3;border:1px solid #2a3a4a;border-radius:6px;padding:4px 6px}`;
+document.head.appendChild(css);
+const sec=document.createElement('section');sec.className='panel';sec.id='clsSection';
+sec.innerHTML=`<div class="head"><h2>샷 종류 분석 (선수별)</h2><span class="sub">규정표 기준 자동 분류 · 경기 후 선수별 득점률 (AI 추정, 참고용)</span><button type="button" id="clsToggle">펼치기 ▾</button></div>
+<div id="clsBody" style="display:none;padding:0 14px 14px">
+<div class="row">선수 ID(회원 코드/닉네임) <label>1P(흰 수구) <input type="text" id="clsN0" size="12"></label><label>2P(노란 수구) <input type="text" id="clsN1" size="12"></label>
+<label>쿠션 번호 기준 <select id="clsOri"><option value="auto">자동(초구 배치에서 빨간공 위치)</option><option value="우">빨간공 쪽 = 화면 오른쪽</option><option value="좌">빨간공 쪽 = 화면 왼쪽</option></select></label><span id="clsOriNow"></span></div>
+<h3 style="font-size:13px;margin:10px 0 2px">이번 경기</h3><div id="clsCur"></div>
+<h3 style="font-size:13px;margin:10px 0 2px">선수별 누적 <select id="clsMem"></select></h3><div id="clsAcc"></div><div id="clsAdv"></div><div id="clsTh"></div>
+<h3 style="font-size:13px;margin:10px 0 2px">규정표 (수정 가능)</h3><textarea id="clsRules" spellcheck="false"></textarea>
+<h3 style="font-size:13px;margin:10px 0 2px">샷 용어표 (멘트용어 · 샷타입 1~10 · 세부구질명)</h3><textarea id="clsTerms" spellcheck="false" style="min-height:120px"></textarea>
+<div class="row"><button type="button" id="clsSaveT">용어표 저장</button><button type="button" id="clsDefT">기본 용어표로</button></div>
+<div class="row"><button type="button" id="clsSaveR">규정 저장</button><button type="button" id="clsDefR">기본 규정으로</button><button type="button" id="clsCsvShots">이번 경기 샷별 CSV</button><button type="button" id="clsCsvMem">선수별 누적 CSV</button><button type="button" id="clsClr">누적 기록 지우기</button><span id="clsMsg"></span></div>
+<div class="clsNote">이번 경기는 선수 ID를 입력해 두면 경기가 끝날 때 그 선수의 누적에 합쳐집니다(입력하지 않으면 '전체'에만 집계). 쿠션 번호는 초구 배치 기준으로 자동 결정됩니다.</div></div>`;
+const anchor=$('cntSection')||document.querySelector('section.panel.records');
+if(anchor&&anchor.parentNode)anchor.parentNode.insertBefore(sec,anchor.nextSibling&&anchor.id==='cntSection'?anchor.nextSibling:anchor);else document.body.appendChild(sec);
+const msg=t=>{const e=$('clsMsg');if(e)e.textContent=t||'';};
+$('clsToggle').onclick=()=>{const b=$('clsBody'),o=b.style.display==='none';b.style.display=o?'':'none';$('clsToggle').textContent=o?'접기 ▴':'펼치기 ▾';if(o)paintUI();};
+$('clsRules').value=RULES_TXT;$('clsTerms').value=TERMS_TXT;$('clsOri').value=S.orient;$('clsN0').value=S.names[0]||'';$('clsN1').value=S.names[1]||'';
+$('clsN0').onchange=$('clsN1').onchange=()=>{S.names=[$('clsN0').value.trim()||'1Pman',$('clsN1').value.trim()||'2Pman'];$('clsN0').value=S.names[0];$('clsN1').value=S.names[1];saveS();dirty=true;persist(true);paintUI();};
+$('clsOri').onchange=()=>{S.orient=$('clsOri').value;saveS();paintUI();};
+$('clsSaveR').onclick=()=>{const t=$('clsRules').value,r=parseRules(t);if(!r.length){msg('규칙이 한 줄도 없습니다. 형식: 이름|방향|순서,순서');return;}RULES_TXT=t;RULES=r;try{localStorage.setItem(LSR,t);}catch(_){}msg('규정 저장됨 · '+r.length+'줄');paintUI();};
+$('clsDefR').onclick=()=>{$('clsRules').value=DEF_RULES;RULES_TXT=DEF_RULES;RULES=parseRules(DEF_RULES);try{localStorage.removeItem(LSR);}catch(_){}msg('기본 규정으로 되돌림');paintUI();};
+$('clsSaveT').onclick=()=>{const t=$('clsTerms').value,m=parseTerms(t);if(!m.size){msg('용어표가 비었습니다');return;}TERMS_TXT=t;TERMS=m;try{localStorage.setItem(LST,t);}catch(_){}msg('용어표 저장됨');paintUI();};
+$('clsDefT').onclick=()=>{$('clsTerms').value=DEF_TERMS;TERMS_TXT=DEF_TERMS;TERMS=parseTerms(DEF_TERMS);try{localStorage.removeItem(LST);}catch(_){}msg('기본 용어표로 되돌림');paintUI();};
+$('clsClr').onclick=()=>{if(!confirm('선수별 누적 기록을 모두 지울까요? (규정·설정은 유지)'))return;try{for(const g of IDX)localStorage.removeItem('cls-g2:'+g);localStorage.removeItem(LSI);}catch(_){}GAMES=[];IDX=[];msg('누적 기록 삭제');paintUI();};
+function csv(rows){return '﻿'+rows.map(r=>r.map(x=>{x=x==null?'':String(x);return /[",\n]/.test(x)?'"'+x.replace(/"/g,'""')+'"':x;}).join(',')).join('\n');}
+function dl(name,text){const u=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),15000);}
+$('clsCsvShots').onclick=()=>{const rows=[['샷','시작초','선수','샷 종류','샷타입 번호','대분류','세부구질명','쿠션순서','방향','두께','결과','분류상태']];for(const r of snapshot())rows.push([r.id,r.start!=null?+r.start.toFixed(2):'',r.p==null?'':(S.names[r.p]||(r.p+1)+'P'),r.type,termOf(r.type).no,termOf(r.type).group,termOf(r.type).detail,r.seq,r.side==='L'?'왼쪽':r.side==='R'?'오른쪽':'',r.th==null?'':r.th.toFixed(2),r.r?'득점':'무득점',r.status]);dl('shot_types_current.csv',csv(rows));};
+$('clsCsvMem').onclick=()=>{const rows=[['선수','샷 종류','샷타입 번호','대분류','세부구질명','시도','득점','득점률','얇게 시도/득점','보통 시도/득점','두껍게 시도/득점']];
+ for(const n of allMembers()){for(const [t,a] of agg(rowsOfMember(n)))rows.push([n,t,termOf(t).no,termOf(t).group,termOf(t).detail,a.n,a.s,a.n?(a.s/a.n).toFixed(3):'',...a.th.map(x=>x[0]+'/'+x[1])]);}dl('shot_types_members.csv',csv(rows));};
+function paintUI(){
+ try{if($('clsBody').style.display==='none')return;
+  $('clsOriNow').textContent='현재 번호 기준: 빨간공 쪽 단쿠션 = 화면 '+curOri()+'쪽 (2번)';
+  const rows=lastSnap.length?lastSnap:snapshot();
+  const cols=[0,1].map(p=>({head:(S.names[p]||(p+1)+'P'),map:agg(rows.filter(r=>r.p===p))}));
+  const un=agg(rows.filter(r=>r.p==null));if(un.size)cols.push({head:'선수 미지정',map:un});
+  $('clsCur').innerHTML=tableHTML(cols)+(()=>{const m=new Map();for(const r of rows)if(r.status==='미분류'||r.status==='방향미확인')m.set(r.seq+(r.status==='방향미확인'?'(방향?)':''),(m.get(r.seq+(r.status==='방향미확인'?'(방향?)':''))||0)+1);
+   return m.size?'<div class="clsNote">규정에 없는/확인 못한 쿠션 순서: '+[...m].sort((a,b)=>b[1]-a[1]).map(([k,v])=>k+' ×'+v).join(', ')+'</div>':'';})();
+  const sel=$('clsMem'),mem=allMembers(),old=sel.value;sel.innerHTML='<option value="">(선택)</option>'+mem.map(n=>`<option>${n}</option>`).join('');if(mem.includes(old))sel.value=old;else if(S.names[0]&&mem.includes(S.names[0]))sel.value=S.names[0];
+  const nm=sel.value;if(nm){const map=agg(rowsOfMember(nm));$('clsAcc').innerHTML=tableHTML([{head:nm+' 누적',map}]);$('clsAdv').innerHTML=adviceHTML(map,nm);$('clsTh').innerHTML=thHTML(map)?'<div class="clsNote">두께 구간별 득점/시도</div>'+thHTML(map):'';}
+  else{$('clsAcc').innerHTML='<div class="clsNote">선수 ID를 입력한 경기가 저장되면 여기서 선수별 누적을 볼 수 있습니다.</div>';$('clsAdv').innerHTML='';$('clsTh').innerHTML='';}
+ }catch(e){}}
+$('clsMem').onchange=()=>paintUI();
+setInterval(()=>{if(!inBatch()&&$('clsBody').style.display!=='none')paintUI();},3000);
+
+
+/* ---------- 영상 아래 실시간 샷 기술 표시줄 + 경기 종료 집계 ---------- */
+const css2=document.createElement('style');css2.textContent=`#clsLive{margin:8px 0;padding:8px 12px;border:1px solid #2a3a4a;border-radius:10px;background:#0f1b27;color:#dfeaf3}#clsLive .h{display:flex;gap:10px;align-items:center;font-size:12px;color:#9fb6c8}#clsLive .h b{color:#dfeaf3;font-size:13px}#clsLive .h button{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid #2a3a4a;background:#16283a;color:#cfe3f3;cursor:pointer}#clsLiveBig{font-size:18px;font-weight:700;margin:4px 0}#clsLiveBig .ok{color:#6fe3a0}#clsLiveBig .ng{color:#ff8c8c}#clsLiveList{font-size:12px;line-height:1.6;color:#b9cddc}#clsLiveList .ok{color:#6fe3a0}#clsLiveList .ng{color:#ff9a9a}#clsEndSum{margin-top:6px;border-top:1px solid #2a3a4a;padding-top:6px}`;
+document.head.appendChild(css2);
+const live=document.createElement('div');live.id='clsLive';
+live.innerHTML='<div class="h"><b>샷 기술</b><span id="clsLiveSub">샷이 끝나면 분류가 표시됩니다 (AI 추정)</span><button type="button" id="clsLiveEnd">경기 집계 ▾</button></div><div id="clsLiveBig">—</div><div id="clsLiveList"></div><div id="clsEndSum" style="display:none"></div>';
+(function place(){const a=document.getElementById('v57Panel')||document.getElementById('v57Log');
+ if(a&&a.parentNode){a.parentNode.insertBefore(live,a);return;}
+ const c=document.querySelector('.stage,.video-wrap,#stage,video');if(c&&c.parentNode){c.parentNode.insertBefore(live,c.nextSibling);return;}
+ document.body.appendChild(live);})();
+const nm=p=>p==null?'미지정':(S.names[p]||(p+1)+'P');
+function lineOf(r,full){const t=termOf(r.type),tag=[];
+ try{if(window.cntApi&&cntApi.foulOf&&cntApi.foulOf(r.id))tag.push('파울');}catch(_){}
+ const kind=r.status==='방향미확인'?r.type+' (방향 확인 중)':r.type;
+ const sd=r.side==='L'?'공 왼쪽':r.side==='R'?'공 오른쪽':'';
+ const info=[r.seq?'쿠션 '+r.seq:'',sd,r.th!=null?'두께 '+r.th.toFixed(2):'',r.note].filter(Boolean).join(' · ');
+ return `#${r.id} · ${nm(r.p)} · <b>${t.no?t.no+'. ':''}${kind}</b>${t.group&&t.group!==r.type&&r.status==='확정'?' ['+t.group+']':''} → <span class="${r.r?'ok':'ng'}">${r.r?'득점':'무득점'}</span>${tag.length?' · '+tag.join(','):''}${full&&info?' <span style="color:#8aa">('+info+')</span>':''}`;}
+function paintLive(){
+ if(!on('line')||!on('rt'))return;
+ try{const L=(typeof shots!=='undefined'?shots:[]);
+  let act=L.find(s=>s&&s.active);if(!act){try{if(typeof currentShot!=='undefined'&&currentShot&&currentShot.active)act=currentShot;}catch(_){}}
+  let sub='AI 추정 · 샷이 끝날 때마다 갱신';
+  if(act){sub='샷 진행 중…';try{const G=GEO.get(act.id);if(G&&G.ev&&G.ev.length){const c=classify(act,curOri());if(c.status==='확정'||c.status==='추정'||c.status==='방향미확인')sub='샷 진행 중 · '+c.type+(c.status==='확정'?'':'?')+(c.seq?' (쿠션 '+c.seq+')':'');}}catch(_){}}
+  $('clsLiveSub').textContent=sub;
+  const rows=lastSnap;
+  if(!rows.length){$('clsLiveBig').innerHTML='—';$('clsLiveList').innerHTML='';return;}
+  const rr=rows.slice().sort((a,b)=>b.id-a.id);
+  $('clsLiveBig').innerHTML=lineOf(rr[0],true);
+  $('clsLiveList').innerHTML=rr.slice(1,7).map(r=>lineOf(r,false)).join('<br>');
+ }catch(e){}}
+$('clsLiveEnd').onclick=()=>{const e=$('clsEndSum');if(e.style.display==='none'){showEnd('수동 보기');}else e.style.display='none';};
+function showEnd(reason){
+ if(!on('cls')||!on('sum'))return;
+ try{const rows=lastSnap.length?lastSnap:snapshot();
+  const cols=[0,1].map(p=>({head:nm(p),map:agg(rows.filter(r=>r.p===p))}));
+  const un=agg(rows.filter(r=>r.p==null));if(un.size)cols.push({head:'선수 미지정',map:un});
+  let sc='';try{const a=cntApi.score();sc=` · 점수 ${a[0]} : ${a[1]}`;}catch(_){}
+  const e=$('clsEndSum');e.style.display='';
+  e.innerHTML=`<div class="clsNote"><b>경기 종료 집계</b>${reason?' ('+reason+')':''}${sc} · AI 추정, 참고용</div>`+tableHTML(cols);
+ }catch(_){}}
+window.clsGameEnd=reason=>{try{if(inBatch())return;lastSnap=snapshot();dirty=true;persist(true);showEnd(reason);paintUI();}catch(_){}};
+
+/* 점수판에서 선수 ID를 보내는 경우: {cmd:'set_players', names:['코드A','코드B']} */
+window.clsSetNames=n=>{if(Array.isArray(n)){S.names=[String(n[0]||'').trim()||'1Pman',String(n[1]||'').trim()||'2Pman'];$('clsN0').value=S.names[0];$('clsN1').value=S.names[1];saveS();dirty=true;persist(true);}};
+})();
+
+</script>
+<script id="cntFeat">
+/* Ver2.00 기능 가동 설정 — 섹션별 가동/비가동 스위치 (부하 큰 기능 표시). 판정부 무변경. */
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);const LS='feat-v1';
+let F={rt:true,cls:true,line:true,sum:true,all:true};
+try{Object.assign(F,JSON.parse(localStorage.getItem(LS)||'{}'));}catch(_){}
+window.clsFeat=F;
+const save=()=>{try{localStorage.setItem(LS,JSON.stringify(F));}catch(_){}};
+// kind:'own' = 이 설정값, 'mirror' = 기존 체크박스와 같은 값(양방향)
+const ITEMS=[
+ {h:'판정 · 후처리'},
+ {id:'pc',k:'mirror',el:'v5284AutoPC',n:'후처리 재검증 (의심 샷 30Hz·원본화질)',load:'큼',d:'분석 끝난 뒤 의심 샷을 다시 계산합니다. 실시간 판정에는 쓰이지 않으며 ALL 일괄 검증 중에는 자동으로 켜집니다.'},
+ {id:'em',k:'mirror',el:'cntEM',n:'무득점 조기 판정',load:'중',d:'궤적상 득점이 불가능해지면 샷이 끝나기 전에 무득점을 알립니다.'},
+ {id:'ta',k:'mirror',el:'v57Enable',n:'정답표 불일치 시 판정 정지',load:'낮음',d:'이닝표(PNG)를 올린 경우에만 의미가 있습니다.'},
+ {id:'as',k:'mirror',el:'cntAS',n:'입력되면 자동 분석 시작',load:'낮음',d:'카메라·스트림이 연결되면 바로 분석을 시작합니다.'},
+ {h:'샷 기술 분류'},
+ {id:'cls',k:'own',n:'샷 종류 분류 (전체)',load:'중',d:'샷마다 쿠션 순서·접촉 위치를 분석해 샷 종류를 분류합니다. 끄면 샷 용어 멘트·샷 기술 줄·집계가 모두 멈추고 엔진의 접촉 보고도 중단됩니다.'},
+ {id:'rt',k:'own',n:'샷 분류를 실시간으로 처리 (끄면 경기 종료 후 일괄 분류)',load:'중',d:'끄면 경기 중에는 궤적·접촉 데이터만 모으고, 경기가 끝나는 순간(또는 「경기 집계」 버튼) 한 번에 분류·집계합니다. 샷 용어 멘트와 샷 기술 줄은 경기 중에 나오지 않습니다.'},
+ {id:'line',k:'own',n:'샷 기술 표시줄 (영상 아래 글자)',load:'낮음',d:'영상 아래 실시간 샷 기술 글자 표시.'},
+ {id:'sum',k:'own',n:'경기 종료 집계 · 선수별 누적 저장',load:'낮음',d:'경기 끝날 때 선수별 성공률 집계와 저장.'},
+ {h:'멘트 · 화면'},
+ {id:'hr',k:'mirror',el:'cntHR',n:'하이런 멘트',load:'낮음',d:'연속 득점이 기준 이상이면 멘트.'},
+ {id:'all',k:'own',n:'ALL 일괄 검증 섹션 표시',load:'낮음',d:'끄면 섹션만 숨깁니다(일괄 검증을 쓸 때만 켜 두세요).'},
+];
+const css=document.createElement('style');css.textContent=`#featSection .fRow{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-top:1px solid #243645;font-size:13px}
+#featSection .fH{font-weight:700;margin:10px 0 0;color:#9fd0ee;font-size:12px}#featSection .fN{flex:1}#featSection .fN small{display:block;color:#93a9ba;font-size:11px;line-height:1.4;margin-top:2px}
+#featSection .fTag{font-size:11px;padding:1px 7px;border-radius:9px;white-space:nowrap;margin-left:6px}
+#featSection .t큼{background:#6a2a2a;color:#ffd0d0}#featSection .t중{background:#5a4a1a;color:#ffe9a8}#featSection .t낮음{background:#1f4a3a;color:#bdf0d9}
+#featSection .sw{position:relative;width:62px;min-height:32px;border-radius:16px;border:1px solid #567;background:#3a4650;color:#fff;font-size:12px;cursor:pointer;flex:none;padding:0}
+#featSection .sw.on{background:#1e7a4a;border-color:#6be3bd}#featSection .fBtns button{min-height:32px;margin:4px 6px 4px 0;font-size:12px}`;
+document.head.appendChild(css);
+const sec=document.createElement('section');sec.className='panel';sec.id='featSection';
+sec.innerHTML='<div class="head"><h2>기능 가동 설정</h2><span class="sub">섹션별 기능 가동/비가동 · PC 부하가 크면 「큼」「중」 표시 기능부터 끄세요</span><button type="button" id="featToggle">접기 ▴</button></div><div id="featBody" style="padding:0 14px 14px"></div>';
+const body=sec.querySelector('#featBody');
+const sw={};
+function get(it){if(it.k==='mirror'){const e=$(it.el);return e?e.checked:false;}return F[it.id]!==false;}
+function paint(it){const b=sw[it.id];if(!b)return;const v=get(it);b.classList.toggle('on',v);b.textContent=v?'가동':'비가동';if(it.k==='mirror'&&!$(it.el))b.disabled=true;}
+function set(it,v){
+ if(it.k==='mirror'){const e=$(it.el);if(!e)return;if(e.checked!==v){e.checked=v;e.dispatchEvent(new Event('change',{bubbles:true}));e.dispatchEvent(new Event('input',{bubbles:true}));}}
+ else{F[it.id]=v;save();apply();}
+ paint(it);}
+for(const it of ITEMS){
+ if(it.h){const h=document.createElement('div');h.className='fH';h.textContent=it.h;body.appendChild(h);continue;}
+ const r=document.createElement('div');r.className='fRow';
+ r.innerHTML=`<div class="fN"><b>${it.n}</b><span class="fTag t${it.load}">부하 ${it.load}</span><small>${it.d}</small></div>`;
+ const b=document.createElement('button');b.type='button';b.className='sw';b.onclick=()=>set(it,!get(it));sw[it.id]=b;r.appendChild(b);body.appendChild(r);}
+const bt=document.createElement('div');bt.className='fBtns';
+bt.innerHTML='<button type="button" id="featLite">경량 모드 (부하 「큼」「중」 기능 끄기)</button><button type="button" id="featAll">전체 가동</button>';
+body.appendChild(bt);
+const HEAVY=ITEMS.filter(i=>i.id&&(i.load==='큼'||i.load==='중'));
+bt.querySelector('#featLite').onclick=()=>HEAVY.forEach(i=>set(i,false));
+bt.querySelector('#featAll').onclick=()=>ITEMS.filter(i=>i.id).forEach(i=>set(i,true));
+sec.querySelector('#featToggle').onclick=()=>{const o=body.style.display==='none';body.style.display=o?'':'none';sec.querySelector('#featToggle').textContent=o?'접기 ▴':'펼치기 ▾';};
+
+// 위치: 실시간 모드 설정 아래(ALL 섹션이 먼저 그 아래에 끼어들므로 최종 순서: 실시간 → ALL → 기능 가동 → 샷 종류 분석)
+const cs=$('clsSection'),cn=$('cntSection');
+if(cs&&cs.parentNode)cs.parentNode.insertBefore(sec,cs);else if(cn&&cn.parentNode)cn.parentNode.insertBefore(sec,cn.nextSibling);else document.body.appendChild(sec);
+
+const st=document.createElement('style');document.head.appendChild(st);
+const wk=new WeakSet();let lastCfg=null;
+function apply(){
+ st.textContent=(F.cls&&F.line?'':'#clsLive{display:none!important}')+(F.all?'':'#mgAllPanel{display:none!important}');
+ try{if(typeof worker!=='undefined'&&worker){if(!wk.has(worker)||lastCfg!==F.cls){wk.add(worker);lastCfg=F.cls;worker.postMessage({type:'clsCfg',on:!!F.cls});}}}catch(_){}
+ for(const it of ITEMS)if(it.id)paint(it);}
+apply();
+setInterval(apply,1000);   // 새 워커 생성 시 설정 재전달 + 다른 곳에서 바뀐 체크박스 반영
+for(const it of ITEMS)if(it.k==='mirror'){const e=$(it.el);if(e)e.addEventListener('change',()=>paint(it));}
 })();
 
 </script>
@@ -18359,28 +18814,25 @@ window.cntApi={gov,foulOf,speak,newGame,startGame,endGame,score,setLean,layoutMa
 
  /* ---------- UI ---------- */
  const css=document.createElement('style');
- css.textContent=`#mgAllToggle{position:fixed;left:8px;bottom:8px;z-index:9998;min-height:30px;padding:4px 10px;font-size:12px;border-radius:7px;background:#203a52;border:1px solid #6aa0c8;color:#fff;opacity:.9}
-#mgAllPanel{position:fixed;left:8px;bottom:44px;z-index:9998;width:min(640px,calc(100vw - 16px));max-height:72vh;overflow:auto;background:#0f1d2b;border:1px solid #4d7ea3;border-radius:9px;padding:8px;color:#e8f2fb;font-size:12px;box-shadow:0 6px 24px #0009;display:none}
+ css.textContent=`#mgAllPanel{display:block;width:auto;max-height:none;margin:12px 0;padding:10px 14px 14px;background:#0f1d2b;border:1px solid #4d7ea3;border-radius:9px;color:#e8f2fb;font-size:13px;box-sizing:border-box}#mgAllPanel.mgc>:not(:first-child){display:none}
 #mgAllPanel button{min-height:30px;padding:3px 8px;font-size:12px;border-radius:6px;margin:2px}
 #mgAllPanel table{width:100%;border-collapse:collapse;margin-top:6px}#mgAllPanel th,#mgAllPanel td{border-top:1px solid #2d4b63;padding:3px 4px;text-align:left;vertical-align:top}
 #mgAllPanel tr.mgrow{cursor:pointer}#mgAllPanel tr.mgrow:hover{background:#18324a}#mgAllPanel tr.mgsel{background:#22405c}
 #mgAllPanel .mgbad{color:#ffb38a}#mgAllPanel .mgwarn{color:#ffe08a}#mgCheckList{margin-top:4px}#mgCheckList div{padding:3px 0;border-top:1px solid #2d4b63}#mgAllPanel .mgok{color:#95edcd}#mgAllPanel .mgsub{color:#9fb6c9;font-size:11px}`;
  document.head.appendChild(css);
- const tg=document.createElement('button');tg.id='mgAllToggle';tg.type='button';tg.textContent='ALL 일괄 검증 ▸';
  const pn=document.createElement('div');pn.id='mgAllPanel';
- pn.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><b>ALL 일괄 검증 · 멀티 게임 순차 판정</b><button type="button" id="mgClose">접기 ▾</button></div>
+ pn.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:15px">ALL 일괄 검증 · 멀티 게임 순차 판정</b><button type="button" id="mgClose">접기 ▴</button></div>
 <div class="mgsub">같은 이름의 mp4 + png 를 한 경기로 짝짓습니다(예: 5322.mp4 + 5322.png). 1배속 기존 판정 그대로 순서대로 실행합니다. 이닝표는 비교에만 씁니다. 실행 중에는 「정답표 불일치 시 판정 정지」를 잠시 끄고, 끝나면 원래대로 돌립니다. 끝나면 [업로드용 ZIP 저장] 파일(RESULT\\upload_ALL.zip) 하나를 Claude에게 올리면 됩니다.</div>
 <div><button type="button" id="mgPickDir">① 폴더 선택</button><button type="button" id="mgPickFiles">① 파일 여러 개 선택</button><input type="file" id="mgFiles" multiple accept=".mp4,video/mp4,.png,image/png" hidden>
 <button type="button" id="mgCheck" disabled>사전 점검</button><button type="button" id="mgStart" disabled>② 검증 시작</button><button type="button" id="mgStop" disabled>중단</button></div>
-<div><button type="button" id="mgSum" disabled>요약 CSV</button><button type="button" id="mgDiff" disabled>불일치 상세 CSV</button><button type="button" id="mgShots" disabled>경기별 샷 CSV 전체</button><button type="button" id="mgPattern" disabled style="background:#4a3a12;border-color:#ffcf5a">오류 패턴 저장</button><button type="button" id="mgZip" disabled style="background:#123f2c;border-color:#5fe0a8">업로드용 ZIP 저장</button><button type="button" id="mgLoadPrev">이전 결과 불러오기</button>
+<div><button type="button" id="mgSum" disabled>요약 CSV</button><button type="button" id="mgDiff" disabled>불일치 상세 CSV</button><button type="button" id="mgDiffLive" disabled title="후처리 전(실시간 판정) 기준 불일치">실시간 불일치 CSV</button><button type="button" id="mgTypes" disabled title="샷 종류 분류(규정표 기준) 결과">샷 종류 CSV</button><button type="button" id="mgShots" disabled>경기별 샷 CSV 전체</button><button type="button" id="mgPattern" disabled style="background:#4a3a12;border-color:#ffcf5a">오류 패턴 저장</button><button type="button" id="mgZip" disabled style="background:#123f2c;border-color:#5fe0a8">업로드용 ZIP 저장</button><button type="button" id="mgLoadPrev">이전 결과 불러오기</button>
 <label class="mgsub" style="margin-left:6px"><input type="checkbox" id="mgSkip"> 이전에 완료된 경기 건너뛰기</label></div>
 <div class="mgsub" style="margin-top:3px">알림(선택): ntfy 주제 <input id="mgNtfy" placeholder="예: 3q-zx03-7741" style="width:130px;min-height:24px;font-size:12px"> 메일 <input id="mgMail" placeholder="ntfy에서 인증한 메일" style="width:150px;min-height:24px;font-size:12px"> 토큰 <input id="mgToken" type="password" placeholder="메일용 tk_…" style="width:110px;min-height:24px;font-size:12px"> <label><input type="checkbox" id="mgWinNote"> 윈도우 알림</label> <button type="button" id="mgNotifyTest">알림 테스트</button></div>
 <div id="mgCheckSum" class="mgsub" style="margin-top:3px"></div><div id="mgCheckList" class="mgsub"></div><div id="mgInfo" class="mgsub"></div><div id="mgWarn" class="mgbad"></div>
 <table><thead><tr><th>경기</th><th>사전 점검</th><th>상태</th><th>이닝(정답/AI)</th><th>불일치</th><th>최종(정답 : AI)</th></tr></thead><tbody id="mgRows"></tbody></table>
 <div id="mgDetail" style="margin-top:6px"></div><div id="mgDone" style="margin-top:6px;font-weight:700"></div>`;
- document.body.append(tg,pn);
- tg.onclick=()=>{const open=pn.style.display!=='block';pn.style.display=open?'block':'none';tg.textContent=open?'ALL 일괄 검증 ◂':'ALL 일괄 검증 ▸';};
- $q('mgClose').onclick=()=>{pn.style.display='none';tg.textContent='ALL 일괄 검증 ▸';};
+ {const cs=document.getElementById('cntSection');if(cs&&cs.parentNode)cs.parentNode.insertBefore(pn,cs.nextSibling);else document.body.appendChild(pn);}
+ $q('mgClose').onclick=()=>{const c=pn.classList.toggle('mgc');$q('mgClose').textContent=c?'펼치기 ▾':'접기 ▴';};
 
  /* ---------- notifications (desktop + optional ntfy push / e-mail) ----------
     Only short status text (game name, status, time) is sent, and only when a ntfy topic is filled in. */
@@ -18419,7 +18871,7 @@ window.cntApi={gov,foulOf,speak,newGame,startGame,endGame,score,setLean,layoutMa
   const r=M.running,has=M.games.length>0,done=M.games.some(g=>g.row);
   $q('mgPickDir').disabled=r||M.checking;$q('mgPickFiles').disabled=r||M.checking;$q('mgStart').disabled=r||M.checking||!M.games.some(g=>g.video);
   $q('mgCheck').disabled=r||M.checking||!M.games.some(g=>g.video);
-  $q('mgStop').disabled=!r;$q('mgSum').disabled=!done;$q('mgDiff').disabled=!done;
+  $q('mgStop').disabled=!r;$q('mgSum').disabled=!done;$q('mgDiff').disabled=!done;$q('mgDiffLive').disabled=!done;$q('mgTypes').disabled=!done;
   $q('mgShots').disabled=!M.games.some(g=>g.shotsCsv);$q('mgPattern').disabled=r||!M.games.some(g=>g.row);$q('mgZip').disabled=r||!M.games.some(g=>g.row);$q('mgLoadPrev').disabled=r;
   void has;
  }
@@ -18499,11 +18951,14 @@ window.cntApi={gov,foulOf,speak,newGame,startGame,endGame,score,setLean,layoutMa
   M.dir=null;M.resultDir=null;pair(fs.map(f=>({name:f.name,get:async()=>f})));void runPrecheck();};
 
  /* ---------- saving ---------- */
- const SUM_HEAD=['경기','상태','정답 이닝수','AI 이닝수','일치 이닝','불일치 이닝','정답 최종(1P:2P)','AI 최종(1P:2P)','영상 길이(초)','소요(분)','누락 프레임 합계','누락 샷 수','최대 프레임 간격(ms)','입력 안정도','이닝표 읽기 메모','비고'];
+ const SUM_HEAD=['경기','상태','정답 이닝수','AI 이닝수','일치 이닝','불일치 이닝','정답 최종(1P:2P)','AI 최종(1P:2P)','영상 길이(초)','소요(분)','누락 프레임 합계','누락 샷 수','최대 프레임 간격(ms)','입력 안정도','이닝표 읽기 메모','비고','실시간 AI 이닝수','실시간 AI 최종(1P:2P)','실시간 일치 이닝','실시간 불일치 이닝','후처리로 결과 변화'];
  const DIFF_HEAD=['경기','이닝','정답 1P','AI 1P','정답 2P','AI 2P','샷 번호','시작초','종료초'];
  function summaryRows(){return [SUM_HEAD,...M.games.filter(g=>g.row).map(g=>{const r=g.row;
-  return [g.name,r.status,r.refInnings,r.aiInnings,r.matched,r.mismatch,r.refFinal,r.aiFinal,r.duration,r.minutes,r.gapFrames??'',r.gapShots??'',r.maxGapMs??'',r.inputStability??'',r.memo,r.note];})];}
+  return [g.name,r.status,r.refInnings,r.aiInnings,r.matched,r.mismatch,r.refFinal,r.aiFinal,r.duration,r.minutes,r.gapFrames??'',r.gapShots??'',r.maxGapMs??'',r.inputStability??'',r.memo,r.note,r.liveInnings??'',r.liveFinal??'',r.liveMatched??'',r.liveMismatch??'',r.postChanged??''];})];}
  function diffRows(){const out=[DIFF_HEAD];for(const g of M.games)if(g.row)for(const d of g.row.diff||[])
+  out.push([g.name,d.inning,d.reference1??'',d.ai1??'',d.reference2??'',d.ai2??'',(d.ids||[]).join('|'),d.start??'',d.end??'']);return out;}
+ function typeRows(){const out=[['경기','샷','선수(1P/2P)','샷 종류','샷타입 번호','대분류','세부구질명','쿠션순서','공 맞은 쪽','두께(0얇게~1정면)','결과','분류상태']];for(const g of M.games)if(g.row)for(const r of g.row.cls||[])out.push([g.name,r[0],r[1]==null?'':(r[1]+1)+'P',r[2],...(()=>{const t=(window.clsApi&&window.clsApi.termOf?window.clsApi.termOf(r[2]):{});return [t.no||'',t.group||'',t.detail||''];})(),r[3],r[4]==='L'?'왼쪽':r[4]==='R'?'오른쪽':'',r[5],r[6]?'득점':'무득점',r[7]]);return out;}
+ function liveDiffRows(){const out=[DIFF_HEAD.map((x,i)=>i===3||i===5?'실시간 '+x:x)];for(const g of M.games)if(g.row)for(const d of g.row.liveDiff||[])
   out.push([g.name,d.inning,d.reference1??'',d.ai1??'',d.reference2??'',d.ai2??'',(d.ids||[]).join('|'),d.start??'',d.end??'']);return out;}
  async function writeResult(name,text){
   if(!M.resultDir)return false;
@@ -18529,12 +18984,16 @@ window.cntApi={gov,foulOf,speak,newGame,startGame,endGame,score,setLean,layoutMa
   if(g&&g.tracks)await writeJSON(g.name+'_tracks.json',g.tracks);
   await writeResult('summary.csv',csvText(summaryRows()));
   await writeResult('diff.csv',csvText(diffRows()));
+  await writeResult('diff_live.csv',csvText(liveDiffRows()));
+  await writeResult('shot_types.csv',csvText(typeRows()));
  }
  function download(name,text){const url=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));
   const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),15000);}
  void 0;
  $q('mgSum').onclick=()=>download('summary.csv',csvText(summaryRows()));
  $q('mgDiff').onclick=()=>download('diff.csv',csvText(diffRows()));
+ $q('mgDiffLive').onclick=()=>download('diff_live.csv',csvText(liveDiffRows()));
+ $q('mgTypes').onclick=()=>download('shot_types.csv',csvText(typeRows()));
  $q('mgShots').onclick=async()=>{for(const g of M.games)if(g.shotsCsv){download(g.name+'_shots.csv',g.shotsCsv);await sleep(400);}};
  $q('mgPattern').onclick=async()=>{
   const pack=await mergedPatterns();
@@ -18714,6 +19173,10 @@ window.cntApi={gov,foulOf,speak,newGame,startGame,endGame,score,setLean,layoutMa
   g.row={name:g.name,status:st,refInnings:refN,aiInnings:inn.length,matched,mismatch,refFinal,aiFinal,gapFrames,gapShots,maxGapMs,inputStability,
    duration:Number.isFinite(g.duration)?+g.duration.toFixed(1):'',minutes:+(g.elapsed/60000).toFixed(1),elapsedMs:g.elapsed,
    memo:g.memo||'',note:notes.join(' / '),diff,savedAt:new Date().toISOString(),app:'3Q Score v1.03 ALL'};
+  if(g.live){const L=g.live,lc=L.hasRef&&compared;
+   g.row.liveInnings=L.innings;g.row.liveFinal=L.final;g.row.liveMismatch=lc?L.diff.length:'';g.row.liveMatched=lc?Math.max(refN,L.innings)-L.diff.length:'';g.row.liveDiff=L.diff;
+   g.row.postChanged=(L.final!==aiFinal||(lc&&L.diff.length!==diff.length))?'변경됨':'동일';}
+  try{if(window.clsApi&&shots.length)g.row.cls=window.clsApi.snapshot().map(r=>[r.id,r.p,r.type,r.seq,r.side,r.th==null?'':+r.th.toFixed(2),r.r,r.status]);}catch(_){}
   g.status=st;
   if(String(st).startsWith('오류')&&!shots.length)g.shotsCsv=null;
   else try{g.shotsCsv=grabShotsCsv();}catch(e){g.row.note=(g.row.note?g.row.note+' / ':'')+'샷 CSV 생성 실패: '+(e.message||e);}
@@ -18882,8 +19345,18 @@ window.cntApi={gov,foulOf,speak,newGame,startGame,endGame,score,setLean,layoutMa
   if(want&&sel.value!==want){sel.value=want;sel.dispatchEvent(new Event('change',{bubbles:true}));}
   g.pointMode=sel.value==='two'?'2점제':'1점제';
  }
+
+ /* Ver2.00: record the REAL-TIME result (state at analysis end, before the post-pass) next to the final one. Read-only. */
+ function liveSnap(g){
+  try{v5279UpdateComparison();}catch(_){}
+  const inn0=buildInnings();const hr=v5279Reference.length>0;
+  g.live={innings:inn0.length,final:(inn0.at(-1)?.total||[0,0]).join(':'),hasRef:hr,
+   diff:hr?(v5279LastDiff||[]).map(d=>({inning:d.inning,reference1:d.reference1,reference2:d.reference2,ai1:d.ai1,ai2:d.ai2,ids:(d.ids||[]).slice(),start:d.start,end:d.end})):[]};
+ }
+ {const o=v5284ScheduleAutoRecheck;
+  v5284ScheduleAutoRecheck=function(){try{if(M.running&&M.current&&!v5281Busy)liveSnap(M.current);}catch(_){}return o.apply(this,arguments);};}
  async function runGame(g){
-  g.t0=Date.now();g.notes=[];g.memo='';g.hidden=document.hidden;g.status='영상 로딩';g.loadedOK=false;g.hiddenWarned=false;g.pattern=null;g.tracks=null;g.shotsCsv=null;draw();
+  g.t0=Date.now();g.live=null;g.notes=[];g.memo='';g.hidden=document.hidden;g.status='영상 로딩';g.loadedOK=false;g.hiddenWarned=false;g.pattern=null;g.tracks=null;g.shotsCsv=null;draw();
   setPointMode(g);
   const vf=await g.video.get();
   for(let attempt=1;;attempt++){
