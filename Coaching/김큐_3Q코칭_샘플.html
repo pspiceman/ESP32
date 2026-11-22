@@ -1,0 +1,805 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark"><meta name="theme-color" content="#0a1018"><title>3Q 코칭 · 회원</title>
+<link rel="icon" type="image/png" href="./coach-192.png"><link rel="apple-touch-icon" href="./coach-192.png">
+<style>
+:root{--bg:#0a1018;--panel:#111a25;--line:#22313f;--text:#e9eef5;--muted:#8ea0b2;--mint:#6ff0c2;--blue:#3b82f6}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;-webkit-text-size-adjust:100%}
+main{max-width:860px;margin:0 auto;padding:10px 12px 40px}
+.top{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#0a1018ee;backdrop-filter:blur(6px);z-index:5}
+.brand{display:flex;gap:7px;align-items:center}.logo{background:linear-gradient(135deg,#38bdf8,#2563eb);color:#fff;font-weight:900;border-radius:8px;padding:2px 7px;box-shadow:0 0 12px #38bdf866}
+button,select,input{font:inherit;color:inherit}
+button,select{background:#162231;border:1px solid var(--line);border-radius:10px;min-height:42px;padding:6px 12px;cursor:pointer}
+button:disabled{opacity:.35;cursor:default}.sm{min-height:34px;padding:4px 10px;font-size:13px}.ghost{background:transparent}
+.primary{background:var(--blue);border-color:var(--blue);font-weight:700}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin:10px 0}
+h1{font-size:22px;margin:4px 0}h2{font-size:15px;margin:0 0 10px}
+.muted{color:var(--muted)}.small{font-size:12px;margin:2px 0 0;text-align:center}
+.login{max-width:420px;margin:40px auto}.login form{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.login label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.login input:not([type=checkbox]){background:#0b131c;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:16px}
+.login .keep{flex-direction:row;align-items:center;gap:8px}.msg{color:#ff9aa0;min-height:1.2em;margin:0}
+.pname{font-size:24px;font-weight:800}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.kpi{background:#0e1722;border:1px solid var(--line);border-radius:12px;padding:9px 11px;display:flex;flex-direction:column}
+.kpi span{font-size:12px;color:var(--muted)}.kpi b{font-size:21px}.kpi i{font-style:normal;font-size:12px;color:var(--muted)}.kpi small{font-size:13px;color:var(--muted)}
+.types{width:100%;border-collapse:collapse;font-size:14px}.types td,.types th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}.types th{color:var(--muted);font-weight:600;font-size:12px}
+.bar{display:inline-block;width:80px;height:8px;background:#ffffff1c;border-radius:4px;vertical-align:middle;margin-right:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--mint)}
+.game{display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;margin:0 0 8px;padding:11px 13px;border-radius:12px}
+.gl{display:flex;gap:12px;flex-wrap:wrap;font-size:14px}.res.W{color:var(--mint);font-weight:800}.res.L{color:#ff8a8a;font-weight:800}
+.bar1{display:flex;align-items:center;gap:10px;margin:4px 0 8px}
+.stagebox{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+#cv{display:block;width:100%;touch-action:pan-y}
+.tags{position:absolute;left:8px;top:8px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
+.tag{background:#0a1018d9;border:1px solid #c79a3c;color:#ffd58a;border-radius:8px;padding:2px 8px;font-size:12.5px}.tag.tech{border-color:#2c4a68;color:#bfe6ff}
+.ctrl{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.row4{display:grid;grid-template-columns:1fr auto 1fr .8fr;gap:8px;align-items:center}.pos{color:var(--muted);font-size:13px;text-align:center;min-width:54px}
+.plays{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pl{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#0e1722}
+.pl button{flex:1;border:0;border-radius:0;background:transparent;font-weight:700}
+.pl .ck{display:flex;align-items:center;justify-content:center;width:44px;border-left:1px solid var(--line);cursor:pointer}.pl .ck input{display:none}
+.pl .ck i{width:16px;height:16px;border-radius:4px;border:2px solid currentColor}.pl.on .ck i{background:currentColor;box-shadow:inset 0 0 0 2px #0e1722}
+.pl.rec{color:#6ff0c2}.pl.act{color:#ffd166}.pl.fix{color:#ff9ad5}
+.vid{background:#1b1730;border-color:#3b2f66}
+.story p{margin:0 0 8px}.fixT{color:#ffc2e6}.recT{color:#b4f7dc}
+.tips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+.tipc{display:flex;flex-direction:column;align-items:center;text-align:center;font-size:12.5px;gap:2px;background:#0e1722;border:1px solid var(--line);border-radius:12px;padding:8px}
+.tipc canvas{width:64px;height:64px}.tipc b{font-size:13px}.tipc.rec b{color:#6ff0c2}.tipc.act b{color:#ffd166}.tipc.fix b{color:#ff9ad5}
+@media(min-width:700px){.kpis{grid-template-columns:repeat(6,minmax(0,1fr))}}
+</style></head><body>
+<header class="top"><div class="brand"><span class="logo">3Q</span><b>코칭</b><span class="muted">회원</span></div><button id="bLogout" class="ghost sm">로그아웃</button></header>
+<main>
+<section id="scLogin" class="card login" hidden>
+ <h1>내 3쿠션 코칭</h1><p class="muted">클럽에서 받은 회원코드와 PIN을 넣으세요.</p>
+ <form id="lgForm"><label>회원코드<input id="lgCode" autocomplete="username" autocapitalize="characters" required></label>
+  <label>PIN<input id="lgPin" type="password" inputmode="text" autocomplete="current-password" required></label>
+  <label class="keep"><input id="lgKeep" type="checkbox" checked> 이 기기에서 로그인 유지</label>
+  <button class="primary">보기</button><p id="lgMsg" class="msg"></p></form>
+</section>
+<section id="scHome" hidden>
+ <div class="card"><div class="pname" id="hName"></div><div class="muted" id="hSub"></div><div class="kpis" id="kpis"></div></div>
+ <div class="card"><h2>샷 기술별 성공률</h2><table class="types" id="types"></table></div>
+ <div class="card"><h2>경기 · 실패 샷 코칭</h2><div id="games"></div></div>
+</section>
+<section id="scShot" hidden>
+ <div class="bar1"><button id="bBack" class="sm">◀ 목록</button><b id="gTitle"></b></div>
+ <div class="stagebox"><canvas id="cv"></canvas><div class="tags"><span class="tag" id="sHead"></span><span class="tag tech" id="sTech" hidden></span></div></div>
+ <div class="ctrl">
+  <div class="row4"><button id="bPrev">◀ 이전</button><span id="sPos" class="pos"></span><button id="bNext">다음 ▶</button><select id="rate"><option value=".5">0.5×</option><option value="1" selected>1×</option></select></div>
+  <div class="plays">
+   <div class="pl rec"><button id="b_rec">▶ 추천</button><label class="ck"><input type="checkbox" id="c_rec"><i></i></label></div>
+   <div class="pl act"><button id="b_act">▶ 실제</button><label class="ck"><input type="checkbox" id="c_act"><i></i></label></div>
+   <div class="pl fix"><button id="b_fix">▶ 교정</button><label class="ck"><input type="checkbox" id="c_fix"><i></i></label></div>
+  </div>
+  <button id="bVid" class="vid" hidden>🎬 실제 경기 영상에서 보기</button>
+  <p class="muted small">화면을 탭하면 처음으로 · 좌우로 밀면 이전·다음 샷</p>
+ </div>
+ <div class="card story"><div id="sBody"></div><div class="tips" id="sTips"></div></div>
+</section>
+</main>
+
+<script>
+function createPhysics(){
+ 'use strict';
+ const W=2.84,H=1.42,R=.03075,D=2*R,G=9.81;
+ const BASE=Object.freeze({slide:.20,roll:.012,railE:.82,railMu:.14,ballE:.96,spinDecay:.45,railRoll:.9});
+ const clamp=(v,l,h)=>Math.max(l,Math.min(h,v));
+ function validate(p){
+  return Array.isArray(p)&&p.length===3&&p.every(a=>a&&Number.isFinite(a.x)&&Number.isFinite(a.y)&&a.x>=R+.001&&a.x<=W-R-.001&&a.y>=R+.001&&a.y<=H-R-.001)&&p.every((a,i)=>p.every((b,j)=>i===j||Math.hypot(a.x-b.x,a.y-b.y)>=D+.005));
+ }
+ // Same chronological rule as v3.6: freeze at SECOND DISTINCT object, not later rails.
+ function ruleAtSecond(events){
+  let cushions=0;const hit=new Set();
+  for(const e of events){
+   if(e.type==='cushion')cushions++;
+   if(e.type==='ball'){
+    hit.add(e.target);
+    if(hit.size===2)return {score:cushions>=3,cushions,objects:[...hit],t:e.t};
+   }
+  }
+  return {score:false,cushions,objects:[...hit],t:null};
+ }
+ function friction(b,h,cfg){
+  const fullStep=h;
+  const sx=b.vx-R*b.wy,sy=b.vy+R*b.wx,slip=Math.hypot(sx,sy);
+  if(slip>.001){
+   const ht=Math.min(h,slip/(3.5*cfg.slide*G)),factor=cfg.slide*G*ht/slip;
+   const jx=-factor*sx,jy=-factor*sy;
+   b.vx+=jx;b.vy+=jy;b.wx+=2.5*jy/R;b.wy-=2.5*jx/R;
+   h-=ht;
+  }
+  if(h>1e-9){
+   const speed=Math.hypot(b.vx,b.vy),k=speed>0?Math.max(0,1-cfg.roll*G*h/speed):0;
+   b.vx*=k;b.vy*=k;b.wx=-b.vy/R;b.wy=b.vx/R;
+  }
+  b.wz*=Math.max(0,1-cfg.spinDecay*fullStep);
+  if(Math.hypot(b.vx,b.vy)<.001&&Math.hypot(b.wx,b.wy)*R<.001){b.vx=b.vy=b.wx=b.wy=0;}
+ }
+ function simulate(pos,shot,opts={}){
+  const cfg={...BASE,...(opts.model||{})},step=opts.dt||.02,maxC=opts.maxC||5,record=!!opts.record,maxT=opts.maxT||18;
+  const balls=pos.map(p=>({x:p.x,y:p.y,vx:0,vy:0,wx:0,wy:0,wz:0}));
+  const cb=balls[0],dx=Math.cos(shot.angle),dy=Math.sin(shot.angle),speed=shot.speed;
+  cb.vx=dx*speed;cb.vy=dy*speed;
+  cb.wx=-2.5*shot.tipY*speed*dy/R;cb.wy=2.5*shot.tipY*speed*dx/R;cb.wz=-2.5*shot.tipX*speed/R;
+  let time=0,cushions=0,hitMask=0,pathLength=0,cut=null,firstTarget=null,ambiguous=false,ticks=0;
+  const events=[],frames=record?[{t:0,p:balls.map(b=>({x:b.x,y:b.y}))}]:null;
+  let savedAt=0,lastEvent=-100,terminal='stopped',thirdRailTime=-100;
+  const approaches=Array.from({length:maxC+1},()=>null);let firstNear=null;
+  // Swept closest approach to the remaining object, measured edge-to-edge in metres.
+  function inspectApproach(h){
+   for(let j=1;j<=2;j++){
+    if(hitMask&(1<<j))continue;
+    const q=balls[j],rx=cb.x-q.x,ry=cb.y-q.y,vx=cb.vx-q.vx,vy=cb.vy-q.vy;
+    const vv=vx*vx+vy*vy,u=vv>1e-12?clamp(-(rx*vx+ry*vy)/vv,0,h):0;
+    const gap=Math.max(0,Math.hypot(rx+vx*u,ry+vy*u)-D);
+    const prev=hitMask===0?firstNear:approaches[cushions];
+    if(!prev||gap<prev.gap){
+     const item={gap,target:j,t:time+u,cushions,cue:{x:cb.x+cb.vx*u,y:cb.y+cb.vy*u},object:{x:q.x+q.vx*u,y:q.y+q.vy*u}};
+     if(hitMask===0)firstNear=item;else if(cushions<=maxC)approaches[cushions]=item;
+    }
+   }
+  }
+  function frame(force){if(record&&(force||time-savedAt>=.036)){frames.push({t:time,p:balls.map(b=>({x:b.x,y:b.y}))});savedAt=time;}}
+  for(let loop=0;loop<1800&&time<maxT;loop++){
+   if(Math.hypot(cb.vx,cb.vy)<.022&&Math.hypot(cb.wx,cb.wy)*R<.03){terminal='stopped';break;}
+   let remaining=step;
+   for(let sub=0;sub<12&&remaining>1e-8;sub++){
+    let tau=remaining,kind=0,ia=-1,ib=-1,rail=-1;
+    for(let i=0;i<3;i++){
+     const b=balls[i];let tr;
+     if(b.vx<-.00001){tr=(R-b.x)/b.vx;if(tr>=-1e-7&&tr<tau){tau=Math.max(0,tr);kind=1;ia=i;rail=0;}}
+     if(b.vx>.00001){tr=(W-R-b.x)/b.vx;if(tr>=-1e-7&&tr<tau){tau=Math.max(0,tr);kind=1;ia=i;rail=1;}}
+     if(b.vy<-.00001){tr=(R-b.y)/b.vy;if(tr>=-1e-7&&tr<tau){tau=Math.max(0,tr);kind=1;ia=i;rail=2;}}
+     if(b.vy>.00001){tr=(H-R-b.y)/b.vy;if(tr>=-1e-7&&tr<tau){tau=Math.max(0,tr);kind=1;ia=i;rail=3;}}
+     for(let j=i+1;j<3;j++){
+      const q=balls[j],px=q.x-b.x,py=q.y-b.y,vx=b.vx-q.vx,vy=b.vy-q.vy;
+      const bdot=px*vx+py*vy;if(bdot<=.000001)continue;
+      const aa=vx*vx+vy*vy,cc=px*px+py*py-D*D,disc=bdot*bdot-aa*cc;
+      if(disc<0||aa<1e-10)continue;
+      const tt=Math.max(0,(bdot-Math.sqrt(disc))/aa);
+      if(tt<tau){tau=tt;kind=2;ia=i;ib=j;}
+     }
+    }
+    inspectApproach(tau);
+    pathLength+=Math.hypot(cb.vx,cb.vy)*tau;
+    for(const b of balls){b.x+=b.vx*tau;b.y+=b.vy*tau;friction(b,tau,cfg);}
+    time+=tau;remaining-=tau;ticks++;
+    if(kind===1){
+     if(ia===0&&cushions>=maxC){terminal='limit';break;}
+     const b=balls[ia],nx=rail===0?1:rail===1?-1:0,ny=rail===2?1:rail===3?-1:0;
+     const tx=-ny,ty=nx,vn=b.vx*nx+b.vy*ny,ut=b.vx*tx+b.vy*ty-R*b.wz;
+     const jn=Math.max(0,-(1+cfg.railE)*vn),jt=clamp(-ut/3.5,-cfg.railMu*jn,cfg.railMu*jn);
+     b.vx+=jn*nx+jt*tx;b.vy+=jn*ny+jt*ty;b.wz-=2.5*jt/R;
+     // Cushion nose sits above the ball's equator: the impact largely re-aligns the rolling spin
+     // with the rebound, so a plain ball leaves the rail close to the mirror angle instead of
+     // curling away from it. Only the normal component is reset strongly; english still acts via jt.
+     {const vrx=R*b.wy,vry=-R*b.wx,vrn=vrx*nx+vry*ny,vrt=vrx*tx+vry*ty,von=b.vx*nx+b.vy*ny,vot=b.vx*tx+b.vy*ty;
+      const nn=vrn+(von-vrn)*cfg.railRoll,nt=vrt+(vot-vrt)*cfg.railRoll*.6,qx=nn*nx+nt*tx,qy=nn*ny+nt*ty;b.wy=qx/R;b.wx=-qy/R;}
+     b.x=clamp(b.x+nx*1e-7,R,W-R);b.y=clamp(b.y+ny*1e-7,R,H-R);
+     if(ia===0){
+      cushions++;
+      const e={type:'cushion',rail,t:time,x:b.x,y:b.y,number:cushions,confirmed:true};events.push(e);
+      if(cushions===3)thirdRailTime=time;
+      if(Math.min(b.x-R,W-R-b.x,b.y-R,H-R-b.y)<-1e-6)ambiguous=true;
+      if(time-lastEvent<.012)ambiguous=true;
+      lastEvent=time;frame(true);
+     }
+    }else if(kind===2){
+     const a=balls[ia],b=balls[ib],sep=Math.hypot(b.x-a.x,b.y-a.y),nx=(b.x-a.x)/sep,ny=(b.y-a.y)/sep;
+     const rel=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
+     if(rel<0){
+      const preSpeed=Math.hypot(a.vx,a.vy),cos=preSpeed>0?clamp((a.vx*nx+a.vy*ny)/preSpeed,-1,1):1;
+      const impulse=-(1+cfg.ballE)*rel/2;
+      a.vx-=impulse*nx;a.vy-=impulse*ny;b.vx+=impulse*nx;b.vy+=impulse*ny;
+      if(ia===0){
+       if(firstTarget===null){firstTarget=ib;cut=1-Math.sqrt(Math.max(0,1-cos*cos));}
+       const fresh=!(hitMask&(1<<ib));hitMask|=(1<<ib);
+       // Side of the object ball struck, seen from behind the cue ball (rotation-invariant).
+       const pv=Math.hypot(a.vx+impulse*nx,a.vy+impulse*ny)||1,lx=(a.vy+impulse*ny)/pv,ly=-(a.vx+impulse*nx)/pv;
+       const side=(-nx*lx-ny*ly)>=0?'L':'R';
+       events.push({type:'ball',target:ib,t:time,x:a.x,y:a.y,ox:b.x,oy:b.y,fresh,side,confirmed:true});
+       if(time-lastEvent<.012)ambiguous=true;
+       lastEvent=time;frame(true);
+      }else if(hitMask){events.push({type:'okiss',t:time,x:b.x,y:b.y});}
+     }
+     const correction=Math.max(0,D+1e-7-sep)/2;
+     a.x-=nx*correction;a.y-=ny*correction;b.x+=nx*correction;b.y+=ny*correction;
+    }else{frame(false);}
+    if(hitMask===6){terminal='second';break;}
+    if(cushions>maxC||pathLength>24){terminal='limit';break;}
+   }
+   if(terminal==='second'||terminal==='limit')break;
+  }
+  frame(true);
+  const rule=ruleAtSecond(events),signature=events.filter(e=>e.type!=='okiss').map(e=>e.type==='ball'?'b'+e.target:'r'+e.rail).join('-');
+  if(rule.t!==null&&Math.abs(rule.t-thirdRailTime)<.025)ambiguous=true;
+  const near=approaches.slice(3).filter(Boolean).sort((a,b)=>a.gap-b.gap)[0]||null;
+  const progressNear=approaches.filter(Boolean).sort((a,b)=>b.cushions-a.cushions||a.gap-b.gap)[0]||null;
+  const success=rule.score&&!ambiguous&&terminal==='second'&&cushions<=maxC;
+  return {success,near,progressNear,firstNear,rule,events,frames,duration:time,cushions,pathLength,cut,firstTarget,signature,ambiguous,terminal,ticks,shot:{...shot}};
+ }
+ function parameters(level){
+  const tips=[[0,.35],[-.15,.32],[.15,.32]];
+  if(level>=2)tips.push([-.29,.28],[.29,.28],[0,0],[-.2,0],[.2,0]);
+  if(level>=3)tips.push([-.40,.16],[.40,.16],[0,-.23],[-.28,-.23],[.28,-.23]);
+  const speeds=level===1?[2.0,2.7,3.3]:level===2?[2.1,2.85,3.5]:[2.25,2.9,3.6];
+  return tips.flatMap(([tipX,tipY])=>speeds.map(speed=>({tipX,tipY,speed})));
+ }
+ function difficulty(r){
+  return (r.cushions-3)*2.5+Math.abs(r.shot.tipX)*7+Math.max(0,.3-r.shot.tipY)*2+
+    Math.max(0,.24-r.cut)*15+Math.max(0,r.cut-.75)*5+r.pathLength*.20+
+    r.events.filter(e=>e.type==='ball'&&!e.fresh).length*4;
+ }
+ // Rank only trajectories actually simulated. A non-scoring route is never relabelled a score.
+ function quality(r){
+  if(r.success)return -100+difficulty(r)*.001;
+  if(r.near)return .2+r.near.gap+(r.ambiguous?.002:0);
+  if(r.progressNear)return 3+(3-Math.min(3,r.progressNear.cushions))*1.5+r.progressNear.gap*.25;
+  if(r.rule.objects.length===2)return 8+Math.max(0,3-r.rule.cushions);
+  if(r.rule.objects.length===1)return 10+Math.max(0,3-r.rule.cushions)*.2;
+  return 12+(r.firstNear?.gap??4);
+ }
+ function decorate(r,level,stage){
+  r.difficulty=difficulty(r);r.tolerance=r.tolerance||0;r.rank=r.difficulty-r.tolerance*8;
+  r.requestedLevel=level;r.searchStage=stage;r.extended=stage!=='primary';
+  r.kickFirst=r.events[0]?.type==='cushion';
+  r.kind=r.success?'scoring':'nearest';r.provisional=false;
+  return r;
+ }
+ function preview(pos,options={}){
+  if(!validate(pos))throw new Error('INVALID_POSITION');
+  let best=null;
+  for(let j=1;j<=2;j++){
+   const dx=pos[j].x-pos[0].x,dy=pos[j].y-pos[0].y;
+   const base=Math.atan2(dy,dx),span=Math.asin(Math.min(.999,D/Math.hypot(dx,dy)));
+   for(const u of [-.82,-.50,.50,.82]){
+    const r=simulate(pos,{angle:base+span*u,speed:2.85,tipX:0,tipY:.35},{maxC:5,dt:.012,model:options.model});
+    if(!best||quality(r)<quality(best))best=r;
+   }
+  }
+  const r=simulate(pos,best.shot,{maxC:5,dt:.005,record:true,model:options.model});
+  decorate(r,options.level||1,'preview');r.provisional=true;r.kind='preview';
+  return r;
+ }
+ function* search(pos,level=1,options={}){
+  if(!validate(pos))throw new Error('INVALID_POSITION');
+  if(![1,2,3].includes(level))throw new Error('INVALID_LEVEL');
+  const clock=()=>typeof performance!=='undefined'?performance.now():Date.now();
+  const started=clock(),budgetMs=options.budgetMs??(options.dense?35000:12000);
+  const maxTests=options.maxTests??(options.dense?42000:20000),maxC=5;
+  let tested=0,coarseCount=0,phase='primary',expanded=false,expired=false,reportedAt=0;
+  let nearest=preview(pos,{...options,level});
+  const pool=new Map(),pending=[],valid=[],checked=new Set();
+  function exhausted(){return tested>=maxTests||clock()-started>=budgetMs;}
+  function run(shot,dt=.014,record=false,cap=5){tested++;return simulate(pos,shot,{maxC:cap,dt,record,model:options.model});}
+  function poolKey(r){return r.signature+'|'+Math.round(r.shot.angle*140)+'|'+Math.sign(r.shot.tipX);}
+  function remember(r){
+   const key=poolKey(r),prev=pool.get(key);
+   if(!prev||quality(r)<quality(prev))pool.set(key,r);
+   if(pool.size>120){const keep=[...pool.entries()].sort((a,b)=>quality(a[1])-quality(b[1])).slice(0,60);pool.clear();keep.forEach(([k,v])=>pool.set(k,v));}
+   if(quality(r)<quality(nearest))nearest=r;
+   const primaryOK=phase!=='primary'||(r.cut>.035&&r.cut<.97&&(level>1||r.events.filter(e=>e.type==='ball').length===2));
+   if(r.success&&primaryOK){pending.push({r,stage:phase,cap:phase==='primary'?level+2:5});coarseCount++;}
+  }
+  function packet(stage=phase,previewRoute=null){
+   const p=stage==='primary'?.08+Math.min(.32,tested/6000*.32):stage==='expanded'?.45+Math.min(.21,tested/14000*.21):stage==='kick'?.70:stage==='refine'?.83:stage==='verify'?.9:.02;
+   const msg={phase:stage,progress:p,tested,candidates:valid.length,expanded};
+   if(previewRoute)msg.previewRoute=previewRoute;
+   return msg;
+  }
+  function nearPreview(){
+   const r=run(nearest.shot,.005,true,5);decorate(r,level,phase);r.provisional=true;r.kind='preview';return r;
+  }
+  function* flush(limit=40){
+   pending.sort((a,b)=>difficulty(a.r)-difficulty(b.r));
+   let count=0;
+   while(pending.length&&count++<limit&&valid.length<9){
+    const {r,stage,cap}=pending.shift();
+    const key=r.signature+'|'+r.shot.angle.toFixed(5)+'|'+r.shot.tipX+'|'+r.shot.tipY+'|'+r.shot.speed;
+    if(checked.has(key))continue;checked.add(key);
+    if(valid.filter(v=>v.signature===r.signature).length>=3)continue;
+    let f=null;
+    for(const d of [0,-.0008,.0008,-.0016,.0016]){
+     const z=run({...r.shot,angle:r.shot.angle+d},.005,true,cap);
+     if(z.success&&(stage!=='primary'||level>1||z.events.filter(e=>e.type==='ball').length===2)){f=z;break;}
+    }
+    if(f){
+     let lo=f.shot.angle,hi=lo;
+     for(const sign of [-1,1])for(let i=1;i<=4;i++){
+      const z=run({...f.shot,angle:f.shot.angle+sign*i*.00065},.005,false,cap);
+      if(!z.success||z.signature!==f.signature)break;
+      if(sign<0)lo=z.shot.angle;else hi=z.shot.angle;
+     }
+     const centered=run({...f.shot,angle:(lo+hi)/2},.005,true,cap);
+     if(centered.success&&centered.signature===f.signature)f=centered;
+     let tolerance=0;
+     for(const deg of [.08,.18,.35]){
+      const a=run({...f.shot,angle:f.shot.angle-deg*Math.PI/180},.005,false,cap);
+      const b=run({...f.shot,angle:f.shot.angle+deg*Math.PI/180},.005,false,cap);
+      if(a.success&&b.success&&a.signature===f.signature&&b.signature===f.signature)tolerance=deg;else break;
+     }
+     f.tolerance=tolerance;decorate(f,level,stage);
+     if(!valid.some(v=>v.signature===f.signature&&Math.abs(v.shot.angle-f.shot.angle)<.004&&Math.abs(v.shot.tipX-f.shot.tipX)<.18))valid.push(f);
+    }
+    yield packet('verify',valid.length===1?valid[0]:null);
+    if(exhausted())break;
+   }
+  }
+  function answer(routes){
+   return {routes,tested,coarse:coarseCount,level,expanded:routes.some(r=>r.extended),fallback:!routes.some(r=>r.success),timedOut:expired,stage:phase,model:{...BASE,...(options.model||{})},elapsedMs:clock()-started};
+  }
+  function scored(){
+   valid.sort((a,b)=>a.rank-b.rank);
+   const list=[],seen=new Set();for(const v of valid)if(!seen.has(v.signature)){list.push(v);seen.add(v.signature);}
+   for(const v of valid)if(!list.includes(v))list.push(v);
+   return answer(list.slice(0,6));
+  }
+  yield packet('preview',nearest);
+  // Stage 1: the requested level is a preference, not a reason to leave the screen blank.
+  const steps=options.dense?288:176;
+  primary:for(const param of parameters(level)){
+   for(let target=1;target<=2;target++){
+    const dx=pos[target].x-pos[0].x,dy=pos[target].y-pos[0].y,d=Math.hypot(dx,dy);
+    const base=Math.atan2(dy,dx),span=Math.asin(Math.min(.999,D/d));
+    for(let i=0;i<=steps;i++){
+     if(exhausted()){expired=true;break primary;}
+     const u=-.995+1.99*i/steps;
+     remember(run({...param,angle:base+span*u},.014,false,level+2));
+     if(tested%24===0)yield packet();
+    }
+   }
+   if(pending.length){yield* flush(12);if(valid.length>=6)break;}
+   if(clock()-reportedAt>650){reportedAt=clock();yield packet(phase,nearPreview());}
+  }
+  if(pending.length)yield* flush(32);
+  if(valid.length)return scored();
+  // Stage 2: automatically expand to all tip choices, both object orders, and 3--5 rails.
+  expanded=true;phase='expanded';yield packet(phase,nearPreview());
+  const expandedParams=level===3?[]:parameters(3);
+  const n=options.dense?164:84;
+  extra:for(const param of expandedParams){
+   for(let target=1;target<=2;target++){
+    const dx=pos[target].x-pos[0].x,dy=pos[target].y-pos[0].y,base=Math.atan2(dy,dx),span=Math.asin(Math.min(.999,D/Math.hypot(dx,dy)));
+    for(let i=0;i<=n;i++){
+     if(exhausted()){expired=true;break extra;}
+     remember(run({...param,angle:base+span*(-.997+1.994*(i+.23)/(n+1))},.014));
+     if(tested%24===0)yield packet();
+    }
+   }
+   if(pending.length){yield* flush(12);if(valid.length>=3)break;}
+  }
+  if(pending.length)yield* flush(28);
+  if(valid.length)return scored();
+  // Stage 3: rail-first shots. Mirror targets provide seeds; a full-circle sweep covers
+  // changes from cushion friction and side-spin, rather than treating mirror lines as scores.
+  phase='kick';yield packet(phase,nearPreview());
+  const kickParams=[{tipX:0,tipY:.35,speed:2.85},{tipX:0,tipY:.35,speed:3.6},
+   {tipX:-.22,tipY:.30,speed:3.2},{tipX:.22,tipY:.30,speed:3.2},
+   {tipX:-.4,tipY:.18,speed:3.6},{tipX:.4,tipY:.18,speed:3.6},
+   {tipX:0,tipY:0,speed:3.6},{tipX:0,tipY:-.23,speed:3.6}];
+  const ww=W-D,hh=H-D,mirrors=[];
+  for(let target=1;target<=2;target++)for(let ix=-2;ix<=2;ix++)for(let iy=-2;iy<=2;iy++){
+   if((ix===0&&iy===0)||Math.abs(ix)+Math.abs(iy)>4)continue;
+   const x=R+ix*ww+(Math.abs(ix)%2?ww-(pos[target].x-R):pos[target].x-R);
+   const y=R+iy*hh+(Math.abs(iy)%2?hh-(pos[target].y-R):pos[target].y-R);
+   const dx=x-pos[0].x,dy=y-pos[0].y;
+   mirrors.push({angle:Math.atan2(dy,dx),span:Math.asin(Math.min(.999,D/Math.hypot(dx,dy)))});
+  }
+  kick:for(const param of kickParams){
+   for(const m of mirrors)for(const u of [-.8,-.3,.3,.8]){
+    if(exhausted()){expired=true;break kick;}
+    remember(run({...param,angle:m.angle+m.span*u},.014));
+    if(tested%24===0)yield packet();
+   }
+   const count=options.dense?540:288;
+   for(let i=0;i<count;i++){
+    if(exhausted()){expired=true;break kick;}
+    remember(run({...param,angle:2*Math.PI*(i+.31)/count},.014));
+    if(tested%24===0)yield packet();
+   }
+   if(pending.length){yield* flush(14);if(valid.length>=3)break;}
+  }
+  if(pending.length)yield* flush(28);
+  if(valid.length)return scored();
+  // Stage 4: optimize the best near-misses at the same time resolution used for replay.
+  phase='refine';yield packet(phase,nearPreview());
+  const seeds=[...pool.values()].sort((a,b)=>quality(a)-quality(b)).slice(0,options.dense?28:16);
+  const deltas=[{angle:.005,speed:.24,tipX:.065,tipY:.06},{angle:.002,speed:.1,tipX:.025,tipY:.025},
+   {angle:.0007,speed:.04,tipX:.01,tipY:.01},{angle:.00025,speed:.015,tipX:.004,tipY:.004}];
+  optimize:for(const seed of seeds){
+   if(exhausted()){expired=true;break;}
+   let b=run(seed.shot,.005);remember(b);
+   for(const ds of deltas){
+    for(let pass=0;pass<2;pass++){
+     let changed=false;
+     for(const [name,step] of Object.entries(ds))for(const sign of [-1,1]){
+      if(exhausted()){expired=true;break optimize;}
+      const shot={...b.shot,[name]:b.shot[name]+sign*step};
+      shot.speed=clamp(shot.speed,1.2,4);shot.tipX=clamp(shot.tipX,-.44,.44);shot.tipY=clamp(shot.tipY,-.4,.44);
+      if(Math.hypot(shot.tipX,shot.tipY)>.5)continue;
+      const z=run(shot,.005);remember(z);
+      if(quality(z)<quality(b)-1e-7){b=z;changed=true;}
+      if(tested%12===0)yield packet();
+     }
+     if(b.success||!changed)break;
+    }
+    if(b.success)break;
+   }
+   if(pending.length){yield* flush(12);if(valid.length>=2)break;}
+  }
+  if(pending.length)yield* flush(30);
+  if(valid.length)return scored();
+  // Never fabricate a hit or move a ball to manufacture a successful route.
+  // Re-evaluate a small set with recording to supply one truthful, playable fallback.
+  let fallback=null;
+  const shortlist=[...pool.values(),nearest].sort((a,b)=>quality(a)-quality(b)).slice(0,10);
+  for(const seed of shortlist){
+   const r=run(seed.shot,.005,true);decorate(r,level,'nearest');
+   if(r.success){valid.push(r);return scored();}
+   if(!fallback||quality(r)<quality(fallback))fallback=r;
+   yield packet('verify');
+  }
+  if(!fallback)fallback=preview(pos,{...options,level});
+  decorate(fallback,level,'nearest');fallback.kind='nearest';fallback.provisional=false;
+  return answer([fallback]);
+ }
+
+ /* ===== Beginner layer: shot classification (master table) + basic-shot-first search ===== */
+ // Physics rail index -> cushion number in portrait view (player at cushion 4).
+ // rail0 x=0 -> 2 (top short), rail1 x=W -> 4 (bottom short), rail2 y=0 -> 3 (right long), rail3 y=H -> 1 (left long)
+ const RAILNUM=[4,2,1,3]; // landscape: rail0 x=0 -> 4 (left short), rail1 x=W -> 2 (right short), rail2 y=0 -> 1 (top long), rail3 y=H -> 3 (bottom long)
+ const BASIC={
+  L:{'123':'back','341':'back','321':'side','143':'side','214':'front','213':'front','432':'front','431':'front','234':'thin','231':'thin','412':'thin','413':'thin'},
+  R:{'321':'back','143':'back','123':'side','341':'side','234':'front','231':'front','412':'front','413':'front','214':'thin','213':'thin','432':'thin','431':'thin'}
+ };
+ const COMMON={'212':'revS','232':'revS','414':'revS','434':'revS','121':'revL','141':'revL','323':'revL','343':'revL',
+  '131':'crossS','313':'crossS','132':'crossS','312':'crossS','134':'crossS','314':'crossS',
+  '242':'crossL','424':'crossL','241':'crossL','421':'crossL','243':'crossL','423':'crossL'};
+ const PENALTY={back:0,side:.5,front:.5,thin:1.1,revS:1.5,revL:1.5,crossS:1.7,crossL:1.7,grand:3.2,special:4.5,unknown:4.5,bank:8};
+ const CLOSE_DIST=.20; // object-ball centre distance (m) that counts as "very close"
+ function classify(r){
+  const tEnd=r.rule&&r.rule.t!=null?r.rule.t+1e-9:Infinity;
+  const evs=r.events.filter(e=>e.t<=tEnd);
+  const fb=evs.findIndex(e=>e.type==='ball');
+  const cush=evs.filter(e=>e.type==='cushion').map(e=>RAILNUM[e.rail]);
+  const kickN=(fb<0?evs:evs.slice(0,fb)).filter(e=>e.type==='cushion').length;
+  const after=fb<0?[]:evs.slice(fb+1).filter(e=>e.type==='cushion').map(e=>RAILNUM[e.rail]);
+  const side=fb<0?null:evs[fb].side;
+  const kiss=evs.some(e=>(e.type==='ball'&&!e.fresh)||e.type==='okiss');
+  let id;
+  if(kickN>0)id='bank';
+  else if((r.rule?.cushions||0)>=4)id='grand';
+  else{
+   const s=after.slice(0,3).join('');
+   if(/(\d)\1/.test(s))id='special';
+   else id=(side&&BASIC[side][s])||COMMON[s]||'unknown';
+  }
+  return {id,seq:cush,side,kickN,kiss,firstCushion:cush[0]||null};
+ }
+ // ---- Stance / playability (cue geometry, reach, body side for the cue hand) ----
+ const RAIL_OUT=.17; // cushion + wooden rail width beyond the cushion nose (m)
+ function rayToRect(px,py,bx,by,x0,y0,x1,y1){
+  let t=Infinity,side=-1;
+  if(bx<-1e-9){const u=(x0-px)/bx;if(u<t){t=u;side=0;}}if(bx>1e-9){const u=(x1-px)/bx;if(u<t){t=u;side=1;}}
+  if(by<-1e-9){const u=(y0-py)/by;if(u<t){t=u;side=2;}}if(by>1e-9){const u=(y1-py)/by;if(u<t){t=u;side=3;}}
+  return {t,side};
+ }
+ function insideDepth(x,y){return Math.min(x+RAIL_OUT,W+RAIL_OUT-x,y+RAIL_OUT,H+RAIL_OUT-y);}
+ function stanceFn(pos,shot,hand='R'){
+  const c=pos[0],dx=Math.cos(shot.angle),dy=Math.sin(shot.angle),bx=-dx,by=-dy;
+  const inner=rayToRect(c.x,c.y,bx,by,0,0,W,H),outer=rayToRect(c.x,c.y,bx,by,-RAIL_OUT,-RAIL_OUT,W+RAIL_OUT,H+RAIL_OUT);
+  const gap=inner.t-R,reach=outer.t,q={x:c.x+bx*outer.t,y:c.y+by*outer.t},rail=RAILNUM[inner.side];
+  const res={ok:true,reason:null,reach,gap,q,rail,depth:0};
+  // a ball sitting on the cue line behind the cue ball
+  for(let j=1;j<=2;j++){const ox=pos[j].x-c.x,oy=pos[j].y-c.y,u=ox*bx+oy*by;if(u>0&&u<.55&&Math.abs(ox*by-oy*bx)<R+.012){res.ok=false;res.reason='blocked';return res;}}
+  if(gap<.025){res.ok=false;res.reason='frozen';return res;}
+  if(gap<.10&&shot.tipY<.1){res.ok=false;res.reason='railLow';return res;}
+  if(reach>1.0){res.ok=false;res.reason='reach';return res;}
+  // body of a right-hander stands left of the cue line (left-hander: right)
+  const lx=dy,ly=-dx,s=hand==='L'?-1:1,B={x:q.x+s*lx*.3+bx*.2,y:q.y+s*ly*.3+by*.2};
+  res.depth=insideDepth(B.x,B.y);
+  if(res.depth>.08){res.ok=false;res.reason='body';}
+  return res;
+ }
+ const CORE=new Set(['back','side','front','thin']);
+ function* beginnerSearch(pos,options={}){
+  if(!validate(pos))throw new Error('INVALID_POSITION');
+  const clock=()=>typeof performance!=='undefined'?performance.now():Date.now(),started=clock();
+  const model=options.model,close=Math.hypot(pos[1].x-pos[2].x,pos[1].y-pos[2].y)<CLOSE_DIST;
+  let tested=0;const buckets=new Map(),verified=[],seen=new Set();let nearest=null;
+  const hand=options.hand==='L'?'L':'R';let skipped=0;
+  const stance=options.noStance?(()=>({ok:true,reason:null,reach:.5,gap:1,q:{x:0,y:0},rail:1,depth:0})):stanceFn;
+  const run=(shot,dt=.03,record=false)=>{tested++;return simulate(pos,shot,{maxC:5,dt,record,model,maxT:dt>=.02?9:18});};
+  const playable=shot=>{const st=stance(pos,shot,hand);if(!st.ok)skipped++;return st.ok;};
+  const pen=id=>id==='bank'?(close?1.2:PENALTY.bank):PENALTY[id];
+  function coarse(r,c){return pen(c.id)+difficulty(r)*.3+(c.kiss?6:0)+Math.max(0,.18-r.cut)*12;}
+  function consider(r){
+   if(!r.success){if(!nearest||quality(r)<quality(nearest))nearest=r;return;}
+   const c=classify(r);
+   if(c.id!=='bank'&&(r.cut<.06||r.cut>.97))return; // ultra-thin / dead-full hits are not beginner shots
+   const key=c.id+'|'+r.firstTarget+'|'+Math.sign(r.shot.tipX)+'|'+Math.sign(r.shot.tipY)+'|'+Math.round(r.shot.angle*45);
+   const sc=coarse(r,c),prev=buckets.get(key);
+   if(!prev||sc<prev.sc)buckets.set(key,{r,sc,id:c.id});
+  }
+  function tolerance(f,id){
+   let deg=0;
+   for(const d of [.02,.04,.07,.1,.15,.25]){
+    let ok=true;
+    for(const s of [-1,1]){const z=run({...f.shot,angle:f.shot.angle+s*d*Math.PI/180},.005);if(!z.success||classify(z).id!==id){ok=false;break;}}
+    if(ok)deg=d;else break;
+   }
+   let speedOK=true;
+   for(const k of [.92,1.08]){const z=run({...f.shot,speed:f.shot.speed*k},.005);if(!z.success||classify(z).id!==id){speedOK=false;break;}}
+   return {deg,speedOK};
+  }
+  function nearKiss(f){
+   // Closest surface gap cue<->first object and object<->object after the first hit (from recorded frames).
+   const fb=f.events.find(e=>e.type==='ball');if(!fb||!f.frames)return 1;
+   const tEnd=f.rule.t??f.duration,o=f.firstTarget,o2=3-o;let g=1;
+   for(const fr of f.frames){
+    if(fr.t<fb.t+.12||fr.t>tEnd-.02)continue;
+    const p=fr.p;g=Math.min(g,Math.hypot(p[0].x-p[o].x,p[0].y-p[o].y)-D,Math.hypot(p[o].x-p[o2].x,p[o].y-p[o2].y)-D);
+   }
+   return g;
+  }
+  function verify(limit){
+   const list=[...buckets.values()].sort((a,b)=>a.sc-b.sc).slice(0,limit);
+   for(const {r,id} of list){
+    const k=id+'|'+r.shot.angle.toFixed(4)+'|'+r.shot.tipX+'|'+r.shot.tipY+'|'+r.shot.speed;
+    if(seen.has(k))continue;seen.add(k);
+    let f=null;
+    for(const d of [0,-.0008,.0008,-.0016,.0016]){
+     const z=run({...r.shot,angle:r.shot.angle+d},.005,true);
+     if(z.success&&classify(z).id===id){f=z;break;}
+    }
+    if(!f)continue;
+    // centre the aim inside the scoring window
+    let lo=f.shot.angle,hi=lo;
+    for(const s of [-1,1])for(let i=1;i<=3;i++){
+     const z=run({...f.shot,angle:f.shot.angle+s*i*.0009},.008);
+     if(!z.success||classify(z).id!==id)break;
+     if(s<0)lo=z.shot.angle;else hi=z.shot.angle;
+    }
+    if(hi-lo>1e-6){const z=run({...f.shot,angle:(lo+hi)/2},.005,true);if(z.success&&classify(z).id===id)f=z;}
+    const c=classify(f),tol=tolerance(f,id),gap=nearKiss(f);
+    f.cls=c;f.tolerance=tol.deg;f.speedOK=tol.speedOK;f.kissGap=gap;f.difficulty=difficulty(f);
+    f.ease=1;
+    f.stance=stance(pos,f.shot,hand);
+    f.rank=pen(c.id)+f.difficulty*.3-tol.deg*10-(tol.speedOK?.8:0)+(c.kiss?6:0)+(gap<.03?2:0)+Math.max(0,.18-f.cut)*12
+      +(Math.abs(f.shot.tipX)>.3?.8:0)+(f.shot.tipY<0?.5:0)+(f.shot.speed>3.7?.3:0)+(f.stance.ok?0:20)+Math.max(0,f.stance.reach-.8)*1.5;
+    f.rank-=tol.deg*15;
+    f.close=close;
+    if(!verified.some(v=>v.cls.id===c.id&&v.firstTarget===f.firstTarget&&Math.abs(v.shot.angle-f.shot.angle)<.01&&Math.sign(v.shot.tipX)===Math.sign(f.shot.tipX)))verified.push(f);
+   }
+  }
+  // Beginner error model: aim sd 0.1 deg, speed sd 7 %, tip sd 0.04R. Fixed seed -> stable numbers.
+  function successProb(f,n=20){
+   let seed=12345,ok=0;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+   const g=()=>Math.sqrt(-2*Math.log(rnd()+1e-12))*Math.cos(2*Math.PI*rnd());
+   for(let i=0;i<n;i++){
+    const sh={angle:f.shot.angle+g()*.1*Math.PI/180,speed:f.shot.speed*(1+g()*.07),tipX:f.shot.tipX+g()*.04,tipY:f.shot.tipY+g()*.04};
+    tested++;const z=simulate(pos,sh,{maxC:5,dt:.01,model});if(z.success)ok++;
+   }
+   return ok/n;
+  }
+  function scoreProb(limit){
+   const list=verified.filter(v=>v.prob==null&&v.stance&&v.stance.ok&&!v.cls.kiss).sort((a,b)=>a.rank-b.rank).slice(0,limit);
+   for(const f of list){f.prob=successProb(f);f.ease=f.prob>=.35?3:f.prob>=.18?2:1;f.rank-=f.prob*10;}
+  }
+  function pick(){
+   const sorted=[...verified].sort((a,b)=>a.rank-b.rank);
+   const good=sorted.filter(v=>!v.cls.kiss&&v.cls.id!=='special'&&v.cls.id!=='unknown'&&v.stance&&v.stance.ok&&v.kissGap>=.012);
+   const core=good.filter(v=>CORE.has(v.cls.id)),bank=good.filter(v=>v.cls.id==='bank'),other=good.filter(v=>!CORE.has(v.cls.id)&&v.cls.id!=='bank');
+   let pool=core.length?core:other.length?other:bank;
+   if(close&&bank.length&&(!core.length||bank[0].rank<core[0].rank+1.5))pool=[...pool,bank[0]].sort((a,b)=>a.rank-b.rank);
+   if(!pool.length)pool=good.length?good:sorted;
+   const out=[];for(const v of pool){if(out.length>=2)break;if(out.some(o=>o.cls.id===v.cls.id))continue;out.push(v);}
+   // second card only if it is reasonably easy compared with the first
+   if(out.length===2&&(out[1].rank-out[0].rank>4||(out[0].prob!=null&&out[1].prob!=null&&out[1].prob<out[0].prob*.5)))out.pop();
+   return out;
+  }
+  const packet=(phase,p,extra={})=>({phase,progress:p,tested,found:verified.length,...extra});
+  function result(extra={}){
+   const routes=pick();
+   return {routes,tested,skipped,hand,close,elapsedMs:clock()-started,fallback:!routes.length,...(options.returnAll?{all:verified}:{}),...extra};
+  }
+  // ---- Stage A: object-ball-first basic shots with beginner tips & speeds
+  const TIPS=[[0,.3],[-.15,.3],[.15,.3],[-.28,.28],[.28,.28],[-.38,.2],[.38,.2],[0,0],[-.25,0],[.25,0],[0,-.25],[-.25,-.22],[.25,-.22]];
+  const SPEEDS=[2.8,3.4,4.0],steps=options.steps||90,total=TIPS.length*SPEEDS.length*2*(steps+1);
+  yield packet('basic',.02);
+  for(let ti=0;ti<TIPS.length;ti++){
+   const [tipX,tipY]=TIPS[ti];
+   for(const speed of SPEEDS)for(let target=1;target<=2;target++){
+    const dx=pos[target].x-pos[0].x,dy=pos[target].y-pos[0].y,base=Math.atan2(dy,dx),span=Math.asin(Math.min(.999,D/Math.hypot(dx,dy)));
+    for(let i=0;i<=steps;i++){
+     const shot={tipX,tipY,speed,angle:base+span*(-.985+1.97*i/steps)};if(playable(shot))consider(run(shot));
+     if(tested%60===0)yield packet('basic',.03+.72*tested/total);
+    }
+   }
+   if(ti===6){verify(10);scoreProb(4);yield packet('basic',.03+.72*tested/total,{interim:pick()});}
+  }
+  verify(20);scoreProb(8);
+  const usable=verified.filter(v=>!v.cls.kiss&&CORE.has(v.cls.id)&&v.stance&&v.stance.ok);
+  // ---- Stage B: bank shots only when objects are very close or nothing else works
+  if(close||!usable.length){
+   const reason=close?'close':'none';
+   yield packet('bank',.8,{reason,interim:pick()});
+   const KP=[{tipX:0,tipY:.3,speed:3.4},{tipX:0,tipY:.3,speed:4.0},{tipX:-.2,tipY:.3,speed:3.6},{tipX:.2,tipY:.3,speed:3.6}];
+   const ww=W-D,hh=H-D,seeds=[];
+   for(let target=1;target<=2;target++)for(let ix=-2;ix<=2;ix++)for(let iy=-2;iy<=2;iy++){
+    if((ix===0&&iy===0)||Math.abs(ix)+Math.abs(iy)>3)continue;
+    const x=R+ix*ww+(Math.abs(ix)%2?ww-(pos[target].x-R):pos[target].x-R),y=R+iy*hh+(Math.abs(iy)%2?hh-(pos[target].y-R):pos[target].y-R);
+    const dx=x-pos[0].x,dy=y-pos[0].y;seeds.push({a:Math.atan2(dy,dx),s:Math.asin(Math.min(.999,D/Math.hypot(dx,dy)))});
+   }
+   for(const p of KP){
+    for(const m of seeds)for(const u of [-.8,-.3,.3,.8]){const sh={...p,angle:m.a+m.s*u};if(playable(sh))consider(run(sh));}
+    for(let i=0;i<300;i++){const sh={...p,angle:2*Math.PI*(i+.37)/300};if(playable(sh))consider(run(sh));if(tested%60===0)yield packet('bank',.8+.12*i/300);}
+   }
+   verify(28);scoreProb(8);
+   if(verified.length)return result({bankReason:reason});
+  }else return result();
+  // ---- Stage C: nothing found -> wide fallback search of the base engine
+  yield packet('wide',.9);
+  const g=search(pos,1,{model,budgetMs:options.wideBudget||9000});let s;
+  do{s=g.next();if(!s.done)yield packet('wide',.9+.09*(s.value.progress||0),{tested:tested+s.value.tested});}while(!s.done);
+  tested+=s.value.tested;
+  const routes=s.value.routes.map(r=>{r.cls=r.success?classify(r):null;r.ease=1;r.rank=99;r.close=close;r.stance=stance(pos,r.shot,hand);return r;});
+  return {routes:routes.slice(0,1),hand,skipped,tested,close,elapsedMs:clock()-started,fallback:!routes.some(r=>r.success),wide:true};
+ }
+
+ return {W,H,R,D,BASE,validate,ruleAtSecond,simulate,search,difficulty,parameters,quality,preview,classify,beginnerSearch,stance:stanceFn,RAILNUM,CLOSE_DIST};
+}
+
+/* 3Q 코칭 · 회원용 뷰어 — 영상 없이 데이터(수 KB)로 애니 코칭을 다시 그린다 */
+const DATA0={"v":"3q-member-1","made":"2026-11-22T01:15:23.165Z","coach":"v1.09","player":{"nick":"김큐","code":"M001","hc":20},"totals":{"games":1,"wins":1,"losses":0,"inn":31,"pts":26,"hr":4,"avg":0.8387096774193549,"wr":1},"types":[["뒤돌리기",13,7],["옆돌리기",10,5],["앞돌리기",8,2],["빗겨치기",6,4],["뱅크샷",5,4],["횡단샷",3,0],["미분류",1,1],["대회전",1,1],["되돌리기",1,1]],"games":[{"key":"4417","name":"4417.mp4","date":"2026-11-22T01:15:17.735Z","opp":"박쓰리","hc":20,"oppHc":18,"pts":26,"oppPts":5,"inn":31,"hr":4,"res":"W","pal":{"cloth0":"rgb(172,171,171)","cloth1":"rgb(121,124,127)","cush":"rgb(115,119,122)","rail":"rgb(155,141,129)","rail0":"rgb(183,166,152)","rail1":"rgb(127,116,106)","floor0":"rgb(131,112,105)","floor1":"rgb(83,71,67)","line":"rgb(193,192,192)","outer":0.15165910237014624,"cuW":0.05,"dia":"#15171a","lum":171.3},"model":{},"yt":"https://youtu.be/abcDEF12345","shots":[{"i":1,"t0":31.333,"head":"1이닝 1P 2번째 샷","body":"노란공 오른쪽을 3/8 두께로, 상단 왼쪽 3팁 당점에 약하게 4번 쿠션(왼쪽 단쿠션) 2.1포인트로 보내는 샷을 시도했지만 무득점 (두 번째 목적구 전 쿠션이 2개뿐).","fix":"👉 두께를 3/8에서 1/8로 더 얇게 쳤다면 득점 경로였습니다.","rec":"추천 샷은 빗겨치기(노란공 오른쪽 1/4, 상단 왼쪽 2팁, 예상 성공률 80%)입니다.","cue":0,"pre":[[0.441,0.228],[0.087,0.79],[2.722,0.077]],"tech":"단장 빗겨치기 (짱꼴라)","est":true,"sh":{"act":{"s":[2.2145,2.1594,-0.4,0.18],"tip":"상단 왼쪽 3팁","pw":2,"cut":"3/8"},"fix":{"s":[2.2093,2.1594,-0.4,0.18],"tip":"상단 왼쪽 3팁","pw":2,"cut":"1/8"},"rec":{"s":[2.2072,2.8,-0.28,0.28],"tip":"상단 왼쪽 2팁","pw":3,"cut":"1/4"}},"tr":{"fps":10,"d":[44,23,9,79,272,8,31,41,9,79,272,8,18,60,9,79,272,8,8,72,9,83,272,8,9,77,9,96,272,8,18,82,10,108,272,8,25,89,10,119,272,8,31,96,11,130,272,8,37,103,11,139,272,8,42,110,11,134,272,8,48,117,11,127,272,8,55,124,11,122,272,8,60,131,11,116,272,8,66,137,11,110,272,8,72,137,10,104,272,8,77,133,10,99,272,8,83,129,11,94,272,8,89,125,10,88,272,8,94,122,10,83,272,8,100,118,10,77,272,8,105,114,10,72,272,8,110,110,10,67,272,8,116,107,10,62,272,8,121,103,10,56,272,8,127,100,10,52,272,8,132,96,10,46,272,8,137,93,10,42,272,8,142,89,10,37,272,8,147,86,9,32,272,8,152,83,9,27,272,8,158,79,9,22,272,8,163,76,9,17,272,8,168,73,9,13,272,8,172,70,9,8,272,8,178,66,9,4,272,8,182,63,9,5,272,8,187,60,9,8,272,8,192,57,9,10,272,8,196,54,9,12,272,8,201,51,9,15,272,8,206,48,9,17,272,8,210,45,9,19,272,8,215,42,9,22,272,8,219,39,8,24,272,8,224,36,8,27,272,8,229,33,8,29,272,8,233,30,8,31,272,8,237,27,8,33,272,8,242,25,8,35,272,8,246,22,8,37,272,8,250,19,8,39,272,8,255,16,8,41,272,8,259,14,8,43,272,8,263,11,8,45,272,8,266,8,8,47,273,7,266,7,8,48,276,7,267,5,7,50,279,6,268,4,7,52,281,5,268,5,7,54,279,5,268,5,7,56,278,4,268,6,7,57,276,4,269,7,7,59,275,4,269,8,7,60,274,4,269,9,7,62,273,4,268,10,7,63,273,5,268,11,7,65,272,4]}},{"i":3,"t0":81.733,"head":"2이닝 1P 1번째 샷","body":"빨간공 오른쪽을 — 두께로, 상단 오른쪽 2팁 당점에 약하게 빗겨치기를 시도했지만 무득점 (두 번째 목적구를 약 12cm 차이로 빗나감).","fix":"👉 이 샷은 같은 구질로는 교정해서 득점할 수 있는 길이 없었습니다. 아래 추천 샷처럼 다른 길을 고르는 편이 좋았습니다.","rec":"추천 샷은 앞돌리기(빨간공 오른쪽 1/8, 상단 왼쪽 3팁, 예상 성공률 75%)입니다.","cue":0,"pre":[[2.57,0.068],[1.804,0.424],[2.695,0.041]],"tech":"앞돌리기 (마와시/세워치기 포함)","est":true,"sh":{"act":{"s":[0.4055,2.5318,0.3,0.25],"tip":"상단 오른쪽 2팁","pw":2,"cut":""},"fix":null,"rec":{"s":[0.2469,4,-0.38,0.2],"tip":"상단 왼쪽 3팁","pw":5,"cut":"1/8"}},"tr":{"fps":10,"d":[257,7,180,42,270,4,274,16,180,42,272,7,265,31,180,42,275,12,245,44,180,42,278,17,227,57,180,42,280,22,211,69,180,42,279,26,196,81,180,42,278,31,181,92,180,42,276,35,167,103,180,42,274,39,153,114,180,42,273,44,138,126,180,42,271,48,124,135,180,42,269,52,110,133,180,42,268,56,97,127,180,42,266,61,83,120,180,42,264,65,70,114,180,42,263,69,56,109,180,42,261,73,43,103,180,42,260,77,30,97,180,42,258,81,16,92,180,42,256,85,5,86,180,42,255,89,12,78,180,42,254,93,20,70,180,42,252,97,28,62,180,42,251,101,35,55,180,42,249,104,42,47,180,42,248,108,49,40,180,42,246,112,56,33,180,42,245,116,63,25,180,42,244,119,69,18,180,42,242,123,75,11,180,42,241,126,82,5,180,42,240,130,89,7,180,42,238,133,95,11,180,42,237,137,102,15,180,42,236,138,108,19,180,42,234,136,115,24,180,42,233,134,121,27,180,42,232,132,127,31,180,42,230,130,133,35,180,42,229,128,140,39,180,42,228,126,146,43,180,42,227,125,152,46,180,42,226,123,158,50,180,42,225,121,164,54,180,42,224,120,170,58,180,42,223,118,176,61,180,42,222,117,182,65,180,42,220,115,188,68,180,42,220,114,194,72,180,42,219,112,200,76,180,42,218,110,205,79,180,42,217,109,211,83,180,42,216,108,217,86,180,42,215,106,222,90,180,42,214,105,228,93,180,42,213,104,233,96,180,42,213,103,239,100,180,42,212,101,245,103,180,42,211,100,250,107,180,42,210,99,255,110,180,42,210,98,261,113,180,42,209,97,266,116,180,42,209,96,271,119,180,42,208,95,277,123,180,42,208,94,280,126,180,42,207,93,278,129,180,42,207,92,275,132,180,42,206,91,273,135,180,42,206,91,270,137,180,42,205,90,268,137,180,42,205,89,265,135,180,42,204,88,262,133,180,42,204,88,259,132,180,42,204,87,257,130,180,42,203,86,254,128,180,42,203,86,252,127,180,42,203,85,249,125,180,42,202,85,246,123,180,42,202,84,244,122,180,42,202,84,241,120,180,42,202,83,239,119,180,42,201,83,237,118,180,42,201,83,234,116,180,42,201,83,232,115,180,42,201,82,230,114,180,42,201,82,228,112,180,42,200,82,225,110,180,42,200,82,223,109,180,42,200,82,221,108,180,42,200,82,219,107,180,42,200,81,217,105,180,42,200,81,215,104,180,42,200,81,213,103,180,42,201,81,212,102,180,42,201,81,210,100,180,42,201,81,208,99,180,42,201,81,206,98,180,42,201,81,205,98,180,42,201,81,203,96,180,42,201,81,201,95,180,42,201,81,200,94,180,42,201,81,198,93,180,42,201,81,196,92,180,42,201,81,195,91,180,42,201,81,194,90,180,42,201,81,192,89,180,42,201,81,190,88,180,42,201,81,189,88,180,42,201,81,188,87,180,42,201,81,187,86,180,42,201,81,185,85,180,42,201,81,184,84,180,42,201,81,183,83,180,42,201,81,182,82,180,42,201,81,181,81,180,42,201,81,180,81,180,42,201,81,179,80,180,42,201,81,178,79,180,42,201,81,176,79,180,42,201,81,175,78,180,42,201,81]}},{"i":6,"t0":175.033,"head":"3이닝 1P 2번째 샷","body":"빨간공 오른쪽을 3/8 두께로, 상단 오른쪽 3팁 당점에 약하게 뒤돌리기를 시도했지만 무득점.","fix":"👉 이 샷은 같은 구질로는 교정해서 득점할 수 있는 길이 없었습니다. 아래 추천 샷처럼 다른 길을 고르는 편이 좋았습니다.","rec":"추천 샷은 앞돌리기(노란공 왼쪽 1/4, 상단 무회전, 예상 성공률 45%)입니다.","cue":0,"pre":[[2.113,1.233],[2.717,1.319],[0.65,0.756]],"tech":"뒤돌리기 (우라)","est":false,"sh":{"act":{"s":[-2.8005,2.4804,0.4,0.112],"tip":"상단 오른쪽 3팁","pw":2,"cut":"3/8"},"fix":null,"rec":{"s":[0.0652,3.4,0,0.3],"tip":"상단 무회전","pw":4,"cut":"1/4"}},"tr":{"fps":10,"d":[211,123,272,132,65,76,193,116,272,132,65,76,174,110,272,132,65,76,155,103,272,132,65,76,136,96,272,132,65,76,116,89,272,132,65,76,98,83,272,132,65,76,78,76,272,132,65,76,67,66,272,132,57,79,60,55,272,132,45,83,52,44,272,132,34,87,43,34,272,132,25,91,35,23,272,132,15,94,26,13,272,132,7,98,16,4,272,132,8,101,10,10,272,132,14,102,4,16,272,132,19,104,5,21,272,132,24,106,9,27,272,132,29,108,13,32,272,132,34,110,16,37,272,132,39,112,20,42,272,132,44,114,23,47,272,132,48,116,27,52,272,132,53,118,30,57,272,132,58,120,33,62,272,132,62,122,36,67,272,132,67,124,40,72,272,132,71,126,43,77,272,132,76,128,46,81,272,132,80,129,50,86,272,132,84,131,53,91,272,132,89,133,55,95,272,132,93,135,59,100,272,132,97,136,62,105,272,132,101,138,65,109,272,132,105,140,68,114,272,132,109,138,71,118,272,132,112,138,74,123,272,132,116,137,77,127,272,132,119,136,80,132,272,132,123,135,83,135,272,132,126,134,86,139,272,132,129,134,88,137,272,132,132,133,91,135,272,132,136,132,94,132,272,132,139,131,96,130,272,132,142,130,99,127,272,132,145,129,101,125,272,132,148,129,104,123,272,132,151,128,107,121,272,132,154,127,109,119,272,132,157,126,111,116,272,132,160,126,114,114,272,132,163,125,116,112,272,132,165,124,119,110,272,132,168,124,121,108,272,132,171,123,123,106,272,132,173,122,125,104,272,132,176,122,128,102,272,132,178,121,130,100,272,132,181,121,132,99,272,132,183,120,134,97,272,132,186,120,136,95,272,132,188,119,138,93,272,132,190,118,141,91,272,132,193,118,143,90,272,132,195,117,145,88,272,132,197,117,147,86,272,132,199,116,148,85,272,132,201,116,150,83,272,132,203,115,152,81,272,132,205,115,154,80,272,132,208,114,156,79,272,132,210,114,158,77,272,132,211,113,160,75,272,132,213,113,161,74,272,132,215,112,163,73,272,132,217,112,165,71,272,132,219,112,166,70,272,132,221,112,168,68,272,132,222,111,170,67,272,132,224,111,171,66,272,132,225,111,173,65,272,132,227,110,174,63,272,132,229,110,175,62,272,132,230,110,177,61,272,132,231,109,178,60,272,132,233,109,179,59,272,132,235,109,181,57,272,132,236,109,182,57,272,132,237,109,183,56,272,132,239,108,184,55,272,132,240,108,185,54,272,132,241,108,186,53,272,132,242,108,188,51,272,132,243,108,189,50,272,132,244,108,189,50,272,132,245,108,190,49,272,132,246,108,191,48,272,132,247,107,192,47,272,132,248,107,193,47,272,132,249,107,194,46,272,132,250,107,195,45,272,132,250,107,195,44,272,132,251,107,196,44,272,132,252,107,197,43,272,132,253,107,198,43,272,132,253,107]}},{"i":9,"t0":254.533,"head":"4이닝 1P 2번째 샷","body":"노란공 오른쪽을 1/8 두께로, 상단 오른쪽 3팁 당점에 아주 약하게 옆돌리기를 시도했지만 무득점 (두 번째 목적구를 약 8cm 차이로 빗나감).","fix":"👉 이 샷은 같은 구질로는 교정해서 득점할 수 있는 길이 없었습니다. 아래 추천 샷처럼 다른 길을 고르는 편이 좋았습니다.","rec":"추천 샷은 빗겨치기(노란공 왼쪽 1/8, 상단 무회전, 예상 성공률 65%)입니다.","cue":0,"pre":[[2.512,0.194],[2.493,0.461],[1.355,0.556]],"tech":"옆돌리기 (제각돌리기/학구)","est":false,"sh":{"act":{"s":[1.7777,1.6879,0.38,0.5],"tip":"상단 오른쪽 3팁","pw":1,"cut":"1/8"},"fix":null,"rec":{"s":[1.4494,2.8,0,0.3],"tip":"상단 무회전","pw":3,"cut":"1/8"}},"tr":{"fps":10,"d":[251,19,249,46,136,56,249,30,249,46,136,56,244,43,250,47,136,56,236,51,254,51,136,56,228,60,257,55,136,56,221,69,260,58,136,56,213,79,263,62,136,56,205,88,266,65,136,56,198,96,269,68,136,56,190,106,272,72,136,56,183,114,275,75,136,56,176,123,278,78,136,56,168,132,281,82,136,56,160,137,280,84,136,56,153,132,279,87,136,56,145,127,277,89,136,56,137,122,276,91,136,56,130,117,275,94,136,56,122,112,273,96,136,56,114,108,272,98,136,56,107,103,271,101,136,56,99,98,270,103,136,56,92,94,268,105,136,56,84,89,267,107,136,56,77,84,266,109,136,56,70,80,264,111,136,56,62,75,263,113,136,56,55,71,262,115,136,56,47,66,261,117,136,56,40,62,260,119,136,56,33,58,259,121,136,56,26,53,258,122,136,56,19,49,257,124,136,56,11,44,256,126,136,56,4,40,255,128,136,56,7,35,254,130,136,56,10,30,253,131,136,56,14,26,252,133,136,56,18,21,251,135,136,56,22,17,250,136,136,56,26,12,249,137,136,56,29,8,248,138,136,56,33,3,247,137,136,56,37,5,246,136,136,56,40,7,246,136,136,56,44,10,246,135,136,56,47,12,245,135,136,56,51,14,245,134,136,56,54,17,244,134,136,56,58,19,244,133,136,56,61,22,244,132,136,56,65,24,243,131,136,56,68,26,243,131,136,56,71,29,242,130,136,56,74,31,242,130,136,56,78,33,242,130,136,56,81,35,242,129,136,56,84,38,241,129,136,56,87,39,241,129,136,56,90,41,241,128,136,56,93,44,240,128,136,56,96,46,240,128,136,56,99,48,240,128,136,56,102,50,240,128,136,56,105,52,240,128,136,56,108,54,240,127,136,56,110,56,240,127,136,56,113,58,240,127,136,56,116,60,240,127,136,56,119,61,240,127,136,56,121,63,240,127,136,56,124,65,240,127,136,56,127,67,240,127,136,56,129,69,240,127,136,56,132,70,240,127,136,56,134,72,240,127,136,56,137,74,240,127,136,56,139,75,240,127,136,56,142,77,240,127,136,56,144,79,240,127,136,56,146,80,240,127,136,56,149,82,240,127,136,56,151,83,240,127,136,56,153,85,240,127,136,56,156,87,240,127,136,56,158,88,240,127,136,56,160,90,240,127,136,56,162,91,240,127,136,56,164,93,240,127,136,56,166,94,240,127,136,56,168,95,240,127,136,56,170,97,240,127,136,56,172,98,240,127,136,56,174,99,240,127,136,56,176,101,240,127,136,56,178,102,240,127,136,56,180,103,240,127,136,56,181,105,240,127,136,56,183,106,240,127,136,56,184,107,240,127,136,56,186,108,240,127,135,56,188,110,240,127,135,56,189,111,240,127,135,56,190,112,240,127,135,56,192,113,240,127,136,56,194,114,240,127,136,56,195,115,240,127,136,56,196,116,240,127,136,56,197,117,240,127,136,56,199,118,240,127,136,56,200,119,240,127,136,56,201,120,240,127,136,56,202,121,240,127,136,56,203,122,240,127,136,56,205,123,240,127,136,56,206,124,240,127,136,56,207,125,240,127,136,56,208,126,240,127,136,56,209,127,240,127,136,56,210,128,240,127,136,56,211,128,240,127,136,56]}},{"i":13,"t0":356.733,"head":"5이닝 1P 1번째 샷","body":"노란공 왼쪽을 3/8 두께로, 상단 오른쪽 2팁 당점에 강하게 빗겨치기를 시도했지만 무득점 (두 번째 목적구를 약 2cm 차이로 빗나감).","fix":"👉 이 샷은 같은 구질로는 교정해서 득점할 수 있는 길이 없었습니다. 아래 추천 샷처럼 다른 길을 고르는 편이 좋았습니다.","rec":"추천 샷은 앞돌리기(빨간공 왼쪽 1/4, 상단 무회전, 예상 성공률 25%)입니다.","cue":0,"pre":[[2.723,1.347],[2.161,0.878],[0.231,0.713]],"tech":"단장 빗겨치기 (짱꼴라)","est":false,"sh":{"act":{"s":[-2.5006,4.785,0.272,0.25],"tip":"상단 오른쪽 2팁","pw":5,"cut":"3/8"},"fix":null,"rec":{"s":[-2.9106,3.4,0,0.3],"tip":"상단 무회전","pw":4,"cut":"1/4"}},"tr":{"fps":10,"d":[272,134,216,88,23,71,230,104,216,87,23,71,194,97,211,64,23,71,160,101,203,29,23,71,128,105,196,8,23,71,96,107,191,33,23,71,66,108,187,56,23,71,36,107,182,78,23,71,6,107,178,98,23,71,23,99,174,117,23,71,46,92,170,136,23,71,66,84,169,127,23,71,86,77,168,113,23,71,103,70,167,101,23,71,118,63,166,91,23,71,132,56,165,81,23,71,146,50,164,71,23,71,160,43,162,61,23,71,173,37,161,52,23,71,187,31,160,42,23,71,200,24,159,33,23,71,213,18,158,23,23,71,227,12,157,14,23,71,240,6,156,6,23,71,252,7,155,9,23,71,265,10,154,15,23,71,277,14,154,20,23,71,275,19,154,25,23,71,267,25,153,30,23,71,259,30,153,35,23,71,253,36,152,40,23,71,247,41,152,45,23,71,240,47,151,50,23,71,234,53,151,55,23,71,228,58,150,60,23,71,222,63,150,65,23,71,216,69,149,70,23,71,210,74,149,74,23,71,204,80,149,79,23,71,197,85,148,83,23,71,192,90,148,88,23,71,186,96,147,93,23,71,180,101,147,97,23,71,174,106,146,102,23,71,168,112,146,106,23,71,162,117,146,111,23,71,156,122,145,115,23,71,150,127,145,119,23,71,144,132,145,124,23,71,139,137,144,128,23,71,133,137,144,132,23,71,128,134,144,136,23,71,123,132,143,139,23,71,118,129,143,136,23,71,113,126,143,134,23,71,108,124,143,132,23,71,103,120,142,130,23,71,97,118,142,127,23,71,93,116,142,125,23,71,88,113,142,123,23,71,83,111,142,121,23,71,78,108,141,119,23,71,73,106,141,117,23,71,69,103,141,115,23,71,64,100,141,113,23,71,59,98,141,111,23,71,54,96,140,109,23,71,50,93,140,107,23,71,45,91,140,106,23,71,41,88,140,104,23,71,35,86,140,102,23,71,31,84,140,100,23,71,27,81,140,99,23,71,22,79,140,97,23,71,18,77,140,96,23,71,14,75,140,94,23,71,9,73,140,93,23,71,4,71,140,91,23,71,4,68,140,90,23,71,6,66,139,89,23,71,9,64,139,88,23,71,11,62,139,86,23,71,13,60,139,85,23,71,15,58,140,84,23,71,17,55,140,83,23,71,20,54,140,82,23,71,22,52,140,81,23,71,24,50,140,80,23,71,26,48,140,79,23,71,28,46,140,78,23,71,30,44,140,77,23,71,32,42,140,76,23,71,34,41,140,76,23,71,36,39,140,75,23,71,38,37,140,74,23,71,39,35,140,73,23,71,42,34,140,73,23,71,43,32,140,72,23,71,45,31,140,72,23,71,47,29,140,71,23,71,48,27,140,71,23,71,50,26,141,70,23,71,52,24,141,70,23,71,53,23,141,70,23,71,54,22,141,69,23,71,56,20,141,69,23,71,58,19,141,69,23,71,59,18,141,69,23,71,60,16,141,69,23,71,62,15,141,69,23,71,63,14,141,68,23,71,64,12,141,68,23,71,66,11,141,68,23,71,67,10,141,68,23,71,68,9,141,68,23,71,69,8,141,68,23,71,70,7,141,68,23,71,72,6,141,68,23,71,72,5,141,68,23,71,73,4,141,68,23,71,74,3,141,68,23,71]}},{"i":15,"t0":414.2,"head":"6이닝 1P 1번째 샷","body":"빨간공 왼쪽을 1/2 두께로, 중단 오른쪽 3팁 당점에 조금 강하게 2번 쿠션(오른쪽 단쿠션) 1.7포인트로 보내는 샷을 시도했지만 무득점.","fix":"👉 두께를 1/2에서 1/8로 더 얇게, 세기를 조금 더 강하게, 2번 쿠션 도착점을 1.7에서 2.3포인트로 쳤다면 대회전으로 득점 경로였습니다.","rec":"추천 샷은 옆돌리기(노란공 오른쪽 1/2, 상단 오른쪽 2팁, 예상 성공률 45%)입니다.","cue":0,"pre":[[0.104,0.613],[0.383,0.96],[0.979,1.053]],"tech":"장횡단 (장더블/레일)","est":true,"sh":{"act":{"s":[0.4231,3.8681,0.366,0.06],"tip":"중단 오른쪽 3팁","pw":4,"cut":"1/2"},"fix":{"s":[0.4144,4.4483,0.366,0.06],"tip":"중단 오른쪽 3팁","pw":5,"cut":"1/8"},"rec":{"s":[0.9668,4,0.28,0.28],"tip":"상단 오른쪽 2팁","pw":5,"cut":"1/2"}},"tr":{"fps":10,"d":[10,61,38,96,98,105,45,77,38,96,98,105,80,93,38,96,98,105,106,95,38,96,105,119,126,88,38,96,116,134,146,83,38,96,122,123,166,79,38,96,128,109,186,76,38,96,134,96,205,73,38,96,140,85,224,71,38,96,145,73,243,68,38,96,150,61,263,65,38,96,156,49,277,64,38,96,161,38,267,65,38,96,166,26,253,69,38,96,172,15,240,71,38,96,177,6,230,74,38,96,180,12,221,76,38,96,182,19,212,78,38,96,185,25,204,81,38,96,188,31,195,83,38,96,190,36,187,85,38,96,193,42,178,87,38,96,195,47,170,90,38,96,199,53,161,92,38,96,201,58,153,94,38,96,204,64,145,96,38,96,206,69,136,99,38,96,209,74,128,101,38,96,211,79,120,103,38,96,214,84,112,106,38,96,216,90,104,108,38,96,219,95,96,110,38,96,222,100,88,112,38,96,224,105,80,115,38,96,227,110,72,117,38,96,229,115,63,118,38,96,232,120,56,121,38,96,234,124,48,123,38,96,237,130,40,126,38,96,239,134,32,128,38,96,241,137,24,130,38,96,243,135,16,133,38,96,245,133,8,135,38,96,246,131,4,136,38,96,247,128,9,136,38,96,249,125,13,136,38,96,250,123,16,136,38,96,251,121,20,136,38,96,253,118,23,136,38,96,254,116,27,135,38,96,256,113,30,135,38,96,257,111,33,135,38,96,258,109,36,135,38,96,259,107,39,135,38,96,260,105,42,135,38,96,262,102,45,135,38,96,263,100,48,135,38,96,264,98,51,134,38,96,265,96,54,134,38,96,266,94,57,134,38,96,267,92,60,134,38,96,268,90,62,134,38,96,269,88,65,134,38,96,271,87,68,134,38,96,271,85,70,134,38,96,272,83,73,134,38,96,273,81,76,134,38,96,274,80,78,134,38,96,275,78,80,134,38,96,276,77,83,134,38,96,277,75,85,134,38,96,278,73,87,134,38,96,278,72,90,134,38,96,279,70,92,134,38,96,280,69,94,134,38,96,281,67,97,134,38,96,281,66,99,134,38,96,281,65,101,133,38,96,280,64,102,134,38,96,280,63,105,134,38,96,280,62,107,134,38,96,279,61,108,133,38,96,279,60,110,133,38,96,279,60,112,134,38,96,278,59,114,133,38,96,278,58,116,133,38,96,278,58,117,133,38,96,277,57,119,133,38,96,277,56,121,133,38,96,277,55,123,133,38,96,277,55,124,133,38,96,277,54,126,132,38,96,276,54,127,132,38,96,276,53,128,132,38,96,276,53,130,133,38,96,276,52,131,133,38,96,276,52,133,133,38,96,276,52,134,133,38,96,276,52,135,133,38,96,275,51,136,133,38,96,275,51,138,132,38,96,275,51,139,132,38,96,275,51,140,133,38,96,275,51,140,133,38,96,275,51,142,132,38,96,275,51,143,132,38,96,275,51,144,132,38,96,275,51]}},{"i":17,"t0":466.967,"head":"7이닝 1P 1번째 샷","body":"노란공 왼쪽을 3/8 두께로, 상단 왼쪽 3팁 당점에 보통 세기로 1번 쿠션(위 장쿠션) 7.5포인트로 보내는 샷을 시도했지만 무득점.","fix":"👉 조준을 0.1° 이내로 아주 미세하게 조정했다면 득점 경로였습니다 (실수 범위의 빗나감).","rec":"추천 샷은 뒤돌리기(노란공 왼쪽 5/8, 상단 왼쪽 1팁, 예상 성공률 70%)입니다.","cue":0,"pre":[[1.528,1.31],[2.587,0.571],[2.548,1.07]],"tech":"뒤돌리기 (우라)","est":true,"sh":{"act":{"s":[-0.6378,2.8272,-0.316,0.252],"tip":"상단 왼쪽 3팁","pw":3,"cut":"3/8"},"fix":{"s":[-0.6383,2.8272,-0.316,0.252],"tip":"상단 왼쪽 3팁","pw":3,"cut":"3/8"},"rec":{"s":[-0.6265,2.8,-0.15,0.3],"tip":"상단 왼쪽 1팁","pw":3,"cut":"5/8"}},"tr":{"fps":10,"d":[153,131,259,57,255,107,171,117,259,57,255,107,195,100,259,57,255,107,217,83,259,57,255,107,238,67,259,57,255,107,253,50,266,57,255,107,256,33,279,58,255,107,260,15,267,58,255,107,265,7,255,58,255,107,268,20,245,58,255,107,271,31,234,58,255,107,274,41,224,58,255,107,279,50,213,58,255,107,281,58,203,58,255,107,279,66,192,58,255,107,278,73,182,58,255,107,276,80,172,58,255,107,274,88,162,58,255,107,273,95,151,58,255,107,271,102,141,59,255,107,269,109,131,59,255,107,268,116,121,59,255,107,266,123,111,59,255,107,265,130,101,59,255,107,263,137,91,59,255,107,261,134,81,59,255,107,259,130,71,59,255,107,257,127,61,59,255,107,255,123,51,59,255,107,253,119,41,59,255,107,251,115,31,59,255,107,249,112,21,60,255,107,247,108,11,60,255,107,245,104,5,60,255,107,243,101,10,60,255,107,242,97,16,60,255,107,240,94,21,60,255,107,238,91,27,60,255,107,236,87,32,61,255,107,235,83,37,61,255,107,233,81,43,61,255,107,231,77,47,61,255,107,229,74,52,61,255,107,227,71,58,61,255,107,226,68,63,61,255,107,224,65,67,62,255,107,222,62,72,62,255,107,221,58,77,62,255,107,219,55,82,62,255,107,218,52,86,62,255,107,217,49,91,62,255,107,215,47,95,62,255,107,213,44,100,62,255,107,212,41,104,62,255,107,210,38,109,62,255,107,209,35,113,62,255,107,208,32,118,62,255,107,206,30,122,63,255,107,205,27,126,63,255,107,203,24,130,63,255,107,202,22,134,63,255,107,201,19,139,63,255,107,200,17,143,63,255,107,199,14,147,63,255,107,197,12,151,63,255,107,196,9,155,63,255,107,195,7,159,63,255,107,194,5,163,63,255,107,193,4,166,63,255,107,192,5,170,63,255,107,192,6,174,63,255,107,191,8,178,63,255,107,190,9,181,63,255,107,189,10,185,63,255,107,189,11,188,63,255,107,188,12,192,63,255,107,188,13,195,63,255,107,187,15,198,63,255,107,187,16,202,63,255,107,186,16,205,63,255,107,186,17,209,63,255,107,186,18,212,63,255,107,185,18,215,63,255,107,185,19,218,63,255,107,184,20,221,63,255,107,184,21,224,63,255,107,184,22,227,63,255,107,183,22,230,63,255,107,183,23,233,63,255,107,183,23,236,63,255,107,182,24,239,63,255,107,182,24,242,63,255,107]}},{"i":20,"t0":552.3,"head":"8이닝 1P 2번째 샷","body":"노란공 오른쪽을 1/2 두께로, 중단 왼쪽 1팁 당점에 강하게 뒤돌리기를 시도했지만 무득점.","fix":"👉 같은 뒤돌리기라도 두께를 1/2에서 1/4로 더 얇게 쳤다면 득점 경로였습니다.","rec":"추천 샷은 옆돌리기(빨간공 오른쪽 1/2, 하단 오른쪽 2팁, 예상 성공률 45%)입니다.","cue":0,"pre":[[2.745,0.51],[0.38,0.191],[2.548,0.157]],"tech":"뒤돌리기 (우라)","est":false,"sh":{"act":{"s":[-2.9904,4.1213,-0.138,-0.048],"tip":"중단 왼쪽 1팁","pw":5,"cut":"1/2"},"fix":{"s":[-2.9887,4.1213,-0.138,-0.048],"tip":"중단 왼쪽 1팁","pw":5,"cut":"1/4"},"rec":{"s":[-2.0106,3.4,0.25,-0.22],"tip":"하단 오른쪽 2팁","pw":4,"cut":"1/2"}},"tr":{"fps":10,"d":[275,51,38,19,255,16,242,46,38,19,255,16,199,40,38,19,255,16,157,33,38,19,255,16,117,27,38,19,255,16,78,22,38,19,255,16,43,16,34,20,255,16,36,6,11,28,255,16,26,13,27,33,255,16,14,23,49,36,255,16,5,32,69,40,255,16,14,42,88,43,255,16,24,51,105,46,255,16,32,60,123,49,255,16,38,69,140,51,255,16,45,78,157,54,255,16,51,86,174,57,255,16,57,94,191,60,255,16,63,103,208,63,255,16,69,111,225,65,255,16,75,119,241,68,255,16,82,128,258,71,255,16,87,136,274,74,255,16,94,137,275,75,255,16,101,132,263,76,255,16,108,127,252,76,255,16,114,123,244,77,255,16,121,118,235,78,255,16,127,114,227,78,255,16,134,110,218,79,255,16,141,105,209,80,255,16,147,102,201,80,255,16,154,97,192,81,255,16,160,93,184,82,255,16,166,88,176,82,255,16,167,90,173,78,255,16,166,94,172,71,255,16,166,97,170,65,255,16,167,99,168,59,255,16,167,102,165,53,255,16,167,104,163,47,255,16,167,107,162,41,255,16,167,109,159,36,255,16,167,111,157,30,255,16,167,114,155,25,255,16,167,116,153,19,255,16,167,118,151,14,255,16,167,120,149,8,255,16,167,122,147,5,255,16,168,125,146,7,255,16,168,127,145,10,255,16,168,129,144,13,255,16,168,131,143,16,255,16,168,132,142,18,255,16,168,134,141,21,255,16,168,136,140,24,255,16,168,138,139,27,255,16,168,139,139,29,255,16,168,138,138,32,255,16,168,137,137,35,255,16,169,136,136,37,255,16,169,135,135,40,255,16,169,134,134,42,255,16,170,133,134,45,255,16,170,133,133,47,255,16,170,132,132,49,255,16,170,131,131,52,255,16,170,131,131,54,255,16]}},{"i":23,"t0":622.633,"head":"9이닝 1P 1번째 샷","body":"노란공 왼쪽을 1/4 두께로, 하단 무회전 당점에 강하게 뒤돌리기를 시도했지만 무득점 (목적구끼리 부딪히는 키스, 두 번째 목적구를 약 1cm 차이로 빗나감).","fix":"👉 이 샷은 같은 구질로는 교정해서 득점할 수 있는 길이 없었습니다. 아래 추천 샷처럼 다른 길을 고르는 편이 좋았습니다.","rec":"추천 샷은 옆돌리기(빨간공 오른쪽 3/8, 상단 오른쪽 2팁, 예상 성공률 65%)입니다.","cue":0,"pre":[[2.773,0.134],[1.575,0.64],[2.48,1.096]],"tech":"뒤돌리기 (우라)","est":false,"sh":{"act":{"s":[2.6952,4.2518,-0.009,-0.386],"tip":"하단 무회전","pw":5,"cut":"1/4"},"fix":null,"rec":{"s":[1.9026,4,0.28,0.28],"tip":"상단 오른쪽 2팁","pw":5,"cut":"3/8"}},"tr":{"fps":10,"d":[277,13,158,64,248,110,243,30,158,64,248,110,207,47,158,64,248,110,172,63,157,64,248,110,153,85,142,57,248,110,139,109,122,49,248,110,124,131,104,41,248,110,106,130,88,34,248,110,87,114,73,28,248,110,68,100,58,21,248,110,49,87,42,15,248,110,30,76,27,8,248,110,11,65,12,3,248,110,10,52,7,8,248,110,24,38,15,13,248,110,36,25,23,17,248,110,47,12,30,21,248,110,57,6,37,24,248,110,68,14,44,28,248,110,79,22,51,32,248,110,89,29,58,36,248,110,99,36,65,39,248,110,110,43,71,43,248,110,120,50,78,46,248,110,131,57,85,50,248,110,141,64,91,54,248,110,151,71,98,57,248,110,161,78,104,61,248,110,171,84,111,64,248,110,181,91,117,68,248,110,191,97,124,71,248,110,201,104,130,75,248,110,210,111,136,78,248,110,220,117,142,82,248,110,230,123,148,85,248,110,240,130,154,88,248,110,250,136,161,92,248,110,258,136,166,95,248,110,265,133,173,98,248,110,272,129,178,101,248,110,280,127,184,105,248,110,278,125,190,108,248,110,273,124,196,111,248,110,270,123,202,114,248,110,266,122,207,117,248,110,262,121,213,121,248,110,259,120,219,124,248,110,255,119,224,126,248,110,252,118,229,130,248,110,248,117,235,133,248,110,244,116,241,136,248,110,241,116,246,138,248,110,237,115,250,137,248,110,234,114,254,135,248,110,231,113,259,134,248,110,227,112,263,132,248,110,224,111,267,131,248,110,221,110,271,129,248,110,218,109,275,128,248,110,215,108,279,127,248,110,211,108,281,125,248,110,209,107,279,124,248,110,206,106,276,122,248,110,203,105,274,121,248,110,200,104,272,119,248,110,197,104,269,118,248,110,194,103,267,117,248,110,191,102,265,116,248,110,189,102,264,114,248,110,186,101,261,113,248,110,183,100,259,112,248,110,181,99,257,111,248,110,178,99,256,110,248,110,175,98,254,108,248,110,173,97,253,107,247,110,171,97,253,106,245,110,168,96,252,105,245,110,166,95,251,103,244,110,163,94,251,102,243,110,161,94,250,101,242,110,159,93,250,101,242,110,156,93,250,99,241,110,154,92,249,98,241,110,152,92,249,97,240,110,150,91,248,96,239,110,148,91,248,96,238,110,146,90,248,95,238,110,144,90,247,94,238,110,142,89,247,93,237,110,140,89,246,93,237,110,138,88,246,92,236,110,136,88,246,91,236,110,134,87,246,91,236,110,133,87,245,90,236,110,131,87,245,90,236,110,129,86,245,89,236,110,128,86,245,89,236,110,126,85,244,88,235,110,125,85,244,88,235,110,123,85,244,87,235,110,122,84,244,87,235,110,120,84,244,87,235,110,119,84,244,87,235,110,118,83,244,86,235,110,116,83,244,86,235,110,115,83,244,86,235,110,114,83,244,86,235,110,113,82,244,86,235,110,112,82,243,86,235,110,111,82,243,86,235,110,110,82,243,86,235,110,109,81,243,86,235,110]}},{"i":25,"t0":697.733,"head":"10이닝 1P 1번째 샷","body":"빨간공 왼쪽을 3/8 두께로, 하단 오른쪽 3팁 당점에 강하게 뱅크샷을 시도했지만 무득점 (두 번째 목적구를 약 2cm 차이로 빗나감).","fix":"👉 이 샷은 같은 구질로는 교정해서 득점할 수 있는 길이 없었습니다. 아래 추천 샷처럼 다른 길을 고르는 편이 좋았습니다.","rec":"추천 샷은 뱅크샷(노란공 왼쪽 3/8, 상단 왼쪽 2팁, 예상 성공률 75%) — 선수의 선택과 같은 샷입니다.","cue":0,"pre":[[0.419,0.322],[2.349,0.955],[2.354,1.103]],"tech":"쓰리뱅크","est":false,"sh":{"act":{"s":[-0.3073,4.3414,0.377,-0.25],"tip":"하단 오른쪽 3팁","pw":5,"cut":"3/8"},"fix":null,"rec":{"s":[-2.6696,3.6,-0.2,0.3],"tip":"상단 왼쪽 2팁","pw":4,"cut":"3/8"}},"tr":{"fps":10,"d":[42,32,235,96,235,110,76,22,235,96,235,110,121,9,235,96,235,110,163,9,235,96,235,110,202,20,235,96,235,110,238,30,235,96,235,110,273,39,235,96,235,110,263,53,235,96,235,110,236,69,235,96,235,110,212,85,235,96,235,110,189,101,235,96,235,110,168,116,235,96,235,110,148,132,235,96,235,110,130,134,235,96,235,110,113,124,235,96,235,110,96,115,235,96,235,110,79,107,235,96,235,110,62,100,235,96,235,110,44,92,235,96,235,110,27,84,235,96,235,110,10,76,235,96,235,110,9,67,235,96,235,110,22,56,235,96,235,110,32,46,235,96,235,110,42,35,235,96,235,110,51,25,235,96,235,110,59,16,235,96,235,110,68,7,235,96,235,110,77,7,235,96,235,110,86,14,235,96,235,110,95,19,235,96,235,110,104,25,235,96,235,110,112,30,235,96,235,110,121,35,235,96,235,110,130,41,235,96,235,110,138,46,235,96,235,110,147,51,235,96,235,110,155,56,235,96,235,110,164,62,235,96,235,110,172,67,235,96,235,110,181,72,235,96,235,110,189,77,235,96,235,110,197,82,235,96,235,110,205,87,235,96,235,110,213,92,235,96,235,110,221,97,235,96,235,110,230,102,235,96,235,110,236,104,235,96,237,113,242,104,235,96,238,118,248,104,235,96,240,123,254,104,235,96,242,127,260,104,235,96,244,132,266,104,235,96,245,136,272,104,235,96,247,137,278,104,235,96,248,135,281,104,235,96,249,132,277,106,235,96,251,130,274,107,235,96,252,128,271,108,235,96,253,125,268,110,235,96,254,123,265,111,235,96,255,121,263,113,235,96,256,119,262,113,235,96,255,118,262,112,235,96,253,118,262,111,235,96,252,118,262,110,235,96,250,118,262,109,235,96,249,118,262,108,235,96,248,119,261,107,235,96,246,119,261,106,235,96,245,119,261,106,235,96,243,119]}},{"i":31,"t0":860.7,"head":"12이닝 1P 3번째 샷","body":"노란공 오른쪽을 1/8 두께로, 상단 오른쪽 2팁 당점에 강하게 앞돌리기를 시도했지만 무득점 (두 번째 목적구를 약 15cm 차이로 빗나감).","fix":"👉 같은 앞돌리기라도 두께를 1/8에서 3/4로 더 두껍게, 세기를 조금 더 부드럽게 쳤다면 득점 경로였습니다.","rec":"추천 샷은 빗겨치기(빨간공 왼쪽 5/8, 상단 오른쪽 2팁, 예상 성공률 60%)입니다.","cue":0,"pre":[[2.55,0.331],[0.153,0.626],[2.769,0.775]],"tech":"앞돌리기 (마와시/세워치기 포함)","est":false,"sh":{"act":{"s":[3.0293,5.115,0.283,0.288],"tip":"상단 오른쪽 2팁","pw":5,"cut":"1/8"},"fix":{"s":[3.0258,4.757,0.283,0.288],"tip":"상단 오른쪽 2팁","pw":5,"cut":"3/4"},"rec":{"s":[1.0628,4,0.28,0.28],"tip":"상단 오른쪽 2팁","pw":5,"cut":"5/8"}},"tr":{"fps":10,"d":[255,33,15,63,277,78,208,38,15,63,277,78,156,44,15,63,277,78,105,50,15,63,277,78,55,55,15,63,277,78,17,53,13,68,277,78,4,38,28,84,277,78,10,20,55,96,277,78,19,5,80,108,277,78,32,14,102,119,277,78,44,26,123,129,277,78,54,37,143,137,277,78,63,46,161,133,277,78,72,55,178,128,277,78,80,64,196,123,277,78,89,72,213,118,277,78,98,81,230,113,277,78,106,90,248,108,277,78,114,98,265,103,277,78,123,107,277,97,277,77,131,115,269,90,277,78,139,123,257,82,277,78,148,132,247,74,277,78,155,137,238,66,277,78,161,133,229,58,277,78,166,128,220,51,277,78,171,125,212,43,277,78,177,121,203,36,277,78,182,117,195,28,277,78,187,113,186,21,277,78,193,110,177,13,277,78,198,106,169,7,277,78,203,102,161,7,277,78,208,99,153,11,277,77,213,95,144,16,277,77,218,92,136,20,277,77,223,88,128,24,277,77,228,85,120,28,277,77,233,81,112,32,277,77,238,78,104,36,277,77,243,74,96,40,277,78,248,71,88,44,277,78,253,68,81,48,277,78,257,65,73,52,277,78,262,62,65,56,277,78,267,58,57,60,277,78,271,55,50,64,277,78,276,52,42,67,277,78,280,49,34,71,277,78,279,47,26,75,277,78,277,45,19,79,277,78,274,43,11,83,277,78,272,42,4,87,277,78,270,40,7,91,277,77,268,38,12,95,277,77,266,37,16,100,277,77,264,35,20,104,277,77,262,34,24,108,277,77,260,32,28,112,277,77,258,30,32,117,277,77,256,29,37,121,277,77,254,27,41,125,277,77,252,26,44,129,277,77,251,24,48,133,277,77,249,23,52,137,277,77,247,22,56,139,277,77,245,20,60,137,277,77,244,19,63,135,277,78,242,18,66,133,277,78,240,16,70,131,277,77,239,15,73,129,277,77,237,14,76,127,277,77,236,13,79,125,277,77,234,12,83,122,277,77,233,11,86,120,277,78,231,9,89,119,277,78,230,8,92,117,277,78,229,7,95,114,277,78,227,6,98,113,277,78,226,5,101,111,277,78,225,4,104,109,277,78,224,4,107,107,277,78,223,4,110,105,277,78,222,5,112,103,277,78,221,6,116,102,277,78,221,6,118,100,277,78,220,7,121,98,277,78,219,7,124,96,277,78]}},{"i":36,"t0":1007.067,"head":"14이닝 1P 1번째 샷","body":"빨간공 왼쪽을 3/8 두께로, 중단 오른쪽 1팁 당점에 강하게 장횡단을 시도했지만 무득점 (수구가 제1적구와 다시 부딪히는 키스(쫑), 두 번째 목적구를 약 22cm 차이로 빗나감).","fix":"👉 이 샷은 같은 구질로는 교정해서 득점할 수 있는 길이 없었습니다. 아래 추천 샷처럼 다른 길을 고르는 편이 좋았습니다.","rec":"추천 샷은 빗겨치기(빨간공 왼쪽 1/2, 상단 무회전, 예상 성공률 55%)입니다.","cue":0,"pre":[[1.589,0.173],[0.41,1.092],[2.019,0.757]],"tech":"장횡단 (장더블/레일)","est":false,"sh":{"act":{"s":[0.8821,4.5659,0.1,0],"tip":"중단 오른쪽 1팁","pw":5,"cut":"3/8"},"fix":null,"rec":{"s":[0.8919,4,0,0.3],"tip":"상단 무회전","pw":5,"cut":"1/2"}},"tr":{"fps":10,"d":[159,17,41,109,202,76,183,47,41,109,202,76,213,70,41,109,203,90,239,70,41,109,206,124,266,72,41,109,207,125,271,74,41,109,210,101,253,75,41,109,211,78,234,76,41,109,213,58,217,78,41,109,215,39,201,81,41,109,217,21,187,84,41,109,218,9,173,88,41,109,219,19,160,92,41,109,219,32,146,95,41,109,220,44,132,99,41,109,220,54,119,103,41,109,221,65,105,106,41,109,221,75,92,110,41,109,222,85,79,114,41,109,222,94,65,118,41,109,223,105,52,121,41,109,224,115,38,125,41,109,224,125,24,129,41,109,225,135,11,132,41,109,225,135,5,136,41,109,225,128,15,138,41,109,225,123,23,139,41,109,225,117,30,140,41,109,226,112,38,138,41,109,226,106,43,138,41,109,226,101,50,136,41,109,226,96,56,135,41,109,226,91,62,134,41,109,226,85,69,133,41,109,226,80,75,132,41,109,226,75,81,131,41,109,226,70,87,130,41,109,227,65,93,129,41,109,227,60,99,128,41,109,227,55,105,127,41,109,227,50,111,125,41,109,227,46,117,125,41,109,227,41,123,124,41,109,227,36,128,123,41,109,228,31,134,122,41,109,228,27,139,121,41,109,228,22,145,120,41,109,228,17,151,119,41,109,228,13,156,118,41,109,228,9,161,117,41,109,228,5,167,117,41,109,228,6,172,116,41,109,228,9,177,114,41,109,228,11,182,114,41,109,228,14,188,113,41,109,228,16,193,112,41,109,228,18,198,111,41,109,228,20,203,111,41,109,228,23,208,110,41,109,228,25,213,109,41,109,228,27,217,108,41,109,228,29,222,107,41,109,228,31,227,107,41,109,229,34,232,106,41,109,229,36,236,105,41,109,229,37,241,104,41,109,229,39,245,104,41,109,229,41,250,103,41,109,229,43,255,102,41,109,229,45,259,102,41,109,229,47,263,101,41,109,229,49,268,100,41,109,229,50,272,100,41,109,229,52,277,99,41,109,229,54,281,98,41,109,229,55,279,98,41,109,229,57,277,97,41,109,229,58,275,97,41,109,229,60,272,97,41,109,229,61,270,96,41,109,229,63,268,96,41,109,229,64,266,95,41,109,230,66,263,95,41,109,230,67,261,94,41,109,230,68,260,94,41,109,230,69,258,94,41,109,230,71,255,94,41,109,230,72,253,93,41,109,230,73,252,93,41,109,230,74,250,93,41,109,230,75,248,92,41,109,230,76,246,92,41,109,230,77,244,92,41,109,230,78,243,92,41,109,230,79,241,91,41,109,230,79,240,91,41,109,230,80,238,91,41,109,230,81,236,91,41,109,230,82,235,91,41,109,230,83,233,90,41,109,230,83,232,90,41,109,230,84,231,90,41,109,230,85,230,91,41,109,230,85,229,91,41,109,230,85,228,92,41,109,229,85,227,92,41,109,229,85,226,92,41,109,229,85,225,93,41,109,229,84]}},{"i":49,"t0":1371.067,"head":"17이닝 1P 1번째 샷","body":"빨간공 왼쪽을 1/8 두께로, 상단 왼쪽 2팁 당점에 보통 세기로 옆돌리기를 시도했지만 무득점 (두 번째 목적구를 약 10cm 차이로 빗나감).","fix":"👉 이 샷은 같은 구질로는 교정해서 득점할 수 있는 길이 없었습니다. 아래 추천 샷처럼 다른 길을 고르는 편이 좋았습니다.","rec":"추천 샷은 앞돌리기(노란공 오른쪽 3/8, 상단 무회전, 예상 성공률 35%)입니다.","cue":0,"pre":[[2.182,0.841],[0.341,0.653],[2.169,1.32]],"tech":"옆돌리기 (제각돌리기/학구)","est":false,"sh":{"act":{"s":[1.4907,3.0922,-0.232,0.266],"tip":"상단 왼쪽 2팁","pw":3,"cut":"1/8"},"fix":null,"rec":{"s":[-3.0176,4,0,0.3],"tip":"상단 무회전","pw":5,"cut":"3/8"}},"tr":{"fps":10,"d":[218,84,34,65,217,132,221,116,34,65,217,132,233,133,34,65,208,138,249,112,34,65,199,133,264,92,34,65,192,127,276,75,34,65,185,121,275,59,34,65,178,116,266,45,34,65,172,111,258,30,34,65,165,106,251,16,34,65,158,101,248,2,34,65,152,95,241,27,34,65,145,91,234,55,34,65,139,85,239,51,34,65,132,80,245,48,34,65,126,75,196,47,34,65,119,70,187,53,34,65,113,65,177,60,34,65,107,60,168,67,34,65,101,55,159,75,34,65,95,51,150,82,34,65,88,46,141,89,34,65,82,41,132,97,34,65,76,36,123,104,34,65,70,31,114,111,34,65,64,27,105,118,34,65,58,22,96,125,34,65,51,17,87,132,34,65,45,12,78,138,34,65,39,8,72,136,34,65,34,4,66,132,34,65,29,5,59,129,34,65,24,7,53,126,34,65,20,9,47,122,34,65,15,12,40,119,34,65,11,14,34,116,34,65,7,16,28,113,34,65,3,18,22,110,34,65,5,20,16,107,34,65,8,21,10,104,34,65,10,23,4,101,34,65,13,24,6,99,34,65,15,26,9,96,34,65,17,27,12,95,34,65,19,29,16,94,34,65,22,31,18,92,34,65,24,32,22,90,34,65,26,33,24,88,34,65,28,35,27,87,34,65,30,36,31,86,34,65,32,37,33,84,34,65,34,39,36,82,34,65,36,40,39,81,34,65,38,41,42,79,34,65,40,43,44,78,34,65,41,44,47,77,34,65,43,45,50,75,34,65,45,46,52,74,34,65,47,47,55,72,34,65,48,48,57,71,34,65,50,50,59,70,34,65,51,51,62,69,34,65,53,52,64,67,34,65,54,53,67,66,34,65,56,54,69,65,34,65,57,55,71,64,34,65,59,56,73,63,34,65,60,57,75,61,34,65,62,57,77,61,34,65,62,58,80,59,34,65,64,59,82,58,34,65,65,61,83,57,34,65,66,61,85,56,34,65,67,62,87,55,34,65,68,63,89,54,34,65,69,64,91,53,34,65,70,64,93,52,34,65,71,65,94,51,34,65,72,66,96,50,34,65,73,66,98,49,34,65,74,67,100,48,34,65,75,68,101,48,34,65,76,68,103,47,34,65,77,69,104,46,34,65,77,69,106,45,34,65,78,70,107,44,34,65,78,71,109,44,34,65,79,71,110,43,34,65,79,72,111,42,34,65,80,73,113,42,34,65,80,73,114,41,34,65,81,74,115,40,34,65,81,74,117,40,34,65,81,74,118,39,34,65,82,74,119,39,34,65,82,75,120,38,34,65,82,75,121,37,34,65,83,75,123,37,34,65,83,76,124,37,34,65,83,76,125,36,34,65,83,76,126,36,34,65,84,76,126,35,34,65,84,77,127,35,34,65,84,77,128,34,34,65,84,77,129,34,34,65,84,77,130,33,34,65,84,77,131,33,34,65,84,77]}},{"i":52,"t0":1447.967,"head":"18이닝 1P 2번째 샷","body":"빨간공 오른쪽을 1/8 두께로, 상단 오른쪽 2팁 당점에 보통 세기로 옆돌리기를 시도했지만 무득점 (두 번째 목적구를 약 4cm 차이로 빗나감).","fix":"👉 같은 옆돌리기라도 회전을 상단 오른쪽 1팁으로 조금 덜, 3번 쿠션 도착점을 2.4에서 2.7포인트로 쳤다면 득점 경로였습니다.","rec":"추천 샷은 앞돌리기(노란공 오른쪽 1/4, 상단 오른쪽 1팁, 예상 성공률 45%)입니다.","cue":0,"pre":[[2.262,0.221],[1.326,0.617],[2.076,0.612]],"tech":"옆돌리기 (제각돌리기/학구)","est":false,"sh":{"act":{"s":[2.1342,3.2085,0.24,0.35],"tip":"상단 오른쪽 2팁","pw":3,"cut":"1/8"},"fix":{"s":[2.1403,3.2085,0.09,0.35],"tip":"상단 오른쪽 1팁","pw":3,"cut":"1/8"},"rec":{"s":[2.7849,4,0.15,0.3],"tip":"상단 오른쪽 1팁","pw":5,"cut":"1/4"}},"tr":{"fps":10,"d":[226,22,133,62,208,61,210,47,133,62,208,61,186,69,133,62,212,69,162,86,133,62,219,80,138,104,133,62,224,90,115,122,133,62,229,98,92,136,133,62,234,107,70,127,133,62,238,115,49,115,133,62,243,124,28,105,133,62,248,132,6,96,133,62,252,137,15,83,133,62,255,132,31,70,133,62,258,128,44,58,133,62,261,123,56,46,133,62,264,119,67,33,133,62,266,115,78,21,133,62,269,110,89,9,133,62,272,107,100,6,133,62,275,102,111,15,133,62,277,98,122,22,133,62,280,94,133,29,133,62,281,91,144,35,133,62,279,87,155,42,133,62,278,84,165,48,133,62,276,81,176,55,133,62,275,78,187,61,133,62,274,75,197,68,133,62,272,72,208,74,133,62,271,69,218,81,133,62,269,66,228,87,133,62,268,63,239,93,133,62,266,60,249,100,133,62,265,57,259,105,133,62,264,54,270,112,133,62,263,51,278,118,133,62,262,49,276,125,133,62,260,46,270,132,133,62,259,43,264,136,133,62,258,41,258,133,133,62,257,38,253,130,133,62,255,35,247,126,133,62,254,33,241,122,133,62,253,31,235,118,133,62,252,28,230,115,133,62,251,25,224,111,133,62,250,23,219,107,133,62,249,21,213,103,133,62,248,19,208,100,133,62,247,17,203,96,133,62,246,14,197,93,133,62,245,12,192,89,133,62,244,10,187,86,133,62,243,7,182,82,133,62,242,5,176,79,133,62,241,4,171,75,133,62,240,5,166,72,133,62,240,6,161,68,133,62,239,7,156,65,133,62,239,9,151,62,133,62,238,10,145,59,133,62,238,11,140,55,133,62,237,11,136,52,133,62,237,12,131,49,133,62,236,13,126,45,133,62,236,14,121,42,133,62,235,15,116,39,133,62,235,16,111,36,133,62,234,16,106,33,133,62,234,17,102,30,133,62,233,18,97,27,133,62,233,19,92,23,133,62,233,19,88,20,133,62,233,20,83,17,133,62,232,20,79,14,133,62,232,21,74,11,133,62,232,21,70,8,133,62,232,21,65,5,133,62,232,22,61,3,133,62,231,22,58,4,133,62,231,23,54,6,133,62,231,23,51,7,133,62,231,24,47,9,133,62,231,24,45,10,133,62,231,24,42,11,133,62,231,24,38,13,133,62,231,25,35,14,133,62,231,25,32,15,133,62,231,25,29,17,133,62,231,25,26,18,133,62,231,25,23,19,133,62,231,25,20,21,133,62,231,25,17,22,133,62,231,25,14,23,133,62,231,25,12,24,133,62,231,25,9,25,133,62,231,25,6,27,133,62,231,25,3,28,133,62,231,25,3,28,133,62,231,25,5,29,133,62,231,25,7,30,133,62,231,25,8,30,133,62,231,25,9,31,133,62,231,25,11,32,133,62,231,25,12,33,133,62,231,25,13,33,133,62,231,25,14,34,133,62,231,25,15,35,133,62,231,25,17,35,133,62,231,25,18,36,133,62,231,25,19,36,133,62,231,25,19,37,133,62,231,25,20,37,133,62,231,25,21,38,133,62,231,25,22,39,133,62,231,25,23,39,133,62,231,25,24,39,133,62,231,25,25,40,133,62,231,25,25,40,133,62,231,25]}},{"i":56,"t0":1564.667,"head":"20이닝 1P 1번째 샷","body":"노란공 오른쪽을 1/8 두께로, 상단 왼쪽 1팁 당점에 보통 세기로 옆돌리기를 시도했지만 무득점 (두 번째 목적구를 약 5cm 차이로 빗나감).","fix":"👉 이 샷은 같은 구질로는 교정해서 득점할 수 있는 길이 없었습니다. 아래 추천 샷처럼 다른 길을 고르는 편이 좋았습니다.","rec":"추천 샷은 뒤돌리기(빨간공 오른쪽 3/8, 중단 오른쪽 2팁, 예상 성공률 45%)입니다.","cue":0,"pre":[[0.674,0.682],[0.952,0.21],[0.335,0.64]],"tech":"옆돌리기 (제각돌리기/학구)","est":false,"sh":{"act":{"s":[-0.9766,3.2638,-0.166,0.32],"tip":"상단 왼쪽 1팁","pw":3,"cut":"1/8"},"fix":null,"rec":{"s":[-2.898,3.4,0.25,0],"tip":"중단 오른쪽 2팁","pw":4,"cut":"3/8"}},"tr":{"fps":10,"d":[67,68,95,21,34,64,83,46,95,21,34,64,101,27,95,14,34,64,120,25,93,12,34,64,137,22,91,28,34,64,153,18,89,43,34,64,169,15,88,56,34,64,186,12,86,70,34,64,202,9,85,84,34,64,218,6,83,97,34,64,234,4,82,111,34,64,251,5,80,124,34,64,268,7,78,138,34,64,277,10,78,132,33,64,267,16,77,124,33,64,255,22,77,116,33,64,246,28,76,109,33,64,238,34,75,102,33,64,230,39,75,95,33,64,222,45,74,87,33,64,214,50,73,80,33,64,207,56,73,73,33,64,199,61,72,66,33,64,191,67,72,59,33,64,183,73,71,52,33,64,176,78,70,46,33,64,168,83,70,39,33,64,160,89,69,32,33,64,153,94,68,25,33,64,145,100,68,19,33,64,138,105,67,12,33,64,130,110,66,6,33,64,123,116,66,5,33,64,116,121,65,9,33,64,108,126,65,13,33,64,101,132,65,16,33,64,94,137,64,20,33,64,86,138,64,23,33,64,78,135,64,27,33,64,70,132,63,30,33,64,62,129,63,34,33,64,54,127,62,37,33,64,47,124,62,41,33,64,39,121,62,44,33,64,31,118,61,47,33,64,23,116,61,51,33,64,15,113,60,54,33,64,8,110,60,57,33,64,4,107,60,60,33,64,9,103,59,63,33,64,13,98,59,66,33,64,17,95,59,69,33,64,21,91,58,72,33,64,25,87,58,75,33,64,29,83,57,78,33,64,33,80,57,81,33,64,37,76,57,83,33,64,41,72,56,86,33,64,45,69,56,89,33,64,48,64,56,92,33,64,52,61,55,94,33,64,56,58,55,97,33,64,59,54,55,99,33,64,63,51,54,102,33,64,67,47,54,104,33,64,70,44,54,107,33,64,74,40,53,109,33,64,77,37,53,112,33,64,81,34,53,114,33,64,84,30,52,116,33,64,87,27,52,119,33,64,91,24,52,121,33,64,94,21,52,123,33,64,97,17,51,125,33,64,100,15,51,127,33,64,103,11,51,129,33,64,107,8,50,131,33,64,110,5,50,133,34,64,113,4,50,136,34,64,115,5,50,137,34,64,117,6,50,139,34,64,120,8,49,140,34,64,122,10,49,139,34,64,124,11,49,138,33,64,126,13,49,137,33,64,128,14,49,137,33,64,130,15,48,136,33,64,132,17,48,135,33,64,134,18,48,134,33,64,136,20,48,133,33,64,138,21,48,132,33,64,141,22,48,131,33,64,142,23,48,131,33,64,144,25,48,130,33,64,146,26,48,130,34,64,148,27,48,129,34,64,150,28,48,129,34,64,151,30,48,129,34,64,153,31,47,128,34,64,155,32,47,128,34,64,157,33,47,128,34,64,158,34,47,127,34,64,159,35,47,127,34,64,161,37,47,127,34,64,163,38,47,127,34,64,164,38,47,126,34,64,166,40,47,126,34,64,167,41,47,126,33,64,168,42,47,126,33,64,170,43,47,126,33,64,171,44,47,126,33,64,172,45,47,126,33,64,173,45,47,126,33,64,174,46,47,126,33,64,176,47,47,126,33,64,177,48,47,126,33,64,178,49,47,126,33,64,179,50,47,126,33,64,180,50,47,126,33,64,181,51,47,126,33,64,182,52,47,126,33,64]}},{"i":58,"t0":1644,"head":"21이닝 1P 1번째 샷","body":"빨간공 오른쪽을 1/2 두께로, 상단 오른쪽 1팁 당점에 조금 강하게 앞돌리기를 시도했지만 무득점 (목적구끼리 부딪히는 키스, 두 번째 목적구를 약 21cm 차이로 빗나감).","fix":"👉 같은 앞돌리기라도 두께를 1/2에서 3/8로 더 얇게, 회전을 상단 무회전으로 조금 덜, 4번 쿠션 도착점을 0.8에서 1.0포인트로 쳤다면 득점 경로였습니다.","rec":"추천 샷은 앞돌리기(빨간공 오른쪽 1/4, 상단 무회전, 예상 성공률 40%) — 선수의 선택과 같은 샷입니다.","cue":0,"pre":[[2.523,0.242],[2.01,1.144],[0.334,0.64]],"tech":"앞돌리기 (마와시/세워치기 포함)","est":false,"sh":{"act":{"s":[2.9715,3.8755,0.1,0.3],"tip":"상단 오른쪽 1팁","pw":4,"cut":"1/2"},"fix":{"s":[2.9794,3.8755,-0.05,0.3],"tip":"상단 무회전","pw":4,"cut":"3/8"},"rec":{"s":[2.9817,4,0,0.3],"tip":"상단 무회전","pw":5,"cut":"1/4"}},"tr":{"fps":10,"d":[252,24,201,114,33,64,218,30,201,114,33,64,182,36,201,114,33,64,149,42,201,114,33,64,116,47,201,114,33,64,84,53,201,114,33,64,51,58,201,114,33,64,33,54,201,114,19,74,23,44,201,114,7,87,12,35,201,114,23,95,5,28,201,114,38,102,15,22,201,114,50,109,23,17,201,114,62,115,30,11,201,114,74,121,37,5,201,114,85,127,43,4,201,114,97,133,49,7,201,114,108,138,55,10,201,114,119,137,61,13,201,114,129,133,67,16,201,114,139,130,73,19,201,114,149,126,79,22,201,114,159,123,85,25,201,114,169,119,90,28,201,114,179,116,96,31,201,114,188,113,102,34,202,115,197,109,107,37,204,117,205,104,113,40,206,120,212,98,118,42,207,122,219,92,124,45,210,124,226,86,129,48,211,126,233,80,134,51,214,128,239,75,140,54,215,130,246,69,145,56,217,132,253,64,150,59,219,134,260,58,155,62,221,136,266,53,161,64,223,138,273,47,166,67,224,138,279,42,171,70,225,137,277,36,176,72,226,136,274,30,181,75,228,135,270,24,186,77,228,134,266,19,190,80,229,133,263,13,195,82,230,132,259,7,200,85,231,131,255,5,205,87,232,130,251,8,210,90,233,130,248,12,214,92,234,129,243,15,219,95,235,128,239,18,223,97,236,127,236,21,228,99,236,127,232,24,232,102,237,126,228,27,237,104,238,125,225,30,241,106,239,125,220,33,245,108,239,124,217,36,250,111,240,124,213,39,254,113,240,123,209,42,258,115,241,123,206,45,263,117,241,122,202,47,267,120,242,122,199,50,271,122,242,121,195,53,275,124,242,121,192,56,279,126,243,120,189,59,280,129,243,120,185,61,279,130,244,120,182,64,277,131,244,119,178,67,275,133,244,119,175,69,272,134,244,119,171,72,270,136,245,119,168,74,268,138,245,118,165,77,267,137,245,118,162,80,265,137,246,118,159,82,262,136,246,118,155,85,261,136,246,118,153,87,260,135,246,118,150,90,258,134,246,118,147,92,257,133,246,118,144,95,255,132,246,118,141,97,254,131,246,118,138,99,253,131,246,118,135,102,251,130,246,118,132,104,250,129,246,118,129,106,249,129,246,118,126,109,248,128,246,118,124,111,247,127,246,118,121,113,246,127,246,118,118,115,244,126,246,118,116,117,243,125,246,118,113,120,242,125,246,118,111,122,241,124,246,118,108,124,240,124,246,118,106,126,239,123,246,118,103,128,239,123,246,118,101,130,238,122,246,118,98,133,237,122,246,118,96,134,236,121,246,118,94,137,235,121,246,118,91,138,235,120,246,118,89,140,234,120,246,118,88,139,233,120,246,118,86,138,233,119,246,118,84,137]}},{"i":62,"t0":1764.433,"head":"22이닝 1P 1번째 샷","body":"노란공 왼쪽을 3/8 두께로, 하단 오른쪽 1팁 당점에 강하게 뒤돌리기를 시도했지만 무득점 (두 번째 목적구를 약 8cm 차이로 빗나감).","fix":"👉 같은 뒤돌리기라도 두께를 3/8에서 1/4로 더 얇게, 세기를 조금 더 부드럽게 쳤다면 득점 경로였습니다.","rec":"추천 샷은 앞돌리기(빨간공 왼쪽 3/8, 상단 왼쪽 1팁, 예상 성공률 50%)입니다.","cue":0,"pre":[[2.639,1.121],[1.403,0.914],[1.094,0.373]],"tech":"뒤돌리기 (우라)","est":false,"sh":{"act":{"s":[-3.0109,4.55,0.07,-0.25],"tip":"하단 오른쪽 1팁","pw":5,"cut":"3/8"},"fix":{"s":[-3.0118,4.2315,0.07,-0.25],"tip":"하단 오른쪽 1팁","pw":5,"cut":"1/4"},"rec":{"s":[-2.7118,4,-0.15,0.3],"tip":"상단 왼쪽 1팁","pw":5,"cut":"3/8"}},"tr":{"fps":10,"d":[264,112,140,91,109,37,218,106,140,91,109,37,168,99,140,91,109,37,133,106,126,78,109,37,112,125,100,53,109,37,93,135,76,30,109,37,74,124,53,7,109,37,57,112,35,15,109,37,41,100,20,30,109,37,27,89,7,44,110,37,15,79,12,57,110,37,6,70,21,70,110,37,11,59,30,82,110,37,18,48,38,94,110,37,25,37,46,106,110,37,31,26,53,118,109,37,38,16,61,130,109,37,44,7,69,137,109,37,51,8,78,131,110,37,59,15,87,124,110,37,67,21,95,117,110,37,74,27,104,111,110,37,81,33,112,105,109,37,88,38,120,98,109,37,96,44,129,92,109,37,103,50,137,86,109,37,110,55,145,80,110,37,117,61,154,74,110,37,124,67,162,68,110,37,131,72,170,62,110,37,138,78,178,56,109,37,145,83,186,50,109,37,152,89,194,44,109,37,159,94,201,38,109,37,165,99,209,33,109,37,172,105,217,27,109,37,179,110,225,21,109,37,186,115,232,15,110,37,192,121,240,10,110,37,199,126,248,5,110,37,205,131,254,7,110,37,212,136,259,10,110,37,217,137,265,12,110,37,222,134,270,15,110,37,227,132,276,18,110,37,231,129,280,20,110,37,235,127,278,21,110,37,240,124,275,23,110,37,244,122,272,24,110,37,248,119,269,25,110,37,253,117,266,26,110,37,257,115,263,27,110,37,261,113,260,29,109,37,265,110,258,30,109,37,269,108,255,31,110,37,274,106,253,32,109,37,278,104,250,33,109,37,280,102,247,34,109,37,279,100,245,35,109,37,277,98,242,37,109,37,274,97,240,37,109,37,272,96,237,39,109,37,271,95,235,40,109,37,269,93,233,41,109,37,266,92,230,42,109,37,264,91,228,43,109,37,263,90,226,44,109,37,260,89,224,44,109,37,259,88,222,45,109,37,257,86,219,47,109,37,255,85,218,47,109,37,254,84,215,48,109,37,252,83,213,49,109,37,250,82,211,50,109,37,248,81,209,51,109,37,247,80,207,51,109,37,245,79,206,52,109,37,243,78,204,53,109,37,242,77,202,54,109,37,240,76,201,54,109,37,239,75,199,55,109,37,238,74,197,56,109,37,236,73,196,56,109,37,235,72,194,57,109,37,233,72,192,58,109,37,232,71,191,58,109,37,231,70,190,59,109,37,230,69,188,59,109,37,228,69,187,60,109,37,227,68,185,61,109,37,226,67,184,61,109,37,225,67,183,62,109,37,224,66,181,62,109,37,223,65,180,62,109,37,222,65,179,63,109,37,221,64,178,63,109,37,221,64,177,64,109,37,220,63,175,64,109,37,219,63,174,64,109,37,218,62,173,65,109,37,217,62,172,65,109,37,216,61,172,66,109,37,216,61,171,66,109,37]}},{"i":67,"t0":1916.233,"head":"23이닝 1P 4번째 샷","body":"노란공 오른쪽을 — 두께로, 중단 오른쪽 1팁 당점에 조금 강하게 4번 쿠션(왼쪽 단쿠션) 1.1포인트로 보내는 샷을 시도했지만 무득점 (두 번째 목적구 전 쿠션이 1개뿐).","fix":"👉 회전을 중단 무회전으로 조금 덜 쳤다면 뱅크샷으로 득점 경로였습니다.","rec":"추천 샷은 옆돌리기(노란공 오른쪽 1/2, 상단 오른쪽 3팁, 예상 성공률 70%)입니다.","cue":0,"pre":[[2.808,1.212],[2.628,1.039],[1.989,0.151]],"tech":"앞돌리기 (마와시/세워치기 포함)","est":true,"sh":{"act":{"s":[-2.8567,3.8654,0.1,-0.02],"tip":"중단 오른쪽 1팁","pw":4,"cut":""},"fix":{"s":[-2.8593,3.8654,0.02,-0.02],"tip":"중단 무회전","pw":4,"cut":"1/8"},"rec":{"s":[-2.2563,3.4,0.38,0.2],"tip":"상단 오른쪽 3팁","pw":4,"cut":"1/2"}},"tr":{"fps":10,"d":[281,121,263,104,199,15,250,112,261,92,199,15,218,114,256,67,199,15,187,115,252,44,199,15,157,115,248,23,199,15,126,114,245,9,199,15,97,111,242,18,199,15,66,108,240,32,199,15,36,104,237,43,199,15,11,100,234,53,199,15,23,93,231,64,199,15,46,84,229,74,199,15,67,76,226,85,199,15,85,68,224,95,199,15,102,60,221,106,199,15,117,53,218,116,199,15,133,45,215,126,199,15,148,38,213,135,199,15,163,31,212,133,199,15,178,24,210,127,199,15,193,16,209,122,199,15,193,13,208,116,213,11,195,10,207,111,226,7,199,7,206,106,237,5,202,4,205,100,246,6,206,6,204,95,255,7,210,8,203,90,264,9,214,10,202,84,273,10,218,12,201,79,279,12,222,14,200,74,275,13,225,16,199,69,270,14,229,18,198,64,265,16,233,20,197,59,260,17,236,22,196,54,255,18,240,24,195,49,250,19,244,26,194,45,246,20,246,29,193,40,242,20,249,33,192,35,238,19,252,36,191,30,234,18,255,39,191,26,230,18,257,43,190,21,227,18,260,46,189,16,223,17,263,49,188,12,220,16,265,52,187,7,216,16,267,55,186,4,213,16,270,58,186,7,209,15,273,61,185,9,206,14,275,64,185,11,202,14,277,67,184,14,199,13,280,70,184,16,196,13,281,73,183,19,193,12,280,75,183,21,189,12,278,77,182,23,186,11,277,80,182,25,183,11,276,83,181,28,180,10,275,84,181,30,177,10,274,87,180,32,174,9,272,89,180,34,171,9,271,91,179,36,168,8,270,94,179,38,165,8,269,95,179,40,163,7,268,97,178,41,160,7,267,100,178,44,157,6,266,102,177,45,154,6,265,103,177,47,152,5,264,105,177,49,149,5,263,108,176,51,146,5,262,109,176,52,144,4,261,110,175,54,141,4,260,113,175,56,139,3,259,115,175,57,137,3,259,117,174,59,135,4,257,118,174,60,132,4,257,120,173,62,130,4,256,121,173,64,128,4,255,123,173,65,126,5,254,125,173,66,124,5,253,126,172,68,122,5,252,127,172,69,120,6,252,129,172,70,118,6,251,131,171,72,117,6,250,132,171,73,115,6,250,133,171,74,113,7,249,134,171,75,111,7,249,136,170,76,109,7,248,137,170,77,108,7,247,138,170,78,107,7,247,138,169,79,105,8,246,137,169,80,103,8,246,136,169,81,102,8,245,136,169,82,100,8,245,135,169,83,99,8]}},{"i":69,"t0":1978.567,"head":"24이닝 1P 1번째 샷","body":"빨간공 왼쪽을 1/4 두께로, 상단 왼쪽 1팁 당점에 조금 강하게 뒤돌리기를 시도했지만 무득점 (두 번째 목적구를 약 2cm 차이로 빗나감).","fix":"👉 이 샷은 같은 구질로는 교정해서 득점할 수 있는 길이 없었습니다. 아래 추천 샷처럼 다른 길을 고르는 편이 좋았습니다.","rec":"추천 샷은 빗겨치기(노란공 왼쪽 1/8, 상단 오른쪽 3팁, 예상 성공률 0%)입니다.","cue":0,"pre":[[2.428,1.316],[0.047,0.079],[0.541,1.124]],"tech":"뒤돌리기 (우라)","est":false,"sh":{"act":{"s":[-3.0582,3.8578,-0.1,0.316],"tip":"상단 왼쪽 1팁","pw":4,"cut":"1/4"},"fix":null,"rec":{"s":[-2.6812,2.8,0.38,0.2],"tip":"상단 오른쪽 3팁","pw":3,"cut":"1/8"}},"tr":{"fps":10,"d":[243,132,5,8,54,112,210,129,5,8,54,112,165,125,5,8,54,112,121,122,5,8,54,112,78,119,5,8,54,112,45,127,5,8,45,102,20,137,5,8,29,83,10,128,5,8,14,65,27,113,5,8,5,49,44,98,5,8,14,38,61,84,5,8,23,27,75,71,5,8,30,17,87,58,5,8,37,6,99,46,5,8,44,7,111,34,5,8,50,14,123,22,5,8,57,20,134,9,5,8,63,26,146,8,5,8,70,32,159,16,5,8,76,38,171,22,5,8,83,43,183,29,5,8,89,49,195,36,5,8,95,55,207,43,5,8,101,60,219,49,5,8,108,66,230,56,5,8,114,71,242,62,5,8,120,77,254,68,5,8,126,82,265,75,5,8,132,87,277,81,5,8,138,93,277,88,5,8,144,98,269,96,5,8,150,103,262,103,5,8,156,109,256,111,5,8,162,114,250,118,5,8,168,119,244,125,5,8,174,124,238,134,5,8,179,130,232,137,5,8,185,134,225,132,5,8,191,138,219,129,5,8,194,135,213,124,5,8,199,133,207,120,5,8,202,131,201,116,5,8,206,128,195,112,5,8,210,126,189,108,5,8,214,123,183,103,5,8,217,121,178,100,5,8,221,119,172,95,5,8,225,116,166,92,5,8,229,114,160,88,5,8,232,112,155,84,5,8,236,110,149,80,5,8,239,107,143,76,5,8,243,105,138,72,5,8,246,103,132,68,5,8,250,101,126,65,5,8,253,99,121,61,5,8,256,97,115,57,5,8,260,95,110,53,5,8,263,93,105,49,5,8,266,91,99,46,5,8,269,89,94,42,5,8,272,87,89,38,5,8,276,85,84,35,5,8,279,83,78,31,5,8,281,82,73,28,5,8,279,80,68,24,5,8,278,79,63,21,5,8,276,78,58,17,5,8,275,77,53,14,5,8,273,75,48,10,5,8,272,74,43,6,5,8,270,74,38,4,5,8,269,73,34,4,5,8,267,72,30,5,5,8,266,70,26,7,5,8,264,70,23,9,5,8,263,69,18,10,5,8,262,68,15,12,5,8,261,67,12,13,5,8,260,66,8,15,5,8,258,65,4,17,5,8,257,64,4,18,5,8,256,64,6,19,5,8,255,63,7,20,5,8,254,62,9,21,5,8,253,62,11,22,5,8,252,61,13,23,5,8,251,60,14,24,5,8,250,60,16,25,5,8,249,59,18,26,5,8,248,58,20,27,5,8,247,58,21,28,5,8,246,57,23,28,5,8,246,57,24,29,5,8,245,56,25,30,5,8,245,56,27,31,5,8,244,55,29,32,5,8,243,55,30,32,5,8,242,54,32,33,5,8,242,54,33,34,5,8,241,54,34,34,5,8,241,53,35,35,5,8,240,53,36,36,5,8,240,53,37,37,5,8,240,53,38,37,5,8,239,52,39,38,5,8,239,52,40,39,5,8,239,52,41,39,5,8,238,52,42,40,5,8,238,52,43,40,5,8,238,52,44,41,5,8,238,52,45,41,5,8,237,51,45,42,5,8,237,51,46,42,5,8,237,51,47,42,5,8,237,51,48,43,5,8,237,51]}},{"i":72,"t0":2082.967,"head":"25이닝 1P 1번째 샷","body":"노란공 오른쪽을 정면 두께로, 하단 오른쪽 2팁 당점에 강하게 옆돌리기를 시도했지만 무득점 (두 번째 목적구를 약 5cm 차이로 빗나감).","fix":"👉 같은 옆돌리기라도 두께를 정면에서 3/8로 더 얇게, 회전을 하단 오른쪽 3팁으로 더 많이, 3번 쿠션 도착점을 3.3에서 3.7포인트로 쳤다면 득점 경로였습니다.","rec":"추천 샷은 뒤돌리기(빨간공 오른쪽 1/4, 상단 왼쪽 2팁, 예상 성공률 80%)입니다.","cue":0,"pre":[[2.163,0.151],[1.862,1.265],[2.439,0.444]],"tech":"옆돌리기 (제각돌리기/학구)","est":false,"sh":{"act":{"s":[1.8616,4.6076,0.292,-0.12],"tip":"하단 오른쪽 2팁","pw":5,"cut":"정면"},"fix":{"s":[1.8651,4.6076,0.372,-0.12],"tip":"하단 오른쪽 3팁","pw":5,"cut":"3/8"},"rec":{"s":[0.9316,2.8,-0.28,0.28],"tip":"상단 왼쪽 2팁","pw":3,"cut":"1/4"}},"tr":{"fps":10,"d":[216,15,186,126,244,44,207,48,186,126,244,44,193,96,186,126,244,44,177,122,188,129,244,44,159,125,192,106,244,44,144,129,196,78,244,44,128,134,200,52,244,44,113,137,204,28,244,44,97,139,207,7,244,44,81,137,208,19,244,44,64,135,209,35,244,44,47,134,210,49,244,44,31,132,211,62,244,44,15,130,212,74,244,44,5,127,213,86,244,44,18,120,214,98,244,44,29,113,215,110,244,44,38,107,216,122,244,44,45,101,217,134,244,44,53,95,218,134,244,44,60,88,218,126,244,44,68,82,219,120,244,44,75,76,219,113,244,44,83,71,219,107,244,44,90,65,220,100,244,44,97,59,220,94,244,44,104,53,220,88,244,44,112,47,221,81,244,44,119,41,221,75,244,44,126,36,221,69,244,44,133,30,222,63,244,44,140,24,222,57,244,44,147,19,222,51,244,44,154,13,223,45,244,44,160,8,223,39,244,44,167,5,223,33,244,44,175,7,224,27,244,44,183,10,224,22,244,44,191,13,224,16,244,44,199,16,225,10,244,44,207,19,225,5,244,44,215,22,225,7,244,44,223,25,226,10,244,44,230,27,226,13,244,44,238,30,226,16,244,44,246,33,226,19,244,44,253,35,227,22,244,44,260,38,227,25,244,44,268,41,227,28,244,45,276,44,227,31,244,45,280,46,228,34,244,44,276,50,228,37,244,44,272,54,228,40,244,44,268,58,228,43,244,44,264,62,228,45,244,44,260,66,229,48,244,44,256,70,229,51,244,44,252,74,229,53,244,44,249,77,229,56,244,44,245,81,230,58,244,44,241,85,230,61,244,44,238,89,230,63,244,44,234,92,230,66,244,44,230,96,231,68,244,44,227,100,231,70,244,44,223,103,231,73,244,44,220,107,231,75,244,44,216,110,232,77,244,44,213,114,232,80,244,44,210,117,232,82,244,44,206,121,232,84,244,44,203,124,233,86,244,44,200,128,233,88,244,44,196,131,233,90,244,44,193,135,233,92,244,44,190,138,233,94,244,44,187,137,234,96,244,44,185,136,234,98,244,44,182,134,234,99,244,44,180,132,234,101,244,44,178,130,235,103,244,44,175,129,235,105,244,44,173,127,235,106,244,44,171,125,235,108,244,44,169,124,236,110,244,44,166,122,236,111,244,44,164,120,236,113,244,44,162,119,236,114,244,44,160,117,236,116,244,44,158,116,237,117,244,44,156,115,237,118,244,44,154,113,237,120,244,44,152,111,237,121,244,44,150,110,237,122,244,44,148,108,237,123,244,44,146,107,238,125,244,44,144,105,238,126,244,44,143,104,238,127,244,44,141,103,238,128,244,44,139,101,238,129,244,44,137,100,238,130,244,44,136,99,238,131,244,44,134,97,239,132,244,44,133,96,239,132,244,44,131,95,239,133,244,44,129,94,239,134,244,44,128,93,239,135,244,44,127,92,240,136,244,44,125,91,240,136,244,44,124,90,240,137,244,44,123,89,240,137,244,44,121,88,240,138,244,44,120,87,240,138,244,44,119,86,240,138,244,44,118,85,240,138,244,44,117,84,240,138,244,44,116,83,240,138,244,44,114,82,240,138,244,44,113,81,240,138,244,44,112,81,240,138,244,44,112,80,240,138,244,44]}},{"i":75,"t0":2167.733,"head":"26이닝 1P 1번째 샷","body":"노란공 오른쪽을 1/8 두께로, 중단 오른쪽 1팁 당점에 강하게 앞돌리기를 시도했지만 무득점.","fix":"👉 이 샷은 같은 구질로는 교정해서 득점할 수 있는 길이 없었습니다. 아래 추천 샷처럼 다른 길을 고르는 편이 좋았습니다.","rec":"추천 샷은 옆돌리기(빨간공 오른쪽 3/8, 상단 오른쪽 2팁, 예상 성공률 70%)입니다.","cue":0,"pre":[[2.702,0.893],[1.987,0.836],[2.439,0.444]],"tech":"앞돌리기 (마와시/세워치기 포함)","est":false,"sh":{"act":{"s":[-2.9384,5.025,0.1,0],"tip":"중단 오른쪽 1팁","pw":5,"cut":"1/8"},"fix":null,"rec":{"s":[-2.0266,4,0.28,0.28],"tip":"상단 오른쪽 2팁","pw":5,"cut":"3/8"}},"tr":{"fps":10,"d":[270,89,199,84,244,44,217,78,199,84,244,44,198,76,198,85,244,44,183,69,193,92,244,44,168,63,190,98,244,44,152,57,186,103,244,44,137,51,182,109,244,44,121,46,179,114,244,44,106,40,175,120,244,44,91,34,172,125,244,44,75,28,168,130,244,44,60,22,165,136,244,44,44,16,162,138,244,44,29,9,159,135,244,44,13,4,157,132,244,44,7,5,154,129,244,44,15,12,152,127,244,44,24,19,150,124,244,44,31,24,147,121,244,44,39,30,145,118,244,44,46,35,143,116,244,44,53,41,140,113,244,44,60,46,138,110,244,44,67,52,136,108,244,44,74,58,134,105,244,44,81,63,132,103,244,44,88,68,130,100,244,44,95,74,128,98,244,44,102,79,126,95,244,44,108,84,124,93,244,44,115,89,123,90,244,44,114,94,127,88,244,44,114,98,131,87,244,44,115,103,135,85,244,44,115,108,139,83,244,44,115,112,143,81,244,44,116,117,147,80,244,44,116,121,151,78,244,44,117,126,155,76,244,44,117,130,158,75,244,44,118,134,162,73,244,44,118,138,166,72,244,44,119,137,170,70,244,44,119,135,173,69,244,44,120,133,177,67,244,44,121,130,180,66,244,44,122,128,183,64,244,44,123,126,187,63,244,44,124,124,190,61,244,44,125,122,194,60,244,44,126,119,197,59,244,44,126,118,200,57,244,44,127,116,203,56,244,44,128,114,207,54,244,44,129,112,210,53,244,44,129,110,213,52,244,44,130,108,216,50,244,44,131,106,219,49,244,44,132,105,222,48,244,44,133,103,225,47,244,44,133,101,228,45,244,44,134,100,231,44,244,44,134,98,233,43,244,44,135,96,236,42,244,44,136,95,239,41,244,44,136,94,241,39,244,45,137,92,243,37,245,45,138,91,245,35,245,46,139,89,247,34,246,46,139,88,248,32,247,46,140,87,250,31,248,46,140,85,252,29,248,47,141,84,253,28,249,47,141,83,255,26,249,47,142,82,256,25,250,48,142,81,258,23,250,48,143,80,260,22,250,48,143,79,261,20,251,48,144,78,263,19,251,48,144,77,265,18,251,49,144,76,266,16,251,49,145,75,267,15,251,49,145,74,268,14,252,49,146,73,270,12,252,49,147,72,271,11,252,49,147,72,272,10,252,49,147,71,274,9,252,49,147,71,275,8,252,49,147,70,276,7,252,49]}},{"i":77,"t0":2244.433,"head":"27이닝 1P 1번째 샷","body":"빨간공 왼쪽을 1/8 두께로, 상단 오른쪽 1팁 당점에 보통 세기로 앞돌리기를 시도했지만 무득점 (두 번째 목적구를 약 1cm 차이로 빗나감).","fix":"👉 같은 앞돌리기라도 회전을 상단 오른쪽 1팁으로 조금 덜, 2번 쿠션 도착점을 0.4에서 0.7포인트로 쳤다면 득점 경로였습니다.","rec":"추천 샷은 뒤돌리기(노란공 오른쪽 3/8, 상단 왼쪽 2팁, 예상 성공률 60%)입니다.","cue":0,"pre":[[1.5,0.647],[2.484,1.352],[2.046,0.637]],"tech":"앞돌리기 (마와시/세워치기 포함)","est":false,"sh":{"act":{"s":[-0.12,3.2086,0.172,0.094],"tip":"상단 오른쪽 1팁","pw":3,"cut":"1/8"},"fix":{"s":[-0.1261,3.2086,0.092,0.094],"tip":"상단 오른쪽 1팁","pw":3,"cut":"1/8"},"rec":{"s":[0.6546,2.8,-0.28,0.28],"tip":"상단 왼쪽 2팁","pw":3,"cut":"3/8"}},"tr":{"fps":10,"d":[150,65,248,135,205,64,186,61,248,135,205,64,219,47,248,135,212,73,247,29,248,135,221,87,273,11,248,135,231,99,270,5,248,135,238,110,254,9,248,135,246,121,239,13,248,135,254,131,226,17,248,135,262,137,215,20,248,135,267,129,204,23,248,135,272,123,194,26,248,135,278,117,183,28,248,135,281,112,173,31,248,135,277,106,162,34,248,135,274,101,152,36,248,135,271,96,141,40,248,135,268,90,131,42,248,135,265,85,120,45,248,135,262,80,110,47,248,135,259,75,100,50,248,135,256,70,90,53,248,135,253,64,79,55,248,135,250,59,69,58,248,135,247,55,59,61,248,135,244,49,48,63,248,135,241,44,38,66,248,135,238,40,28,69,248,135,236,35,18,71,248,135,233,30,8,74,248,135,230,25,6,76,248,135,227,20,12,77,248,135,225,16,18,78,248,135,222,11,23,79,248,135,219,6,28,80,248,135,216,5,34,81,248,135,214,8,39,83,248,135,211,10,45,84,248,135,208,13,50,85,248,135,206,16,55,86,248,135,203,18,60,87,248,135,201,21,65,88,248,135,198,23,71,89,248,135,195,26,75,90,248,135,193,28,80,91,248,135,191,30,85,92,248,135,188,33,90,93,248,135,186,35,95,94,248,135,184,38,99,95,248,135,182,40,104,96,248,135,179,42,109,97,248,135,177,44,113,98,248,135,174,46,118,99,248,135,172,49,122,100,248,135,170,51,127,101,248,135,168,53,131,102,248,135,166,55,135,103,248,135,164,57,140,104,248,135,161,59,144,105,248,135,159,61,148,106,248,135,157,63,152,107,248,135,156,65,157,108,248,135,153,67,160,109,248,135,151,69,165,110,248,135,149,71,169,111,248,135,147,73,173,111,248,135,145,75,176,112,248,135,144,76,180,113,248,135,142,78,184,114,248,135,140,80,188,115,248,135,138,82,192,116,248,135,137,83,195,116,248,135,135,85,199,117,248,135,133,87,203,118,248,135,132,88,206,119,248,135,130,90,210,119,248,135,129,91,213,120,248,135,127,93,216,121,248,135,126,95,220,121,248,135,124,96,223,122,248,135,123,97,226,123,248,135,121,99,230,124,248,135,120,100,233,124,248,135,119,102,236,125,248,135,117,103,239,126,248,135,116,104,242,127,248,135,115,106,245,127,248,135,114,107,249,127,248,135,112,108,251,128,248,135,111,109,255,129,248,135,110,111,257,129,248,135,109,112,260,130,248,135,108,113,263,131,248,135,107,114,266,131,248,135,106,115,268,131,248,135,105,117,271,132,248,135,104,118,274,132,248,135,103,118,277,133,248,135,103,119,279,134,248,135,102,120,281,134,248,135,101,122,280,134,248,135,100,122,279,135,248,135,99,123,278,135,248,135,99,124,277,135,248,135,98,125,276,136,248,135,98,126,274,136,248,135,97,126,273,136,248,135,96,127,272,136,248,135,95,128,271,137,248,135,95,129,270,137,248,135,94,129,269,137,248,135,94,130,268,138,248,135,93,131]}},{"i":85,"t0":2450.633,"head":"29이닝 1P 1번째 샷","body":"빨간공 오른쪽을 1/4 두께로, 상단 왼쪽 2팁 당점에 강하게 단횡단을 시도했지만 무득점 (두 번째 목적구를 약 21cm 차이로 빗나감).","fix":"👉 같은 단횡단이라도 회전을 상단 왼쪽 3팁으로 더 많이 쳤다면 득점 경로였습니다.","rec":"추천 샷은 옆돌리기(빨간공 왼쪽 3/8, 상단 무회전, 예상 성공률 60%)입니다.","cue":0,"pre":[[0.545,0.343],[0.165,0.631],[0.783,0.843]],"tech":"단횡단 (단더블/레일)","est":false,"sh":{"act":{"s":[1.2042,4.0096,-0.3,0.4],"tip":"상단 왼쪽 2팁","pw":5,"cut":"1/4"},"fix":{"s":[1.2016,4.0096,-0.38,0.4],"tip":"상단 왼쪽 3팁","pw":5,"cut":"1/4"},"rec":{"s":[1.0521,2.8,0,0.3],"tip":"상단 무회전","pw":3,"cut":"3/8"}},"tr":{"fps":10,"d":[55,35,17,63,78,84,67,72,17,63,80,85,65,101,17,63,97,93,56,124,17,63,119,103,50,137,17,63,139,113,51,120,17,63,158,121,52,106,17,63,174,130,53,93,17,63,191,136,54,82,17,63,205,134,54,71,17,63,219,130,55,61,17,63,232,126,56,50,17,63,246,122,57,40,17,63,259,118,58,30,17,63,272,115,58,19,17,63,279,111,59,9,17,63,269,107,59,5,17,63,260,104,57,12,17,63,253,101,55,18,17,63,245,97,53,23,17,63,239,94,51,28,17,63,231,90,49,33,17,63,224,87,47,38,17,63,217,83,45,43,17,63,209,81,43,48,17,63,202,77,41,53,17,63,195,74,39,58,17,63,188,70,37,63,17,63,181,68,35,68,17,63,174,64,33,73,17,63,167,61,31,77,17,63,160,58,29,82,17,63,154,55,28,86,17,63,147,52,26,91,17,63,140,48,24,96,17,63,133,46,22,100,17,63,126,42,20,105,17,63,119,39,19,109,17,63,113,36,17,114,17,63,106,33,15,118,17,63,100,30,13,123,17,63,93,27,12,127,17,63,87,24,10,131,17,63,80,21,8,135,17,63,73,18,7,140,17,63,67,15,6,139,17,63,61,13,5,137,17,63,55,10,4,135,17,63,48,7,4,132,17,63,41,4,3,130,17,63,36,4,3,128,17,63,31,5,2,126,17,63,25,6,3,124,17,63,20,8,3,123,17,63,15,9,3,121,17,63,10,10,4,120,17,63,5,12,4,118,17,63,5,13,4,116,17,63,8,15,4,115,17,63,10,16,5,113,17,63,13,18,5,111,17,63,16,19,5,111,17,63,19,21,6,109,17,63,22,22,6,108,17,63,24,23,6,107,17,63,27,25,7,105,17,63,30,26,7,104,17,63,32,28,7,103,17,63,34,29,8,102,17,63,37,30,8,102,17,63,39,32,8,100,17,63,42,33,8,99,17,63,44,34,8,98,17,63,46,35,8,97,17,63,49,36,9,96,17,63,51,37,9,96,17,63,53,39,9,95,17,63,55,40,9,94,17,63,57,41]}}]}]};
+const P=createPhysics();
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const BALL_COL=['#f4f7ef','#f8cc35','#ef4f57'],BALL_KO=['흰 공','노란공','빨간공'];
+const COL={rec:'#6ff0c2',act:'#ffd166',fix:'#ff9ad5'},KO={rec:'추천',act:'실제',fix:'교정'};
+let D=null,G=null,SH=-1,LIST=[];
+const M={mode:'freeze',anim:null,guide:null,raf:0,show:{rec:false,act:false,fix:false}};
+
+/* ---------- access: code + PIN -> file name hash, AES-GCM decrypt ---------- */
+const enc=new TextEncoder(),dec=new TextDecoder();
+const b64d=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function sha(s){const h=await crypto.subtle.digest('SHA-256',enc.encode(s));return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('');}
+async function fileId(code,pin){return (await sha('3q:'+code.trim().toUpperCase()+':'+pin.trim())).slice(0,24);}
+async function decrypt(box,code,pin){
+ const km=await crypto.subtle.importKey('raw',enc.encode(code.trim().toUpperCase()+':'+pin.trim()),'PBKDF2',false,['deriveKey']);
+ const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64d(box.salt),iterations:box.it||150000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
+ const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(box.iv)},key,b64d(box.ct));return JSON.parse(dec.decode(pt));}
+async function login(code,pin,remember){
+ $('lgMsg').textContent='불러오는 중…';
+ try{const id=await fileId(code,pin);const r=await fetch(`./members/${id}.json`,{cache:'no-cache'});
+  if(!r.ok)throw new Error(r.status===404?'회원코드나 PIN이 맞지 않아요.':'서버 응답 '+r.status);
+  const d=await decrypt(await r.json(),code,pin);
+  try{if(remember)localStorage.setItem('3q-member',JSON.stringify({code,pin}));else localStorage.removeItem('3q-member');}catch(e){}
+  start(d);}
+ catch(e){$('lgMsg').textContent=e.name==='OperationError'?'회원코드나 PIN이 맞지 않아요.':(e.message||'불러오지 못했어요.');}
+}
+
+/* ---------- screens ---------- */
+function show(id){for(const s of ['scLogin','scHome','scShot'])$(s).hidden=s!==id;window.scrollTo(0,0);}
+function start(d){D=d;document.title=`${d.player.nick||d.player.code} · 3Q 코칭`;renderHome();show('scHome');}
+const pct=v=>v==null?'—':Math.round(v*100)+'%';
+function renderHome(){
+ const p=D.player,t=D.totals;
+ $('hName').textContent=p.nick||p.code;$('hSub').textContent=`${p.code?'회원코드 '+p.code+' · ':''}${new Date(D.made).toLocaleDateString('ko-KR')} 업데이트`;
+ $('kpis').innerHTML=[['핸디',p.hc!==''&&p.hc!=null?p.hc:'—'],['에버리지',t.avg==null?'—':t.avg.toFixed(3)],['승률',pct(t.wr),`${t.wins}승 ${t.losses}패`],['하이런',t.hr||0],['경기',t.games],['득점 / 이닝',`${t.pts}<small> / ${t.inn}</small>`]]
+  .map(([k,v,s])=>`<div class="kpi"><span>${k}</span><b>${v}</b>${s?`<i>${s}</i>`:''}</div>`).join('');
+ $('types').innerHTML=D.types.length?'<tr><th>기술</th><th>시도</th><th>성공률</th></tr>'+D.types.map(([k,n,ok])=>`<tr><td>${esc(k)}</td><td>${n}</td><td><span class="bar"><i style="width:${n?Math.round(ok/n*100):0}%"></i></span>${n?Math.round(ok/n*100):0}%</td></tr>`).join(''):'<tr><td class="muted">아직 기록이 없습니다.</td></tr>';
+ $('games').innerHTML=D.games.map((g,i)=>`<button class="game" data-i="${i}"><div><b>${esc(g.name)}</b><span class="muted"> · ${String(g.date).slice(0,10)}</span></div><div class="gl"><span>vs ${esc(g.opp||'—')}</span><span>${g.pts}${g.hc?'/'+g.hc:''} : ${g.oppPts}${g.oppHc?'/'+g.oppHc:''}</span><span>${g.inn}이닝</span><span class="res ${g.res}">${{W:'승',L:'패',D:'무'}[g.res]||''}</span></div><div class="muted">코칭 샷 ${g.shots.length}개 ▶</div></button>`).join('')||'<p class="muted">코칭할 경기가 없습니다.</p>';
+ $('games').querySelectorAll('.game').forEach(b=>b.onclick=()=>openGame(+b.dataset.i));
+}
+function openGame(i){G=D.games[i];LIST=G.shots;$('gTitle').textContent=`${G.name} · vs ${G.opp||'—'}`;show('scShot');openShot(0);}
+function openShot(k){
+ if(!LIST.length){$('sHead').textContent='코칭할 실패 샷이 없습니다';return;}
+ SH=clamp(k,0,LIST.length-1);const a=LIST[SH];stop();M.mode='freeze';
+ $('sHead').textContent=a.head;$('sTech').textContent=a.tech?`기술: ${a.tech}${a.est?' (추정)':''}`:'';$('sTech').hidden=!a.tech;
+ $('sPos').textContent=`${SH+1} / ${LIST.length}`;
+ $('sBody').innerHTML=`<p>${esc(a.body)}</p>${a.fix?`<p class="fixT">${esc(a.fix)}</p>`:''}${a.rec?`<p class="recT">${esc(a.rec)}</p>`:''}`;
+ for(const k of ['rec','act','fix'])$('b_'+k).disabled=!a.sh[k];
+ $('bVid').hidden=!G.yt;
+ $('sTips').innerHTML=['act','fix','rec'].filter(k=>a.sh[k]).map(k=>{const s=a.sh[k];return `<div class="tipc ${k}"><canvas width="96" height="96" data-k="${k}"></canvas><b>${KO[k]}</b><span>${esc(s.tip)}</span><span>세기 ${'■'.repeat(s.pw)}${'□'.repeat(5-s.pw)}${s.cut?' · 두께 '+s.cut:''}</span></div>`;}).join('');
+ $('sTips').querySelectorAll('canvas').forEach(c=>tipBall(c.getContext('2d'),48,48,38,a.sh[c.dataset.k].s,COL[c.dataset.k]));
+ simCache.clear();resize();draw();
+}
+
+/* ---------- geometry / drawing ---------- */
+const cv=$('cv'),cx=cv.getContext('2d');let SC=1,OX=0,OY=0,DPR=1;
+function resize(){DPR=Math.min(2.5,window.devicePixelRatio||1);const w=cv.clientWidth,h=Math.round(w*0.56);cv.style.height=h+'px';cv.width=Math.round(w*DPR);cv.height=Math.round(h*DPR);
+ const W=cv.width,H=cv.height,mx=W*.075,my=H*.13;SC=Math.min((W-2*mx)/2.84,(H-2*my)/1.42);OX=(W-SC*2.84)/2;OY=(H-SC*1.42)/2;}
+const S2=(x,y)=>({x:OX+x*SC,y:OY+y*SC});
+const BR=()=>P.R*SC;
+function rr(x,y,w,h,r){cx.beginPath();if(cx.roundRect)cx.roundRect(x,y,w,h,r);else cx.rect(x,y,w,h);}
+function table(){
+ const W=cv.width,H=cv.height,pal=G.pal||{},a=S2(0,0),b=S2(2.84,1.42),m=SC;
+ const fl=cx.createRadialGradient(W/2,H/2,H*.1,W/2,H/2,W*.75);fl.addColorStop(0,pal.floor0||'#1a2532');fl.addColorStop(1,pal.floor1||'#0a1018');cx.fillStyle=fl;cx.fillRect(0,0,W,H);
+ const cu=(pal.cuW||.05)*m,rl=((pal.outer||.18)-(pal.cuW||.05))*m,rx=a.x-cu-rl,ry=a.y-cu-rl,rw=b.x-a.x+2*(cu+rl),rh=b.y-a.y+2*(cu+rl);
+ cx.save();cx.shadowColor='#000c';cx.shadowBlur=.12*m;cx.shadowOffsetY=.03*m;rr(rx,ry,rw,rh,.05*m);cx.fillStyle=pal.rail1||'#2b1e16';cx.fill();cx.restore();
+ const wd=cx.createLinearGradient(0,ry,0,ry+rh);wd.addColorStop(0,pal.rail0||'#4a3326');wd.addColorStop(.5,pal.rail||'#36251b');wd.addColorStop(1,pal.rail0||'#4a3326');rr(rx,ry,rw,rh,.05*m);cx.fillStyle=wd;cx.fill();
+ cx.strokeStyle=pal.outer?'rgba(0,0,0,.75)':'#6b4d3a';cx.lineWidth=Math.max(1,(pal.outer?.008:.004)*m);cx.stroke();
+ cx.fillStyle=pal.cush||'#1d5596';cx.fillRect(a.x-cu,a.y-cu,b.x-a.x+2*cu,b.y-a.y+2*cu);
+ const cl=cx.createRadialGradient((a.x+b.x)/2,(a.y+b.y)/2,.1*m,(a.x+b.x)/2,(a.y+b.y)/2,1.6*m);cl.addColorStop(0,pal.cloth0||'#2f7ac9');cl.addColorStop(1,pal.cloth1||'#1f5ca6');cx.fillStyle=cl;cx.fillRect(a.x,a.y,b.x-a.x,b.y-a.y);
+ cx.strokeStyle=pal.line||'#5c94d3';cx.lineWidth=Math.max(1,.003*m);cx.strokeRect(a.x,a.y,b.x-a.x,b.y-a.y);
+ cx.fillStyle=pal.dia||'#efe6d2';const dm=(x,y)=>{cx.save();cx.translate(x,y);cx.rotate(Math.PI/4);const s=.012*m;cx.fillRect(-s/2,-s/2,s,s);cx.restore();};
+ const off=cu+rl*.5;for(let i=1;i<8;i++){const x=a.x+(b.x-a.x)*i/8;dm(x,a.y-off);dm(x,b.y+off);}for(let i=1;i<4;i++){const y=a.y+(b.y-a.y)*i/4;dm(a.x-off,y);dm(b.x+off,y);}
+}
+function ball(p,i,alpha=1){const r=BR(),g=cx.createRadialGradient(p.x-r*.35,p.y-r*.4,r*.1,p.x,p.y,r);g.addColorStop(0,['#fff','#fff3a8','#ffb0b0'][i]);g.addColorStop(.45,BALL_COL[i]);g.addColorStop(1,['#a9b8b0','#bf8516','#a92a3d'][i]);
+ cx.save();cx.globalAlpha=alpha;cx.shadowColor='#0008';cx.shadowBlur=6*DPR;cx.beginPath();cx.arc(p.x,p.y,r,0,7);cx.fillStyle=g;cx.fill();cx.restore();}
+function cue(p,ang,gap,alpha){const m=SC,c=S2(p[0],p[1]),dx=Math.cos(ang),dy=Math.sin(ang),tip=P.R*m+gap*m,len=1.45*m,x0=c.x-dx*tip,y0=c.y-dy*tip,x1=c.x-dx*(tip+len),y1=c.y-dy*(tip+len),nx=-dy,ny=dx,w0=.0065*m,w1=.016*m;
+ cx.save();cx.globalAlpha=alpha;cx.shadowColor='#0009';cx.shadowBlur=.015*m;cx.shadowOffsetY=.01*m;
+ const seg=(u0,u1,c0,c1)=>{const xa=x0+(x1-x0)*u0,ya=y0+(y1-y0)*u0,xb=x0+(x1-x0)*u1,yb=y0+(y1-y0)*u1,wa=w0+(w1-w0)*u0,wb=w0+(w1-w0)*u1;cx.beginPath();cx.moveTo(xa+nx*wa,ya+ny*wa);cx.lineTo(xb+nx*wb,yb+ny*wb);cx.lineTo(xb-nx*wb,yb-ny*wb);cx.lineTo(xa-nx*wa,ya-ny*wa);cx.closePath();
+  const g=cx.createLinearGradient(xa+nx*wa,ya+ny*wa,xa-nx*wa,ya-ny*wa);g.addColorStop(0,c0);g.addColorStop(.5,c1);g.addColorStop(1,c0);cx.fillStyle=g;cx.fill();};
+ seg(0,.012,'#2e6fd6','#5b9bff');seg(.012,.03,'#e9e7e0','#fff');seg(.03,.62,'#c9a26b','#efd3a2');seg(.62,.66,'#1b1b1b','#3a3a3a');seg(.66,.97,'#3b1f12','#6a3a20');seg(.97,1,'#111','#2a2a2a');cx.restore();}
+function tipBall(c,x,y,R,s,col){const g=c.createRadialGradient(x-R*.35,y-R*.4,R*.1,x,y,R);g.addColorStop(0,'#fff');g.addColorStop(.55,'#e8ece6');g.addColorStop(1,'#a7b2ac');c.beginPath();c.arc(x,y,R,0,7);c.fillStyle=g;c.fill();
+ c.strokeStyle='rgba(60,75,70,.55)';c.lineWidth=1;c.beginPath();c.moveTo(x-R,y);c.lineTo(x+R,y);c.moveTo(x,y-R);c.lineTo(x,y+R);c.stroke();c.beginPath();c.arc(x,y,R*.5,0,7);c.stroke();
+ const tx=x+clamp(s[2],-.55,.55)*R,ty=y-clamp(s[3],-.55,.55)*R;c.beginPath();c.arc(tx,ty,R*.2,0,7);c.fillStyle=col;c.fill();c.strokeStyle='#0b0f14';c.lineWidth=2;c.stroke();}
+function guideCard(a,kind,al){
+ if(al<=0)return;const s=a.sh[kind],k=Math.max(.8,Math.min(1.5,cv.height/(420*DPR)))*DPR,R=30*k,pad=9*k,fs=Math.round(13*k),fsB=Math.round(14*k),tw=120*k,cw=pad*3+R*2+tw,ch=Math.max(R*2+pad*2,fsB+fs*4.5+pad*2);
+ const c=S2(a.pre[a.cue][0],a.pre[a.cue][1]),ang=angOf(a,kind),dx=Math.cos(ang),dy=Math.sin(ang),W=cv.width,H=cv.height,d=BR()*3+Math.max(cw,ch)*.62;
+ const others=[0,1,2].filter(b=>b!==a.cue).map(b=>S2(a.pre[b][0],a.pre[b][1])),br=BR()*2.2;let best=null;
+ for(const dd of [d,d*1.35])for(let i=0;i<16;i++){const t=i/16*Math.PI*2,ux=Math.cos(t),uy=Math.sin(t),x=clamp(c.x+ux*dd-cw/2,4,W-cw-4),y=clamp(c.y+uy*dd-ch/2,4,H-ch-4),qx=x+cw/2-c.x,qy=y+ch/2-c.y,L=Math.hypot(qx,qy)||1,v=(qx*dx+qy*dy)/L;
+  let sc=Math.max(0,-v)*cw*.9+Math.max(0,v)*cw*.35+(dd>d?cw*.15:0);if(c.x>x-br&&c.x<x+cw+br&&c.y>y-br&&c.y<y+ch+br)sc+=cw*5;for(const o of others)if(o.x>x-br&&o.x<x+cw+br&&o.y>y-br&&o.y<y+ch+br)sc+=cw*3;if(!best||sc<best.sc)best={sc,x,y};}
+ const x=best.x,y=best.y,col=COL[kind];cx.save();cx.globalAlpha=al;rr(x,y,cw,ch,11*k);cx.fillStyle='rgba(10,16,24,.84)';cx.fill();cx.strokeStyle=col;cx.lineWidth=1.5*k;cx.stroke();
+ tipBall(cx,x+pad+R,y+ch/2,R,s.s,col);const lx=x+pad*2+R*2;let ly=y+pad+fsB;cx.textAlign='left';cx.fillStyle=col;cx.font=`800 ${fsB}px system-ui`;cx.fillText(KO[kind]+' 샷',lx,ly);
+ cx.fillStyle='#e9eef5';cx.font=`600 ${fs}px system-ui`;ly+=fs*1.4;cx.fillText('당점 '+s.tip,lx,ly);ly+=fs*1.4;cx.fillText('세기',lx,ly);const mx=lx+fs*2.3,bw=fs*.62,bh=fs*.8;
+ for(let i=0;i<5;i++){cx.fillStyle=i<s.pw?col:'rgba(255,255,255,.18)';cx.fillRect(mx+i*(bw+2*k),ly-bh,bw,bh);}cx.fillStyle='#e9eef5';cx.fillText(s.pw<=2?'약':s.pw>=4?'강':'중',mx+5*(bw+2*k)+4*k,ly);
+ if(s.cut){ly+=fs*1.4;cx.fillText('두께 '+s.cut,lx,ly);}cx.restore();}
+
+/* ---------- motion data ---------- */
+const simCache=new Map();
+function ordered(a){const o=[0,1,2].filter(b=>b!==a.cue);return [a.cue,...o].map(b=>({x:a.pre[b][0],y:a.pre[b][1]}));}
+const toReal=(a,k)=>k===0?a.cue:[0,1,2].filter(b=>b!==a.cue)[k-1];
+function track(a,kind){ // -> {dur, pos(t)->[[x,y]x3], path:[[x,y]...] of cue}
+ const key=SH+kind;if(simCache.has(key))return simCache.get(key);let out=null;
+ if(kind==='act'){const T=a.tr,fps=T.fps,n=T.d.length/6,fr=k=>[0,1,2].map(b=>[T.d[k*6+b*2]/100,T.d[k*6+b*2+1]/100]);
+  out={dur:(n-1)/fps,pos:t=>{const u=clamp(t*fps,0,n-1),k=Math.floor(u),f=u-k,A=fr(k),B=fr(Math.min(n-1,k+1));return A.map((p,i)=>[p[0]+(B[i][0]-p[0])*f,p[1]+(B[i][1]-p[1])*f]);},path:[...Array(n).keys()].map(k=>fr(k)[a.cue])};}
+ else{const s=a.sh[kind].s,r=P.simulate(ordered(a),{angle:s[0],speed:s[1],tipX:s[2],tipY:s[3]},{record:true,dt:.006,maxC:6,model:G.model||{}});
+  const F=r.frames.map(f=>{const p=[null,null,null];f.p.forEach((q,k)=>p[toReal(a,k)]=[q.x,q.y]);return {t:f.t,p};});
+  out={dur:F[F.length-1].t,pos:t=>{let k=0;while(k<F.length-1&&F[k+1].t<=t)k++;const f=F[k],g=F[Math.min(F.length-1,k+1)],u=g.t>f.t?clamp((t-f.t)/(g.t-f.t),0,1):0;return f.p.map((q,i)=>[q[0]+(g.p[i][0]-q[0])*u,q[1]+(g.p[i][1]-q[1])*u]);},path:F.map(f=>f.p[a.cue])};}
+ simCache.set(key,out);return out;}
+function angOf(a,kind){const s=a.sh[kind]||a.sh.act||a.sh.rec;if(s)return s.s[0];return 0;}
+
+function path(pts,col,dash){if(pts.length<2)return;cx.save();cx.strokeStyle=col;cx.lineWidth=2.2*DPR;cx.setLineDash(dash.map(v=>v*DPR));cx.globalAlpha=.95;cx.lineJoin='round';cx.beginPath();pts.forEach((p,i)=>{const q=S2(p[0],p[1]);i?cx.lineTo(q.x,q.y):cx.moveTo(q.x,q.y);});cx.stroke();cx.restore();}
+function draw(){
+ if(!G||SH<0)return;const a=LIST[SH];cx.setTransform(1,0,0,1,0,0);cx.clearRect(0,0,cv.width,cv.height);table();
+ if(M.show.rec&&a.sh.rec)path(track(a,'rec').path,COL.rec,[8,5]);
+ if(M.show.fix&&a.sh.fix)path(track(a,'fix').path,COL.fix,[3,4]);
+ if(M.show.act&&a.tr)path(track(a,'act').path,COL.act,[]);
+ if(M.anim){const p=M.anim.pos();p.forEach((q,i)=>q&&ball(S2(q[0],q[1]),i));const c=M.anim.cue();if(c)cue(a.pre[a.cue],c.ang,c.gap,c.alpha);if(M.guide)guideCard(a,M.guide.kind,M.guide.alpha());}
+ else{a.pre.forEach((q,i)=>ball(S2(q[0],q[1]),i));cue(a.pre[a.cue],angOf(a,'rec'),.05,.95);}
+}
+function stop(){cancelAnimationFrame(M.raf);M.anim=null;M.guide=null;M.mode='freeze';}
+function play(kind){
+ const a=LIST[SH];if(!a||!a.sh[kind])return;stop();const tr=track(a,kind),ang=angOf(a,kind),PRE=1.6,STK=.75,ST=PRE+STK,t0=performance.now(),rate=+$('rate').value;
+ const el0=()=>(performance.now()-t0)/1000*rate,el=()=>Math.max(0,el0()-PRE);
+ M.guide={kind,alpha:()=>{const e=el0();return e<.25?e/.25:e<ST+.5?1:Math.max(0,1-(e-ST-.5)/.4);}};
+ M.anim={pos:()=>tr.pos(clamp(el0()-ST,0,tr.dur)),cue:()=>{const e=el();if(e<.25)return {ang,gap:.05,alpha:1};if(e<.6){const u=(e-.25)/.35;return {ang,gap:.05+.17*Math.sin(u*Math.PI/2),alpha:1};}
+  if(e<STK){const u=(e-.6)/(STK-.6);return {ang,gap:.22-.22*u*u,alpha:1};}const f=e-STK;return f<.45?{ang,gap:-.06*Math.min(1,f/.12),alpha:1-f/.45}:null;}};
+ M.mode='sim';const tick=()=>{draw();if(el0()<tr.dur+ST+.3)M.raf=requestAnimationFrame(tick);else M.mode='end';};tick();
+}
+function videoLink(){const a=LIST[SH],t=Math.max(0,Math.floor(a.t0-2)),u=G.yt;if(!u)return;
+ let url=u;if(/youtu\.?be/.test(u)){url=u.replace(/([?&])t=\d+s?/,'$1').replace(/[?&]$/,'');url+=(url.includes('?')?'&':'?')+'t='+t;}else url=u.split('#')[0]+'#t='+t;window.open(url,'_blank','noopener');}
+
+/* ---------- wiring ---------- */
+for(const k of ['rec','act','fix']){$('b_'+k).onclick=()=>play(k);$('c_'+k).onchange=e=>{M.show[k]=e.target.checked;e.target.closest('.pl').classList.toggle('on',e.target.checked);if(M.mode!=='sim')draw();};}
+$('bPrev').onclick=()=>openShot(SH-1);$('bNext').onclick=()=>openShot(SH+1);$('bBack').onclick=()=>{stop();show('scHome');};$('bVid').onclick=videoLink;
+cv.addEventListener('click',()=>{if(M.mode!=='freeze'){stop();draw();}});
+{let sx=0,sy=0;cv.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});cv.addEventListener('touchend',e=>{const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5)openShot(SH+(dx<0?1:-1));},{passive:true});}
+addEventListener('resize',()=>{if(!$('scShot').hidden){resize();draw();}});
+$('lgForm').onsubmit=e=>{e.preventDefault();login($('lgCode').value,$('lgPin').value,$('lgKeep').checked);};
+$('bLogout').onclick=()=>{try{localStorage.removeItem('3q-member');}catch(e){}if(DATA0)return;D=null;show('scLogin');};
+(function boot(){
+ if(DATA0){$('bLogout').hidden=true;start(DATA0);return;}
+ const q=new URLSearchParams(location.search);if(q.get('code'))$('lgCode').value=q.get('code');
+ let s=null;try{s=JSON.parse(localStorage.getItem('3q-member')||'null');}catch(e){}
+ if(s&&s.code&&s.pin){$('lgCode').value=s.code;$('lgPin').value=s.pin;$('lgKeep').checked=true;login(s.code,s.pin,true);}
+ show(D?'scHome':'scLogin');
+})();
+window.M3Q={get D(){return D;},openGame,openShot,play,M};
+
+</script>
+</body></html>
