@@ -259,7 +259,7 @@ body.mobile .queue.pin .gname{max-width:80px;font-size:11.5px}
 </style></head><body>
 <div class="wrap">
 <header id="top">
- <div class="brand"><div class="mark">3C</div><div><div class="eyebrow">VIDEO COACHING · SELF-LEARNING</div><h1>3쿠션 영상 코칭 <span class="ver" id="ver">v1.16</span></h1></div></div>
+ <div class="brand"><div class="mark">3C</div><div><div class="eyebrow">VIDEO COACHING · SELF-LEARNING</div><h1>3쿠션 영상 코칭 <span class="ver" id="ver">v1.17</span></h1></div></div>
  <div class="row"><span class="pill" id="devPill">PC</span><span class="pill" id="learnPill">학습 0경기 · 0샷</span><button id="helpBtn" class="ghost sm">사용 안내</button></div>
 </header>
 
@@ -323,6 +323,7 @@ body.mobile .queue.pin .gname{max-width:80px;font-size:11.5px}
     <div class="file"><label>🗂 여러 파일 선택<input id="filesPick" type="file" multiple accept="video/*,image/png,image/jpeg"></label></div>
     <button id="startBtn" class="primary" disabled>▶ 순서대로 분석·학습</button>
     <button id="stopBtn" disabled>■ 중지</button>
+    <button id="saveAllBtn" title="분석된 경기의 코칭 파일(.coach.json)을 모두 저장">💾 코칭 파일 모두 저장</button>
     <input id="attachPick" type="file" accept="image/*" hidden>
    </div>
    <div class="row"><span class="hint">새 영상 스캔 속도</span><select id="scanRate"><option value="1">1× 정밀</option><option value="2" selected>2×</option><option value="4">4× 빠름(정확도↓)</option></select>
@@ -1647,7 +1648,7 @@ const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const BALL_COL=['#f4f7ef','#f8cc35','#ef4f57'],BALL_KO=['흰 공','노란공','빨간공'],BALL_CLS=['w','y','r'];
 const COL={rec:'#6ff0c2',act:'#ffd166',fix:'#ff9ad5'};
-const VERSION='v1.16';
+const VERSION='v1.17';
 const LKEY='c3c-learn-v1';
 /* device profile: picked automatically, re-evaluated on resize/rotation */
 const DEV={mobile:false,dpr:2,simDt:.005,scanScale:1,steps:70};
@@ -1853,23 +1854,26 @@ function selectGame(key,coach){
 }
 /* ---- sequential analysis + learning ---- */
 let STOP=false;
+$('saveAllBtn').onclick=async()=>{const l=shown().filter(g=>g.G);if(!l.length)return toast('저장할 분석 결과가 없어요');for(const g of l)g.savedFile=false;const n=await saveCoachFiles(l);toast(`코칭 파일 ${l.length}개 저장${n?` (다운로드 ${n}개)`:''}`);};
 $('stopBtn').onclick=()=>{STOP=true;$('anaStatus').textContent='현재 경기를 마치면 멈춥니다(스캔 중이면 바로 중지)…';};
 $('startBtn').onclick=async()=>{
  STOP=false;$('startBtn').disabled=true;$('stopBtn').disabled=false;$('dirPick').disabled=$('filesPick').disabled=true;if($('dirRW'))$('dirRW').disabled=true;
  if(LOADING){$('anaStatus').textContent='이닝표·영상 정보를 마저 읽는 중…';await LOADING;}
  let wake=null;try{wake=await navigator.wakeLock?.request('screen');}catch(e){}
  if(DEV.mobile)toast('분석 중에는 화면을 켜 두고 이 탭을 열어 두세요 (오른쪽 아래 작은 화면이 스캔 중인 영상입니다).');
- const todo=todoList();let k=0;
+ const todo=todoList();let k=0;const done=[];
  const reWake=async()=>{if(!document.hidden&&!$('stopBtn').disabled){try{wake=await navigator.wakeLock?.request('screen');}catch(e){}}};document.addEventListener('visibilitychange',reWake);
  for(const g of todo){
   if(STOP)break;k++;g.status='분석 중';renderQueue();
   if(!g.duration){await probe(g);if(!g.duration){g.status='❌ 영상 정보를 읽지 못함';renderQueue();continue;}}
   try{await analyzeGame(g,(p,msg)=>{setProg(p);$('anaStatus').textContent=`[${k}/${todo.length}] ${g.name} · ${msg}`;g.status=msg;renderQueue();});
-   await persistGame(g);g.status=`✅ ${g.G.shots.length}샷${g.savedFile?' · 파일 저장':''}`;if(!S.G||S.game===g)selectGame(g.key,false);}
+   await persistGame(g);done.push(g);g.status=`✅ ${g.G.shots.length}샷${g.savedFile?' · 파일 저장':''}`;if(!S.G||S.game===g)selectGame(g.key,false);}
   catch(e){console.error(e);g.status='❌ '+(e.message||e);}
   renderQueue();refreshGameSel();
  }
- $('anaStatus').textContent=STOP?'중지했습니다. 다시 누르면 남은 경기부터 이어서 분석합니다.':`분석·학습 완료 · ${GAMES.filter(g=>g.G).length}경기. 위쪽 ‘코칭 경기’에서 경기를 고르세요.`;
+ // every game analysed in this run gets its .coach.json file: written into the folder when allowed, otherwise downloaded
+ const nf=await saveCoachFiles(done.filter(g=>!g.savedFile));
+ $('anaStatus').textContent=(STOP?'중지했습니다. 다시 누르면 남은 경기부터 이어서 분석합니다.':`분석·학습 완료 · ${GAMES.filter(g=>g.G).length}경기. 위쪽 ‘코칭 경기’에서 경기를 고르세요.`)+(done.length?` 코칭 파일 ${done.filter(g=>g.savedFile).length}개 저장${nf?` (다운로드 ${nf}개 — 영상 폴더로 옮겨 두세요)`:''}.`:'');
  if(!STOP&&!DEV.mobile&&!$('loaderBody').classList.contains('folded'))$('loaderFold').click();
  document.removeEventListener('visibilitychange',reWake);try{wake&&wake.release();}catch(e){}
  $('stopBtn').disabled=true;$('dirPick').disabled=$('filesPick').disabled=false;if($('dirRW'))$('dirRW').disabled=false;$('startBtn').disabled=!todoList().length;setProg(100);
@@ -2022,6 +2026,10 @@ async function persistGame(g){
  if(g.fid){await DB.put('analyses',g.fid,rec);DB.del('ckpt',g.fid);}
  if(g.dir){try{const fh=await g.dir.getFileHandle(g.key+'.coach.json',{create:true});const w=await fh.createWritable();await w.write(new Blob([JSON.stringify(rec)],{type:'application/json'}));await w.close();g.savedFile=true;}catch(e){console.warn('save',e);g.savedFile=false;}}
 }
+async function saveCoachFiles(list){let n=0;
+ for(const g of list){if(!g.G)continue;if(g.dir&&!g.savedFile){try{await persistGame(g);}catch(e){}}
+  if(!g.savedFile){downloadGame(g);g.savedFile=true;n++;g.status=`✅ ${g.G.shots.length}샷 · 파일 다운로드`;await new Promise(r=>setTimeout(r,450));}}
+ renderQueue();return n;}
 function downloadGame(g){if(!g.G)return;const rec={v:VERSION,key:g.key,name:g.name,duration:g.duration,innings:g.innings,cue1p:g.cue1p||0,players:g.players||null,G:g.G,date:(g.saved&&g.saved.date)||new Date().toISOString()};
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(rec)],{type:'application/json'}));a.download=g.key+'.coach.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
 function finishGame(g){

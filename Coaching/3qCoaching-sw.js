@@ -2,7 +2,7 @@
    Scope is limited to 3qCoaching.html so it never takes over other pages in the same folder
    (e.g. 3qGuide / 3qAutoscore and their own sw.js). Videos are opened as local files (blob:)
    and are never cached here. */
-const CACHE='3qcoaching-v1.16';
+const CACHE='3qcoaching-v1.17';
 const SHELL=['./3qCoaching.html','./3qCoaching.webmanifest','./coach-192.png','./coach-512.png','./coach-maskable-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith('3qcoaching-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
