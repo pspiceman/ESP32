@@ -154,8 +154,8 @@ body.mobile .swipe-hint{display:block;text-align:center;font-size:11px;color:var
 body.mobile .stage{touch-action:pan-y}
 /* ===== v2 layout: one flow container, ordered per device ===== */
 .flow{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:16px;align-items:start;
- grid-template-areas:"loader loader" "stage story" "stage list" "stats learn"}
-#stagePanel{grid-area:stage}#storyPanel{grid-area:story}#listPanel{grid-area:list}#loaderPanel{grid-area:loader}#statsPanel{grid-area:stats}#learnPanel{grid-area:learn}
+ grid-template-areas:"loader loader" "stage story" "stage list" "stats learn" "players players" "guide guide"}
+.stage-cell{grid-area:stage;min-width:0}#storyPanel{grid-area:story}#listPanel{grid-area:list}#loaderPanel{grid-area:loader}#statsPanel{grid-area:stats}#learnPanel{grid-area:learn}#playersPanel{grid-area:players}#guidePanel{grid-area:guide}
 #stagePanel{position:sticky;top:10px}
 .gamebar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .gamebar select{min-width:180px;max-width:100%}
@@ -178,7 +178,7 @@ body.mobile .stage{touch-action:pan-y}
 .tg.virt.on{color:#ff9f9f}
 @media(max-width:1200px){.flow{grid-template-columns:minmax(0,1fr) 360px}}
 /* mobile: title -> video -> controls -> coaching -> list -> loader -> stats */
-body.mobile .flow{grid-template-columns:minmax(0,1fr);gap:10px;grid-template-areas:"stage" "story" "list" "loader" "stats" "learn"}
+body.mobile .flow{grid-template-columns:minmax(0,1fr);gap:10px;grid-template-areas:"stage" "story" "list" "loader" "stats" "players" "learn" "guide"}
 body.mobile #stagePanel{position:static}
 body.mobile .gamebar{padding:6px 8px}
 body.mobile .gamebar select{flex:1;min-width:0}
@@ -215,16 +215,51 @@ body.mobile .queue{font-size:12px}
 body.mobile .pl button{min-height:42px;font-size:13.5px}
 .btns.b4 select{min-height:44px;height:100%}
 body.mobile .btns.b4 select{min-height:48px}
+
+/* v1.08 players / guide */
+.pl-in{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px}
+.pl-in h3,.pl-base h3,#plCard h3{font-size:14px;margin:6px 0 8px}
+.queue.pin input{background:#0b131c;border:1px solid var(--line);color:var(--text);border-radius:7px;padding:5px 7px;font:inherit;min-width:0}
+.queue.pin input.hc{width:56px}.queue.pin th.p1{color:#cfe3ff}.queue.pin th.p2{color:#ffe1a8}
+.pl-body{padding:12px 16px 16px}
+.pl-name{font-size:20px;font-weight:800}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:12px 0 14px}
+.kpi{background:#0e1722;border:1px solid var(--line);border-radius:11px;padding:9px 11px;display:flex;flex-direction:column;gap:2px}
+.kpi span{font-size:11.5px;color:var(--muted)}.kpi b{font-size:20px}.kpi i{font-style:normal;font-size:11.5px;color:var(--muted)}.kpi small{font-size:12px;color:var(--muted)}
+.ptypes .bar{display:inline-block;width:90px;height:8px;background:#ffffff1c;border-radius:4px;vertical-align:middle;margin-right:6px;overflow:hidden}.ptypes .bar i{display:block;height:100%;background:var(--mint)}
+.pl-base{background:#0e1722;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px;display:flex;flex-direction:column;gap:10px}
+.base-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.base-grid label,.gd-body label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.pl-base input,.gd-body textarea,#plBaseTypes input{background:#0b131c;border:1px solid var(--line);color:var(--text);border-radius:7px;padding:6px 8px;font:inherit}
+#plBaseTypes input{width:70px}
+#plSel{min-height:32px;max-width:220px}
+.pill.tech{background:#16283b;color:#bfe6ff;border-color:#2c4a68}
+.gd-body{padding:12px 16px 16px;display:flex;flex-direction:column;gap:10px}
+.gd-top{display:flex;gap:14px;align-items:flex-start}.gd-top .hint p{margin:0 0 6px}
+.gd-map{width:86px;flex:none;color:var(--muted);font:700 14px system-ui;fill:var(--text)}
+.gd-wrap{max-height:420px}
+.queue.gd input{background:transparent;border:1px solid transparent;color:var(--text);border-radius:6px;padding:4px 6px;font:inherit;width:100%;min-width:40px}
+.queue.gd input:focus{border-color:var(--line);background:#0b131c;outline:none}
+.queue.gd .gd-pri,.queue.gd .gd-no{width:44px}.queue.gd .gd-side{width:62px}.queue.gd .gd-seq{width:120px}.queue.gd .gd-name{min-width:170px}.queue.gd .gd-cond{min-width:240px}
+body.mobile .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+body.mobile .base-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.mobile .gd-top{flex-direction:column}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.pl-base[hidden]{display:none}
+.queue.pin td,.queue.pin th{padding:5px 7px}.queue.pin input{width:100%;min-width:70px}.queue.pin input.hc{width:58px;min-width:50px}.queue.pin input.code{min-width:70px}
+.queue.pin tr.p1row td{border-bottom:0}.queue.pin tr.p1row th{border-bottom:0}.queue.pin .gname{vertical-align:middle;max-width:110px;overflow:hidden;text-overflow:ellipsis}
+.queue.pin th.p1,.queue.pin th.p2{background:transparent;position:static;font-size:12px}
+body.mobile .queue.pin .gname{max-width:80px;font-size:11.5px}
 </style></head><body>
 <div class="wrap">
 <header id="top">
- <div class="brand"><div class="mark">3C</div><div><div class="eyebrow">VIDEO COACHING · SELF-LEARNING</div><h1>3쿠션 영상 코칭 <span class="ver" id="ver">v1.05</span></h1></div></div>
+ <div class="brand"><div class="mark">3C</div><div><div class="eyebrow">VIDEO COACHING · SELF-LEARNING</div><h1>3쿠션 영상 코칭 <span class="ver" id="ver">v1.08</span></h1></div></div>
  <div class="row"><span class="pill" id="devPill">PC</span><span class="pill" id="learnPill">학습 0경기 · 0샷</span><button id="helpBtn" class="ghost sm">사용 안내</button></div>
 </header>
 
 <main class="flow">
  <!-- ① video + analysis controls -->
- <section class="panel" id="stagePanel">
+ <div class="stage-cell"><section class="panel" id="stagePanel">
   <div class="gamebar"><span class="hint">코칭 경기</span><select id="gameSel" disabled><option>경기를 불러오세요</option></select><span class="hint" id="gameInfo"></span></div>
   <div class="stage" id="stage">
    <video id="video" playsinline preload="metadata" muted></video>
@@ -247,11 +282,11 @@ body.mobile .btns.b4 select{min-height:48px}
    </div>
    <p class="swipe-hint">화면을 탭하면 샷 시작으로 · 좌우로 밀면 이전·다음 샷</p>
   </div>
- </section>
+ </section></div>
 
  <!-- ② coaching text -->
  <section class="panel" id="storyPanel">
-  <div class="panel-head"><div class="shot-head"><h2 id="shotTitle">샷을 선택하세요</h2><span id="shotBadge" class="badge gray">—</span></div><span class="pill" id="shotTime">—</span></div>
+  <div class="panel-head"><div class="shot-head"><h2 id="shotTitle">샷을 선택하세요</h2><span id="shotBadge" class="badge gray">—</span></div><div class="row" style="gap:6px"><span class="pill tech" id="shotTech" hidden></span><span class="pill" id="shotTime">—</span></div></div>
   <div class="story" id="story"><p class="hint">분석이 끝나면 샷마다 “어떻게 쳤고, 어떻게 쳤어야 했는지”를 설명합니다.</p></div>
   <div class="tips">
    <div class="tipbox"><canvas id="tipA" width="220" height="220"></canvas><b>실제(추정)</b><span id="tipAt">—</span></div>
@@ -266,7 +301,6 @@ body.mobile .btns.b4 select{min-height:48px}
   <div class="panel-head"><h2>샷 목록</h2><button id="listToggle" class="sm" aria-expanded="false">이닝별 목록 보기 ▼</button>
    <div class="filters">
     <div class="seg" id="whoSeg"><button data-who="0">1P</button><button data-who="1">2P</button><button data-who="all" class="on">둘 다</button></div>
-    <div class="seg" id="kindSeg"><button data-kind="miss" class="on">실패 샷</button><button data-kind="all">전체</button></div>
    </div>
   </div>
   <div class="list" id="list"><p class="hint">분석 후 이닝별로 샷이 나열됩니다.</p></div>
@@ -291,6 +325,11 @@ body.mobile .btns.b4 select{min-height:48px}
    <div class="progress"><div id="prog"></div></div>
    <p class="hint" id="anaStatus">폴더나 파일을 새로 고르면 목록이 새로 만들어집니다. 영상과 같은 이름의 이닝표를 짝짓고 바로 숫자로 읽습니다. 분석이 끝난 경기는 저장되어, 다음에 같은 영상을 고르면 다시 분석하지 않습니다.</p>
    <div class="queue-wrap"><table class="queue" id="queue"></table></div>
+   <div class="pl-in">
+    <div class="row" style="justify-content:space-between"><h3>👤 선수 정보 <span class="hint" style="font-weight:500">· 분석 전에 입력하면 선수 기록이 쌓입니다 (닉네임 또는 회원코드)</span></h3>
+     <div class="row"><button id="plCopy" class="sm" title="첫 경기의 1P·2P를 모든 경기에 넣기">첫 경기 선수 모두 적용</button><button id="plSwap" class="sm ghost" title="모든 경기의 1P·2P 바꾸기">1P⇄2P</button></div></div>
+    <div id="plIn"></div>
+   </div>
    <div class="inn-box" id="innBox" hidden>
     <div class="row" style="justify-content:space-between"><h3 id="innTitle">이닝표</h3><div class="row"><button id="innToggle" class="sm">이닝표 보기 ▼</button><button id="innAdd" class="sm">+ 이닝</button><button id="innDel" class="sm">− 이닝</button><button id="innImgBtn" class="sm">원본 보기</button></div></div>
     <p class="hint" id="innStatus"></p>
@@ -301,6 +340,38 @@ body.mobile .btns.b4 select{min-height:48px}
 
  <!-- ⑤ stats / ⑥ learning -->
  <section class="panel" id="statsPanel"><div class="panel-head"><h2>선수별 요약</h2><span class="hint">이닝표 기준 득점 · 영상 분석 기준 샷 종류</span></div><div class="stats" id="stats"><p class="hint">분석 후 표시됩니다.</p></div></section>
+ <section class="panel" id="playersPanel">
+  <div class="panel-head"><h2>선수 기록 <span class="hint" style="font-weight:500">· 핸디 · 에버리지 · 승률 · 하이런 · 샷 기술별 성공률</span></h2>
+   <div class="row"><select id="plSel" aria-label="선수"></select><button id="plNew" class="sm">+ 선수</button><button id="plBase" class="sm">초기값</button><button id="plReport" class="sm" title="선수에게 줄 기록 페이지(HTML) 저장">📄 리포트</button>
+    <button id="plExport" class="sm" title="모든 선수 기록 백업">내보내기</button><div class="file"><label class="sm">가져오기<input id="plImport" type="file" accept=".json,application/json"></label></div><button id="plDel" class="sm ghost">삭제</button></div></div>
+  <div class="pl-body">
+   <form class="pl-base" id="plBaseBox" hidden onsubmit="return false">
+    <h3>선수 정보 · 초기값 <span class="hint" style="font-weight:500">· 앱 밖의 기존 기록(대회·클럽 기록 등)을 넣으면 분석 경기와 합쳐 계산합니다</span></h3>
+    <div class="base-grid">
+     <label>닉네임<input name="nick"></label><label>회원코드<input name="code"></label><label>핸디<input name="hc" type="number" min="0" inputmode="numeric"></label>
+     <label>경기 수<input name="games" type="number" min="0"></label><label>승<input name="wins" type="number" min="0"></label><label>패<input name="losses" type="number" min="0"></label>
+     <label>이닝<input name="inn" type="number" min="0"></label><label>득점<input name="pts" type="number" min="0"></label><label>하이런<input name="hr" type="number" min="0"></label>
+    </div>
+    <details><summary>샷 기술별 초기값 (선택)</summary><table class="cmp" id="plBaseTypes"></table></details>
+    <div class="row"><button id="plBaseSave" class="primary sm">저장</button><button id="plBaseCancel" class="sm ghost">닫기</button></div>
+   </form>
+   <div id="plCard"></div>
+  </div>
+ </section>
+ <section class="panel" id="guidePanel">
+  <div class="panel-head"><h2>샷 기술 가이드 <span class="hint" style="font-weight:500">· 샷 기술 분류 기준표 (수정·추가 가능)</span></h2>
+   <div class="row"><button id="gdAdd" class="sm">+ 행</button><button id="gdExport" class="sm">CSV 내보내기</button><div class="file"><label class="sm">CSV 가져오기<input id="gdImport" type="file" accept=".csv,text/csv"></label></div><button id="gdReset" class="sm ghost">기본값</button><button id="gdFold" class="sm ghost">펼치기 ▼</button></div></div>
+  <div class="gd-body" id="gdBody" hidden>
+   <div class="gd-top">
+    <svg class="gd-map" viewBox="0 0 120 190" aria-label="쿠션 번호"><rect x="22" y="18" width="76" height="152" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="60" cy="52" r="6" fill="#e54848"/><circle cx="50" cy="146" r="6" fill="#fff" stroke="#333"/><circle cx="70" cy="146" r="6" fill="#f2cf2b" stroke="#333"/>
+     <text x="60" y="12" text-anchor="middle">2</text><text x="10" y="98" text-anchor="middle">1</text><text x="110" y="98" text-anchor="middle">3</text><text x="60" y="186" text-anchor="middle">4</text></svg>
+    <div class="hint"><p><b>쿠션 번호</b>는 빨간공 쪽 단쿠션을 2로 둔 세로 배치 기준입니다(1 왼쪽 장쿠션 · 3 오른쪽 장쿠션 · 4 반대쪽 단쿠션). 경기 첫 샷의 빨간공 위치로 자동으로 맞춥니다.</p>
+     <p><b>쿠션 순서</b> 칸: 숫자(예 123)는 제1목적구를 맞힌 뒤 처음 쿠션 순서, “선쿠션”이 들어가면 뱅크샷(선쿠션 개수 순서대로 원·투·쓰리), “4개 이상”은 대회전, “연속”은 같은 쿠션 연속입니다. <b>공 맞은 쪽</b>은 왼쪽·오른쪽·무관. 우선순위 숫자가 작은 행부터 판정합니다.</p></div>
+   </div>
+   <div class="queue-wrap gd-wrap"><table class="queue gd" id="gdTable"></table></div>
+   <label class="hint">메모 (판단 기준 설명)<textarea id="gdNotes" rows="3"></textarea></label>
+  </div>
+ </section>
  <section class="panel" id="learnPanel"><div class="panel-head"><h2>누적 학습</h2><div class="row"><button id="expBtn" class="sm">내보내기</button><div class="file"><label class="sm">불러오기<input id="impFile" type="file" accept=".json,application/json"></label></div><button id="resetLearn" class="sm ghost">초기화</button></div></div>
   <div class="learn" id="learn"></div></section>
 </main>
@@ -1483,7 +1554,7 @@ const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const BALL_COL=['#f4f7ef','#f8cc35','#ef4f57'],BALL_KO=['흰 공','노란공','빨간공'],BALL_CLS=['w','y','r'];
 const COL={rec:'#6ff0c2',act:'#ffd166',fix:'#ff9ad5'};
-const VERSION='v1.05';
+const VERSION='v1.08';
 const LKEY='c3c-learn-v1';
 /* device profile: picked automatically, re-evaluated on resize/rotation */
 const DEV={mobile:false,dpr:2,simDt:.005,scanScale:1,steps:70};
@@ -1594,7 +1665,7 @@ async function addFilesNow(list){
  let restored=0;
  for(const f of jsons){try{const r=JSON.parse(await f.text());const g=GAMES.find(x=>x.key===keyOf(f)&&x.video);if(g&&r&&r.G&&!g.G){g.G=r.G;g.saved=r;restored++;}}catch(e){}}
  for(const g of GAMES){if(g.video&&!g.G){const r=await DB.get('analyses',g.fid);if(r&&r.G){g.G=r.G;g.saved=r;restored++;}else{const c=await DB.get('ckpt',g.fid);if(c&&c.det&&c.det.length)g.ckpt=Math.round(c.lastT);}}}
- for(const g of GAMES)if(g.G){g.status=`✅ ${g.G.shots.length}샷 (저장됨)`;if(g.saved&&!g.png&&g.saved.innings)g.innings=g.saved.innings;if(g.saved)g.cue1p=g.saved.cue1p||0;addGameToLearn(g.G);}else if(g.ckpt)g.status=`⏸ ${fmt(g.ckpt)}까지 스캔됨 · 이어서 가능`;
+ for(const g of GAMES)if(g.G){g.status=`✅ ${g.G.shots.length}샷 (저장됨)`;if(g.saved&&!g.png&&g.saved.innings)g.innings=g.saved.innings;if(g.saved)g.cue1p=g.saved.cue1p||0;if(g.saved&&g.saved.players&&!g.players)g.players=g.saved.players;else if(g.G.players&&!g.players)g.players=g.G.players;addGameToLearn(g.G);if(g.players)registerGame(g);}else if(g.ckpt)g.status=`⏸ ${fmt(g.ckpt)}까지 스캔됨 · 이어서 가능`;
  // names did not match (typical when a phone gallery renames files): pair the leftovers in selection order
  const loneV=newV.filter(g=>!g.png),loneI=newI.filter(g=>!g.video);
  if(loneV.length&&loneV.length===loneI.length){
@@ -1854,11 +1925,11 @@ function resampleDet(det,toM){
  return {frames:out,fps};
 }
 async function persistGame(g){
- const rec={v:VERSION,key:g.key,name:g.name,duration:g.duration,innings:g.innings,cue1p:g.cue1p||0,G:g.G,date:new Date().toISOString()};
+ const rec={v:VERSION,key:g.key,name:g.name,duration:g.duration,innings:g.innings,cue1p:g.cue1p||0,players:g.players||null,G:g.G,date:(g.saved&&g.saved.date)||new Date().toISOString()};
  if(g.fid){await DB.put('analyses',g.fid,rec);DB.del('ckpt',g.fid);}
  if(g.dir){try{const fh=await g.dir.getFileHandle(g.key+'.coach.json',{create:true});const w=await fh.createWritable();await w.write(new Blob([JSON.stringify(rec)],{type:'application/json'}));await w.close();g.savedFile=true;}catch(e){console.warn('save',e);g.savedFile=false;}}
 }
-function downloadGame(g){if(!g.G)return;const rec={v:VERSION,key:g.key,name:g.name,duration:g.duration,innings:g.innings,cue1p:g.cue1p||0,G:g.G,date:new Date().toISOString()};
+function downloadGame(g){if(!g.G)return;const rec={v:VERSION,key:g.key,name:g.name,duration:g.duration,innings:g.innings,cue1p:g.cue1p||0,players:g.players||null,G:g.G,date:(g.saved&&g.saved.date)||new Date().toISOString()};
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(rec)],{type:'application/json'}));a.download=g.key+'.coach.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
 function finishGame(g){
  // label with this game's innings, then store in the learning library
@@ -1881,7 +1952,7 @@ function fitTableInWorker(shots){
 }
 
 /* ================= shot list / filters ================= */
-function visible(a){if(S.who!=='all'&&(a.cue===S.cue1p?'0':'1')!==S.who)return false;if(S.kind==='miss'&&a.score)return false;return true;}
+function visible(a){if(S.who!=='all'&&(a.cue===S.cue1p?'0':'1')!==S.who)return false;if(a.score)return false;return true;}
 let LIST_OPEN=false;
 $('listToggle').onclick=()=>{LIST_OPEN=!LIST_OPEN;buildList();};
 function buildList(){
@@ -1890,7 +1961,7 @@ function buildList(){
  const cur=S.cur>=0?G.shots[S.cur]:null,pos=S.list.indexOf(S.cur);
  $('listToggle').textContent=LIST_OPEN?'이닝별 목록 접기 ▲':'이닝별 목록 보기 ▼';$('listToggle').setAttribute('aria-expanded',String(LIST_OPEN));
  const sum=document.createElement('p');sum.className='hint list-sum';
- sum.innerHTML=`${S.list.length}개 샷${S.kind==='miss'?'(실패)':''} 중 <b>${pos>=0?pos+1:'—'}</b>번째${cur&&cur.text?` · ${cur.text.head}`:''} · ◀ 이전 / 다음 ▶ 으로 넘겨 보세요`;
+ sum.innerHTML=`${S.list.length}개 샷(실패) 중 <b>${pos>=0?pos+1:'—'}</b>번째${cur&&cur.text?` · ${cur.text.head}`:''} · ◀ 이전 / 다음 ▶ 으로 넘겨 보세요`;
  box.append(sum);if(!LIST_OPEN)return;const byInn=new Map();
  G.shots.forEach((a,i)=>{const k=a.label?a.label.inn:0;if(!byInn.has(k))byInn.set(k,[]);byInn.get(k).push(i);});
  for(const [inn,ids] of byInn){const row=document.createElement('div');row.className='inn-row';row.innerHTML=`<span class="lab">${inn?inn+'이닝':'기타'}</span>`;
@@ -1899,7 +1970,6 @@ function buildList(){
   box.append(row);}
 }
 document.querySelectorAll('#whoSeg button').forEach(b=>b.onclick=()=>{S.who=b.dataset.who;document.querySelectorAll('#whoSeg button').forEach(x=>x.classList.toggle('on',x===b));buildList();if(S.list.length&&!S.list.includes(S.cur))selectShot(S.list[0]);});
-document.querySelectorAll('#kindSeg button').forEach(b=>b.onclick=()=>{S.kind=b.dataset.kind;document.querySelectorAll('#kindSeg button').forEach(x=>x.classList.toggle('on',x===b));buildList();if(S.list.length&&!S.list.includes(S.cur))selectShot(S.list[0]);});
 $('prevBtn').onclick=()=>{const k=S.list.indexOf(S.cur);const i=k>0?S.list[k-1]:S.list.filter(x=>x<S.cur).pop();if(i!=null)selectShot(i);};
 $('nextBtn').onclick=()=>{const k=S.list.indexOf(S.cur);const i=k>=0&&k<S.list.length-1?S.list[k+1]:S.list.find(x=>x>S.cur);if(i!=null)selectShot(i);};
 
@@ -2046,6 +2116,40 @@ function drawCue(p,ang,gap,alpha=1){
  seg(.97,1,'#111','#2a2a2a');               // bumper
  octx.restore();
 }
+// pre-shot guide: a large cue ball with the tip point + power and thickness, placed beside the cue ball
+const GUIDE_COL={rec:'#6ff0c2',fix:'#ff9ad5',act:'#ffd166'},GUIDE_KO={rec:'추천',fix:'교정',act:'실제'};
+function drawGuide(a,g){
+ const al=g.alpha();if(al<=0)return;
+ const k=Math.max(.75,Math.min(1.6,ov.height/(560*DEV.dpr)))*DEV.dpr,R=34*k,pad=10*k,fs=Math.round(14*k),fsB=Math.round(15*k),tw=128*k,cw=pad*3+R*2+tw,ch=Math.max(R*2+pad*2,fsB+fs*4.5+pad*2);
+ const c=toScr(a.pre[a.cue][0],a.pre[a.cue][1]),dx=Math.cos(g.ang),dy=Math.sin(g.ang),W=ov.width,H=ov.height,d=ballR()*3+Math.max(cw,ch)*.62;
+ // pick the side that keeps the card on screen and off the stick / first path
+ const others=[0,1,2].filter(b=>b!==a.cue).map(b=>toScr(a.pre[b][0],a.pre[b][1])),br=ballR()*2.2;
+ let best=null;for(const dd of [d,d*1.35])for(let i=0;i<16;i++){const t=i/16*Math.PI*2,ux=Math.cos(t),uy=Math.sin(t);
+  const x=clamp(c.x+ux*dd-cw/2,4,W-cw-4),y=clamp(c.y+uy*dd-ch/2,4,H-ch-4),cx=x+cw/2,cy=y+ch/2,vx=(cx-c.x)/(Math.hypot(cx-c.x,cy-c.y)||1),vy=(cy-c.y)/(Math.hypot(cx-c.x,cy-c.y)||1);
+  let sc=Math.max(0,-(vx*dx+vy*dy))*cw*.9+Math.max(0,vx*dx+vy*dy)*cw*.35+(dd>d?cw*.15:0);
+  if(c.x>x-br&&c.x<x+cw+br&&c.y>y-br&&c.y<y+ch+br)sc+=cw*5;
+  for(const o of others)if(o.x>x-br&&o.x<x+cw+br&&o.y>y-br&&o.y<y+ch+br)sc+=cw*3;
+  if(!best||sc<best.sc)best={sc,x,y};}
+ const x=best.x,y=best.y,col=GUIDE_COL[g.kind];
+ octx.save();octx.globalAlpha=al;
+ rrect(octx,x,y,cw,ch,12*k);octx.fillStyle='rgba(10,16,24,.82)';octx.fill();octx.strokeStyle=col;octx.lineWidth=1.5*k;octx.stroke();
+ // big ball
+ const bx=x+pad+R,by=y+ch/2,gr=octx.createRadialGradient(bx-R*.35,by-R*.4,R*.1,bx,by,R);gr.addColorStop(0,'#fff');gr.addColorStop(.55,'#e8ece6');gr.addColorStop(1,'#a7b2ac');
+ octx.beginPath();octx.arc(bx,by,R,0,7);octx.fillStyle=gr;octx.fill();
+ octx.strokeStyle='rgba(60,75,70,.55)';octx.lineWidth=1*k;octx.beginPath();octx.moveTo(bx-R,by);octx.lineTo(bx+R,by);octx.moveTo(bx,by-R);octx.lineTo(bx,by+R);octx.stroke();
+ octx.beginPath();octx.arc(bx,by,R*.5,0,7);octx.stroke();
+ const tx=bx+clamp(g.shot.tipX,-.55,.55)*R,ty=by-clamp(g.shot.tipY,-.55,.55)*R;
+ octx.beginPath();octx.arc(tx,ty,R*.2,0,7);octx.fillStyle=col;octx.fill();octx.strokeStyle='#0b0f14';octx.lineWidth=2*k;octx.stroke();
+ // text
+ const pw=PL.powerOf(g.shot.speed),lx=x+pad*2+R*2;let ly=y+pad+fsB;
+ octx.textAlign='left';octx.textBaseline='alphabetic';octx.fillStyle=col;octx.font=`800 ${fsB}px system-ui`;octx.fillText(GUIDE_KO[g.kind]+' 샷',lx,ly);
+ octx.fillStyle='#e9eef5';octx.font=`600 ${fs}px system-ui`;ly+=fs*1.4;octx.fillText('당점 '+PL.tipKo(g.shot),lx,ly);
+ ly+=fs*1.4;octx.fillText('세기',lx,ly);const mx=lx+fs*2.3,bw=fs*.62,bh=fs*.8;
+ for(let i=0;i<5;i++){octx.fillStyle=i<pw.n?col:'rgba(255,255,255,.18)';octx.fillRect(mx+i*(bw+2*k),ly-bh,bw,bh);}
+ octx.fillStyle='#e9eef5';octx.fillText(pw.n<=2?'약':pw.n>=4?'강':'중',mx+5*(bw+2*k)+4*k,ly);
+ if(g.cut!=null){ly+=fs*1.4;octx.fillText('두께 '+PL.frac8(g.cut),lx,ly);}
+ octx.restore();
+}
 function cueAngle(a,kind){
  if(kind==='rec'&&a.rec&&a.rec[0])return a.rec[0].shot.angle;
  if(kind==='fix'&&a.fix)return a.fix.shot.angle;
@@ -2071,7 +2175,7 @@ function drawOverlay(){
   if(!running){const o=[0,1,2].filter(b=>b!==a.cue);for(const b of o)poly(actPts(a,b),BALL_COL[b],LW(.8),[2,4],.55);}}
  if(a._libShow&&a._lib){const lr=simOf(a,'lib');if(lr)poly(cuePts(a,lr),'#9db8ff',LW(1.3),[2,4],.9);}
  // balls
- if((simming||S.mode==='simEnd')&&S.anim){const p=S.anim.pos();p.forEach((q,i)=>q&&ballAt(toScr(q[0],q[1]),i,r));const cs=S.anim.cue&&S.anim.cue();if(cs)drawCue(a.pre[a.cue],cs.ang,cs.gap,cs.alpha);}
+ if((simming||S.mode==='simEnd')&&S.anim){const p=S.anim.pos();p.forEach((q,i)=>q&&ballAt(toScr(q[0],q[1]),i,r));const cs=S.anim.cue&&S.anim.cue();if(cs)drawCue(a.pre[a.cue],cs.ang,cs.gap,cs.alpha);if(S.guide)drawGuide(a,S.guide);}
  else if(!running&&tV){for(let b=0;b<3;b++)ballAt(toScr(a.pre[b][0],a.pre[b][1]),b,r);
   // resting cue lined up with the shot being shown (recommended if displayed, otherwise the actual one)
   drawCue(a.pre[a.cue],cueAngle(a,tR&&rec?'rec':'act'),.05,.95);}
@@ -2079,7 +2183,7 @@ function drawOverlay(){
 ['tRec','tAct','tFix'].forEach(id=>$(id).onchange=e=>{e.target.closest('.pl').classList.toggle('on',e.target.checked);drawOverlay();});
 
 /* ================= modes: freeze / run / virtual sim ================= */
-function stopAll(){video.pause();cancelAnimationFrame(S.raf);S.anim=null;S.mode='freeze';}
+function stopAll(){video.pause();cancelAnimationFrame(S.raf);S.anim=null;S.guide=null;S.mode='freeze';}
 function selectShot(i){S.cur=i;showShot(i);buildList();freeze();}
 function freeze(){
  const a=S.G.shots[S.cur];stopAll();S.mode='freeze';$('tagMode').hidden=false;$('tagMode').textContent='⏮ 샷 시작';
@@ -2101,12 +2205,14 @@ function simulateVirtual(kind){
    pos=t=>{let k=0;while(k<F.length-1&&F[k+1].t<=t)k++;const f=F[k],g=F[Math.min(F.length-1,k+1)],u=g.t>f.t?clamp((t-f.t)/(g.t-f.t),0,1):0;return f.p.map((q,i)=>[q.x+(g.p[i].x-q.x)*u,q.y+(g.p[i].y-q.y)*u]);};}
   S.mode='sim';$('tagMode').textContent={act:'애니 · 실제 친 대로',rec:'애니 · 추천대로',fix:'애니 · 교정대로'}[kind];
   // cue stroke first: settle, back-swing, accelerate through the ball, follow-through fading out
-  const ang=cueAngle(a,kind),ST=.75,t0=performance.now(),rate=+$('rate').value,el=()=>(performance.now()-t0)/1000*rate;
-  S.anim={pos:()=>pos(clamp(el()-ST,0,dur)),cue:()=>{const e=el();if(e<.25)return {ang,gap:.05,alpha:1};
+  const ang=cueAngle(a,kind),PRE=1.6,STK=.75,ST=STK+PRE,t0=performance.now(),rate=+$('rate').value,el0=()=>(performance.now()-t0)/1000*rate,el=()=>Math.max(0,el0()-PRE);
+  const gShot=kind==='rec'?a.rec[0].shot:kind==='fix'?a.fix.shot:a.fit&&a.fit.shot,gCut=kind==='rec'?a.rec[0].cut:kind==='fix'?a.fix.cut:(a.obs.cut??(a.fit&&a.fit.cut));
+  S.guide=gShot?{kind,shot:gShot,cut:gCut,ang,alpha:()=>{const e=el0();return e<.25?e/.25:e<ST+.5?1:Math.max(0,1-(e-ST-.5)/.4);}}:null;
+  S.anim={pos:()=>pos(clamp(el0()-ST,0,dur)),cue:()=>{const e=el();if(e<.25)return {ang,gap:.05,alpha:1};
    if(e<.6){const u=(e-.25)/.35;return {ang,gap:.05+.17*Math.sin(u*Math.PI/2),alpha:1};}
-   if(e<ST){const u=(e-.6)/(ST-.6);return {ang,gap:.22-.22*u*u,alpha:1};}
-   const f=e-ST;if(f<.45)return {ang,gap:-.06*Math.min(1,f/.12),alpha:1-f/.45};return null;}};
-  const tick=()=>{drawOverlay();if(el()<dur+ST+.3)S.raf=requestAnimationFrame(tick);else{S.mode='simEnd';drawOverlay();}};tick();
+   if(e<STK){const u=(e-.6)/(STK-.6);return {ang,gap:.22-.22*u*u,alpha:1};}
+   const f=e-STK;if(f<.45)return {ang,gap:-.06*Math.min(1,f/.12),alpha:1-f/.45};return null;}};
+  const tick=()=>{drawOverlay();if(el0()<dur+ST+.3)S.raf=requestAnimationFrame(tick);else{S.mode='simEnd';drawOverlay();}};tick();
  };
  const t=Math.max(0,a.t0-.35);if(Math.abs(video.currentTime-t)<.02)after();else{video.currentTime=t;video.onseeked=()=>{video.onseeked=null;after();};}
 }
@@ -2181,6 +2287,211 @@ $('stage').addEventListener('click',e=>{if(!S.G||S.cur<0||e.target.closest('butt
  matchMedia('(pointer:coarse)').addEventListener?.('change',detectDevice);
 })();
 window.C3C={S,P,L,PL,get LEARN(){return LEARN;},GAMES,addFiles,selectGame};
+
+/* ================= 선수 정보 · 개인 기록 · 샷 기술 가이드 ================= */
+const GUIDE_DEFAULT={"hdr": ["우선순위", "샷타입 번호", "대분류", "세부구질명", "멘트용어", "공 맞은 쪽", "쿠션 순서", "분류 조건"], "rows": [["1", "1", "뱅크샷", "원뱅크", "뱅크샷", "무관", "(자동: 선쿠션 수)", "첫 목적구보다 먼저 쿠션 1개 (이후 3쿠션 득점)"], ["1", "1", "뱅크샷", "투뱅크", "뱅크샷", "무관", "(자동: 선쿠션 수)", "첫 목적구보다 먼저 쿠션 2개"], ["1", "1", "뱅크샷", "쓰리뱅크", "뱅크샷", "무관", "(자동: 선쿠션 수)", "첫 목적구보다 먼저 쿠션 3개 이상"], ["2", "2", "뒤돌리기", "뒤돌리기 (우라)", "뒤돌리기", "왼쪽", "123", "첫 목적구 접촉 전 쿠션 순서가 123 와 일치"], ["2", "2", "뒤돌리기", "뒤돌리기 (우라)", "뒤돌리기", "왼쪽", "341", "첫 목적구 접촉 전 쿠션 순서가 341 와 일치"], ["2", "2", "뒤돌리기", "뒤돌리기 (우라)", "뒤돌리기", "오른쪽", "321", "첫 목적구 접촉 전 쿠션 순서가 321 와 일치"], ["2", "2", "뒤돌리기", "뒤돌리기 (우라)", "뒤돌리기", "오른쪽", "143", "첫 목적구 접촉 전 쿠션 순서가 143 와 일치"], ["2", "3", "옆돌리기", "옆돌리기 (제각돌리기/학구)", "옆돌리기", "왼쪽", "321", "첫 목적구 접촉 전 쿠션 순서가 321 와 일치"], ["2", "3", "옆돌리기", "옆돌리기 (제각돌리기/학구)", "옆돌리기", "왼쪽", "143", "첫 목적구 접촉 전 쿠션 순서가 143 와 일치"], ["2", "3", "옆돌리기", "옆돌리기 (제각돌리기/학구)", "옆돌리기", "오른쪽", "123", "첫 목적구 접촉 전 쿠션 순서가 123 와 일치"], ["2", "3", "옆돌리기", "옆돌리기 (제각돌리기/학구)", "옆돌리기", "오른쪽", "341", "첫 목적구 접촉 전 쿠션 순서가 341 와 일치"], ["2", "4", "앞돌리기", "앞돌리기 (마와시/세워치기 포함)", "앞돌리기", "왼쪽", "214", "첫 목적구 접촉 전 쿠션 순서가 214 와 일치"], ["2", "4", "앞돌리기", "앞돌리기 (마와시/세워치기 포함)", "앞돌리기", "왼쪽", "213", "첫 목적구 접촉 전 쿠션 순서가 213 와 일치"], ["2", "4", "앞돌리기", "앞돌리기 (마와시/세워치기 포함)", "앞돌리기", "왼쪽", "432", "첫 목적구 접촉 전 쿠션 순서가 432 와 일치"], ["2", "4", "앞돌리기", "앞돌리기 (마와시/세워치기 포함)", "앞돌리기", "왼쪽", "431", "첫 목적구 접촉 전 쿠션 순서가 431 와 일치"], ["2", "4", "앞돌리기", "앞돌리기 (마와시/세워치기 포함)", "앞돌리기", "오른쪽", "234", "첫 목적구 접촉 전 쿠션 순서가 234 와 일치"], ["2", "4", "앞돌리기", "앞돌리기 (마와시/세워치기 포함)", "앞돌리기", "오른쪽", "231", "첫 목적구 접촉 전 쿠션 순서가 231 와 일치"], ["2", "4", "앞돌리기", "앞돌리기 (마와시/세워치기 포함)", "앞돌리기", "오른쪽", "412", "첫 목적구 접촉 전 쿠션 순서가 412 와 일치"], ["2", "4", "앞돌리기", "앞돌리기 (마와시/세워치기 포함)", "앞돌리기", "오른쪽", "413", "첫 목적구 접촉 전 쿠션 순서가 413 와 일치"], ["2", "5", "빗겨치기", "단장 빗겨치기 (짱꼴라)", "빗겨치기", "왼쪽", "234", "첫 목적구 접촉 전 쿠션 순서가 234 와 일치"], ["2", "5", "빗겨치기", "단장 빗겨치기 (짱꼴라)", "빗겨치기", "왼쪽", "231", "첫 목적구 접촉 전 쿠션 순서가 231 와 일치"], ["2", "5", "빗겨치기", "단장 빗겨치기 (짱꼴라)", "빗겨치기", "왼쪽", "412", "첫 목적구 접촉 전 쿠션 순서가 412 와 일치"], ["2", "5", "빗겨치기", "단장 빗겨치기 (짱꼴라)", "빗겨치기", "왼쪽", "413", "첫 목적구 접촉 전 쿠션 순서가 413 와 일치"], ["2", "5", "빗겨치기", "단장 빗겨치기 (짱꼴라)", "빗겨치기", "오른쪽", "214", "첫 목적구 접촉 전 쿠션 순서가 214 와 일치"], ["2", "5", "빗겨치기", "단장 빗겨치기 (짱꼴라)", "빗겨치기", "오른쪽", "213", "첫 목적구 접촉 전 쿠션 순서가 213 와 일치"], ["2", "5", "빗겨치기", "단장 빗겨치기 (짱꼴라)", "빗겨치기", "오른쪽", "432", "첫 목적구 접촉 전 쿠션 순서가 432 와 일치"], ["2", "5", "빗겨치기", "단장 빗겨치기 (짱꼴라)", "빗겨치기", "오른쪽", "431", "첫 목적구 접촉 전 쿠션 순서가 431 와 일치"], ["2", "7", "되돌리기", "단장 되돌리기 (리버스/제껴치기)", "되돌리기", "무관", "212", "첫 목적구 접촉 전 쿠션 순서가 212 와 일치"], ["2", "7", "되돌리기", "단장 되돌리기 (리버스/제껴치기)", "되돌리기", "무관", "232", "첫 목적구 접촉 전 쿠션 순서가 232 와 일치"], ["2", "7", "되돌리기", "단장 되돌리기 (리버스/제껴치기)", "되돌리기", "무관", "414", "첫 목적구 접촉 전 쿠션 순서가 414 와 일치"], ["2", "7", "되돌리기", "단장 되돌리기 (리버스/제껴치기)", "되돌리기", "무관", "434", "첫 목적구 접촉 전 쿠션 순서가 434 와 일치"], ["2", "7", "되돌리기", "장단 되돌리기 (바운딩/지끼)", "되돌리기", "무관", "121", "첫 목적구 접촉 전 쿠션 순서가 121 와 일치"], ["2", "7", "되돌리기", "장단 되돌리기 (바운딩/지끼)", "되돌리기", "무관", "141", "첫 목적구 접촉 전 쿠션 순서가 141 와 일치"], ["2", "7", "되돌리기", "장단 되돌리기 (바운딩/지끼)", "되돌리기", "무관", "323", "첫 목적구 접촉 전 쿠션 순서가 323 와 일치"], ["2", "7", "되돌리기", "장단 되돌리기 (바운딩/지끼)", "되돌리기", "무관", "343", "첫 목적구 접촉 전 쿠션 순서가 343 와 일치"], ["2", "8", "횡단샷", "단횡단 (단더블/레일)", "횡단", "무관", "131", "첫 목적구 접촉 전 쿠션 순서가 131 와 일치"], ["2", "8", "횡단샷", "단횡단 (단더블/레일)", "횡단", "무관", "313", "첫 목적구 접촉 전 쿠션 순서가 313 와 일치"], ["2", "8", "횡단샷", "단횡단 (단더블/레일)", "횡단", "무관", "132", "첫 목적구 접촉 전 쿠션 순서가 132 와 일치"], ["2", "8", "횡단샷", "단횡단 (단더블/레일)", "횡단", "무관", "312", "첫 목적구 접촉 전 쿠션 순서가 312 와 일치"], ["2", "8", "횡단샷", "단횡단 (단더블/레일)", "횡단", "무관", "134", "첫 목적구 접촉 전 쿠션 순서가 134 와 일치"], ["2", "8", "횡단샷", "단횡단 (단더블/레일)", "횡단", "무관", "314", "첫 목적구 접촉 전 쿠션 순서가 314 와 일치"], ["2", "8", "횡단샷", "장횡단 (장더블/레일)", "횡단", "무관", "242", "첫 목적구 접촉 전 쿠션 순서가 242 와 일치"], ["2", "8", "횡단샷", "장횡단 (장더블/레일)", "횡단", "무관", "424", "첫 목적구 접촉 전 쿠션 순서가 424 와 일치"], ["2", "8", "횡단샷", "장횡단 (장더블/레일)", "횡단", "무관", "241", "첫 목적구 접촉 전 쿠션 순서가 241 와 일치"], ["2", "8", "횡단샷", "장횡단 (장더블/레일)", "횡단", "무관", "421", "첫 목적구 접촉 전 쿠션 순서가 421 와 일치"], ["2", "8", "횡단샷", "장횡단 (장더블/레일)", "횡단", "무관", "243", "첫 목적구 접촉 전 쿠션 순서가 243 와 일치"], ["2", "8", "횡단샷", "장횡단 (장더블/레일)", "횡단", "무관", "423", "첫 목적구 접촉 전 쿠션 순서가 423 와 일치"], ["3", "6", "대회전", "길게 돌리기 (4~5쿠션 이상)", "대회전", "무관", "4개 이상(첫 목적구 접촉 후)", "제2 목적구 접촉 + 그 전 쿠션 4개 이상"], ["4", "9", "특수/기타", "찍어치기(맛세)/점프/끌어치기(히끼)", "", "무관", "연속 같은 쿠션(112, 221 등)", "같은 쿠션을 연속으로 맞힌 궤적 (찍어치기/점프/끌어치기 등은 영상만으로 구분 불가)"], ["5", "10", "미분류", "판정 불가 / 복합 궤적", "", "무관", "—", "위 어디에도 해당하지 않음 / 방향·접촉 정보 부족"]], "notes": ["※ 판단 우선 순위 : 뱅크샷(선쿠션) → 기본 3쿠션 궤적 → 대회전(4쿠션 이상) → 특수/기타 → 미분류 ", "※ 쿠션 번호: 1=왼쪽 장쿠션 2=빨간공쪽 단쿠션 3=오른쪽 장쿠션 4=반대쪽 단쿠션 (초구 배치에서 빨간공 위치로 자동 결정). 방향 불명이면 '추정' 표시, 부분 일치는 '추정'."]};
+const GUIDE_COLS=['pri','no','major','name','term','side','seq','cond'];
+const GUIDE_HDR=['우선순위','샷타입 번호','대분류','세부구질명','멘트용어','공 맞은 쪽','쿠션 순서','분류 조건'];
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){toast('저장 공간이 부족해요');return false;}}};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- shot technique guide (editable) ---------- */
+function guideDefaultRows(){return GUIDE_DEFAULT.rows.map(r=>Object.fromEntries(GUIDE_COLS.map((k,i)=>[k,r[i]||''])));}
+let GUIDE=LS.get('c3c-guide',null)||{rows:guideDefaultRows(),notes:GUIDE_DEFAULT.notes,ver:1};
+function saveGuide(){LS.set('c3c-guide',GUIDE);}
+function parseCSV(t){const out=[];let row=[],f='',q=false;t=t.replace(/^﻿/,'');
+ for(let i=0;i<t.length;i++){const c=t[i];if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++;}else q=false;}else f+=c;}
+  else if(c==='"')q=true;else if(c===','){row.push(f);f='';}else if(c==='\n'||c==='\r'){if(c==='\r'&&t[i+1]==='\n')i++;row.push(f);out.push(row);row=[];f='';}else f+=c;}
+ if(f!==''||row.length){row.push(f);out.push(row);}return out;}
+const csvCell=v=>/[",\n]/.test(v=String(v??''))?'"'+v.replace(/"/g,'""')+'"':v;
+function guideToCSV(){return '﻿'+[GUIDE_HDR,...GUIDE.rows.map(r=>GUIDE_COLS.map(k=>r[k]))].map(r=>r.map(csvCell).join(',')).join('\r\n')+'\r\n\r\n'+(GUIDE.notes||[]).map(csvCell).join('\r\n')+'\r\n';}
+function guideFromCSV(t){const rows=parseCSV(t);const data=rows.filter(r=>r[0]&&/^\d/.test(r[0].trim()));const notes=rows.filter(r=>r[0]&&r[0].trim().startsWith('※')).map(r=>r[0]);
+ if(!data.length)throw new Error('행이 없습니다');return {rows:data.map(r=>Object.fromEntries(GUIDE_COLS.map((k,i)=>[k,(r[i]||'').trim()]))),notes:notes.length?notes:GUIDE.notes,ver:1};}
+
+// cushion numbers of the guide: 1=left long, 2=red-ball-side short, 3=right long, 4=opposite short
+// (portrait view with the red ball's short rail on top). App numbers: 1 top long, 2 right short, 3 bottom long, 4 left short.
+function redSide(G){const s=G&&G.shots&&G.shots[0];if(!s||!s.pre||!s.pre[2])return 'R';return s.pre[2][0]>=1.42?'R':'L';}
+function toGuideNum(num,side){return side==='R'?num:({1:3,2:4,3:1,4:2})[num];}
+// rule kinds read from the free-text "쿠션 순서" column so edited rows keep working
+function ruleOf(r){const s=String(r.seq||'').trim();
+ if(/선쿠션/.test(s))return {k:'bank'};
+ if(/^\d{2,}$/.test(s))return {k:'seq',v:s};
+ const m=s.match(/(\d+)\s*개\s*이상/);if(m)return {k:'many',n:+m[1]};
+ if(/연속/.test(s))return {k:'repeat'};
+ return {k:'none'};}
+function guideClassify(a,G){
+ const ev=(a.obs&&a.obs.events||[]).filter(e=>e.type!=='okiss'),side=redSide(G);
+ const fb=ev.findIndex(e=>e.type==='ball');
+ const rows=GUIDE.rows.map((r,i)=>({...r,i,rule:ruleOf(r),pr:+r.pri||9})).sort((x,y)=>x.pr-y.pr||x.i-y.i);
+ const unk=rows.find(r=>r.rule.k==='none')||{name:'미분류',major:'미분류',term:''};
+ if(fb<0)return {...unk,est:true};
+ const pre=ev.slice(0,fb).filter(e=>e.type==='cushion').length;
+ const f1=ev[fb].target;let k2=ev.findIndex((e,i)=>i>fb&&e.type==='ball'&&e.target!==f1);if(k2<0)k2=ev.length;
+ const mid=ev.slice(fb+1,k2).filter(e=>e.type==='cushion').map(e=>toGuideNum(e.num||P.RAILNUM[e.rail],side));
+ const sd=a.obs.side==='L'?'왼쪽':a.obs.side==='R'?'오른쪽':null;
+ const okSide=r=>!r.side||r.side==='무관'||!sd||r.side===sd;
+ if(pre>0){const b=rows.filter(r=>r.rule.k==='bank');if(b.length)return {...b[Math.min(pre,b.length)-1],pre};}
+ const s=mid.join('');
+ for(const r of rows){const R=r.rule;
+  if(R.k==='seq'&&s.length>=R.v.length&&s.startsWith(R.v)&&okSide(r))return {...r,est:!sd&&r.side!=='무관'};
+  if(R.k==='many'&&mid.length>=R.n)return r;
+  if(R.k==='repeat'&&mid.some((n,i)=>i&&n===mid[i-1]))return r;}
+ // partial: fewer cushions seen than the pattern needs
+ if(s.length){const p=rows.find(r=>r.rule.k==='seq'&&r.rule.v.startsWith(s)&&okSide(r));if(p)return {...p,est:true};}
+ return {...unk,est:true};
+}
+const gName=c=>c.major||c.name||'미분류';
+
+/* ---------- players: per-game entry + accumulated records ---------- */
+let PLAYERS=LS.get('c3c-players',{players:{}});
+function savePlayers(){LS.set('c3c-players',PLAYERS);}
+const pidOf=p=>p&&(p.code&&p.code.trim()?'c:'+p.code.trim():p.nick&&p.nick.trim()?'n:'+p.nick.trim():null);
+function blankP(){return {nick:'',hc:'',code:''};}
+function gamePlayers(g){if(!g.players)g.players=[blankP(),blankP()];return g.players;}
+function emptyBase(){return {games:0,wins:0,losses:0,inn:0,pts:0,hr:0};}
+function upsertPlayer(p){const id=pidOf(p);if(!id)return null;const q=PLAYERS.players[id]||(PLAYERS.players[id]={id,nick:'',code:'',hc:'',base:emptyBase(),games:{}});
+ if(p.nick)q.nick=p.nick.trim();if(p.code)q.code=p.code.trim();if(p.hc!==''&&p.hc!=null)q.hc=+p.hc;return q;}
+
+// numbers of one analysed game for player w (0=1P, 1=2P)
+function gameRecord(g,w){
+ const G=g.G,inn=g.innings||[],cue=w===0?(g.cue1p||0):1-(g.cue1p||0),key=w?'b':'a',ok=r=>r[key]!=null&&r[key]!=='';
+ let pts,ni,hr;
+ if(inn.length){const v=inn.filter(ok).map(r=>+r[key]||0);pts=v.reduce((s,x)=>s+x,0);ni=v.length;hr=v.length?Math.max(...v):0;}
+ else{const sh=G.shots.filter(a=>a.cue===cue);pts=sh.filter(a=>a.score).length;let run=0;hr=0;ni=0;let prev=null;
+  for(const a of G.shots){if(a.cue!==cue){prev=null;continue;}if(prev===null)ni++;if(a.score){run++;hr=Math.max(hr,run);}else run=0;prev=a;if(!a.score)prev=null;}}
+ const types={};for(const a of G.shots){if(a.cue!==cue)continue;const c=guideClassify(a,G),k=gName(c);const t=types[k]||(types[k]={n:0,ok:0});t.n++;if(a.score)t.ok++;}
+ return {pts,inn:ni,hr,types,shots:G.shots.filter(a=>a.cue===cue).length};
+}
+function decide(g,r0,r1){
+ const [p0,p1]=gamePlayers(g),h0=+p0.hc||0,h1=+p1.hc||0;
+ if(h0&&h1){const a=r0.pts>=h0,b=r1.pts>=h1;if(a!==b)return a?0:1;const x=r0.pts/h0,y=r1.pts/h1;return x===y?-1:x>y?0:1;}
+ return r0.pts===r1.pts?-1:r0.pts>r1.pts?0:1;}
+// label a game's shots with its own innings (without disturbing the shown game), then store both players' records
+function registerGame(g){
+ if(!g||!g.G)return;const pl=gamePlayers(g);if(!pidOf(pl[0])&&!pidOf(pl[1]))return;
+ if(S.G!==g.G){const keepS=S.G,keepI=S.innings,keepC=S.cue1p;S.G=g.G;S.innings=g.innings||[];S.cue1p=g.cue1p||0;try{relabel(true);}finally{S.G=keepS;S.innings=keepI;S.cue1p=keepC;}}
+ const r=[gameRecord(g,0),gameRecord(g,1)],win=decide(g,r[0],r[1]);g.G.players=pl;
+ for(const w of [0,1]){const q=upsertPlayer(pl[w]);if(!q)continue;const o=pl[1-w];
+  q.games[g.key]={key:g.key,name:g.name,date:(g.saved&&g.saved.date)||new Date().toISOString(),hc:+pl[w].hc||null,opp:o.nick||o.code||'',oppHc:+o.hc||null,...r[w],oppPts:r[1-w].pts,res:win<0?'D':win===w?'W':'L'};}
+ // games re-entered under another player: drop stale copies
+ for(const q of Object.values(PLAYERS.players)){const g0=q.games[g.key];if(g0&&q.id!==pidOf(pl[0])&&q.id!==pidOf(pl[1]))delete q.games[g.key];}
+ savePlayers();renderPlayers();
+}
+function totals(q){const b={...emptyBase(),...q.base},gs=Object.values(q.games);
+ const t={games:b.games+gs.length,wins:b.wins+gs.filter(x=>x.res==='W').length,losses:b.losses+gs.filter(x=>x.res==='L').length,inn:b.inn+gs.reduce((s,x)=>s+x.inn,0),pts:b.pts+gs.reduce((s,x)=>s+x.pts,0),hr:Math.max(b.hr||0,...gs.map(x=>x.hr),0),types:{}};
+ for(const x of gs)for(const [k,v] of Object.entries(x.types||{})){const y=t.types[k]||(t.types[k]={n:0,ok:0});y.n+=v.n;y.ok+=v.ok;}
+ for(const [k,v] of Object.entries(b.types||{})){const y=t.types[k]||(t.types[k]={n:0,ok:0});y.n+=+v.n||0;y.ok+=+v.ok||0;}
+ t.avg=t.inn?t.pts/t.inn:null;t.wr=(t.wins+t.losses)?t.wins/(t.wins+t.losses):null;return t;}
+
+/* ---------- UI: player inputs in the loader ---------- */
+let PIN_SIG='';
+function renderPlayerInputs(force){
+ const list=shown(),box=$('plIn');if(!box)return;const sig=list.map(g=>g.key).join('|');if(!force&&sig===PIN_SIG)return;PIN_SIG=sig;
+ if(!list.length){box.innerHTML='<p class="hint">경기를 고르면 여기에서 경기마다 선수를 입력합니다.</p>';return;}
+ const dl='<datalist id="plNames">'+Object.values(PLAYERS.players).map(q=>`<option value="${esc(q.nick)}">${esc(q.code||'')}${q.hc?' · 핸디 '+q.hc:''}</option>`).join('')+'</datalist>';
+ box.innerHTML=dl+`<div class="queue-wrap"><table class="queue pin"><tr><th>경기</th><th></th><th>닉네임</th><th>핸디</th><th>회원코드</th></tr>`+
+ list.map(g=>{const p=gamePlayers(g);return [0,1].map(w=>`<tr data-g="${esc(g.key)}" class="${w?'p2row':'p1row'}">${w?'':`<td rowspan="2" class="gname">${esc(g.name)}</td>`}<th class="${w?'p2':'p1'}">${w?'2P':'1P'}</th><td><input data-w="${w}" data-f="nick" list="plNames" value="${esc(p[w].nick)}" placeholder="닉네임"></td><td><input data-w="${w}" data-f="hc" type="number" min="0" max="99" inputmode="numeric" value="${esc(p[w].hc)}" class="hc"></td><td><input data-w="${w}" data-f="code" value="${esc(p[w].code)}" placeholder="코드" class="code"></td></tr>`).join('');}).join('')+'</table></div>';
+ box.querySelectorAll('input').forEach(inp=>{inp.onchange=()=>{const g=GAMES.find(x=>x.key===inp.closest('tr').dataset.g);if(!g)return;const p=gamePlayers(g)[+inp.dataset.w];p[inp.dataset.f]=inp.value.trim();
+  if(inp.dataset.f==='nick'){const q=Object.values(PLAYERS.players).find(q=>q.nick===p.nick);if(q){if(!p.code){p.code=q.code||'';}if(p.hc===''&&q.hc!=='')p.hc=String(q.hc);renderPlayerInputs(true);}}
+  if(inp.dataset.f==='code'){const q=PLAYERS.players['c:'+p.code];if(q){if(!p.nick)p.nick=q.nick;if(p.hc==='')p.hc=String(q.hc??'');renderPlayerInputs(true);}}
+  playerInfoChanged(g);};});
+}
+async function playerInfoChanged(g){if(g.G){registerGame(g);try{await persistGame(g);}catch(e){}}if(S.game===g)renderStats();}
+$('plCopy').onclick=()=>{const list=shown();if(list.length<2)return;const p=gamePlayers(list[0]);for(const g of list.slice(1)){g.players=p.map(x=>({...x}));playerInfoChanged(g);}renderPlayerInputs(true);toast('첫 경기 선수 정보를 모든 경기에 넣었어요');};
+$('plSwap').onclick=()=>{for(const g of shown()){const p=gamePlayers(g);g.players=[p[1],p[0]];playerInfoChanged(g);}renderPlayerInputs(true);};
+
+/* ---------- UI: player records ---------- */
+let PSEL=null;
+function renderPlayers(){
+ const sel=$('plSel');if(!sel)return;const ps=Object.values(PLAYERS.players).sort((a,b)=>(a.nick||a.code).localeCompare(b.nick||b.code,'ko'));
+ if(PSEL&&!PLAYERS.players[PSEL])PSEL=null;if(!PSEL&&ps.length)PSEL=ps[0].id;
+ sel.innerHTML=ps.length?ps.map(q=>`<option value="${esc(q.id)}" ${q.id===PSEL?'selected':''}>${esc(q.nick||'(이름 없음)')}${q.code?' · '+esc(q.code):''}</option>`).join(''):'<option value="">등록된 선수 없음</option>';
+ const card=$('plCard');const q=PSEL&&PLAYERS.players[PSEL];
+ for(const id of ['plBase','plReport','plDel'])$(id).disabled=!q;
+ if(!q){card.innerHTML='<p class="hint">경기 불러오기에서 1P·2P 닉네임(또는 회원코드)과 핸디를 넣고 분석하면 선수 기록이 쌓입니다. <b>+ 선수</b>로 먼저 등록하고 <b>초기값</b>에 기존 기록을 넣어 둘 수도 있습니다.</p>';$('plBaseBox').hidden=true;return;}
+ const t=totals(q),pct=v=>v==null?'—':Math.round(v*100)+'%';
+ const types=Object.entries(t.types).sort((a,b)=>b[1].n-a[1].n);
+ const games=Object.values(q.games).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+ card.innerHTML=`<div class="pl-top"><div><div class="pl-name">${esc(q.nick||'(이름 없음)')}</div><div class="hint">${q.code?'회원코드 '+esc(q.code)+' · ':''}분석 경기 ${games.length} · 초기값 경기 ${q.base.games||0}</div></div></div>
+ <div class="kpis">
+  <div class="kpi"><span>핸디</span><b>${q.hc!==''&&q.hc!=null?q.hc:'—'}</b></div>
+  <div class="kpi"><span>에버리지</span><b>${t.avg==null?'—':t.avg.toFixed(3)}</b></div>
+  <div class="kpi"><span>승률</span><b>${pct(t.wr)}</b><i>${t.wins}승 ${t.losses}패</i></div>
+  <div class="kpi"><span>하이런</span><b>${t.hr||0}</b></div>
+  <div class="kpi"><span>경기</span><b>${t.games}</b></div>
+  <div class="kpi"><span>득점 / 이닝</span><b>${t.pts}<small> / ${t.inn}</small></b></div>
+ </div>
+ <h3>샷 기술별 성공률 <span class="hint">샷 기술 가이드 기준 · 영상 분석</span></h3>
+ ${types.length?`<table class="cmp ptypes"><tr><th>기술</th><th>시도</th><th>성공</th><th>성공률</th></tr>${types.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${v.n}</td><td>${v.ok}</td><td><span class="bar"><i style="width:${v.n?Math.round(v.ok/v.n*100):0}%"></i></span> ${v.n?Math.round(v.ok/v.n*100):0}%</td></tr>`).join('')}</table>`:'<p class="hint">아직 분석된 샷이 없습니다.</p>'}
+ <h3>경기 기록</h3>
+ ${games.length?`<div class="queue-wrap"><table class="queue"><tr><th>날짜</th><th>경기</th><th>상대</th><th>득점</th><th>이닝</th><th>에버</th><th>하이런</th><th>결과</th></tr>${games.map(x=>`<tr><td>${String(x.date).slice(0,10)}</td><td>${esc(x.name)}</td><td>${esc(x.opp||'—')}</td><td>${x.pts}${x.hc?'/'+x.hc:''} : ${x.oppPts}${x.oppHc?'/'+x.oppHc:''}</td><td>${x.inn}</td><td>${x.inn?(x.pts/x.inn).toFixed(3):'—'}</td><td>${x.hr}</td><td class="${x.res==='W'?'ok':x.res==='L'?'bad':''}">${{W:'승',L:'패',D:'무'}[x.res]}</td></tr>`).join('')}</table></div>`:'<p class="hint">분석한 경기가 없습니다.</p>'}`;
+ if(!$('plBaseBox').hidden)fillBase(q);
+}
+function fillBase(q){const b={...emptyBase(),...q.base};const f=$('plBaseBox');
+ f.querySelector('[name=nick]').value=q.nick||'';f.querySelector('[name=code]').value=q.code||'';f.querySelector('[name=hc]').value=q.hc??'';
+ for(const k of ['games','wins','losses','inn','pts','hr'])f.querySelector(`[name=${k}]`).value=b[k]||0;
+ const tt=f.querySelector('#plBaseTypes');const names=[...new Set(GUIDE.rows.map(r=>r.major).filter(Boolean))];
+ tt.innerHTML='<tr><th>기술</th><th>시도</th><th>성공</th></tr>'+names.map(n=>{const v=(b.types||{})[n]||{};return `<tr><td>${esc(n)}</td><td><input type="number" min="0" data-t="${esc(n)}" data-k="n" value="${v.n||0}"></td><td><input type="number" min="0" data-t="${esc(n)}" data-k="ok" value="${v.ok||0}"></td></tr>`;}).join('');}
+$('plSel').onchange=()=>{PSEL=$('plSel').value;$('plBaseBox').hidden=true;renderPlayers();};
+$('plNew').onclick=()=>{const nick=prompt('선수 닉네임');if(!nick)return;const code=prompt('회원코드 (없으면 비워 두세요)')||'';const hc=prompt('핸디 (점수)')||'';
+ const q=upsertPlayer({nick,code,hc});if(!q)return;savePlayers();PSEL=q.id;renderPlayers();renderPlayerInputs(true);$('plBase').click();};
+$('plBase').onclick=()=>{const q=PLAYERS.players[PSEL];if(!q)return;const f=$('plBaseBox');f.hidden=!f.hidden;if(!f.hidden){fillBase(q);f.scrollIntoView({block:'nearest',behavior:'smooth'});}};
+$('plBaseSave').onclick=()=>{const q=PLAYERS.players[PSEL];if(!q)return;const f=$('plBaseBox'),v=n=>f.querySelector(`[name=${n}]`).value.trim();
+ const nb={...emptyBase(),types:{}};for(const k of ['games','wins','losses','inn','pts','hr'])nb[k]=Math.max(0,+v(k)||0);
+ f.querySelectorAll('#plBaseTypes input').forEach(i=>{const t=nb.types[i.dataset.t]||(nb.types[i.dataset.t]={n:0,ok:0});t[i.dataset.k]=Math.max(0,+i.value||0);});
+ for(const k of Object.keys(nb.types))if(!nb.types[k].n&&!nb.types[k].ok)delete nb.types[k];
+ const code=v('code'),nick=v('nick');let id=q.id;const nid=pidOf({code,nick});
+ if(nid&&nid!==q.id){if(PLAYERS.players[nid]){alert('같은 회원코드/닉네임의 선수가 이미 있어요.');return;}delete PLAYERS.players[q.id];q.id=nid;PLAYERS.players[nid]=q;id=nid;
+  for(const g of GAMES)for(const p of g.players||[])if(pidOf(p)===PSEL){p.nick=nick;p.code=code;}}
+ q.nick=nick;q.code=code;q.hc=v('hc')===''?'':+v('hc');q.base=nb;PSEL=id;savePlayers();f.hidden=true;renderPlayers();renderPlayerInputs(true);toast('초기값을 저장했어요');};
+$('plBaseCancel').onclick=()=>{$('plBaseBox').hidden=true;};
+$('plDel').onclick=()=>{const q=PLAYERS.players[PSEL];if(!q||!confirm(`${q.nick||q.code} 선수 기록을 지울까요? (경기 분석 결과는 지워지지 않습니다)`))return;delete PLAYERS.players[PSEL];PSEL=null;savePlayers();renderPlayers();};
+function dl(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),3000);}
+$('plExport').onclick=()=>dl(`3q-players-${new Date().toISOString().slice(0,10)}.json`,new Blob([JSON.stringify({v:VERSION,kind:'3q-players',...PLAYERS})],{type:'application/json'}));
+$('plImport').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const d=JSON.parse(await f.text());if(!d.players)throw 0;let n=0;
+ for(const [id,q] of Object.entries(d.players)){const o=PLAYERS.players[id];if(!o){PLAYERS.players[id]=q;n++;continue;}Object.assign(o.games,q.games||{});if(q.base)o.base=q.base;if(q.hc!=='' && q.hc!=null)o.hc=q.hc;if(q.nick)o.nick=q.nick;n++;}
+ savePlayers();renderPlayers();renderPlayerInputs(true);toast(`선수 ${n}명을 합쳤어요`);}catch(err){toast('선수 기록 파일이 아니에요');}};
+// a one-page report the player can keep or be sent
+$('plReport').onclick=()=>{const q=PLAYERS.players[PSEL];if(!q)return;const t=totals(q),pct=v=>v==null?'—':Math.round(v*100)+'%';
+ const types=Object.entries(t.types).sort((a,b)=>b[1].n-a[1].n),games=Object.values(q.games).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+ const html=`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(q.nick)} 3쿠션 기록</title><style>
+body{font-family:system-ui,-apple-system,'Malgun Gothic',sans-serif;margin:0;padding:24px;color:#14202c;background:#f4f6f8}main{max-width:760px;margin:auto;background:#fff;border-radius:14px;padding:24px 26px;box-shadow:0 2px 10px #0001}
+h1{margin:0 0 4px;font-size:24px}.sub{color:#5b6875;font-size:13px}.k{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}.k div{background:#eef3f7;border-radius:10px;padding:10px 12px}.k span{display:block;font-size:12px;color:#5b6875}.k b{font-size:22px}
+h2{font-size:16px;margin:22px 0 8px}table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px 8px;border-bottom:1px solid #e3e8ec;text-align:left}th{color:#5b6875;font-weight:600}.bar{display:inline-block;width:90px;height:8px;background:#e3e8ec;border-radius:4px;vertical-align:middle;margin-right:6px}.bar i{display:block;height:100%;background:#2f7ad6;border-radius:4px}
+.w{color:#1b8a5a;font-weight:700}.l{color:#c0392b;font-weight:700}footer{margin-top:20px;color:#8a96a2;font-size:11.5px}</style></head><body><main>
+<h1>${esc(q.nick||q.code)}</h1><div class="sub">${q.code?'회원코드 '+esc(q.code)+' · ':''}3쿠션 개인 기록 · ${new Date().toLocaleDateString('ko-KR')} 기준</div>
+<div class="k"><div><span>핸디</span><b>${q.hc!==''&&q.hc!=null?q.hc:'—'}</b></div><div><span>에버리지</span><b>${t.avg==null?'—':t.avg.toFixed(3)}</b></div><div><span>승률</span><b>${pct(t.wr)}</b> <small>${t.wins}승 ${t.losses}패</small></div><div><span>하이런</span><b>${t.hr||0}</b></div><div><span>경기</span><b>${t.games}</b></div><div><span>득점 / 이닝</span><b>${t.pts} / ${t.inn}</b></div></div>
+<h2>샷 기술별 성공률</h2>${types.length?`<table><tr><th>기술</th><th>시도</th><th>성공</th><th>성공률</th></tr>${types.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${v.n}</td><td>${v.ok}</td><td><span class="bar"><i style="width:${v.n?Math.round(v.ok/v.n*100):0}%"></i></span>${v.n?Math.round(v.ok/v.n*100):0}%</td></tr>`).join('')}</table>`:'<p>—</p>'}
+<h2>경기 기록</h2>${games.length?`<table><tr><th>날짜</th><th>상대</th><th>점수</th><th>이닝</th><th>에버</th><th>하이런</th><th>결과</th></tr>${games.map(x=>`<tr><td>${String(x.date).slice(0,10)}</td><td>${esc(x.opp||'—')}</td><td>${x.pts}${x.hc?'/'+x.hc:''} : ${x.oppPts}${x.oppHc?'/'+x.oppHc:''}</td><td>${x.inn}</td><td>${x.inn?(x.pts/x.inn).toFixed(3):'—'}</td><td>${x.hr}</td><td class="${x.res==='W'?'w':x.res==='L'?'l':''}">${{W:'승',L:'패',D:'무'}[x.res]}</td></tr>`).join('')}</table>`:'<p>—</p>'}
+<footer>3Q 코칭 ${VERSION} · 득점·이닝은 이닝표, 샷 기술은 영상 분석 기준입니다. 초기값(경기 ${q.base.games||0})이 포함되어 있습니다.</footer></main></body></html>`;
+ dl(`${(q.nick||q.code||'player').replace(/[\\/:*?"<>|]/g,'_')}_기록.html`,new Blob([html],{type:'text/html'}));};
+
+/* ---------- UI: guide editor ---------- */
+function renderGuide(){
+ const t=$('gdTable');if(!t)return;
+ t.innerHTML='<tr>'+GUIDE_HDR.map(h=>`<th>${h}</th>`).join('')+'<th></th></tr>'+GUIDE.rows.map((r,i)=>'<tr>'+GUIDE_COLS.map(k=>`<td><input data-i="${i}" data-k="${k}" value="${esc(r[k])}" class="gd-${k}"></td>`).join('')+`<td><button class="sm ghost" data-del="${i}" title="이 행 지우기">✕</button></td></tr>`).join('');
+ t.querySelectorAll('input').forEach(inp=>inp.onchange=()=>{GUIDE.rows[+inp.dataset.i][inp.dataset.k]=inp.value.trim();saveGuide();guideChanged();});
+ t.querySelectorAll('button[data-del]').forEach(b=>b.onclick=()=>{GUIDE.rows.splice(+b.dataset.del,1);saveGuide();renderGuide();guideChanged();});
+ $('gdNotes').value=(GUIDE.notes||[]).join('\n');
+}
+function guideChanged(){for(const g of GAMES)if(g.G&&g.players)registerGame(g);renderPlayers();if(S.G&&S.cur>=0)showGuideType();}
+$('gdNotes').onchange=()=>{GUIDE.notes=$('gdNotes').value.split('\n').filter(s=>s.trim());saveGuide();};
+$('gdAdd').onclick=()=>{GUIDE.rows.push({pri:'2',no:'',major:'',name:'',term:'',side:'무관',seq:'',cond:''});saveGuide();renderGuide();const ins=$('gdTable').querySelectorAll('tr:last-child input');ins[2]&&ins[2].focus();};
+$('gdReset').onclick=()=>{if(!confirm('샷 기술 가이드를 처음 값(첨부 기준표)으로 되돌릴까요?'))return;GUIDE={rows:guideDefaultRows(),notes:GUIDE_DEFAULT.notes,ver:1};saveGuide();renderGuide();guideChanged();};
+$('gdExport').onclick=()=>dl('3q-샷기술가이드.csv',new Blob([guideToCSV()],{type:'text/csv'}));
+$('gdImport').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{GUIDE=guideFromCSV(await f.text());saveGuide();renderGuide();guideChanged();toast(`가이드 ${GUIDE.rows.length}행을 불러왔어요`);}catch(err){toast('CSV를 읽지 못했어요: '+err.message);}};
+$('gdFold').onclick=()=>{const b=$('gdBody');b.hidden=!b.hidden;$('gdFold').textContent=b.hidden?'펼치기 ▼':'접기 ▲';};
+
+/* ---------- shot panel: guide-based technique name ---------- */
+function showGuideType(){const a=S.G&&S.G.shots[S.cur],el=$('shotTech');if(!el)return;if(!a){el.hidden=true;return;}
+ const c=guideClassify(a,S.G);el.hidden=false;el.textContent=`기술: ${c.name||gName(c)}${c.est?' (추정)':''}`;el.title=`${c.major||''} · ${c.cond||''}`;}
+
+/* ---------- hooks into the app ---------- */
+{const _rq=renderQueue;renderQueue=function(){_rq.apply(this,arguments);renderPlayerInputs();};
+ const _ss=showShot;showShot=function(){const r=_ss.apply(this,arguments);showGuideType();return r;};
+ const _fg=finishGame;finishGame=function(g){const r=_fg.apply(this,arguments);if(g&&g.players)registerGame(g);return r;};}
+renderGuide();renderPlayers();renderPlayerInputs(true);
+window.C3C.guideClassify=guideClassify;window.C3C.players=()=>PLAYERS;window.C3C.registerGame=registerGame;window.C3C.GUIDE=()=>GUIDE;
 
 </script>
 <script>
