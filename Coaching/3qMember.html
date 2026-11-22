@@ -46,6 +46,31 @@ h1{font-size:22px;margin:4px 0}h2{font-size:15px;margin:0 0 10px}
 .tipc{display:flex;flex-direction:column;align-items:center;text-align:center;font-size:12.5px;gap:2px;background:#0e1722;border:1px solid var(--line);border-radius:12px;padding:8px}
 .tipc canvas{width:64px;height:64px}.tipc b{font-size:13px}.tipc.rec b{color:#6ff0c2}.tipc.act b{color:#ffd166}.tipc.fix b{color:#ff9ad5}
 @media(min-width:700px){.kpis{grid-template-columns:repeat(6,minmax(0,1fr))}}
+/* v1.10 home / shot / cumulative */
+.hello{padding:14px 4px 4px}.hello .pname{font-size:26px}
+h3.sub{font-size:13px;color:var(--muted);margin:12px 0 6px;font-weight:600}
+.glist{list-style:none;margin:0;padding:0;counter-reset:g}
+.glist li{counter-increment:g}
+.glist button{width:100%;text-align:left;display:flex;gap:10px;align-items:center;margin:0 0 8px;padding:10px 12px;border-radius:12px;min-height:52px}
+.glist button::before{content:counter(g)'.';color:var(--muted);font-weight:700;min-width:18px}
+.gl1{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}.gl1 b{font-size:15px}.gl1 .gm{font-size:13.5px;color:#cdd7e2}.gl1 .gt{font-size:12px;color:var(--muted)}
+.res.W{color:var(--mint);font-weight:800}.res.L{color:#ff8a8a;font-weight:800}.res.D{color:var(--muted);font-weight:800}
+.cum{width:100%;margin-top:12px;background:#14243a;border-color:#2b4a72;font-weight:700}
+.tips{margin-top:10px}
+.say h2{margin:0}.sayh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+#sSay p{margin:0 0 7px;font-size:16px;line-height:1.55}#sSay .lb{display:inline-block;min-width:64px;font-size:12px;font-weight:800;border-radius:6px;padding:1px 6px;margin-right:6px;text-align:center;vertical-align:1px}
+#sSay .why .lb{background:#3a2430;color:#ffb3c1}#sSay .fix .lb{background:#3a2440;color:#ff9ad5}#sSay .rec .lb{background:#163a31;color:#6ff0c2}
+#sSay p.speaking{color:#fff;text-shadow:0 0 10px #6ff0c255}
+.story{font-size:13.5px;color:#c4cfdb}.story p{margin:0 0 6px}
+.cum-dlg{width:min(860px,96vw);max-height:92vh;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:18px;padding:0}
+.cum-dlg::backdrop{background:#000b}.dh{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
+.dh h2{margin:0}#cumBody{padding:12px 16px 18px}
+.chart{width:100%;height:auto;display:block}.chart text{fill:var(--muted);font:11px system-ui}.chart .lab{fill:var(--text);font-weight:600}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:4px 0 8px}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.wl{display:flex;gap:4px;flex-wrap:wrap}.wl span{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+.wl .W{background:#163a31;color:var(--mint)}.wl .L{background:#3a2026;color:#ff9aa0}.wl .D{background:#222c36;color:var(--muted)}
+.tip{position:fixed;pointer-events:none;background:#0a1018f2;border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:12px;z-index:20;white-space:nowrap}
+.demo{font-size:11.5px;color:#ffd58a;margin:0 0 8px}
 </style></head><body>
 <header class="top"><div class="brand"><span class="logo">3Q</span><b>코칭</b><span class="muted">회원</span></div><button id="bLogout" class="ghost sm">로그아웃</button></header>
 <main>
@@ -57,26 +82,29 @@ h1{font-size:22px;margin:4px 0}h2{font-size:15px;margin:0 0 10px}
   <button class="primary">보기</button><p id="lgMsg" class="msg"></p></form>
 </section>
 <section id="scHome" hidden>
- <div class="card"><div class="pname" id="hName"></div><div class="muted" id="hSub"></div><div class="kpis" id="kpis"></div></div>
- <div class="card"><h2>샷 기술별 성공률</h2><table class="types" id="types"></table></div>
- <div class="card"><h2>경기 · 실패 샷 코칭</h2><div id="games"></div></div>
+ <div class="hello"><div class="pname" id="hName"></div><div class="muted" id="hSub"></div></div>
+ <div class="card"><h2 id="todayT">오늘의 경기</h2><ol class="glist" id="games"></ol><div id="pastBox" hidden><h3 class="sub">지난 경기</h3><ol class="glist" id="past"></ol></div></div>
+ <div class="card"><h2 id="anaT">샷 분석 · 오늘</h2><table class="types" id="types"></table>
+  <button id="bCum" class="cum">📈 누적 분석 보기</button></div>
 </section>
 <section id="scShot" hidden>
- <div class="bar1"><button id="bBack" class="sm">◀ 목록</button><b id="gTitle"></b></div>
+ <div class="bar1"><button id="bBack" class="sm">◀ 이전</button><b id="gTitle"></b></div>
  <div class="stagebox"><canvas id="cv"></canvas><div class="tags"><span class="tag" id="sHead"></span><span class="tag tech" id="sTech" hidden></span></div></div>
  <div class="ctrl">
   <div class="row4"><button id="bPrev">◀ 이전</button><span id="sPos" class="pos"></span><button id="bNext">다음 ▶</button><select id="rate"><option value=".5">0.5×</option><option value="1" selected>1×</option></select></div>
   <div class="plays">
-   <div class="pl rec"><button id="b_rec">▶ 추천</button><label class="ck"><input type="checkbox" id="c_rec"><i></i></label></div>
    <div class="pl act"><button id="b_act">▶ 실제</button><label class="ck"><input type="checkbox" id="c_act"><i></i></label></div>
    <div class="pl fix"><button id="b_fix">▶ 교정</button><label class="ck"><input type="checkbox" id="c_fix"><i></i></label></div>
+   <div class="pl rec"><button id="b_rec">▶ 추천</button><label class="ck"><input type="checkbox" id="c_rec"><i></i></label></div>
   </div>
-  <button id="bVid" class="vid" hidden>🎬 실제 경기 영상에서 보기</button>
   <p class="muted small">화면을 탭하면 처음으로 · 좌우로 밀면 이전·다음 샷</p>
  </div>
- <div class="card story"><div id="sBody"></div><div class="tips" id="sTips"></div></div>
+ <div class="tips" id="sTips"></div>
+ <div class="card say"><div class="sayh"><h2>🎧 코칭 멘트</h2><button id="bSay" class="sm">🔊 듣기</button></div><div id="sSay"></div></div>
+ <div class="card story"><h3 class="sub">👉 자세한 설명</h3><div id="sBody"></div></div>
 </section>
 </main>
+<dialog id="cumDlg" class="cum-dlg"><div class="dh"><h2>📈 누적 분석</h2><button id="cumX" class="sm ghost" aria-label="닫기">✕</button></div><div id="cumBody"></div></dialog>
 
 <script>
 function createPhysics(){
@@ -684,29 +712,91 @@ async function login(code,pin,remember){
 function show(id){for(const s of ['scLogin','scHome','scShot'])$(s).hidden=s!==id;window.scrollTo(0,0);}
 function start(d){D=d;document.title=`${d.player.nick||d.player.code} · 3Q 코칭`;renderHome();show('scHome');}
 const pct=v=>v==null?'—':Math.round(v*100)+'%';
+const dt=d=>{const x=new Date(d);if(isNaN(x))return String(d||'').slice(0,10);const z=n=>String(n).padStart(2,'0');return `${x.getFullYear()}.${z(x.getMonth()+1)}.${z(x.getDate())} ${z(x.getHours())}:${z(x.getMinutes())}`;};
+const dayOf=d=>{const x=new Date(d);return isNaN(x)?String(d).slice(0,10):x.toDateString();};
+const RES={W:'승',L:'패',D:'무'};
+function sumTypes(list){const t={};for(const g of list)for(const [k,v] of Object.entries(g.types||{})){const y=t[k]||(t[k]={n:0,ok:0});y.n+=+v.n||0;y.ok+=+v.ok||0;}return t;}
+function typeRows(t){return Object.entries(t).sort((a,b)=>b[1].n-a[1].n);}
+function gameLine(g,i){return `<li><button data-i="${i}"><div class="gl1"><b>${esc(D.player.nick)} : ${esc(g.opp||'—')}</b><span class="gm">${g.pts}:${g.oppPts} - ${g.inn}이닝 | <span class="res ${g.res}">${RES[g.res]||'—'}</span> | ${dt(g.date)}</span><span class="gt">실패 샷 코칭 ${g.shots.length}개 ▶</span></div></button></li>`;}
 function renderHome(){
- const p=D.player,t=D.totals;
- $('hName').textContent=p.nick||p.code;$('hSub').textContent=`${p.code?'회원코드 '+p.code+' · ':''}${new Date(D.made).toLocaleDateString('ko-KR')} 업데이트`;
- $('kpis').innerHTML=[['핸디',p.hc!==''&&p.hc!=null?p.hc:'—'],['에버리지',t.avg==null?'—':t.avg.toFixed(3)],['승률',pct(t.wr),`${t.wins}승 ${t.losses}패`],['하이런',t.hr||0],['경기',t.games],['득점 / 이닝',`${t.pts}<small> / ${t.inn}</small>`]]
-  .map(([k,v,s])=>`<div class="kpi"><span>${k}</span><b>${v}</b>${s?`<i>${s}</i>`:''}</div>`).join('');
- $('types').innerHTML=D.types.length?'<tr><th>기술</th><th>시도</th><th>성공률</th></tr>'+D.types.map(([k,n,ok])=>`<tr><td>${esc(k)}</td><td>${n}</td><td><span class="bar"><i style="width:${n?Math.round(ok/n*100):0}%"></i></span>${n?Math.round(ok/n*100):0}%</td></tr>`).join(''):'<tr><td class="muted">아직 기록이 없습니다.</td></tr>';
- $('games').innerHTML=D.games.map((g,i)=>`<button class="game" data-i="${i}"><div><b>${esc(g.name)}</b><span class="muted"> · ${String(g.date).slice(0,10)}</span></div><div class="gl"><span>vs ${esc(g.opp||'—')}</span><span>${g.pts}${g.hc?'/'+g.hc:''} : ${g.oppPts}${g.oppHc?'/'+g.oppHc:''}</span><span>${g.inn}이닝</span><span class="res ${g.res}">${{W:'승',L:'패',D:'무'}[g.res]||''}</span></div><div class="muted">코칭 샷 ${g.shots.length}개 ▶</div></button>`).join('')||'<p class="muted">코칭할 경기가 없습니다.</p>';
- $('games').querySelectorAll('.game').forEach(b=>b.onclick=()=>openGame(+b.dataset.i));
+ const p=D.player;$('hName').textContent=`${p.nick||''}${p.code?'('+p.code+')':''}`;$('hSub').textContent=`${new Date(D.made).toLocaleDateString('ko-KR')} 업데이트`;
+ const gs=D.games.map((g,i)=>({g,i})).sort((x,y)=>String(y.g.date).localeCompare(String(x.g.date)));
+ const today=gs.length?dayOf(gs[0].g.date):null,tg=gs.filter(x=>dayOf(x.g.date)===today),pg=gs.filter(x=>dayOf(x.g.date)!==today);
+ const venue=(tg[0]&&tg[0].g.venue)||D.club||'';
+ $('todayT').innerHTML=`오늘의 경기${venue?` <span class="muted">(${esc(venue)})</span>`:''}`;
+ $('games').innerHTML=tg.map(x=>gameLine(x.g,x.i)).join('')||'<li class="muted">경기가 없습니다.</li>';
+ $('pastBox').hidden=!pg.length;$('past').innerHTML=pg.map(x=>gameLine(x.g,x.i)).join('');
+ document.querySelectorAll('.glist button').forEach(b=>b.onclick=()=>openGame(+b.dataset.i));
+ const tt=typeRows(sumTypes(tg.map(x=>x.g)));
+ $('types').innerHTML=tt.length?'<tr><th>기술</th><th>시도</th><th>성공</th><th>성공률</th></tr>'+tt.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${v.n}</td><td>${v.ok}</td><td><span class="bar"><i style="width:${v.n?Math.round(v.ok/v.n*100):0}%"></i></span>${v.n?Math.round(v.ok/v.n*100):0}%</td></tr>`).join(''):'<tr><td class="muted">오늘 분석된 샷이 없습니다.</td></tr>';
+ HOME={today:tg.map(x=>x.g)};
 }
-function openGame(i){G=D.games[i];LIST=G.shots;$('gTitle').textContent=`${G.name} · vs ${G.opp||'—'}`;show('scShot');openShot(0);}
+let HOME={today:[]};
+/* ---------- cumulative analysis (all games + earlier records) ---------- */
+const C_CUM='#2ea583',C_TODAY='#6f8ff0';
+function svgEl(w,h,inner){return `<svg class="chart" viewBox="0 0 ${w} ${h}" role="img">${inner}</svg>`;}
+function lineChart(pts,avgAll,W=640){ // pts: [{x:label,y,t:tooltip}]
+ const H=200,l=34,r=12,t=12,b=26,n=pts.length,ys=pts.map(p=>p.y),mx=Math.max(1.2,...ys,avgAll||0)*1.1;
+ const X=i=>l+(n<2?(W-l-r)/2:(W-l-r)*i/(n-1)),Y=v=>t+(H-t-b)*(1-v/mx);let g='';
+ for(let k=0;k<=4;k++){const v=mx*k/4;g+=`<line x1="${l}" x2="${W-r}" y1="${Y(v)}" y2="${Y(v)}" stroke="#ffffff14"/><text x="${l-5}" y="${Y(v)+4}" text-anchor="end">${v.toFixed(1)}</text>`;}
+ if(avgAll!=null)g+=`<line x1="${l}" x2="${W-r}" y1="${Y(avgAll)}" y2="${Y(avgAll)}" stroke="#8ea0b2" stroke-dasharray="4 4"/><text x="${W-r}" y="${Y(avgAll)-5}" text-anchor="end">누적 ${avgAll.toFixed(3)}</text>`;
+ g+=`<polyline fill="none" stroke="${C_TODAY}" stroke-width="2" stroke-linejoin="round" points="${pts.map((p,i)=>X(i)+','+Y(p.y)).join(' ')}"/>`;
+ pts.forEach((p,i)=>{g+=`<circle cx="${X(i)}" cy="${Y(p.y)}" r="4.5" fill="${C_TODAY}" stroke="var(--panel)" stroke-width="2"/><circle cx="${X(i)}" cy="${Y(p.y)}" r="14" fill="transparent" data-tip="${esc(p.t)}"/>`;});
+ const step=Math.max(1,Math.ceil(n/Math.max(3,Math.floor(W/80))));pts.forEach((p,i)=>{if(i%step===0||i===n-1)g+=`<text x="${X(i)}" y="${H-8}" text-anchor="middle">${esc(p.x)}</text>`;});
+ return svgEl(W,H,g);}
+function typeBars(cum,today,W=640){
+ const rows=typeRows(cum).slice(0,10),rowH=34,l=Math.min(104,W*.26),r=44,H=rows.length*rowH+8,bw=W-l-r;let g='';
+ rows.forEach(([k,v],i)=>{const y=6+i*rowH,c=v.n?v.ok/v.n:0,td=today[k],tv=td&&td.n?td.ok/td.n:null;
+  g+=`<text class="lab" x="${l-8}" y="${y+15}" text-anchor="end">${esc(k)}</text>`;
+  g+=`<rect x="${l}" y="${y+3}" width="${bw}" height="11" rx="4" fill="#ffffff0d"/><rect x="${l}" y="${y+3}" width="${Math.max(2,bw*c)}" height="11" rx="4" fill="${C_CUM}" data-tip="${esc(k)} 누적 ${Math.round(c*100)}% (${v.ok}/${v.n})"/>`;
+  g+=`<text x="${l+bw+6}" y="${y+13}" class="lab">${Math.round(c*100)}%</text>`;
+  if(tv!=null){g+=`<rect x="${l}" y="${y+17}" width="${Math.max(2,bw*tv)}" height="9" rx="4" fill="${C_TODAY}" data-tip="${esc(k)} 오늘 ${Math.round(tv*100)}% (${td.ok}/${td.n})"/><text x="${l+bw+6}" y="${y+26}">${Math.round(tv*100)}%</text>`;}
+  g+=`<text x="${l-8}" y="${y+28}" text-anchor="end">${v.n}회</text>`;});
+ return svgEl(W,H,g);}
+function openCum(){
+ const rows=[...(D.history||[]),...D.games.map(g=>({date:g.date,pts:g.pts,inn:g.inn,hr:g.hr,res:g.res,types:g.types,opp:g.opp}))].sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+ const b={games:0,wins:0,losses:0,inn:0,pts:0,hr:0,types:{},...(D.base||{})};
+ const T={games:b.games+rows.length,wins:b.wins+rows.filter(x=>x.res==='W').length,losses:b.losses+rows.filter(x=>x.res==='L').length,inn:b.inn+rows.reduce((s,x)=>s+(x.inn||0),0),pts:b.pts+rows.reduce((s,x)=>s+(x.pts||0),0),hr:Math.max(b.hr||0,...rows.map(x=>x.hr||0))};
+ const avg=T.inn?T.pts/T.inn:null,wr=(T.wins+T.losses)?T.wins/(T.wins+T.losses):null,p=D.player;
+ const cumT=sumTypes([...rows,{types:b.types}]),todayT=sumTypes(HOME.today);
+ const pts=rows.filter(x=>x.inn).map(x=>({x:dt(x.date).slice(5,10),y:x.pts/x.inn,t:`${dt(x.date)} vs ${x.opp||'—'} · ${x.pts}점/${x.inn}이닝 · 에버 ${(x.pts/x.inn).toFixed(3)} · ${RES[x.res]||''}`}));
+$('cumDlg').showModal();const CW=Math.max(300,$('cumBody').clientWidth-32);
+ $('cumBody').innerHTML=`${D.history&&D.demo?'<p class="demo">※ 데모: 지난 경기 기록은 예시 데이터입니다.</p>':''}
+ <div class="kpis">${[['핸디',p.hc!==''&&p.hc!=null?p.hc:'—'],['에버리지',avg==null?'—':avg.toFixed(3)],['승률',pct(wr),`${T.wins}승 ${T.losses}패`],['하이런',T.hr||0],['경기',T.games],['득점 / 이닝',`${T.pts}<small> / ${T.inn}</small>`]].map(([k,v,s])=>`<div class="kpi"><span>${k}</span><b>${v}</b>${s?`<i>${s}</i>`:''}</div>`).join('')}</div>
+ <h3 class="sub">경기별 에버리지</h3>${pts.length?lineChart(pts,avg,CW):'<p class="muted">기록이 없습니다.</p>'}
+ <h3 class="sub">최근 결과 (왼쪽이 최신)</h3><div class="wl">${rows.slice(-20).reverse().map(x=>`<span class="${x.res}" title="${esc(dt(x.date))} vs ${esc(x.opp||'')}">${RES[x.res]||'—'}</span>`).join('')}</div>
+ <h3 class="sub">샷 기술별 성공률</h3><div class="legend"><span><i style="background:${C_CUM}"></i>누적</span><span><i style="background:${C_TODAY}"></i>오늘</span></div>${Object.keys(cumT).length?typeBars(cumT,todayT,CW):'<p class="muted">기록이 없습니다.</p>'}`;}
+{const tip=document.createElement('div');tip.className='tip';tip.hidden=true;document.body.append(tip);
+ const showTip=(e,el)=>{tip.textContent=el.dataset.tip;tip.hidden=false;const x=(e.touches?e.touches[0]:e).clientX,y=(e.touches?e.touches[0]:e).clientY;tip.style.left=Math.min(innerWidth-tip.offsetWidth-6,x+10)+'px';tip.style.top=(y-34)+'px';};
+ document.addEventListener('pointermove',e=>{const el=e.target.closest&&e.target.closest('[data-tip]');if(el)showTip(e,el);else tip.hidden=true;});
+ document.addEventListener('pointerdown',e=>{const el=e.target.closest&&e.target.closest('[data-tip]');if(el)showTip(e,el);else tip.hidden=true;});}
+$('bCum').onclick=openCum;$('cumX').onclick=()=>$('cumDlg').close();
+function openGame(i){G=D.games[i];LIST=G.shots;$('gTitle').textContent=`${D.player.nick} : ${G.opp||'—'} · ${G.pts}:${G.oppPts}`;show('scShot');openShot(0);}
 function openShot(k){
+ stopSay();
  if(!LIST.length){$('sHead').textContent='코칭할 실패 샷이 없습니다';return;}
  SH=clamp(k,0,LIST.length-1);const a=LIST[SH];stop();M.mode='freeze';
  $('sHead').textContent=a.head;$('sTech').textContent=a.tech?`기술: ${a.tech}${a.est?' (추정)':''}`:'';$('sTech').hidden=!a.tech;
  $('sPos').textContent=`${SH+1} / ${LIST.length}`;
+ const sy=a.say||{};
+ $('sSay').innerHTML=[['why','무득점 이유',sy.why],['fix','교정',sy.fix],['rec','추천',sy.rec]].filter(x=>x[2]).map(([c,l,t])=>`<p class="${c}"><span class="lb">${l}</span>${esc(String(t).replace(/^(교정|추천)\.\s*/,''))}</p>`).join('')||'<p class="muted">멘트가 없습니다.</p>';
+ $('bSay').disabled=!a.say||!('speechSynthesis' in window);
  $('sBody').innerHTML=`<p>${esc(a.body)}</p>${a.fix?`<p class="fixT">${esc(a.fix)}</p>`:''}${a.rec?`<p class="recT">${esc(a.rec)}</p>`:''}`;
  for(const k of ['rec','act','fix'])$('b_'+k).disabled=!a.sh[k];
- $('bVid').hidden=!G.yt;
  $('sTips').innerHTML=['act','fix','rec'].filter(k=>a.sh[k]).map(k=>{const s=a.sh[k];return `<div class="tipc ${k}"><canvas width="96" height="96" data-k="${k}"></canvas><b>${KO[k]}</b><span>${esc(s.tip)}</span><span>세기 ${'■'.repeat(s.pw)}${'□'.repeat(5-s.pw)}${s.cut?' · 두께 '+s.cut:''}</span></div>`;}).join('');
  $('sTips').querySelectorAll('canvas').forEach(c=>tipBall(c.getContext('2d'),48,48,38,a.sh[c.dataset.k].s,COL[c.dataset.k]));
  simCache.clear();resize();draw();
 }
-
+/* ---------- TTS (later: bluetooth earset) ---------- */
+function stopSay(){try{speechSynthesis.cancel();}catch(e){}document.querySelectorAll('#sSay p').forEach(p=>p.classList.remove('speaking'));$('bSay').textContent='🔊 듣기';}
+function say(){
+ if(!('speechSynthesis' in window))return;if(speechSynthesis.speaking){stopSay();return;}
+ const a=LIST[SH],sy=a&&a.say;if(!sy)return;const ps=[...document.querySelectorAll('#sSay p')],lines=[sy.why,sy.fix,sy.rec].filter(Boolean);
+ const v=speechSynthesis.getVoices().find(x=>/ko/i.test(x.lang));$('bSay').textContent='⏹ 멈춤';
+ lines.forEach((t,i)=>{const u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';if(v)u.voice=v;u.rate=1;
+  u.onstart=()=>{ps.forEach(p=>p.classList.remove('speaking'));ps[i]&&ps[i].classList.add('speaking');};
+  if(i===lines.length-1)u.onend=()=>stopSay();speechSynthesis.speak(u);});}
+$('bSay').onclick=say;
 /* ---------- geometry / drawing ---------- */
 const cv=$('cv'),cx=cv.getContext('2d');let SC=1,OX=0,OY=0,DPR=1;
 function resize(){DPR=Math.min(2.5,window.devicePixelRatio||1);const w=cv.clientWidth,h=Math.round(w*0.56);cv.style.height=h+'px';cv.width=Math.round(w*DPR);cv.height=Math.round(h*DPR);
@@ -781,12 +871,12 @@ function play(kind){
   if(e<STK){const u=(e-.6)/(STK-.6);return {ang,gap:.22-.22*u*u,alpha:1};}const f=e-STK;return f<.45?{ang,gap:-.06*Math.min(1,f/.12),alpha:1-f/.45}:null;}};
  M.mode='sim';const tick=()=>{draw();if(el0()<tr.dur+ST+.3)M.raf=requestAnimationFrame(tick);else M.mode='end';};tick();
 }
-function videoLink(){const a=LIST[SH],t=Math.max(0,Math.floor(a.t0-2)),u=G.yt;if(!u)return;
+function _unusedVideoLink(){const a=LIST[SH],t=Math.max(0,Math.floor(a.t0-2)),u=G.yt;if(!u)return;
  let url=u;if(/youtu\.?be/.test(u)){url=u.replace(/([?&])t=\d+s?/,'$1').replace(/[?&]$/,'');url+=(url.includes('?')?'&':'?')+'t='+t;}else url=u.split('#')[0]+'#t='+t;window.open(url,'_blank','noopener');}
 
 /* ---------- wiring ---------- */
 for(const k of ['rec','act','fix']){$('b_'+k).onclick=()=>play(k);$('c_'+k).onchange=e=>{M.show[k]=e.target.checked;e.target.closest('.pl').classList.toggle('on',e.target.checked);if(M.mode!=='sim')draw();};}
-$('bPrev').onclick=()=>openShot(SH-1);$('bNext').onclick=()=>openShot(SH+1);$('bBack').onclick=()=>{stop();show('scHome');};$('bVid').onclick=videoLink;
+$('bPrev').onclick=()=>openShot(SH-1);$('bNext').onclick=()=>openShot(SH+1);$('bBack').onclick=()=>{stop();stopSay();show('scHome');};
 cv.addEventListener('click',()=>{if(M.mode!=='freeze'){stop();draw();}});
 {let sx=0,sy=0;cv.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});cv.addEventListener('touchend',e=>{const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5)openShot(SH+(dx<0?1:-1));},{passive:true});}
 addEventListener('resize',()=>{if(!$('scShot').hidden){resize();draw();}});
