@@ -1,0 +1,132 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Q24 PC 시험 (오디오/BLE · MQTT)</title><style>
+body{font-family:system-ui,'Malgun Gothic',sans-serif;background:#0f1419;color:#e6edf3;margin:0;padding:12px;max-width:760px;margin:auto}
+h1{font-size:18px;margin:0 0 8px}h1 small{opacity:.6;font-weight:500;margin-left:6px}
+h2{font-size:14px;margin:14px 0 6px;color:#9ecbff;border-top:1px solid #30363d;padding-top:8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0}
+input,button,select{font:inherit;padding:7px 10px;border-radius:7px;border:1px solid #30363d;background:#161b22;color:#e6edf3}
+button{cursor:pointer;background:#1f6feb;border-color:#1f6feb}button.g{background:#238636;border-color:#238636}button.r{background:#8b2a2a;border-color:#8b2a2a}button.n{background:#21262d;border-color:#30363d}button:disabled{opacity:.45}
+#st{padding:3px 10px;border-radius:99px;font-size:13px;background:#6e2b2b}#st.on{background:#1a7f37}
+.hint{opacity:.65;font-size:12.5px}
+#log{height:190px;overflow:auto;background:#0b0f14;border:1px solid #30363d;border-radius:8px;padding:8px;font:12px/1.5 ui-monospace,Consolas,monospace}
+.lv{display:inline-block;width:120px;height:10px;background:#21262d;border-radius:5px;overflow:hidden;vertical-align:middle}.lv i{display:block;height:100%;width:0;background:#3fb950}
+.big{font-size:44px;font-weight:900;text-align:center;margin:6px 0}
+
+</style></head><body>
+<h1>Q24 판정 PC 시험 <small>MQTT 전용 · v0.1</small> <span id="st">끊김</span></h1>
+<div class="row">브로커 <input id="url" size="34"> 테이블 ID <input id="tbl" size="9"> <button id="bc" class="n">연결</button></div>
+<div class="hint" id="link"></div>
+
+<h2>① 판정 문구 → 선수 폰 (TTS)</h2>
+<div class="big"><span id="sc">0 : 0</span></div>
+<div class="row" style="justify-content:center">현재 턴: <b id="turn">1P</b> <button class="n" id="bturn">턴 전환(수동)</button></div>
+<div class="row">
+ <button class="g" id="b1">1P 득점</button><button class="g" id="b2">2P 득점</button>
+ <button class="r" id="bm1">1P 무득점</button><button class="r" id="bm2">2P 무득점</button>
+ <button class="n" id="bs">경기 시작</button><button class="n" id="be">경기 종료</button><button class="n" id="bt">테스트 멘트</button>
+ <button class="n" id="bp">지연 측정(핑)</button><span id="rtt" class="hint"></span>
+</div>
+
+<h2>② 선수 음성 명령 (폰 마이크 → 통화 → PC 인식)</h2>
+<div class="hint">명령: <b>"심판 득점"</b> / <b>"심판 무득점"</b> → 되묻기 → <b>"확인"</b> 이면 점수·턴에 반영. <b>"심판 점수"</b> 는 점수 읽어 주기. 현재 턴 선수의 말만 받습니다.</div>
+<div class="row">상태 <b id="vs">—</b> <label><input type="checkbox" id="spk" checked> 통화음 PC 스피커로</label>
+ 수신 음량 1P <span class="lv"><i id="lv0"></i></span> 2P <span class="lv"><i id="lv1"></i></span></div>
+<div class="row"><b>🎤 들린 말:</b> <span id="heard" style="color:#ffd866">—</span></div>
+<div class="row">가상 인식 입력 <select id="fw"><option value="p0">1P</option><option value="p1">2P</option></select><input id="ft" size="18" placeholder="예: 심판 무득점"><button class="n" id="fb">입력</button><span class="hint">(마이크 없이 명령 흐름만 시험)</span></div>
+<div id="log"></div>
+<script>
+/* 초소형 MQTT 3.1.1 over WebSocket 클라이언트 (QoS0, 의존성 없음) */
+function MQ(url,onMsg,onState){
+ let ws=null,timer=null,ping=null,buf=new Uint8Array(0),subs=[],alive=false,want=true;
+ const enc=s=>{const b=new TextEncoder().encode(s);return [b.length>>8,b.length&255,...b];};
+ const rl=n=>{const o=[];do{let d=n%128;n=Math.floor(n/128);if(n>0)d|=128;o.push(d);}while(n>0);return o;};
+ const pkt=(h,body)=>new Uint8Array([h,...rl(body.length),...body]);
+ const send=p=>{if(ws&&ws.readyState===1)ws.send(p);};
+ function parse(){
+  while(buf.length>=2){
+   let n=0,mul=1,i=1,ok=false;
+   while(i<buf.length){const c=buf[i++];n+=(c&127)*mul;mul*=128;if(!(c&128)){ok=true;break;}}
+   if(!ok||buf.length<i+n)return;
+   const t=buf[0]>>4,body=buf.slice(i,i+n);buf=buf.slice(i+n);
+   if(t===2){alive=true;onState&&onState('connected');subs.forEach(s=>sub(s,true));}
+   else if(t===3){const L=(body[0]<<8)|body[1];const topic=new TextDecoder().decode(body.slice(2,2+L));onMsg(topic,new TextDecoder().decode(body.slice(2+L)));}
+  }
+ }
+ function open(){
+  if(!want)return;onState&&onState('connecting');
+  try{ws=new WebSocket(url,'mqtt');}catch(e){onState&&onState('error');timer=setTimeout(open,3000);return;}
+  ws.binaryType='arraybuffer';
+  ws.onopen=()=>send(pkt(0x10,[...enc('MQTT'),4,2,0,30,...enc('q24-'+Math.random().toString(36).slice(2,10))]));
+  ws.onmessage=e=>{const a=new Uint8Array(e.data),m=new Uint8Array(buf.length+a.length);m.set(buf);m.set(a,buf.length);buf=m;parse();};
+  ws.onclose=ws.onerror=()=>{if(alive){alive=false;onState&&onState('disconnected');}clearInterval(ping);if(want){clearTimeout(timer);timer=setTimeout(open,3000);}};
+  clearInterval(ping);ping=setInterval(()=>send(new Uint8Array([0xC0,0])),20000);
+ }
+ function sub(t,re){if(!re&&!subs.includes(t))subs.push(t);if(alive)send(pkt(0x82,[0,1,...enc(t),0]));}
+ function pub(t,s){const p=new TextEncoder().encode(s);send(pkt(0x30,[...enc(t),...p]));}
+ function close(){want=false;clearTimeout(timer);clearInterval(ping);try{ws&&ws.close();}catch(e){}}
+ open();return {sub,pub,close,get ok(){return alive;}};
+}
+
+const $=id=>document.getElementById(id);const QP=new URLSearchParams(location.search);const DEMO='wss://broker.emqx.io:8084/mqtt';
+const ls=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(e){}};
+$('url').value=QP.get('b')||ls('q24m_url')||DEMO;$('tbl').value=QP.get('t')||ls('q24m_tbl')||('T'+Math.random().toString(36).slice(2,8));
+let mq=null,seq=Date.now()-1.7e12,score=[0,0],turn=0;const log=s=>{const d=$('log');d.insertAdjacentHTML('beforeend',new Date().toLocaleTimeString()+' '+s+'<br>');d.scrollTop=1e9;};
+const T=s=>'q24/'+$('tbl').value.trim()+'/'+s;
+function pub(sub,o){if(mq&&mq.ok)mq.pub(T(sub),JSON.stringify(o));else log('(미연결)');}
+function say(text,to){pub('ai',{proto:1,seq:++seq,at:Date.now(),type:'say',say:text,for:to||undefined,score:[...score]});log('▶ '+(to?to+' ← ':'')+text);}
+function ui(){$('sc').textContent=score[0]+' : '+score[1];$('turn').textContent=(turn+1)+'P';}
+/* ---- 연결 ---- */
+function conn(){if(mq)mq.close();ls('q24m_url',$('url').value.trim());ls('q24m_tbl',$('tbl').value.trim());
+ mq=MQ($('url').value.trim(),onMsg,s=>{$('st').textContent=s==='connected'?'연결됨':s==='connecting'?'연결 중…':'끊김';$('st').className=s==='connected'?'on':'';});
+ mq.sub(T('rtc'));
+ const u=new URL('q24_member.html',location.href);u.search='?t='+$('tbl').value.trim();if($('url').value.trim()!==DEMO)u.search+='&b='+encodeURIComponent($('url').value.trim());
+ $('link').innerHTML='📱 선수 폰에서 열 주소: <b style="user-select:all">'+u.href+'</b>';}
+$('bc').onclick=conn;$('tbl').onchange=conn;
+/* ---- 문구 송신 ---- */
+const sc=p=>{score[p]++;turn=p;ui();say('득점. '+score[0]+' 대 '+score[1]);};
+const ms=p=>{turn=1-p;ui();say('무득점');};
+$('b1').onclick=()=>sc(0);$('b2').onclick=()=>sc(1);$('bm1').onclick=()=>ms(0);$('bm2').onclick=()=>ms(1);
+$('bturn').onclick=()=>{turn=1-turn;ui();log('턴 → '+(turn+1)+'P');};
+$('bs').onclick=()=>{score=[0,0];turn=0;ui();say('경기 시작');};
+$('be').onclick=()=>say('경기 종료. '+score[0]+' 대 '+score[1]);
+$('bt').onclick=()=>say('테스트 멘트입니다. 들리면 정상입니다.');
+let pingAt=0;$('bp').onclick=()=>{pingAt=Date.now();pub('rtc',{id:Math.random().toString(36).slice(2,9),to:'all',from:'pc',type:'ping',at:pingAt});};
+/* ---- 음성 명령 ---- */
+const ICE={iceServers:[{urls:'stun:stun.l.google.com:19302'}]};const P={},seen=[];let pend=null,pendT=null;
+function gather(pc){return new Promise(r=>{if(pc.iceGatheringState==='complete')return r();const f=()=>{if(pc.iceGatheringState==='complete'){pc.removeEventListener('icegatheringstatechange',f);r();}};pc.addEventListener('icegatheringstatechange',f);setTimeout(r,2500);});}
+function vs(){$('vs').textContent=['p0','p1'].map((k,i)=>(i+1)+'P:'+(P[k]?({connected:'연결됨',connecting:'연결 중',new:'대기',failed:'실패',disconnected:'끊김',closed:'종료'}[P[k].pc.connectionState]||'?'):'—')).join('  ');}
+function onMsg(topic,msg){if(!topic.endsWith('/rtc'))return;let o;try{o=JSON.parse(msg);}catch(e){return;}
+ if(o.to!=='pc'||seen.includes(o.id))return;seen.push(o.id);if(seen.length>60)seen.shift();
+ if(o.type==='offer')onOffer(o.from,o.sdp);else if(o.type==='pong'&&o.at===pingAt){$('rtt').textContent=' 왕복 '+(Date.now()-pingAt)+'ms (PC→브로커→폰→브로커→PC)';}}
+async function onOffer(from,sdp){close(from);const pc=new RTCPeerConnection(ICE);P[from]={pc};
+ pc.ontrack=e=>attach(from,e.streams[0]||new MediaStream([e.track]),e.track);pc.onconnectionstatechange=()=>{vs();log(from+' 연결 '+pc.connectionState);};
+ try{await pc.setRemoteDescription({type:'offer',sdp});const a=await pc.createAnswer();await pc.setLocalDescription(a);await gather(pc);
+  pub('rtc',{id:Math.random().toString(36).slice(2,9),to:from,from:'pc',type:'answer',sdp:pc.localDescription.sdp});log(from+' 연결 요청 → 응답 전송');}catch(e){log('⚠ 연결 오류 '+e.message);}vs();}
+function close(k){const p=P[k];if(!p)return;try{p.rec&&(p.rec.onend=null,p.rec.stop());}catch(e){}try{p.audio&&p.audio.remove();}catch(e){}try{p.ac&&p.ac.close();}catch(e){}try{p.pc.close();}catch(e){}delete P[k];vs();}
+function attach(from,stream,track){const p=P[from];if(!p)return;
+ const a=new Audio();a.srcObject=stream;a.autoplay=true;a.volume=$('spk').checked?1:0.02;a.style.display='none';document.body.appendChild(a);a.play().catch(()=>{});p.audio=a;
+ try{const ac=new (window.AudioContext||window.webkitAudioContext)();ac.resume();const src=ac.createMediaStreamSource(stream),an=ac.createAnalyser();an.fftSize=256;src.connect(an);p.ac=ac;const buf=new Uint8Array(an.fftSize),bar=$(from==='p0'?'lv0':'lv1');
+  const tick=()=>{if(!P[from]||P[from]!==p)return;an.getByteTimeDomainData(buf);let m=0;for(const v of buf)m=Math.max(m,Math.abs(v-128));bar.style.width=Math.min(100,m*1.6)+'%';requestAnimationFrame(tick);};tick();}catch(e){}
+ log(from+' 음성 수신 시작');rec(from,track);}
+function rec(from,track){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){log('⚠ 음성인식 미지원 (PC 크롬 필요)');return;}
+ const ver=+((navigator.userAgent.match(/Chrome\/(\d+)/)||[])[1])||0;if(ver&&ver<135)log('⚠ PC 크롬 '+ver+': 통화음 인식은 135 이상 필요');
+ const p=P[from];if(!p)return;const r=new SR();r.lang='ko-KR';r.continuous=true;r.interimResults=true;r.maxAlternatives=3;
+ r.onaudiostart=()=>log(from+' 인식: 소리 입력 시작');r.onspeechstart=()=>log(from+' 인식: 말소리 감지');
+ r.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){const res=e.results[i];if(res.isFinal)heard(from,[...res].map(x=>x.transcript));else $('heard').textContent='… '+res[0].transcript;}};
+ r.onerror=e=>{if(e.error!=='no-speech'&&e.error!=='aborted')log('⚠ '+from+' 인식 오류: '+e.error);};
+ r.onend=()=>{const q=P[from];if(q&&q.rec===r&&q.pc.connectionState!=='closed')setTimeout(()=>{try{r.start(track);}catch(e){}},300);};
+ try{r.start(track);p.rec=r;log(from+' 음성인식 시작');}catch(e){log('⚠ 인식 시작 실패: '+e.message);}}
+function parse(alts){for(const t of alts){const s=t.replace(/[\s.,!?]/g,'');
+  if(pend){if(/아니|취소/.test(s))return{k:'cancel'};if(/확인|^네|^예|맞아/.test(s))return{k:'confirm'};}
+  if(!/심판/.test(s))continue;if(/취소/.test(s))return{k:'cancel'};if(/무득점/.test(s))return{k:'miss'};if(/득점/.test(s))return{k:'score'};if(/점수/.test(s))return{k:'query'};}return null;}
+function heard(from,alts){const idx=from==='p0'?0:1;$('heard').textContent=(idx+1)+'P "'+(alts[0]||'')+'"';log('🎤 '+(idx+1)+'P: '+alts.join(' / '));
+ const c=parse(alts);if(!c)return;
+ if(c.k==='query'){say(score[0]+' 대 '+score[1],from);return;}
+ if(c.k==='cancel'){if(pend&&pend.from===from){pend=null;say('취소했습니다',from);}return;}
+ if(c.k==='confirm'){if(pend&&pend.from===from){const k=pend.kind;pend=null;clearTimeout(pendT);k==='score'?sc(idx):ms(idx);}return;}
+ if(idx!==turn){say('지금은 '+(turn+1)+' 피 선수 차례입니다',from);log('턴 아님 → 무시');return;}
+ pend={from,kind:c.k};clearTimeout(pendT);pendT=setTimeout(()=>{pend=null;},8000);say((c.k==='score'?'득점':'무득점')+'으로 확정할까요? 맞으면 확인이라고 말하세요',from);}
+$('fb').onclick=()=>{const t=$('ft').value.trim();if(t)heard($('fw').value,[t]);};
+$('spk').onchange=()=>{Object.values(P).forEach(p=>{if(p.audio)p.audio.volume=$('spk').checked?1:0.02;});};
+ui();vs();conn();log('시작: 선수 폰 주소를 위 파란 줄에서 복사하세요');
+</script></body></html>
